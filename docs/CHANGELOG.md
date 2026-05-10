@@ -2,6 +2,20 @@
 
 ---
 
+## 2026-05-10 — Google Ads Wizard: Search + PMax sağ Özet panelleri (Display tasarım dilinde)
+- **Sorun:** UI shell standardizasyonu (51a7511) sadece full-screen layout'u taşıdı; Search ve PMax wizard'larda Display'deki sağ sticky Özet paneli yoktu.
+- **Çözüm:**
+  - `components/google/wizard/shared/SearchSummaryPanel.tsx` — Search wizard'ın 8 step'ine eşlenmiş 8 readonly özet kartı (Goal/Type, Conversion & Name, Bidding, Settings/Lang/EU, AI Max, RSA Reklam, Bütçe, Yayın Kontrolü).
+  - `components/google/wizard/pmax/PMaxSummaryPanel.tsx` — PMax wizard'ın 6 step'ine eşlenmiş 6 readonly özet kartı (Overview, Bidding, Settings, Asset Group, Bütçe, Yayın Kontrolü) — asset group kartında businessName + image/logo/video sayıları + headline/description sayıları.
+  - Her iki panel `GoogleWizardSummaryCard` + `GoogleWizardSummaryRow` paylaşılan primitive'lerini kullanıyor — DisplaySidebar ile birebir aynı görsel dil (typography, kart radius, primary highlight on active step, tick badge on complete).
+  - GoogleCampaignWizard ve PMaxCampaignWizard `rightSummary` prop'u üzerinden panelleri shell'e besliyor.
+- **Korunanlar:** Tüm wizard step component'leri, validation, payload, submit logic. Display görünümü değişmedi (DisplaySidebar yerinde, aynı tasarım dilini kullanıyor).
+- **Dosyalar:**
+  - Yeni: `components/google/wizard/shared/SearchSummaryPanel.tsx`, `components/google/wizard/pmax/PMaxSummaryPanel.tsx`
+  - Güncellendi: `components/google/wizard/GoogleCampaignWizard.tsx`, `components/google/wizard/pmax/PMaxCampaignWizard.tsx`
+
+---
+
 ## 2026-05-10 — Google Ads Wizard UI Shell Standardizasyonu (Search + Display + PMax)
 - **Sorun:** Display wizard modern full-screen tasarımı kazanmıştı; Search ve PMax hâlâ eski centered-modal/blue-button görünümünde duruyordu. PMax'ın partial result bandı amber/yellow kullanıyordu (proje renk yasağı).
 - **Çözüm:**

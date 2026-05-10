@@ -7,6 +7,7 @@ import type { WizardState, CampaignGoal } from './shared/WizardTypes'
 import { validateStep } from './shared/WizardValidation'
 import { buildCreatePayload } from './shared/WizardHelpers'
 import GoogleWizardShell, { type ResultBanner } from './shared/GoogleWizardShell'
+import SearchSummaryPanel from './shared/SearchSummaryPanel'
 import StepGoalType from './steps/StepGoalType'
 import StepConversionAndName from './steps/StepConversionAndName'
 import StepBiddingAcquisition from './steps/StepBiddingAcquisition'
@@ -181,6 +182,7 @@ export default function GoogleCampaignWizard({
       currentStep={step}
       campaignTypeLabel={t('display.campaignTypeSearch')}
       onStepClick={goToStep}
+      rightSummary={<SearchSummaryPanel state={state} currentStep={step} t={t} />}
       errorMessage={error}
       resultBanner={resultBanner}
       isFirstStep={isFirstStep}

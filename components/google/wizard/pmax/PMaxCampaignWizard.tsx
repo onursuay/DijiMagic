@@ -7,6 +7,7 @@ import type { PMaxWizardState } from './shared/PMaxWizardTypes'
 import { validatePMaxStep, getPMaxBlockingIssues } from './shared/PMaxWizardValidation'
 import { buildPerformanceMaxCreatePayload } from './shared/PMaxCreatePayload'
 import GoogleWizardShell, { type ResultBanner, type WizardShellStep } from '../shared/GoogleWizardShell'
+import PMaxSummaryPanel from './PMaxSummaryPanel'
 import PMaxStepEntry from './steps/PMaxStepEntry'
 import PMaxStepBiddingAcquisition from './steps/PMaxStepBiddingAcquisition'
 import PMaxStepCampaignSettings from './steps/PMaxStepCampaignSettings'
@@ -186,6 +187,16 @@ export default function PMaxCampaignWizard({ isOpen, onClose, onSuccess, onToast
       campaignTypeLabel={tCommon('display.campaignTypePerformanceMax')}
       onStepClick={goToStep}
       stepStatusOf={stepStatusOf}
+      rightSummary={
+        <PMaxSummaryPanel
+          state={state}
+          currentStep={step}
+          t={t}
+          sidebarTitle={tCommon('display.summarySidebarTitle')}
+          readyLabel={tCommon('display.summaryReadyLabel')}
+          missingLabel={tCommon('display.summaryMissingLabel')}
+        />
+      }
       errorMessage={error}
       resultBanner={resultBanner}
       isFirstStep={isFirstStep}
