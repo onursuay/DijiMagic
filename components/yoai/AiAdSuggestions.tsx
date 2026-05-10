@@ -23,6 +23,12 @@ import type { Decision } from '@/lib/yoai/meta/decision'
 interface Props {
   connectedPlatforms: Platform[]
   onOpenWizard: (proposal?: FullAdProposal) => void
+  /**
+   * Faz 0D: bir approval state'i değiştiğinde parent'a haber verir
+   * (reject/hold/published/editing). Parent bu callback'te pending count'u
+   * yeniden fetch eder.
+   */
+  onApprovalChanged?: () => void
 }
 
 const ROOT_CAUSE_LABEL: Record<RootCauseId, string> = {
@@ -87,7 +93,7 @@ function readCache(): CacheShape | null {
   }
 }
 
-export default function AiAdSuggestions({ connectedPlatforms, onOpenWizard }: Props) {
+export default function AiAdSuggestions({ connectedPlatforms, onOpenWizard, onApprovalChanged }: Props) {
   const cached = typeof window !== 'undefined' ? readCache() : null
   const [proposals, setProposals] = useState<FullAdProposal[]>(cached?.proposals || [])
   const [summary, setSummary] = useState<Summary>(
@@ -235,7 +241,12 @@ export default function AiAdSuggestions({ connectedPlatforms, onOpenWizard }: Pr
   // ── PATCH helpers ──
   const patchApproval = async (
     approvalId: string,
-    payload: { status: 'rejected' | 'hold' | 'pending'; rejection_reason?: string; hold_reason?: string },
+    payload: {
+      status: 'rejected' | 'hold' | 'pending' | 'editing'
+      rejection_reason?: string
+      hold_reason?: string
+      edited_payload?: unknown
+    },
   ) => {
     setSubmittingPatch(true)
     try {
@@ -255,6 +266,25 @@ export default function AiAdSuggestions({ connectedPlatforms, onOpenWizard }: Pr
       setSubmittingPatch(false)
     }
     await refreshApprovals()
+    if (onApprovalChanged) onApprovalChanged()
+  }
+
+  /** Faz 0D: "Öneriyi düzenle" — wizard'ı proposal ile aç + DB'de editing'e geç. */
+  const handleEdit = async (proposal: FullAdProposal, approval?: ApprovalRecord) => {
+    // 1) Wizard'ı hemen aç (kullanıcı beklemesin).
+    onOpenWizard(proposal)
+    // 2) DB'de status='editing' yap (best-effort, non-blocking).
+    if (!approval) return
+    if (approval.status === 'editing') return // no-op (transition guard 'editing→editing'i reddeder)
+    if (!['pending', 'hold'].includes(approval.status)) return
+    try {
+      await patchApproval(approval.id, {
+        status: 'editing',
+        edited_payload: proposal,
+      })
+    } catch (e) {
+      console.warn('[AiAdSuggestions] handleEdit patch failed (non-fatal):', e)
+    }
   }
 
   const handleRejectConfirm = async () => {
@@ -375,9 +405,10 @@ export default function AiAdSuggestions({ connectedPlatforms, onOpenWizard }: Pr
             <Eye className="w-3.5 h-3.5" />
           </button>
           <button
-            disabled
-            className="inline-flex items-center justify-center gap-1 px-2 py-1.5 bg-gray-50 text-gray-400 rounded-lg text-[11px] font-medium cursor-not-allowed"
-            title="Düzenleme akışı sonraki fazda"
+            onClick={() => handleEdit(proposal, approval)}
+            disabled={submittingPatch}
+            className="inline-flex items-center justify-center gap-1 px-2 py-1.5 bg-gray-100 hover:bg-gray-200 text-gray-700 rounded-lg text-[11px] font-medium disabled:opacity-50"
+            title="Öneriyi düzenle"
           >
             <Pencil className="w-3.5 h-3.5" />
           </button>
@@ -487,11 +518,11 @@ export default function AiAdSuggestions({ connectedPlatforms, onOpenWizard }: Pr
           approvalId={oneClickProposal.approvalId}
           onClose={() => {
             setOneClickProposal(null)
-            // Yayın başarılıysa state'i tazele.
             refreshApprovals()
           }}
           onPublished={() => {
             refreshApprovals()
+            if (onApprovalChanged) onApprovalChanged()
           }}
         />
       )}

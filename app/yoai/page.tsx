@@ -10,6 +10,7 @@ import AnalysisCapabilities from '@/components/yoai/AnalysisCapabilities'
 import KpiDashboard from '@/components/yoai/KpiDashboard'
 import AdCreationWizard from '@/components/yoai/AdCreationWizard'
 import AiAdSuggestions from '@/components/yoai/AiAdSuggestions'
+import ApprovalHistoryPanel from '@/components/yoai/ApprovalHistoryPanel'
 import { useCredits } from '@/components/providers/CreditProvider'
 import { CATEGORIES } from '@/lib/yoai/categories'
 import { OFF_TOPIC_MESSAGE } from '@/lib/yoai/prompts'
@@ -43,6 +44,32 @@ export default function YoAiPage() {
   const [pendingAction, setPendingAction] = useState<ExecutableAction | null>(null)
   const [showAdWizard, setShowAdWizard] = useState(false)
   const [wizardProposal, setWizardProposal] = useState<any>(null)
+
+  // ── Faz 0D: Approval pending count (yoai_pending_approvals tablosundan) ──
+  const [approvalsPendingCount, setApprovalsPendingCount] = useState<number | undefined>(undefined)
+  const [historyRefreshKey, setHistoryRefreshKey] = useState(0)
+
+  const refreshApprovalsPendingCount = useCallback(async () => {
+    try {
+      const res = await fetch('/api/yoai/approvals?count=1', { credentials: 'include' })
+      if (!res.ok) return
+      const json = await res.json()
+      if (json && json.ok && typeof json.pendingCount === 'number') {
+        setApprovalsPendingCount(json.pendingCount)
+      }
+    } catch (e) {
+      console.warn('[YoAi] approvals count fetch failed (non-fatal):', e)
+    }
+  }, [])
+
+  const handleApprovalChanged = useCallback(() => {
+    refreshApprovalsPendingCount()
+    setHistoryRefreshKey((k) => k + 1)
+  }, [refreshApprovalsPendingCount])
+
+  useEffect(() => {
+    refreshApprovalsPendingCount()
+  }, [refreshApprovalsPendingCount])
 
   const handleExecuteAction = useCallback((action: ExecutableAction) => {
     setPendingAction(action)
@@ -366,6 +393,7 @@ export default function YoAiPage() {
               loading={ccLoading}
               aiGenerated={ccData?.aiGenerated ?? false}
               onCreateAd={() => setShowAdWizard(true)}
+              approvalsPendingCount={approvalsPendingCount}
             />
 
             <KpiDashboard kpis={ccData?.kpis ?? null} loading={ccLoading} />
@@ -374,7 +402,12 @@ export default function YoAiPage() {
               <AiAdSuggestions
                 connectedPlatforms={ccData.connectedPlatforms}
                 onOpenWizard={(proposal) => { setWizardProposal(proposal || null); setShowAdWizard(true) }}
+                onApprovalChanged={handleApprovalChanged}
               />
+            )}
+
+            {!ccLoading && (
+              <ApprovalHistoryPanel refreshKey={historyRefreshKey} />
             )}
 
             <AnalysisCapabilities />

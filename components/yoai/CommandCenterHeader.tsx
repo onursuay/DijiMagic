@@ -9,9 +9,21 @@ interface Props {
   loading: boolean
   aiGenerated: boolean
   onCreateAd?: () => void
+  /**
+   * Faz 0D: gerçek yoai_pending_approvals.status='pending' count.
+   * undefined ise drafts.length fallback'i kullanılır.
+   */
+  approvalsPendingCount?: number
 }
 
-export default function CommandCenterHeader({ health, lastAnalysis, loading, aiGenerated, onCreateAd }: Props) {
+export default function CommandCenterHeader({
+  health,
+  lastAnalysis,
+  loading,
+  aiGenerated,
+  onCreateAd,
+  approvalsPendingCount,
+}: Props) {
   const formattedTime = lastAnalysis
     ? new Date(lastAnalysis).toLocaleString('tr-TR', { day: '2-digit', month: 'short', hour: '2-digit', minute: '2-digit' })
     : '—'
@@ -22,7 +34,18 @@ export default function CommandCenterHeader({ health, lastAnalysis, loading, aiG
     { label: 'Aktif Kampanya', value: health ? `${health.activeCampaigns} kampanya` : '—', icon: Megaphone, color: 'text-violet-400', bgColor: 'bg-violet-500/10' },
     { label: 'Kritik Uyarılar', value: health ? health.criticalAlerts : '—', icon: AlertOctagon, color: (health?.criticalAlerts ?? 0) > 0 ? 'text-red-400' : 'text-gray-500', bgColor: (health?.criticalAlerts ?? 0) > 0 ? 'bg-red-500/10' : 'bg-gray-500/10' },
     { label: 'İyileştirme Fırsatları', value: health ? health.opportunities : '—', icon: Lightbulb, color: 'text-gray-400', bgColor: 'bg-gray-500/10' },
-    { label: 'Bekleyen Onaylar', value: health ? health.pendingApprovals : '—', icon: ClipboardCheck, color: 'text-primary', bgColor: 'bg-primary/10' },
+    {
+      label: 'Bekleyen Onaylar',
+      value:
+        typeof approvalsPendingCount === 'number'
+          ? approvalsPendingCount
+          : health
+            ? health.pendingApprovals
+            : '—',
+      icon: ClipboardCheck,
+      color: 'text-primary',
+      bgColor: 'bg-primary/10',
+    },
     { label: 'Önerilen Aksiyonlar', value: health ? health.draftActions : '—', icon: Layers, color: 'text-indigo-400', bgColor: 'bg-indigo-500/10' },
   ]
 

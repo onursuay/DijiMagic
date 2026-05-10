@@ -2,6 +2,37 @@
 
 ---
 
+## 2026-05-10 — Faz 0D: Approval lifecycle UI completion (pending count + edit prefill + history)
+- **Sorun:** Faz 0C'den sonra approval queue tablosu hazır + AiAdSuggestions'da reject/hold/detail aksiyonları çalışıyor ama: (1) "Bekleyen Onaylar" metriği hala `ccData.drafts.length`'e bağlıydı (gerçek pending approval count değil), (2) "Düzenle" butonu disabled kalmıştı (wizard prefill akışı bağlanmamıştı), (3) kullanıcı geçmiş approval kararlarını göremiyordu.
+- **Çözüm:**
+  - **Pending count metric**: `app/yoai/page.tsx`'e yeni state `approvalsPendingCount` + `refreshApprovalsPendingCount()` callback (mount + onApprovalChanged'da fetch). `CommandCenterHeader` yeni prop `approvalsPendingCount?: number` — tanımlıysa onu, değilse `health.pendingApprovals` (drafts.length) fallback. Endpoint hata verirse mevcut değer korunur (graceful degrade).
+  - **onApprovalChanged callback**: `AiAdSuggestions` yeni prop `onApprovalChanged?: () => void` — reject/hold/edit/published sonrası tetiklenir. Page bu callback'te pending count'u yeniden fetch edip `historyRefreshKey`'i artırır → ApprovalHistoryPanel da otomatik refresh olur.
+  - **Düzenle butonu aktif**: AiAdSuggestions'da `<Pencil>` butonu disabled placeholder yerine `handleEdit(proposal, approval)`'a bağlandı. Akış: (1) `onOpenWizard(proposal)` ile wizard hemen açılır (kullanıcı beklemesin), (2) best-effort PATCH `/api/yoai/approvals/{id} {status:'editing', edited_payload: proposal}` paralel çağrılır. Sadece pending/hold'dan editing'e geçer (zaten editing ise no-op). edited_payload sanitize edilmiş proposal snapshot olarak DB'ye yazılır. AdCreationWizard zaten `initialProposal` prop'u destekliyor — minimal değişiklik.
+  - **ApprovalHistoryPanel** (yeni component): `/api/yoai/approvals?limit=20` ile beslenen son 20 kayıt. Status badge (pending/published/rejected/hold/editing/failed/expired — onaylı palet, amber YOK), campaignName/headline, platform, created_at/updated_at, reason (rejection_reason → hold_reason → status_reason fallback), publish_audit_id, expand/collapse ile detay (proposal_id, source_campaign_id, hedef, bütçe, başlık, CTA mono font ile). Boş state "Henüz onaylanmış, reddedilmiş veya bekletilmiş öneri yok." `refreshKey` prop'u ile parent'tan re-fetch tetiklenebilir.
+  - **UI metinleri**: "Öneriyi düzenle" (tooltip), "Beklet", "Reddet", "Onayla ve PAUSED Olarak Oluştur", "Onay Geçmişi", "son N kayıt".
+- **Korunanlar:**
+  - PAUSED default + budget guard + explicit checkbox + audit log (Faz 0A/0B/0C aynen)
+  - Status transition guard (PATCH endpoint'i hala USER_PATCHABLE_STATUSES + ALLOWED_USER_TRANSITIONS guard'lı)
+  - Manual "AI Reklam Oluştur" CTA ([page.tsx:368](app/yoai/page.tsx#L368) `setShowAdWizard(true)`) — wizardProposal=null kalır → boş wizard açılır (Düzenle ile karışmaz)
+  - `lib/yoai/meta/orchestrator.ts`, adCreator, daily-run, deepFetcher'lar, diagnosis, decision — DOKUNULMADI
+  - `app/api/integrations/**`, AI proposal promptları, ad_proposals_data JSONB — DEĞİŞMEDİ
+  - Search/Display/PMax/Meta wizard'ları — DOKUNULMADI
+- **Status flow doğruluğu**:
+  - pending → editing (Düzenle ile)
+  - hold → editing (Düzenle ile, hold'da iken)
+  - editing → editing geçişi engellendi (UI tarafında no-op + transition guard zaten reddederdi)
+  - rejected/published/approved → editing yapılamaz (UI'da Düzenle butonu o durumlarda zaten görünmüyor — kart status badge'iyle değiştirilmiş)
+  - published terminal kalmaya devam (sadece markApprovalPublished/markApprovalFailed direkt yazabilir)
+- **Doğrulama:** `npx tsc --noEmit` → 0 error · `npm run build` → ✓ tüm route'lar derlendi · /yoai bundle 23.5→24.9 kB.
+- **Migration apply gereksinimi:** YOK. Faz 0C'deki `yoai_pending_approvals` tablosu yeterli (edited_payload kolonu zaten Faz 0C'de hazırlanmıştı, bu fazda kullanılmaya başlandı).
+- **Dosyalar:**
+  - `components/yoai/ApprovalHistoryPanel.tsx` (yeni)
+  - `app/yoai/page.tsx` (pending count state + history panel render + onApprovalChanged)
+  - `components/yoai/CommandCenterHeader.tsx` (approvalsPendingCount prop + fallback)
+  - `components/yoai/AiAdSuggestions.tsx` (Düzenle aktif + handleEdit + onApprovalChanged callback)
+
+---
+
 ## 2026-05-10 — Faz 0C: Approval lifecycle foundation (pending queue + reject + hold + detail)
 - **Sorun:** AI Reklam Önerileri için kalıcı approval queue yoktu — pending/rejected/hold/edit state'leri, rejection_reason, approval history hiçbiri DB'de tutulmuyordu. Kart aksiyonları (Detayları Gör / Reddet / Beklet / Düzenle) UI'da yoktu. Bekleyen Onaylar metriği gerçek approval kayıtlarına bağlanabilir değildi.
 - **Çözüm:**
