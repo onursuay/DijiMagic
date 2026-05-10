@@ -2,6 +2,17 @@
 
 ---
 
+## 2026-05-10 — Search + PMax tüm native select'ler → Meta WizardSelect (Display'in kullandığı custom dropdown)
+- **Sorun:** Search'teki Teklif Stratejisi dropdown'ı ve diğer native `<select>`'ler tarayıcı default mavi option listesi gösteriyordu — Display ile pixel parite yoktu (Display zaten Meta'nın `WizardSelect` custom dropdown'ını kullanıyor).
+- **Çözüm:** Search ve PMax step component'lerindeki **tüm 10 native `<select>`** kullanımı `@/components/meta/wizard/WizardSelect` ile değiştirildi. Aynı görsel dil: `rounded-xl` border, `border-primary` open state, `bg-primary/8 text-primary font-semibold` selected option, `Check` icon, `ChevronDown` rotate, primary ring focus, açılan menünün `shadow-[0_8px_24px_rgba(0,0,0,0.12)]` lift'i. Tarayıcı default native dropdown tamamen elendi.
+- **Dönüştürülen select'ler:**
+  - Search: `StepBiddingAcquisition` (biddingStrategy), `StepCampaignSettings` (biddingStrategy), `StepConversionAndName` (phone country code), `StepAdGroupKeywords` (defaultMatchType), `StepAdSchedule` (4× hour/minute time pickers)
+  - PMax: `PMaxStepBiddingAcquisition` (biddingFocus), `PMaxStepCampaignSettings` (5× schedule selectors), `PMaxStepAssetGroup` (callToAction)
+- **Korunanlar:** Tüm onChange handler'ları, validation, payload, state mantığı. Sadece JSX `<select>` → `<WizardSelect>` map'i. Display tarafı dokunulmadı.
+- **Dosyalar:** Search 5 + PMax 3 step dosyası
+
+---
+
 ## 2026-05-10 — Search + PMax step içleri Display tasarım dilinde renk/kart parite
 - **Sorun:** Sağ Özet paneli ve shell Display ile aynıydı ama step iç form'ları (input focus ring, button rengi, kart chrome, banner palette) Search'te ve PMax'te hâlâ blue-500/amber/yellow eski tema kullanıyordu — Display ile görsel parite eksikti.
 - **Çözüm:**

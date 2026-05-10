@@ -24,6 +24,7 @@ import type { StepProps, BiddingStrategy } from '../shared/WizardTypes'
 import type { ConversionActionForWizard } from '../shared/WizardTypes'
 import { inputCls, CAMPAIGN_TYPE_BIDDING } from '../shared/WizardTypes'
 import { getBudgetRecommendation } from '../shared/WizardValidation'
+import WizardSelect from '@/components/meta/wizard/WizardSelect'
 
 const BIDDING_LABELS: Record<BiddingStrategy, string> = {
   MAXIMIZE_CLICKS: 'Tıklama Sayısını Artır',
@@ -139,9 +140,11 @@ export default function StepCampaignSettings({ state, update, t }: StepProps) {
       )}
 
       <Field label={t('campaign.biddingStrategy')} required>
-        <select className={inputCls} value={state.biddingStrategy} onChange={e => update({ biddingStrategy: e.target.value as BiddingStrategy })}>
-          {availableBidding.map(bs => (<option key={bs} value={bs}>{BIDDING_LABELS[bs] ?? bs}</option>))}
-        </select>
+        <WizardSelect
+          value={state.biddingStrategy}
+          onChange={(v) => update({ biddingStrategy: v as BiddingStrategy })}
+          options={availableBidding.map(bs => ({ value: bs, label: BIDDING_LABELS[bs] ?? bs }))}
+        />
       </Field>
 
       {state.biddingStrategy === 'TARGET_CPA' && (

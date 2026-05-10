@@ -4,6 +4,7 @@ import { useState } from 'react'
 import { Plus, X, Clock } from 'lucide-react'
 import type { StepProps, ScheduleEntry, DayOfWeek, Minute } from '../shared/WizardTypes'
 import { DAYS_OF_WEEK, inputCls } from '../shared/WizardTypes'
+import WizardSelect from '@/components/meta/wizard/WizardSelect'
 
 const HOURS = Array.from({ length: 24 }, (_, i) => i)
 const END_HOURS = Array.from({ length: 25 }, (_, i) => i) // 0-24
@@ -102,23 +103,35 @@ export default function StepAdSchedule({ state, update, t }: StepProps) {
               </div>
 
               {addingDay === day && (
-                <div className="flex items-center gap-2 mt-2 pl-24">
-                  <select className={`${inputCls} w-16 py-1 text-xs`} value={newStart} onChange={e => setNewStart(Number(e.target.value))}>
-                    {HOURS.map(h => <option key={h} value={h}>{String(h).padStart(2, '0')}</option>)}
-                  </select>
+                <div className="flex items-center gap-2 mt-2 pl-24 flex-wrap">
+                  <WizardSelect
+                    className="w-20"
+                    value={String(newStart)}
+                    onChange={(v) => setNewStart(Number(v))}
+                    options={HOURS.map(h => ({ value: String(h), label: String(h).padStart(2, '0') }))}
+                  />
                   <span className="text-gray-400">:</span>
-                  <select className={`${inputCls} w-14 py-1 text-xs`} value={newStartMin} onChange={e => setNewStartMin(e.target.value as Minute)}>
-                    {MINUTES.map(m => <option key={m} value={m}>{MINUTE_LABELS[m]}</option>)}
-                  </select>
+                  <WizardSelect
+                    className="w-20"
+                    value={newStartMin}
+                    onChange={(v) => setNewStartMin(v as Minute)}
+                    options={MINUTES.map(m => ({ value: m, label: MINUTE_LABELS[m] }))}
+                  />
                   <span className="text-gray-400 text-xs">–</span>
-                  <select className={`${inputCls} w-16 py-1 text-xs`} value={newEnd} onChange={e => setNewEnd(Number(e.target.value))}>
-                    {END_HOURS.map(h => <option key={h} value={h}>{String(h).padStart(2, '0')}</option>)}
-                  </select>
+                  <WizardSelect
+                    className="w-20"
+                    value={String(newEnd)}
+                    onChange={(v) => setNewEnd(Number(v))}
+                    options={END_HOURS.map(h => ({ value: String(h), label: String(h).padStart(2, '0') }))}
+                  />
                   <span className="text-gray-400">:</span>
-                  <select className={`${inputCls} w-14 py-1 text-xs`} value={newEndMin} onChange={e => setNewEndMin(e.target.value as Minute)}>
-                    {MINUTES.map(m => <option key={m} value={m}>{MINUTE_LABELS[m]}</option>)}
-                  </select>
-                  <button type="button" onClick={addEntry} className="px-3 py-1 text-xs font-medium bg-primary text-white rounded hover:bg-primary/90">
+                  <WizardSelect
+                    className="w-20"
+                    value={newEndMin}
+                    onChange={(v) => setNewEndMin(v as Minute)}
+                    options={MINUTES.map(m => ({ value: m, label: MINUTE_LABELS[m] }))}
+                  />
+                  <button type="button" onClick={addEntry} className="px-3 py-2 text-xs font-medium bg-primary text-white rounded-lg hover:bg-primary/90">
                     {t('schedule.add')}
                   </button>
                 </div>

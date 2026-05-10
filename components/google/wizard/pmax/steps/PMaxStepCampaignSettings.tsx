@@ -6,6 +6,7 @@ import { useLocale } from 'next-intl'
 import type { PMaxStepProps, PMaxScheduleEntry, PMaxDayOfWeek, PMaxMinute, PMaxDeviceType } from '../shared/PMaxWizardTypes'
 import { inputCls, PMaxLanguageOptions, PMaxDaysOfWeek, PMaxAllDevices } from '../shared/PMaxWizardTypes'
 import PMaxLocationPicker from '../PMaxLocationPicker'
+import WizardSelect from '@/components/meta/wizard/WizardSelect'
 
 const EU_POLICY_URL = 'https://support.google.com/adspolicy/answer/6014595'
 const HOURS = Array.from({ length: 24 }, (_, i) => i)
@@ -230,41 +231,40 @@ export default function PMaxStepCampaignSettings({ state, update, t }: PMaxStepP
       <CollapsibleSection id="pmax-settings-section-4" title={t('settings.scheduleTitle')}>
         <div className="space-y-3">
           <p className="text-sm text-gray-600">{t('settings.scheduleDescription')}</p>
-          <div className="flex gap-2 items-center mb-2">
-            <select className={`${inputCls} w-28`} value="EVERYDAY" onChange={() => {}}>
-              <option value="EVERYDAY">{t('settings.scheduleEveryDay')}</option>
-            </select>
-            <select
-              className={`${inputCls} w-16`}
-              value={newStart}
-              onChange={e => setNewStart(Number(e.target.value))}
-            >
-              {HOURS.map(h => <option key={h} value={h}>{String(h).padStart(2, '0')}</option>)}
-            </select>
+          <div className="flex gap-2 items-center mb-2 flex-wrap">
+            <WizardSelect
+              className="w-32"
+              value="EVERYDAY"
+              onChange={() => {}}
+              options={[{ value: 'EVERYDAY', label: t('settings.scheduleEveryDay') }]}
+            />
+            <WizardSelect
+              className="w-20"
+              value={String(newStart)}
+              onChange={(v) => setNewStart(Number(v))}
+              options={HOURS.map(h => ({ value: String(h), label: String(h).padStart(2, '0') }))}
+            />
             <span className="text-gray-400">:</span>
-            <select
-              className={`${inputCls} w-14`}
+            <WizardSelect
+              className="w-20"
               value={newStartMin}
-              onChange={e => setNewStartMin(e.target.value as PMaxMinute)}
-            >
-              {MINUTES.map(m => <option key={m} value={m}>{MINUTE_LABELS[m]}</option>)}
-            </select>
+              onChange={(v) => setNewStartMin(v as PMaxMinute)}
+              options={MINUTES.map(m => ({ value: m, label: MINUTE_LABELS[m] }))}
+            />
             <span className="text-gray-400 text-sm">-</span>
-            <select
-              className={`${inputCls} w-16`}
-              value={newEnd}
-              onChange={e => setNewEnd(Number(e.target.value))}
-            >
-              {END_HOURS.map(h => <option key={h} value={h}>{String(h).padStart(2, '0')}</option>)}
-            </select>
+            <WizardSelect
+              className="w-20"
+              value={String(newEnd)}
+              onChange={(v) => setNewEnd(Number(v))}
+              options={END_HOURS.map(h => ({ value: String(h), label: String(h).padStart(2, '0') }))}
+            />
             <span className="text-gray-400">:</span>
-            <select
-              className={`${inputCls} w-14`}
+            <WizardSelect
+              className="w-20"
               value={newEndMin}
-              onChange={e => setNewEndMin(e.target.value as PMaxMinute)}
-            >
-              {MINUTES.map(m => <option key={m} value={m}>{MINUTE_LABELS[m]}</option>)}
-            </select>
+              onChange={(v) => setNewEndMin(v as PMaxMinute)}
+              options={MINUTES.map(m => ({ value: m, label: MINUTE_LABELS[m] }))}
+            />
           </div>
           <button type="button" onClick={() => { if (addingDay) addScheduleEntry() }} className="text-sm text-primary hover:underline">
             {t('settings.scheduleAddLink')}

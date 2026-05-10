@@ -10,6 +10,7 @@ import type {
   PMaxSelectedAudienceSegment,
 } from '../shared/PMaxWizardTypes'
 import { inputCls, PMaxCallToActionOptions } from '../shared/PMaxWizardTypes'
+import WizardSelect from '@/components/meta/wizard/WizardSelect'
 
 /* ------------------------------------------------------------------ */
 /*  Shared UI helpers                                                   */
@@ -1232,15 +1233,13 @@ export default function PMaxStepAssetGroup({ state, update, t }: PMaxStepProps) 
 
             {/* Call to Action */}
             <CollapsibleSection title={t('assetGroup.ctaTitle')} defaultOpen={true}>
-              <select
-                className={`${inputCls} max-w-[240px]`}
-                value={state.callToAction}
-                onChange={e => update({ callToAction: e.target.value as PMaxCallToAction })}
-              >
-                {PMaxCallToActionOptions.map(cta => (
-                  <option key={cta} value={cta}>{t(`assetGroup.ctaOptions.${cta}`)}</option>
-                ))}
-              </select>
+              <div className="max-w-[240px]">
+                <WizardSelect
+                  value={state.callToAction}
+                  onChange={(v) => update({ callToAction: v as PMaxCallToAction })}
+                  options={PMaxCallToActionOptions.map(cta => ({ value: cta, label: t(`assetGroup.ctaOptions.${cta}`) }))}
+                />
+              </div>
             </CollapsibleSection>
 
             {/* Diğer öğe türleri (Other Asset Types) — collapsed toggle */}

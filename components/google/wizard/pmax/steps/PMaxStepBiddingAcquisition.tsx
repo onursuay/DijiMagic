@@ -4,6 +4,7 @@ import { useState } from 'react'
 import { ChevronUp, ChevronDown, Users, Info, AlertCircle } from 'lucide-react'
 import type { PMaxStepProps, PMaxBiddingFocus } from '../shared/PMaxWizardTypes'
 import { inputCls } from '../shared/PMaxWizardTypes'
+import WizardSelect from '@/components/meta/wizard/WizardSelect'
 
 function CollapsibleSection({ title, defaultOpen = true, children }: { title: string; defaultOpen?: boolean; children: React.ReactNode }) {
   const [open, setOpen] = useState(defaultOpen)
@@ -49,14 +50,16 @@ export default function PMaxStepBiddingAcquisition({ state, update, t }: PMaxSte
         <div className="space-y-4">
           <div>
             <label className="block text-[13px] font-medium text-gray-700 mb-1.5">{t('bidding.focusQuestion')}</label>
-            <select
-              className={`${inputCls} max-w-[240px]`}
-              value={state.biddingFocus ?? 'CONVERSION_COUNT'}
-              onChange={e => handleFocusChange(e.target.value as PMaxBiddingFocus)}
-            >
-              <option value="CONVERSION_COUNT">{t('bidding.focusLabels.CONVERSION_COUNT')}</option>
-              <option value="CONVERSION_VALUE">{t('bidding.focusLabels.CONVERSION_VALUE')}</option>
-            </select>
+            <div className="max-w-[240px]">
+              <WizardSelect
+                value={state.biddingFocus ?? 'CONVERSION_COUNT'}
+                onChange={(v) => handleFocusChange(v as PMaxBiddingFocus)}
+                options={[
+                  { value: 'CONVERSION_COUNT', label: t('bidding.focusLabels.CONVERSION_COUNT') },
+                  { value: 'CONVERSION_VALUE', label: t('bidding.focusLabels.CONVERSION_VALUE') },
+                ]}
+              />
+            </div>
           </div>
 
           {/* Target CPA — optional checkbox + input */}

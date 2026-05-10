@@ -23,6 +23,7 @@ import type { StepProps } from '../shared/WizardTypes'
 import { inputCls } from '../shared/WizardTypes'
 import type { ConversionActionForWizard } from '../shared/WizardTypes'
 import { isValidPhoneForCountry } from '../shared/WizardValidation'
+import WizardSelect from '@/components/meta/wizard/WizardSelect'
 
 // Country-based phone options — label, iso2, dialCode, placeholder. Used for display and country-aware validation.
 const COUNTRY_PHONE_OPTIONS: Array<{
@@ -405,15 +406,12 @@ export default function StepConversionAndName({ state, update, t }: StepProps) {
           {state.desiredOutcomePhone && (
             <div className="px-2.5 pb-2.5 pt-0">
               <div className="grid grid-cols-[140px_minmax(0,1fr)] gap-3 items-center w-full">
-                <select
-                  className={`h-10 w-full min-w-0 rounded-md border px-3 text-[13px] focus:outline-none focus:ring-2 focus:ring-primary/20 bg-white ${!state.desiredOutcomePhoneCountryCode?.trim() ? 'border-red-400' : 'border-gray-300'}`}
+                <WizardSelect
                   value={state.desiredOutcomePhoneCountryCode}
-                  onChange={e => update({ desiredOutcomePhoneCountryCode: e.target.value })}
-                >
-                  {COUNTRY_PHONE_OPTIONS.map(opt => (
-                    <option key={opt.id} value={opt.dialCode}>{t(opt.labelKey)}</option>
-                  ))}
-                </select>
+                  onChange={(v) => update({ desiredOutcomePhoneCountryCode: v })}
+                  error={!state.desiredOutcomePhoneCountryCode?.trim()}
+                  options={COUNTRY_PHONE_OPTIONS.map(opt => ({ value: opt.dialCode, label: t(opt.labelKey) }))}
+                />
                 <input
                   type="tel"
                   inputMode="numeric"

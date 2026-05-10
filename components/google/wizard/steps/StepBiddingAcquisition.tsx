@@ -4,6 +4,7 @@ import { Target, Users, Info, DollarSign } from 'lucide-react'
 import type { StepProps, BiddingStrategy } from '../shared/WizardTypes'
 import { inputCls, CAMPAIGN_TYPE_BIDDING, BIDDING_FOCUS_BY_STRATEGY } from '../shared/WizardTypes'
 import { GoogleWizardSection } from '../shared/GoogleWizardUI'
+import WizardSelect from '@/components/meta/wizard/WizardSelect'
 
 function Field({ label, required, children }: { label: string; required?: boolean; children: React.ReactNode }) {
   return (
@@ -41,15 +42,11 @@ export default function StepBiddingAcquisition({ state, update, t }: StepProps) 
         title={t('campaign.biddingStrategy')}
       >
         <Field label={t('campaign.biddingStrategy')} required>
-          <select
-            className={inputCls}
+          <WizardSelect
             value={state.biddingStrategy}
-            onChange={e => handleStrategyChange(e.target.value as BiddingStrategy)}
-          >
-            {availableBidding.map(bs => (
-              <option key={bs} value={bs}>{t(`summary.biddingLabels.${bs}`) || bs}</option>
-            ))}
-          </select>
+            onChange={(v) => handleStrategyChange(v as BiddingStrategy)}
+            options={availableBidding.map(bs => ({ value: bs, label: t(`summary.biddingLabels.${bs}`) || bs }))}
+          />
         </Field>
 
         {focusOptions.length > 0 && (

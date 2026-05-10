@@ -4,6 +4,7 @@ import { useState } from 'react'
 import { Loader2, Plus, Sparkles } from 'lucide-react'
 import type { StepProps, MatchType } from '../shared/WizardTypes'
 import { inputCls } from '../shared/WizardTypes'
+import WizardSelect from '@/components/meta/wizard/WizardSelect'
 
 interface KeywordIdea {
   text: string
@@ -73,11 +74,15 @@ export default function StepAdGroupKeywords({ state, update, t }: StepProps) {
       </Field>
 
       <Field label={t('adgroup.defaultMatchType')}>
-        <select className={inputCls} value={state.defaultMatchType} onChange={e => update({ defaultMatchType: e.target.value as MatchType })}>
-          <option value="BROAD">{t('adgroup.matchTypes.BROAD')}</option>
-          <option value="PHRASE">{t('adgroup.matchTypes.PHRASE')}</option>
-          <option value="EXACT">{t('adgroup.matchTypes.EXACT')}</option>
-        </select>
+        <WizardSelect
+          value={state.defaultMatchType}
+          onChange={(v) => update({ defaultMatchType: v as MatchType })}
+          options={[
+            { value: 'BROAD', label: t('adgroup.matchTypes.BROAD') },
+            { value: 'PHRASE', label: t('adgroup.matchTypes.PHRASE') },
+            { value: 'EXACT', label: t('adgroup.matchTypes.EXACT') },
+          ]}
+        />
       </Field>
 
       <Field label={`${t('adgroup.keywords')} (${t('adgroup.keywordsNote')})`} required>
