@@ -2,6 +2,20 @@
 
 ---
 
+## 2026-05-10 — Final pixel-level UI parity: tüm büyük step dosyaları Display section/card chrome'unda
+- **Sorun:** `StepConversionAndName`, `StepAudience`, `StepKeywordsAndAds`, `PMaxStepAssetGroup`, `PMaxStepCampaignSettings` dosyalarında lokal `<section>`/`<h4>` blokları ile farklı section chrome'lar kullanılıyordu — Display'in `bg-white rounded-xl border border-gray-200 p-6` standardından sapma vardı. Ek olarak `StepKeywordsAndAds.tsx:124`'te bir adet daha native `<select>` (defaultMatchType) gözden kaçmıştı.
+- **Çözüm:**
+  - **`StepConversionAndName`**: 3 adet `GoogleWizardSection` kartına ayrıldı — Kampanya Adı (Tag), Dönüşüm Hedefleri (Target), İstenen Sonuçlar (Flag). Web/telefon outcome kartları `border-2 rounded-xl shadow-sm` Display radio chrome'unda.
+  - **`StepAudience`**: 2 `GoogleWizardSection` kartı — Hedefleme Modu (Target) + Kitle Segmentleri (Users). Mode kartları `border-2 rounded-xl border-primary bg-primary/[0.03] shadow-sm`.
+  - **`StepKeywordsAndAds`**: 5 `GoogleWizardSection` kartı (Reklam Grubu/Anahtar Kelimeler/Negatif/URL-Path/Başlıklar/Açıklamalar). Section başlık/icon hizası Display ile birebir. `defaultMatchType` native select → `WizardSelect`.
+  - **`PMaxStepCampaignSettings`** + **`PMaxStepAssetGroup`**: Lokal `CollapsibleSection`'lar `rounded-lg` → `rounded-xl`, `px-5 py-4` → `px-6 py-5`, `<h4 text-sm>` → `<h3 text-[15px]>` ile Display GoogleWizardSection chrome'una hizalandı. Asset group section header'ı icon span'ı `text-gray-400` ile aynı.
+  - Lokal `Field` component'leri (StepConversionAndName, StepKeywordsAndAds) `text-[13px] font-medium text-gray-700 mb-1.5` Display label tipografisinde.
+- **Audit kanıtı:** `grep -rn "<select " components/google/wizard/` → 0 sonuç. Native dropdown tamamen kalktı.
+- **Korunanlar:** Tüm validation, payload, submit, state mantığı. Sağ Özet panel davranışı (Search/PMax step 0 gizli, step 1+ görünür). Display görünümü değişmedi.
+- **Dosyalar:** 5 step dosyası (Search 3 + PMax 2)
+
+---
+
 ## 2026-05-10 — Tüm Google wizard'larında AB Siyasi radio kartları + son 2 native select Display dilinde
 - **Sorun:** AB Siyasi Reklamları radio'ları Search ve PMax'te görsel olarak Display'in radio card chrome'undan farklıydı (küçük native input + ince border). Ek olarak `LocationAdvancedModal` ve `PMaxLocationAdvancedModal` içindeki yarıçap birim seçicisi (km/mi) hâlâ native `<select>` idi.
 - **Çözüm:**

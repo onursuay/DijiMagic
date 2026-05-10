@@ -2,10 +2,12 @@
 
 import { useState } from 'react'
 import { useLocale } from 'next-intl'
-import { Loader2, Plus, Sparkles, AlertTriangle } from 'lucide-react'
+import { Loader2, Plus, Sparkles, AlertTriangle, Users, Search, FileMinus, Link as LinkIcon, Type, AlignLeft } from 'lucide-react'
 import type { StepProps, MatchType } from '../shared/WizardTypes'
 import { inputCls } from '../shared/WizardTypes'
 import { parseKeywords } from '../shared/WizardHelpers'
+import WizardSelect from '@/components/meta/wizard/WizardSelect'
+import { GoogleWizardSection } from '../shared/GoogleWizardUI'
 
 interface KeywordIdea {
   text: string
@@ -17,7 +19,7 @@ interface KeywordIdea {
 function Field({ label, required, children }: { label: string; required?: boolean; children: React.ReactNode }) {
   return (
     <div>
-      <label className="block text-sm font-medium text-gray-700 mb-1">
+      <label className="block text-[13px] font-medium text-gray-700 mb-1.5">
         {label} {required && <span className="text-red-500">*</span>}
       </label>
       {children}
@@ -106,10 +108,11 @@ export default function StepKeywordsAndAds({ state, update, t }: StepProps) {
   }
 
   return (
-    <div className="space-y-6">
-      {/* 1. Ad group */}
-      <section>
-        <h4 className="text-[15px] font-semibold text-gray-900 mb-3">{t('adgroup.sectionTitle')}</h4>
+    <div className="space-y-8">
+      <GoogleWizardSection
+        icon={<Users className="w-[18px] h-[18px]" />}
+        title={t('adgroup.sectionTitle')}
+      >
         <Field label={t('adgroup.name')} required>
           <input
             className={inputCls}
@@ -121,15 +124,17 @@ export default function StepKeywordsAndAds({ state, update, t }: StepProps) {
         {/* Default match type & CPC — side by side on desktop */}
         <div className="mt-6 pt-6 border-t border-gray-200 space-y-4 sm:space-y-0 sm:grid sm:grid-cols-2 sm:gap-4">
           <Field label={t('adgroup.defaultMatchType')}>
-            <select
-              className={`${inputCls} w-full sm:max-w-[200px]`}
-              value={state.defaultMatchType}
-              onChange={e => update({ defaultMatchType: e.target.value as MatchType })}
-            >
-              <option value="BROAD">{t('adgroup.matchTypes.BROAD')}</option>
-              <option value="PHRASE">{t('adgroup.matchTypes.PHRASE')}</option>
-              <option value="EXACT">{t('adgroup.matchTypes.EXACT')}</option>
-            </select>
+            <div className="w-full sm:max-w-[200px]">
+              <WizardSelect
+                value={state.defaultMatchType}
+                onChange={(v) => update({ defaultMatchType: v as MatchType })}
+                options={[
+                  { value: 'BROAD', label: t('adgroup.matchTypes.BROAD') },
+                  { value: 'PHRASE', label: t('adgroup.matchTypes.PHRASE') },
+                  { value: 'EXACT', label: t('adgroup.matchTypes.EXACT') },
+                ]}
+              />
+            </div>
           </Field>
           <Field label={t('adgroup.cpcBid')}>
             <input
@@ -143,12 +148,13 @@ export default function StepKeywordsAndAds({ state, update, t }: StepProps) {
             />
           </Field>
         </div>
-      </section>
+      </GoogleWizardSection>
 
-      {/* 2. Keywords */}
-      <section>
-        <h4 className="text-[15px] font-semibold text-gray-900 mb-3">{t('adgroup.keywordsSectionTitle')}</h4>
-        <p className="text-[13px] text-gray-500 mb-2">{t('adgroup.keywordsNote')}</p>
+      <GoogleWizardSection
+        icon={<Search className="w-[18px] h-[18px]" />}
+        title={t('adgroup.keywordsSectionTitle')}
+        description={t('adgroup.keywordsNote')}
+      >
         <div className="flex items-center gap-2 mb-1.5">
           <span className="text-xs font-medium text-gray-500">{t('adgroup.defaultLabel')}</span>
           <span className="inline-flex px-2 py-0.5 rounded bg-gray-100 text-gray-700 text-xs font-medium">
@@ -216,11 +222,12 @@ export default function StepKeywordsAndAds({ state, update, t }: StepProps) {
             )}
           </div>
         )}
-      </section>
+      </GoogleWizardSection>
 
-      {/* 3. Negative keywords */}
-      <section>
-        <h4 className="text-[15px] font-semibold text-gray-900 mb-3">{t('adgroup.negativeKeywordsSectionTitle')}</h4>
+      <GoogleWizardSection
+        icon={<FileMinus className="w-[18px] h-[18px]" />}
+        title={t('adgroup.negativeKeywordsSectionTitle')}
+      >
         <Field label={t('adgroup.negativeKeywords')}>
           <textarea
             className={`${inputCls} h-20 resize-none font-mono text-sm`}
@@ -229,11 +236,12 @@ export default function StepKeywordsAndAds({ state, update, t }: StepProps) {
             placeholder={t('adgroup.negativeKeywordsPlaceholder')}
           />
         </Field>
-      </section>
+      </GoogleWizardSection>
 
-      {/* 4. URL & display path */}
-      <section className="pt-4 border-t border-gray-200">
-        <h4 className="text-[15px] font-semibold text-gray-900 mb-3">{t('adgroup.urlPathSectionTitle')}</h4>
+      <GoogleWizardSection
+        icon={<LinkIcon className="w-[18px] h-[18px]" />}
+        title={t('adgroup.urlPathSectionTitle')}
+      >
         <Field label={t('ad.finalUrl')} required>
           <input
             className={`${inputCls} ${hasInvalidUrl ? 'border-gray-400 ring-1 ring-red-300' : ''}`}
@@ -254,12 +262,13 @@ export default function StepKeywordsAndAds({ state, update, t }: StepProps) {
             <input className={inputCls} maxLength={15} value={state.path2} onChange={e => update({ path2: e.target.value })} placeholder={t('ad.path2Placeholder')} />
           </Field>
         </div>
-      </section>
+      </GoogleWizardSection>
 
-      {/* 5. Headlines (RSA) */}
-      <section className="pt-4 border-t border-gray-200">
-        <h4 className="text-[15px] font-semibold text-gray-900 mb-1">{t('adgroup.headlinesSectionTitle')}</h4>
-        <p className="text-[13px] text-gray-500 mb-3">{t('adgroup.headlinesHint')}</p>
+      <GoogleWizardSection
+        icon={<Type className="w-[18px] h-[18px]" />}
+        title={t('adgroup.headlinesSectionTitle')}
+        description={t('adgroup.headlinesHint')}
+      >
         <p className="text-xs font-medium text-gray-600 mb-2">
           {t('adgroup.headlinesCount', { count: headlines.length })}{(headlines.length < 3) && <span className="text-gray-600"> {t('adgroup.headlinesMinRequired')}</span>}
         </p>
@@ -299,12 +308,13 @@ export default function StepKeywordsAndAds({ state, update, t }: StepProps) {
         {hasDuplicateHeadlines && (
           <InlineWarning>{t('validation.duplicateHeadlines')}</InlineWarning>
         )}
-      </section>
+      </GoogleWizardSection>
 
-      {/* 6. Descriptions (RSA) */}
-      <section>
-        <h4 className="text-[15px] font-semibold text-gray-900 mb-1">{t('adgroup.descriptionsSectionTitle')}</h4>
-        <p className="text-[13px] text-gray-500 mb-3">{t('adgroup.descriptionsHint')}</p>
+      <GoogleWizardSection
+        icon={<AlignLeft className="w-[18px] h-[18px]" />}
+        title={t('adgroup.descriptionsSectionTitle')}
+        description={t('adgroup.descriptionsHint')}
+      >
         <p className="text-xs font-medium text-gray-600 mb-2">
           {t('adgroup.descriptionsCount', { count: descriptions.length })}{(descriptions.length < 2) && <span className="text-gray-600"> {t('adgroup.descriptionsMinRequired')}</span>}
         </p>
@@ -344,7 +354,7 @@ export default function StepKeywordsAndAds({ state, update, t }: StepProps) {
         {hasDuplicateDescriptions && (
           <InlineWarning>{t('validation.duplicateDescriptions')}</InlineWarning>
         )}
-      </section>
+      </GoogleWizardSection>
     </div>
   )
 }

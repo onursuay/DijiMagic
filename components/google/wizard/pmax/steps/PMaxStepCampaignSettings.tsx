@@ -38,16 +38,16 @@ function CollapsibleSection({
 }) {
   const [open, setOpen] = useState(defaultOpen)
   return (
-    <div id={id} className="border border-gray-200 rounded-lg bg-white scroll-mt-4">
+    <div id={id} className="bg-white rounded-xl border border-gray-200 scroll-mt-4">
       <button
         type="button"
         onClick={() => setOpen(!open)}
-        className="flex items-center justify-between w-full px-5 py-4 text-left"
+        className="flex items-center justify-between w-full px-6 py-5 text-left"
       >
-        <h4 className="text-sm font-semibold text-gray-900">{title}</h4>
+        <h3 className="text-[15px] font-semibold text-gray-900">{title}</h3>
         {open ? <ChevronUp className="w-4 h-4 text-gray-400" /> : <ChevronDown className="w-4 h-4 text-gray-400" />}
       </button>
-      {open && <div className="px-5 pb-5 pt-0">{children}</div>}
+      {open && <div className="px-6 pb-6 pt-0">{children}</div>}
     </div>
   )
 }

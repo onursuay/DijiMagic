@@ -1,8 +1,9 @@
 'use client'
 
 import { useState, useEffect, useCallback, useRef } from 'react'
-import { Loader2, Search, ChevronRight, ChevronDown, X, Users, Heart, ShoppingBag, UserCheck, Layers, Info } from 'lucide-react'
+import { Loader2, Search, ChevronRight, ChevronDown, X, Users, Heart, ShoppingBag, UserCheck, Layers, Info, Target } from 'lucide-react'
 import type { StepProps, AudienceMode, SelectedAudienceSegment, AudienceSegmentCategory } from '../shared/WizardTypes'
+import { GoogleWizardSection } from '../shared/GoogleWizardUI'
 
 /* ------------------------------------------------------------------ */
 /*  Labels & helpers                                                   */
@@ -170,15 +171,12 @@ export default function StepAudience({ state, update, t }: StepProps) {
   }
 
   return (
-    <div className="space-y-4">
-      <div>
-        <h3 className="text-sm font-semibold text-gray-900 mb-1">{t('audience.segmentTitle')}</h3>
-        <p className="text-sm text-gray-500">{t('audience.segmentDescription')}</p>
-      </div>
-
-      {/* Audience Mode */}
-      <div>
-        <label className="block text-sm font-medium text-gray-700 mb-2">{t('audience.targetingMode')}</label>
+    <div className="space-y-8">
+      <GoogleWizardSection
+        icon={<Target className="w-[18px] h-[18px]" />}
+        title={t('audience.targetingMode')}
+        description={t('audience.segmentDescription')}
+      >
         <div className="grid grid-cols-2 gap-3">
           {(['OBSERVATION', 'TARGETING'] as AudienceMode[]).map(mode => {
             const active = state.audienceMode === mode
@@ -187,11 +185,11 @@ export default function StepAudience({ state, update, t }: StepProps) {
                 key={mode}
                 type="button"
                 onClick={() => update({ audienceMode: mode })}
-                className={`p-3 rounded-lg border-2 text-left transition-all ${
-                  active ? 'border-primary bg-primary/5' : 'border-gray-200 hover:border-gray-300'
+                className={`p-4 rounded-xl border-2 text-left transition-all ${
+                  active ? 'border-primary bg-primary/[0.03] shadow-sm' : 'border-gray-200 hover:border-gray-300'
                 }`}
               >
-                <p className={`text-sm font-semibold ${active ? 'text-primary' : 'text-gray-800'}`}>
+                <p className={`text-sm font-semibold ${active ? 'text-primary' : 'text-gray-900'}`}>
                   {mode === 'OBSERVATION' ? t('audience.observation') : t('audience.targeting')}
                 </p>
                 <p className="text-xs text-gray-500 mt-0.5">
@@ -203,7 +201,13 @@ export default function StepAudience({ state, update, t }: StepProps) {
             )
           })}
         </div>
-      </div>
+      </GoogleWizardSection>
+
+      <GoogleWizardSection
+        icon={<Users className="w-[18px] h-[18px]" />}
+        title={t('audience.segmentTitle')}
+        description={t('audience.segmentDescription')}
+      >
 
       {/* Kitle segmenti picker — tıklanınca açılır, dış tıklamada kapanır */}
       {!pickerOpen && (
@@ -447,6 +451,7 @@ export default function StepAudience({ state, update, t }: StepProps) {
         </div>
       )}
 
+      </GoogleWizardSection>
     </div>
   )
 }

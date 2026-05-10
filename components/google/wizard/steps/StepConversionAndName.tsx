@@ -24,6 +24,8 @@ import { inputCls } from '../shared/WizardTypes'
 import type { ConversionActionForWizard } from '../shared/WizardTypes'
 import { isValidPhoneForCountry } from '../shared/WizardValidation'
 import WizardSelect from '@/components/meta/wizard/WizardSelect'
+import { GoogleWizardSection } from '../shared/GoogleWizardUI'
+import { Tag, Flag } from 'lucide-react'
 
 // Country-based phone options — label, iso2, dialCode, placeholder. Used for display and country-aware validation.
 const COUNTRY_PHONE_OPTIONS: Array<{
@@ -88,7 +90,7 @@ function isAllowedPhoneKey(e: React.KeyboardEvent<HTMLInputElement>): boolean {
 function Field({ label, required, children }: { label: string; required?: boolean; children: React.ReactNode }) {
   return (
     <div>
-      <label className="block text-sm font-medium text-gray-700 mb-1">
+      <label className="block text-[13px] font-medium text-gray-700 mb-1.5">
         {label} {required && <span className="text-red-500">*</span>}
       </label>
       {children}
@@ -216,28 +218,26 @@ export default function StepConversionAndName({ state, update, t }: StepProps) {
   const primaryAction = conversionActions.find(a => a.resourceName === primaryId)
 
   return (
-    <div className="space-y-5">
-      <Field label={t('campaign.name')} required>
-        <input
-          className={inputCls}
-          value={state.campaignName}
-          onChange={e => update({ campaignName: e.target.value })}
-          placeholder={t('campaign.namePlaceholder')}
-        />
-      </Field>
+    <div className="space-y-8">
+      <GoogleWizardSection
+        icon={<Tag className="w-[18px] h-[18px]" />}
+        title={t('campaign.name')}
+      >
+        <Field label={t('campaign.name')} required>
+          <input
+            className={inputCls}
+            value={state.campaignName}
+            onChange={e => update({ campaignName: e.target.value })}
+            placeholder={t('campaign.namePlaceholder')}
+          />
+        </Field>
+      </GoogleWizardSection>
 
-      {/* Conversion goals — real data from Google Ads API, cleaner card UI */}
-      <div>
-        <div className="flex items-center gap-2 mb-2">
-          <Target className="w-4 h-4 text-primary" />
-          <label className="text-[15px] font-semibold text-gray-900">
-            {t('conversion.title')}
-          </label>
-        </div>
-        <p className="text-[13px] text-gray-500 mb-3">
-          {t('conversion.description')}
-        </p>
-
+      <GoogleWizardSection
+        icon={<Target className="w-[18px] h-[18px]" />}
+        title={t('conversion.title')}
+        description={t('conversion.description')}
+      >
         {loading && (
           <div className="flex items-center gap-2 py-8 text-[13px] text-gray-500">
             <Loader2 className="w-5 h-5 animate-spin" />
@@ -347,16 +347,17 @@ export default function StepConversionAndName({ state, update, t }: StepProps) {
             {t('conversion.uiOnlyNote')}
           </p>
         )}
-      </div>
+      </GoogleWizardSection>
 
-      {/* Desired outcomes — Google Ads-style, lighter compact rows */}
-      <div className="rounded border border-gray-100/80 bg-white p-3 space-y-2">
-        <h4 className="text-[15px] font-semibold text-gray-900 mb-0.5">{t('conversion.desiredOutcomesTitle')}</h4>
-        <p className="text-[13px] text-gray-500 mb-2">{t('conversion.desiredOutcomesHelp')}</p>
-
+      <GoogleWizardSection
+        icon={<Flag className="w-[18px] h-[18px]" />}
+        title={t('conversion.desiredOutcomesTitle')}
+        description={t('conversion.desiredOutcomesHelp')}
+      >
+        <div className="space-y-3">
         {/* Web sitesi ziyaretleri */}
-        <div className={`rounded border transition-colors ${
-          state.desiredOutcomeWebsite ? 'border-blue-100 bg-primary/5/20' : 'border-gray-100 bg-gray-50/30'
+        <div className={`rounded-xl border-2 transition-all ${
+          state.desiredOutcomeWebsite ? 'border-primary bg-primary/[0.03] shadow-sm' : 'border-gray-200 hover:border-gray-300'
         }`}>
           <label className="flex items-center gap-2 px-2.5 py-2 cursor-pointer">
             <input
@@ -391,8 +392,8 @@ export default function StepConversionAndName({ state, update, t }: StepProps) {
         </div>
 
         {/* Telefon Aramaları */}
-        <div className={`rounded border transition-colors ${
-          state.desiredOutcomePhone ? 'border-blue-100 bg-primary/5/20' : 'border-gray-100 bg-gray-50/30'
+        <div className={`rounded-xl border-2 transition-all ${
+          state.desiredOutcomePhone ? 'border-primary bg-primary/[0.03] shadow-sm' : 'border-gray-200 hover:border-gray-300'
         }`}>
           <label className="flex items-center gap-2 px-2.5 py-2 cursor-pointer">
             <input
@@ -448,7 +449,8 @@ export default function StepConversionAndName({ state, update, t }: StepProps) {
             </div>
           )}
         </div>
-      </div>
+        </div>
+      </GoogleWizardSection>
     </div>
   )
 }
