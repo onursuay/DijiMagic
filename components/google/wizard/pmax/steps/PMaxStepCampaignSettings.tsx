@@ -7,6 +7,7 @@ import type { PMaxStepProps, PMaxScheduleEntry, PMaxDayOfWeek, PMaxMinute, PMaxD
 import { inputCls, PMaxLanguageOptions, PMaxDaysOfWeek, PMaxAllDevices } from '../shared/PMaxWizardTypes'
 import PMaxLocationPicker from '../PMaxLocationPicker'
 import WizardSelect from '@/components/meta/wizard/WizardSelect'
+import { GoogleWizardRadioOption } from '../../shared/GoogleWizardUI'
 
 const EU_POLICY_URL = 'https://support.google.com/adspolicy/answer/6014595'
 const HOURS = Array.from({ length: 24 }, (_, i) => i)
@@ -148,57 +149,35 @@ export default function PMaxStepCampaignSettings({ state, update, t }: PMaxStepP
       {/* 3. AB siyasi reklamları */}
       <CollapsibleSection id="pmax-settings-section-2" title={t('settings.euPoliticalTitle')}>
         <p className="text-[13px] text-gray-600 mb-3">{t('settings.euPoliticalQuestion')}</p>
-        <div className="space-y-1">
-          <label
-            className={`flex items-center gap-3 py-2.5 px-3 rounded border cursor-pointer transition-colors ${
-              state.euPoliticalAdsDeclaration === 'NOT_POLITICAL'
-                ? 'border-primary/30 bg-primary/5/50'
-                : 'border-gray-100 hover:border-gray-200 bg-gray-50/30'
-            }`}
-          >
-            <input
-              type="radio"
-              name="pmaxEuPoliticalAdsDeclaration"
-              value="NOT_POLITICAL"
-              checked={state.euPoliticalAdsDeclaration === 'NOT_POLITICAL'}
-              onChange={() => update({ euPoliticalAdsDeclaration: 'NOT_POLITICAL' })}
-              className="text-primary focus:ring-primary/20"
-            />
-            <span className="text-[13px] font-medium text-gray-900">{t('settings.euPoliticalNotPolitical')}</span>
-          </label>
-          {state.euPoliticalAdsDeclaration === 'NOT_POLITICAL' && (
-            <p className="text-[12px] text-gray-500 pl-8 mt-0.5 mb-1">
-              {t('settings.euPoliticalHelperNote')} {t('settings.euPoliticalHelperNoteOptional')}
-            </p>
-          )}
-          <label
-            className={`flex items-center gap-3 py-2.5 px-3 rounded border cursor-pointer transition-colors ${
-              state.euPoliticalAdsDeclaration === 'POLITICAL'
-                ? 'border-primary/30 bg-primary/5/50'
-                : 'border-gray-100 hover:border-gray-200 bg-gray-50/30'
-            }`}
-          >
-            <input
-              type="radio"
-              name="pmaxEuPoliticalAdsDeclaration"
-              value="POLITICAL"
-              checked={state.euPoliticalAdsDeclaration === 'POLITICAL'}
-              onChange={() => update({ euPoliticalAdsDeclaration: 'POLITICAL' })}
-              className="text-primary focus:ring-primary/20"
-            />
-            <span className="text-[13px] font-medium text-gray-900">{t('settings.euPoliticalPolitical')}</span>
-          </label>
+        <div className="space-y-2">
+          <GoogleWizardRadioOption
+            name="pmaxEuPoliticalAdsDeclaration"
+            value="NOT_POLITICAL"
+            checked={state.euPoliticalAdsDeclaration === 'NOT_POLITICAL'}
+            onChange={() => update({ euPoliticalAdsDeclaration: 'NOT_POLITICAL' })}
+            title={t('settings.euPoliticalNotPolitical')}
+            description={state.euPoliticalAdsDeclaration === 'NOT_POLITICAL'
+              ? `${t('settings.euPoliticalHelperNote')} ${t('settings.euPoliticalHelperNoteOptional')}`
+              : undefined}
+          />
+          <GoogleWizardRadioOption
+            name="pmaxEuPoliticalAdsDeclaration"
+            value="POLITICAL"
+            checked={state.euPoliticalAdsDeclaration === 'POLITICAL'}
+            onChange={() => update({ euPoliticalAdsDeclaration: 'POLITICAL' })}
+            title={t('settings.euPoliticalPolitical')}
+          />
           {state.euPoliticalAdsDeclaration === 'POLITICAL' && (
-            <div className="flex items-start gap-2 p-3 mt-1 rounded border border-gray-200 bg-gray-50/60 text-[13px] text-gray-700">
-              <Info className="w-4 h-4 shrink-0 mt-0.5 text-gray-600" />
+            <div className="flex items-start gap-2 p-3.5 mt-2 rounded-xl border border-primary/20 bg-primary/5 text-[13px] text-primary">
+              <Info className="w-4 h-4 shrink-0 mt-0.5" />
               <div>
                 <p className="font-medium">{t('settings.euPoliticalWarningLine1')}</p>
-                <p className="mt-1 text-gray-800">{t('settings.euPoliticalWarningLine2')}</p>
+                <p className="mt-1">{t('settings.euPoliticalWarningLine2')}</p>
                 <a
                   href={euPolicyUrl}
                   target="_blank"
                   rel="noopener noreferrer"
-                  className="mt-1.5 inline-block text-primary hover:text-primary underline"
+                  className="mt-1.5 inline-block underline hover:opacity-80"
                 >
                   {t('settings.euPoliticalWarningLearnMore')}
                 </a>

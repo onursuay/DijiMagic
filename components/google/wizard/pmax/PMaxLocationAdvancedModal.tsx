@@ -5,6 +5,7 @@ import { X, Search, MapPin } from 'lucide-react'
 import type { PMaxStepProps, PMaxSelectedLocation, PMaxProximityTarget } from './shared/PMaxWizardTypes'
 import { inputCls } from './shared/PMaxWizardTypes'
 import PMaxLocationMap from './PMaxLocationMap'
+import WizardSelect from '@/components/meta/wizard/WizardSelect'
 
 const DEBOUNCE_MS = 300
 const MIN_CHARS = 2
@@ -252,11 +253,12 @@ export default function PMaxLocationAdvancedModal({ isOpen, onClose, state, upda
                   <div className="flex gap-2">
                     <input type="number" min={1} max={500} className={`${inputCls} w-24`}
                       value={radiusValue} onChange={e => setRadiusValue(Number(e.target.value) || 10)} />
-                    <select className={`${inputCls} w-20`} value={radiusUnit}
-                      onChange={e => setRadiusUnit(e.target.value as 'km' | 'mi')}>
-                      <option value="km">km</option>
-                      <option value="mi">mi</option>
-                    </select>
+                    <WizardSelect
+                      className="w-24"
+                      value={radiusUnit}
+                      onChange={(v) => setRadiusUnit(v as 'km' | 'mi')}
+                      options={[{ value: 'km', label: 'km' }, { value: 'mi', label: 'mi' }]}
+                    />
                   </div>
                 </div>
 

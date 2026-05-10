@@ -103,6 +103,112 @@ export function GoogleWizardRadioCard({
   )
 }
 
+interface RadioOptionProps {
+  /** name attribute — DOM radio group bağlamı için. */
+  name: string
+  value: string
+  checked: boolean
+  onChange: () => void
+  title: string
+  description?: string
+  /** Sağ kolonda inline icon ya da rozet. */
+  trailing?: React.ReactNode
+}
+
+/**
+ * Display tasarım dilinde standart radio satırı:
+ *   - native `<input type="radio">` görsel olarak gizli (`sr-only`) ama
+ *     erişilebilirlik ve form semantiği korunur.
+ *   - Sol custom dot indicator + sağında başlık (description ekstra).
+ *   - `border-2 rounded-xl shadow-sm` Display radio card chrome.
+ */
+export function GoogleWizardRadioOption({
+  name,
+  value,
+  checked,
+  onChange,
+  title,
+  description,
+  trailing,
+}: RadioOptionProps) {
+  return (
+    <label
+      className={`flex items-start gap-3 p-3.5 rounded-xl border-2 cursor-pointer transition-all ${
+        checked
+          ? 'border-primary bg-primary/[0.03] shadow-sm'
+          : 'border-gray-200 hover:border-gray-300'
+      }`}
+    >
+      <div className="mt-0.5 shrink-0">
+        <div
+          className={`w-[18px] h-[18px] rounded-full border-2 flex items-center justify-center ${
+            checked ? 'border-primary' : 'border-gray-300'
+          }`}
+        >
+          {checked && <div className="w-2.5 h-2.5 rounded-full bg-primary" />}
+        </div>
+      </div>
+      <input
+        type="radio"
+        name={name}
+        value={value}
+        checked={checked}
+        onChange={onChange}
+        className="sr-only"
+      />
+      <div className="flex-1 min-w-0">
+        <span className="text-sm font-medium text-gray-900">{title}</span>
+        {description && (
+          <p className="text-xs text-gray-500 mt-0.5 leading-relaxed">{description}</p>
+        )}
+      </div>
+      {trailing}
+    </label>
+  )
+}
+
+interface CheckboxOptionProps {
+  checked: boolean
+  onChange: (next: boolean) => void
+  title: string
+  description?: string
+}
+
+/**
+ * Display tasarım dilinde standart checkbox satırı.
+ * Native checkbox'ı `text-primary focus:ring-primary/20` palette'inde tutar,
+ * dış sarmalayıcı Display radio card chrome'una uyar.
+ */
+export function GoogleWizardCheckboxOption({
+  checked,
+  onChange,
+  title,
+  description,
+}: CheckboxOptionProps) {
+  return (
+    <label
+      className={`flex items-start gap-3 p-4 rounded-xl border-2 cursor-pointer transition-all ${
+        checked
+          ? 'border-primary bg-primary/[0.03] shadow-sm'
+          : 'border-gray-200 hover:border-gray-300 bg-white'
+      }`}
+    >
+      <input
+        type="checkbox"
+        checked={checked}
+        onChange={e => onChange(e.target.checked)}
+        className="mt-0.5 rounded border-gray-300 text-primary focus:ring-primary/20"
+      />
+      <div className="flex-1 min-w-0">
+        <span className="text-sm font-medium text-gray-900">{title}</span>
+        {description && (
+          <p className="text-xs text-gray-500 mt-0.5 leading-relaxed">{description}</p>
+        )}
+      </div>
+    </label>
+  )
+}
+
 interface SummaryCardProps {
   icon: React.ReactNode
   title: string

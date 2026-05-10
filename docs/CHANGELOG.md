@@ -2,6 +2,23 @@
 
 ---
 
+## 2026-05-10 — Tüm Google wizard'larında AB Siyasi radio kartları + son 2 native select Display dilinde
+- **Sorun:** AB Siyasi Reklamları radio'ları Search ve PMax'te görsel olarak Display'in radio card chrome'undan farklıydı (küçük native input + ince border). Ek olarak `LocationAdvancedModal` ve `PMaxLocationAdvancedModal` içindeki yarıçap birim seçicisi (km/mi) hâlâ native `<select>` idi.
+- **Çözüm:**
+  - Yeni paylaşılan primitive `GoogleWizardRadioOption` (Display'in `sr-only` native input + custom dot indicator + `border-2 rounded-xl shadow-sm` chrome). Yan ürün: `GoogleWizardCheckboxOption` (gelecek standardizasyon için).
+  - Search `StepCampaignSettingsSearch` AB Siyasi Reklamları radio bloğu yeni primitive'e taşındı; section başlık tipografisi Display GoogleWizardSection ile birebir aynı.
+  - PMax `PMaxStepCampaignSettings` AB Siyasi Reklamları aynı şekilde paylaşılan primitive ile.
+  - `LocationAdvancedModal` ve `PMaxLocationAdvancedModal` yarıçap birimi (km/mi) → `WizardSelect`. Artık `components/google/wizard/` altında **sıfır** native `<select>` var.
+- **Korunanlar:** state mantığı (`euPoliticalAdsDeclaration` enum'u, `radiusUnit`), validation, payload. Display tarafı dokunulmadı.
+- **Dosyalar:**
+  - `components/google/wizard/shared/GoogleWizardUI.tsx` (yeni primitive'ler)
+  - `components/google/wizard/steps/StepCampaignSettingsSearch.tsx`
+  - `components/google/wizard/pmax/steps/PMaxStepCampaignSettings.tsx`
+  - `components/google/wizard/shared/LocationAdvancedModal.tsx`
+  - `components/google/wizard/pmax/PMaxLocationAdvancedModal.tsx`
+
+---
+
 ## 2026-05-10 — Search + PMax tüm native select'ler → Meta WizardSelect (Display'in kullandığı custom dropdown)
 - **Sorun:** Search'teki Teklif Stratejisi dropdown'ı ve diğer native `<select>`'ler tarayıcı default mavi option listesi gösteriyordu — Display ile pixel parite yoktu (Display zaten Meta'nın `WizardSelect` custom dropdown'ını kullanıyor).
 - **Çözüm:** Search ve PMax step component'lerindeki **tüm 10 native `<select>`** kullanımı `@/components/meta/wizard/WizardSelect` ile değiştirildi. Aynı görsel dil: `rounded-xl` border, `border-primary` open state, `bg-primary/8 text-primary font-semibold` selected option, `Check` icon, `ChevronDown` rotate, primary ring focus, açılan menünün `shadow-[0_8px_24px_rgba(0,0,0,0.12)]` lift'i. Tarayıcı default native dropdown tamamen elendi.
