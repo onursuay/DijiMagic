@@ -1,6 +1,6 @@
 'use client'
 
-import { Check, CheckCircle2, AlertTriangle, AlertCircle, Info } from 'lucide-react'
+import { Check, CheckCircle2, AlertTriangle, AlertCircle, Info, X, Plus } from 'lucide-react'
 
 /**
  * Google Ads Wizard — paylaşılan UI primitive'leri.
@@ -334,6 +334,104 @@ export function GoogleWizardInfoBox({ variant = 'info', title, children }: InfoB
         <div>{children}</div>
       </div>
     </div>
+  )
+}
+
+interface AssetTileProps {
+  /** Görsel/logo/video önizleme URL'i */
+  previewUrl?: string
+  /** Erişilebilirlik için alt metin */
+  alt?: string
+  /** Tile sağ alt köşesinde küçük rozet (ör. "1.91:1", "16:9") */
+  ratioBadge?: string
+  /** Üst üste binecek video play overlay (Youtube vb.) */
+  overlay?: React.ReactNode
+  /** Sil butonu */
+  onRemove?: () => void
+  removeAriaLabel?: string
+  /** `image` (object-cover, gri zemin) ya da `logo` (object-contain, beyaz zemin) */
+  variant?: 'image' | 'logo' | 'video'
+}
+
+/**
+ * Display tasarım dilinde standart asset preview tile (16x16 thumbnail).
+ * DisplayStepAds'in image/logo/video kart içindeki tile'larıyla birebir aynı.
+ */
+export function GoogleWizardAssetTile({
+  previewUrl,
+  alt,
+  ratioBadge,
+  overlay,
+  onRemove,
+  removeAriaLabel,
+  variant = 'image',
+}: AssetTileProps) {
+  const bg = variant === 'image' ? 'bg-gray-50' : 'bg-white'
+  const objectFit = variant === 'logo' ? 'object-contain' : 'object-cover'
+  return (
+    <div className={`relative w-16 h-16 rounded-lg border border-gray-200 overflow-hidden ${bg} group shrink-0`}>
+      {previewUrl && (
+        // eslint-disable-next-line @next/next/no-img-element
+        <img src={previewUrl} alt={alt ?? ''} className={`w-full h-full ${objectFit}`} />
+      )}
+      {overlay && (
+        <div className="absolute inset-0 flex items-center justify-center bg-black/30">{overlay}</div>
+      )}
+      {onRemove && (
+        <button
+          type="button"
+          onClick={onRemove}
+          className="absolute top-0.5 right-0.5 w-5 h-5 bg-black/60 text-white rounded-full flex items-center justify-center hover:bg-black/80"
+          aria-label={removeAriaLabel}
+        >
+          <X className="w-3 h-3" />
+        </button>
+      )}
+      {ratioBadge && (
+        <span className="absolute bottom-0 inset-x-0 text-[9px] text-center bg-black/50 text-white py-0.5">
+          {ratioBadge}
+        </span>
+      )}
+    </div>
+  )
+}
+
+interface AssetAddTileProps {
+  onClick: () => void
+  disabled?: boolean
+  /** Etiket (örn. "Görsel ekle") — küçük metin */
+  label?: string
+  /** Plus dışında özel ikon (örn. Shapes, Film) */
+  icon?: React.ReactNode
+  /** Tile boş listede mi (full width, min-h-[88px]) yoksa filled listede mi (w-16 h-16) */
+  empty?: boolean
+}
+
+/**
+ * Display tasarım dilinde standart asset "ekle" tile'ı.
+ * - Boş listede: full width + min-h-[88px]
+ * - Doluyken: 16x16 kareler (mevcut tile'larla aynı boyut)
+ * Daima: dashed border, hover'da primary highlight.
+ */
+export function GoogleWizardAssetAddTile({
+  onClick,
+  disabled,
+  label,
+  icon,
+  empty,
+}: AssetAddTileProps) {
+  return (
+    <button
+      type="button"
+      onClick={onClick}
+      disabled={disabled}
+      className={`rounded-lg border-2 border-dashed border-gray-300 hover:border-primary flex flex-col items-center justify-center text-gray-400 hover:text-primary transition-colors disabled:opacity-40 disabled:cursor-not-allowed shrink-0 ${
+        empty ? 'w-full flex-1 min-h-[88px]' : 'w-16 h-16'
+      }`}
+    >
+      {icon ?? <Plus className="w-5 h-5" />}
+      {label && <span className="text-[9px] mt-0.5">{label}</span>}
+    </button>
   )
 }
 

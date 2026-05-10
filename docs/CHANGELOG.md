@@ -2,6 +2,20 @@
 
 ---
 
+## 2026-05-10 — PMax asset upload tile/add chrome → Display picker dilinde
+- **Sorun:** PMaxStepAssetGroup içindeki image/logo/video önizleme tile'ları (`w-24 h-24` opacity-driven X) ve add-button'ları (`text-primary hover:underline` text link) Display'in DisplayStepAds tile chrome'undan farklıydı: Display `w-16 h-16 rounded-lg border` thumbnail + `border-2 border-dashed border-gray-300 hover:border-primary` 16x16 add-tile kullanıyordu. Video listesi de tile değil row tarzı görünüyordu.
+- **Çözüm:**
+  - Yeni paylaşılan primitive `GoogleWizardAssetTile` — 16x16 önizleme thumbnail (image/logo/video variant'ları, ratio badge, video play overlay, sil X butonu).
+  - Yeni paylaşılan primitive `GoogleWizardAssetAddTile` — Display dilinde dashed border add-button (boş listede full + min-h-[88px], dolu listede 16x16 kare). Plus icon veya custom icon (Shapes/Video) destekler.
+  - PMax `ImageUploadDialog` ve `VideoUploadSection` görünür preview/add bloklarını yeni tile primitive'lerine taşıdı. Image rolü `variant="image"`, logo rolü `variant="logo"` (object-contain + bg-white), video rolü `variant="video"` + Youtube overlay.
+  - Tüm dialog/state/upload mantığı (drag-drop, file input, multi-tab dialog, blob URL revoke, validation) **birebir korundu** — sadece görsel chrome değişti.
+- **Korunanlar:** Logic, payload, state, validation. Display picker'lara dokunulmadı.
+- **Dosyalar:**
+  - `components/google/wizard/shared/GoogleWizardUI.tsx` (2 yeni primitive)
+  - `components/google/wizard/pmax/steps/PMaxStepAssetGroup.tsx` (görünür tile chrome)
+
+---
+
 ## 2026-05-10 — Final pixel-level UI parity: tüm büyük step dosyaları Display section/card chrome'unda
 - **Sorun:** `StepConversionAndName`, `StepAudience`, `StepKeywordsAndAds`, `PMaxStepAssetGroup`, `PMaxStepCampaignSettings` dosyalarında lokal `<section>`/`<h4>` blokları ile farklı section chrome'lar kullanılıyordu — Display'in `bg-white rounded-xl border border-gray-200 p-6` standardından sapma vardı. Ek olarak `StepKeywordsAndAds.tsx:124`'te bir adet daha native `<select>` (defaultMatchType) gözden kaçmıştı.
 - **Çözüm:**

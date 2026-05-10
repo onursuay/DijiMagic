@@ -3,7 +3,7 @@
 import { useState, useEffect, useCallback, useRef, type ChangeEvent, type DragEvent } from 'react'
 import {
   ChevronUp, ChevronDown, ChevronRight, Image as ImageIcon, Type, Users, X, Plus, Link2, Video,
-  Upload, Search, Loader2, Heart, ShoppingBag, UserCheck, Layers, Info, Globe,
+  Upload, Search, Loader2, Heart, ShoppingBag, UserCheck, Layers, Info, Globe, Shapes, Youtube,
 } from 'lucide-react'
 import type {
   PMaxStepProps, PMaxSitelink, PMaxCallToAction, PMaxAssetImage,
@@ -11,6 +11,7 @@ import type {
 } from '../shared/PMaxWizardTypes'
 import { inputCls, PMaxCallToActionOptions } from '../shared/PMaxWizardTypes'
 import WizardSelect from '@/components/meta/wizard/WizardSelect'
+import { GoogleWizardAssetTile, GoogleWizardAssetAddTile } from '../../shared/GoogleWizardUI'
 
 /* ------------------------------------------------------------------ */
 /*  Shared UI helpers                                                   */
@@ -104,45 +105,27 @@ function ImageUploadDialog({ assets, onAdd, onRemove, maxCount, role, t }: {
 
   return (
     <div className="space-y-3">
-      {/* Existing previews */}
-      {assets.length > 0 && (
-        <div className="flex flex-wrap gap-3">
-          {assets.map(asset => (
-            <div key={asset.id} className="relative group w-24 h-24 rounded-lg overflow-hidden border border-gray-200 bg-gray-50">
-              {(asset.url) ? (
-                // eslint-disable-next-line @next/next/no-img-element
-                <img
-                  src={asset.url}
-                  alt={asset.name || role}
-                  className="w-full h-full object-cover"
-                />
-              ) : (
-                <div className="w-full h-full flex items-center justify-center">
-                  <ImageIcon className="w-8 h-8 text-gray-300" />
-                </div>
-              )}
-              <button
-                type="button"
-                onClick={() => onRemove(asset.id)}
-                className="absolute top-1 right-1 w-5 h-5 rounded-full bg-black/60 text-white flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity"
-              >
-                <X className="w-3 h-3" />
-              </button>
-            </div>
-          ))}
-        </div>
-      )}
-
-      {/* Add button */}
-      {assets.length < maxCount && (
-        <button
-          type="button"
-          onClick={() => setShowDialog(true)}
-          className="inline-flex items-center gap-1.5 text-sm text-primary hover:underline font-medium"
-        >
-          <Plus className="w-3.5 h-3.5" /> {role === 'image' ? t('assetGroup.addImage') : t('assetGroup.addLogo')}
-        </button>
-      )}
+      {/* Existing previews + add tile — Display dilinde tile grid */}
+      <div className="flex flex-wrap gap-2 items-start min-h-[88px]">
+        {assets.map(asset => (
+          <GoogleWizardAssetTile
+            key={asset.id}
+            previewUrl={asset.url}
+            alt={asset.name || role}
+            variant={role === 'logo' ? 'logo' : 'image'}
+            onRemove={() => onRemove(asset.id)}
+            removeAriaLabel={t('assetGroup.removeAsset')}
+          />
+        ))}
+        {assets.length < maxCount && (
+          <GoogleWizardAssetAddTile
+            onClick={() => setShowDialog(true)}
+            empty={assets.length === 0}
+            label={role === 'image' ? t('assetGroup.addImage') : t('assetGroup.addLogo')}
+            icon={role === 'logo' ? <Shapes className="w-5 h-5" /> : <Plus className="w-5 h-5" />}
+          />
+        )}
+      </div>
 
       {/* Google Ads style dialog */}
       {showDialog && (
@@ -278,34 +261,28 @@ function VideoUploadSection({ videos, onAdd, onAddYouTube, onRemove, maxCount, t
       icon={<div className={`w-2 h-2 rounded-full ${videos.length > 0 ? 'bg-primary/50' : 'bg-gray-300'}`} />}
     >
       <div className="space-y-3">
-        {/* Existing videos */}
-        {videos.length > 0 && (
-          <div className="space-y-2">
-            {videos.map(v => (
-              <div key={v.id} className="flex items-center gap-3 p-2.5 border border-gray-200 rounded-lg">
-                <Video className="w-5 h-5 text-gray-400 shrink-0" />
-                <div className="flex-1 min-w-0">
-                  <p className="text-[13px] text-gray-900 truncate">{v.name || v.url || 'Video'}</p>
-                  {v.url && <p className="text-[12px] text-gray-400 truncate">{v.url}</p>}
-                </div>
-                <button type="button" onClick={() => onRemove(v.id)} className="text-gray-400 hover:text-red-600 shrink-0">
-                  <X className="w-4 h-4" />
-                </button>
-              </div>
-            ))}
-          </div>
-        )}
-
-        {/* Add video button */}
-        {videos.length < maxCount && (
-          <button
-            type="button"
-            onClick={() => setShowDialog(true)}
-            className="inline-flex items-center gap-1.5 text-sm text-primary hover:underline font-medium"
-          >
-            <Plus className="w-3.5 h-3.5" /> {t('assetGroup.addVideo')}
-          </button>
-        )}
+        {/* Display dilinde tile grid: önizlemeler + add tile */}
+        <div className="flex flex-wrap gap-2 items-start min-h-[88px]">
+          {videos.map(v => (
+            <GoogleWizardAssetTile
+              key={v.id}
+              previewUrl={v.url}
+              alt={v.name || 'Video'}
+              variant="video"
+              overlay={<Youtube className="w-5 h-5 text-white" />}
+              onRemove={() => onRemove(v.id)}
+              removeAriaLabel={t('assetGroup.removeAsset')}
+            />
+          ))}
+          {videos.length < maxCount && !showDialog && (
+            <GoogleWizardAssetAddTile
+              onClick={() => setShowDialog(true)}
+              empty={videos.length === 0}
+              label={t('assetGroup.addVideo')}
+              icon={<Video className="w-5 h-5" />}
+            />
+          )}
+        </div>
 
         {videos.length === 0 && !showDialog && (
           <p className="text-[12px] text-gray-400 italic">{t('assetGroup.noVideoNote')}</p>
