@@ -15,6 +15,8 @@ import {
 } from 'lucide-react'
 import AdPreviewCard from './AdPreviewCard'
 import OneClickApproveDialog from './OneClickApproveDialog'
+import DecisionDeskSummary, { type DecisionSummaryRow } from './DecisionDeskSummary'
+import ApprovalVersionPanel from './ApprovalVersionPanel'
 import type { FullAdProposal } from '@/lib/yoai/adCreator'
 import type { Platform } from '@/lib/yoai/analysisTypes'
 import type { DiagnosisResult, RootCauseId } from '@/lib/yoai/meta/diagnosis'
@@ -63,14 +65,62 @@ type ApprovalStatus =
   | 'failed'
   | 'expired'
 
+interface DecisionBadge {
+  finalDecision: string | null
+  confidence: number
+  riskLevel: string | null
+  requiresHumanReview: boolean
+  requiredHumanChecksCount: number
+  status: string
+}
+
 interface ApprovalRecord {
   id: string
   proposal_id: string
+  source_campaign_id?: string | null
   status: ApprovalStatus
   rejection_reason: string | null
   hold_reason: string | null
   status_reason: string | null
   published_at: string | null
+  metadata?: Record<string, unknown>
+  decision_badge?: DecisionBadge | null
+}
+
+const REJECTION_CATEGORIES = [
+  { value: 'yanlış_kampanya_türü', label: 'Yanlış Kampanya Türü' },
+  { value: 'düşük_kalite', label: 'Düşük Kalite' },
+  { value: 'bütçe_uygunsuz', label: 'Bütçe Uygunsuz' },
+  { value: 'kreatif_uygunsuz', label: 'Kreatif Uygunsuz' },
+  { value: 'hedefleme_uygunsuz', label: 'Hedefleme Uygunsuz' },
+  { value: 'marka_dili_uygunsuz', label: 'Marka Dili Uygunsuz' },
+  { value: 'politika_riski', label: 'Politika Riski' },
+  { value: 'diğer', label: 'Diğer' },
+]
+
+const HOLD_CATEGORIES = [
+  { value: 'daha_sonra', label: 'Daha Sonra' },
+  { value: 'müşteri_onayı_bekliyor', label: 'Müşteri Onayı Bekliyor' },
+  { value: 'bütçe_bekliyor', label: 'Bütçe Bekliyor' },
+  { value: 'kreatif_bekliyor', label: 'Kreatif Bekliyor' },
+  { value: 'veri_yetersiz', label: 'Veri Yetersiz' },
+  { value: 'diğer', label: 'Diğer' },
+]
+
+const DECISION_BADGE_LABEL: Record<string, string> = {
+  publish_ready: 'Yayına Hazır',
+  needs_edit: 'Düzenleme Gerekli',
+  reject: 'Red',
+  hold: 'Beklet',
+  needs_human_review: 'İnsan Kontrolü',
+}
+
+const DECISION_BADGE_CLS: Record<string, string> = {
+  publish_ready: 'text-emerald-600',
+  needs_edit: 'text-primary',
+  reject: 'text-red-600',
+  hold: 'text-gray-500',
+  needs_human_review: 'text-gray-600',
 }
 
 const PROPOSAL_CACHE_KEY = 'yoai_proposals_cache_v1'
@@ -125,7 +175,10 @@ export default function AiAdSuggestions({ connectedPlatforms, onOpenWizard, onAp
   const [rejectTarget, setRejectTarget] = useState<{ proposal: FullAdProposal; approvalId: string } | null>(null)
   const [holdTarget, setHoldTarget] = useState<{ proposal: FullAdProposal; approvalId: string } | null>(null)
   const [reasonText, setReasonText] = useState('')
+  const [rejectCategory, setRejectCategory] = useState('')
+  const [holdCategory, setHoldCategory] = useState('')
   const [submittingPatch, setSubmittingPatch] = useState(false)
+  const [detailApproval, setDetailApproval] = useState<ApprovalRecord | undefined>(undefined)
 
   const refreshApprovals = useCallback(async () => {
     try {
@@ -246,6 +299,7 @@ export default function AiAdSuggestions({ connectedPlatforms, onOpenWizard, onAp
       rejection_reason?: string
       hold_reason?: string
       edited_payload?: unknown
+      metadata?: Record<string, unknown>
     },
   ) => {
     setSubmittingPatch(true)
@@ -269,19 +323,30 @@ export default function AiAdSuggestions({ connectedPlatforms, onOpenWizard, onAp
     if (onApprovalChanged) onApprovalChanged()
   }
 
-  /** Faz 0D: "Öneriyi düzenle" — wizard'ı proposal ile aç + DB'de editing'e geç. */
+  /** Faz 0D + Faz 5: wizard aç + editing durumuna geç + version kaydı oluştur. */
   const handleEdit = async (proposal: FullAdProposal, approval?: ApprovalRecord) => {
-    // 1) Wizard'ı hemen aç (kullanıcı beklemesin).
     onOpenWizard(proposal)
-    // 2) DB'de status='editing' yap (best-effort, non-blocking).
     if (!approval) return
-    if (approval.status === 'editing') return // no-op (transition guard 'editing→editing'i reddeder)
+    if (approval.status === 'editing') return
     if (!['pending', 'hold'].includes(approval.status)) return
     try {
       await patchApproval(approval.id, {
         status: 'editing',
         edited_payload: proposal,
       })
+      // Non-blocking version kaydı (Faz 5 — edited version)
+      fetch(`/api/yoai/approvals/${approval.id}/versions`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          source: 'edited',
+          proposalId: (proposal as { id?: string }).id ?? approval.proposal_id ?? '',
+          proposalSnapshot: proposal,
+          changeSummary: 'Düzenleme başlatıldı',
+          createdBy: 'user',
+        }),
+        credentials: 'include',
+      }).catch(() => {})
     } catch (e) {
       console.warn('[AiAdSuggestions] handleEdit patch failed (non-fatal):', e)
     }
@@ -290,17 +355,31 @@ export default function AiAdSuggestions({ connectedPlatforms, onOpenWizard, onAp
   const handleRejectConfirm = async () => {
     if (!rejectTarget) return
     const reason = reasonText.trim() || 'Reddedildi'
-    await patchApproval(rejectTarget.approvalId, { status: 'rejected', rejection_reason: reason })
+    const meta: Record<string, unknown> = {}
+    if (rejectCategory) meta.rejection_category = rejectCategory
+    await patchApproval(rejectTarget.approvalId, {
+      status: 'rejected',
+      rejection_reason: reason,
+      ...(Object.keys(meta).length > 0 ? { metadata: meta } : {}),
+    })
     setRejectTarget(null)
     setReasonText('')
+    setRejectCategory('')
   }
 
   const handleHoldConfirm = async () => {
     if (!holdTarget) return
     const reason = reasonText.trim() || undefined
-    await patchApproval(holdTarget.approvalId, { status: 'hold', hold_reason: reason })
+    const meta: Record<string, unknown> = {}
+    if (holdCategory) meta.hold_category = holdCategory
+    await patchApproval(holdTarget.approvalId, {
+      status: 'hold',
+      hold_reason: reason,
+      ...(Object.keys(meta).length > 0 ? { metadata: meta } : {}),
+    })
     setHoldTarget(null)
     setReasonText('')
+    setHoldCategory('')
   }
 
   const handleReopen = async (approvalId: string) => {
@@ -313,6 +392,36 @@ export default function AiAdSuggestions({ connectedPlatforms, onOpenWizard, onAp
     const approval = proposalId ? approvalsByProposalId[proposalId] : undefined
     const status = approval?.status ?? 'pending'
 
+    const openDetail = () => {
+      setDetailProposal(proposal)
+      setDetailApproval(approval)
+    }
+
+    // Decision Desk mini-badge (Faz 5)
+    const renderDecisionBadge = () => {
+      const badge = approval?.decision_badge
+      if (!badge) return null
+      const decision = badge.finalDecision
+      const cls = decision ? (DECISION_BADGE_CLS[decision] ?? 'text-gray-600') : 'text-gray-400'
+      const label = decision
+        ? (DECISION_BADGE_LABEL[decision] ?? decision)
+        : badge.status === 'disabled'
+          ? 'Kapalı'
+          : '—'
+      return (
+        <div className="flex items-center gap-1.5 px-2 py-1 bg-gray-50 border border-gray-100 rounded-lg text-[11px] text-gray-500">
+          <span>AI:</span>
+          <span className={`font-medium ${cls}`}>{label}</span>
+          {decision && badge.confidence > 0 && (
+            <span className="text-gray-400">· {badge.confidence}%</span>
+          )}
+          {badge.requiresHumanReview && badge.requiredHumanChecksCount > 0 && (
+            <span className="text-gray-400">· {badge.requiredHumanChecksCount} kontrol</span>
+          )}
+        </div>
+      )
+    }
+
     if (status === 'published') {
       return (
         <div className="space-y-2">
@@ -322,7 +431,7 @@ export default function AiAdSuggestions({ connectedPlatforms, onOpenWizard, onAp
             <span className="text-[11px] opacity-80 ml-auto">Meta Ads Manager'dan aktif et</span>
           </div>
           <button
-            onClick={() => setDetailProposal(proposal)}
+            onClick={openDetail}
             className="w-full inline-flex items-center justify-center gap-1.5 px-3 py-1.5 bg-gray-100 hover:bg-gray-200 text-gray-700 rounded-lg text-[12px] font-medium"
           >
             <Eye className="w-3.5 h-3.5" /> Detayları Gör
@@ -345,7 +454,7 @@ export default function AiAdSuggestions({ connectedPlatforms, onOpenWizard, onAp
           </div>
           <div className="flex gap-2">
             <button
-              onClick={() => setDetailProposal(proposal)}
+              onClick={openDetail}
               className="flex-1 inline-flex items-center justify-center gap-1.5 px-3 py-1.5 bg-gray-100 hover:bg-gray-200 text-gray-700 rounded-lg text-[12px] font-medium"
             >
               <Eye className="w-3.5 h-3.5" /> Detay
@@ -358,6 +467,7 @@ export default function AiAdSuggestions({ connectedPlatforms, onOpenWizard, onAp
               <RotateCcw className="w-3.5 h-3.5" /> Geri Al
             </button>
           </div>
+          {renderDecisionBadge()}
         </div>
       )
     }
@@ -376,7 +486,7 @@ export default function AiAdSuggestions({ connectedPlatforms, onOpenWizard, onAp
           </div>
           <div className="flex gap-2">
             <button
-              onClick={() => setDetailProposal(proposal)}
+              onClick={openDetail}
               className="flex-1 inline-flex items-center justify-center gap-1.5 px-3 py-1.5 bg-gray-100 hover:bg-gray-200 text-gray-700 rounded-lg text-[12px] font-medium"
             >
               <Eye className="w-3.5 h-3.5" /> Detay
@@ -389,6 +499,7 @@ export default function AiAdSuggestions({ connectedPlatforms, onOpenWizard, onAp
               <RotateCcw className="w-3.5 h-3.5" /> Aktif Et
             </button>
           </div>
+          {renderDecisionBadge()}
         </div>
       )
     }
@@ -398,7 +509,7 @@ export default function AiAdSuggestions({ connectedPlatforms, onOpenWizard, onAp
       <div className="space-y-2">
         <div className="grid grid-cols-4 gap-1.5">
           <button
-            onClick={() => setDetailProposal(proposal)}
+            onClick={openDetail}
             className="inline-flex items-center justify-center gap-1 px-2 py-1.5 bg-gray-100 hover:bg-gray-200 text-gray-700 rounded-lg text-[11px] font-medium"
             title="Detayları Gör"
           >
@@ -452,6 +563,7 @@ export default function AiAdSuggestions({ connectedPlatforms, onOpenWizard, onAp
             <span className="font-medium">Son deneme:</span> {approval.status_reason}
           </p>
         )}
+        {renderDecisionBadge()}
       </div>
     )
   }
@@ -529,7 +641,14 @@ export default function AiAdSuggestions({ connectedPlatforms, onOpenWizard, onAp
 
       {/* Detail modal */}
       {detailProposal && (
-        <DetailModal proposal={detailProposal} onClose={() => setDetailProposal(null)} />
+        <DetailModal
+          proposal={detailProposal}
+          approval={detailApproval}
+          onClose={() => {
+            setDetailProposal(null)
+            setDetailApproval(undefined)
+          }}
+        />
       )}
 
       {/* Reject modal */}
@@ -545,9 +664,14 @@ export default function AiAdSuggestions({ connectedPlatforms, onOpenWizard, onAp
           onCancel={() => {
             setRejectTarget(null)
             setReasonText('')
+            setRejectCategory('')
           }}
           onConfirm={handleRejectConfirm}
           submitting={submittingPatch}
+          categories={REJECTION_CATEGORIES}
+          categoryValue={rejectCategory}
+          onCategoryChange={setRejectCategory}
+          categoryLabel="Red Kategorisi"
         />
       )}
 
@@ -564,9 +688,14 @@ export default function AiAdSuggestions({ connectedPlatforms, onOpenWizard, onAp
           onCancel={() => {
             setHoldTarget(null)
             setReasonText('')
+            setHoldCategory('')
           }}
           onConfirm={handleHoldConfirm}
           submitting={submittingPatch}
+          categories={HOLD_CATEGORIES}
+          categoryValue={holdCategory}
+          onCategoryChange={setHoldCategory}
+          categoryLabel="Bekletme Nedeni"
         />
       )}
 
@@ -593,9 +722,56 @@ export default function AiAdSuggestions({ connectedPlatforms, onOpenWizard, onAp
   )
 }
 
-/* ── Detail modal: proposal_snapshot fields ── */
+/* ── Detail modal: proposal_snapshot fields + Decision Desk + Versions (Faz 5) ── */
 
-function DetailModal({ proposal, onClose }: { proposal: FullAdProposal; onClose: () => void }) {
+function DetailModal({
+  proposal,
+  approval,
+  onClose,
+}: {
+  proposal: FullAdProposal
+  approval?: ApprovalRecord
+  onClose: () => void
+}) {
+  const [decisionRows, setDecisionRows] = useState<DecisionSummaryRow[] | null>(null)
+  const [loadingDecision, setLoadingDecision] = useState(false)
+
+  useEffect(() => {
+    if (!approval?.id) return
+
+    // Lazy: tam karar detaylarını detail endpoint'ten çek
+    setLoadingDecision(true)
+    fetch(`/api/yoai/approvals/${approval.id}`, { credentials: 'include' })
+      .then((r) => r.json())
+      .then((json) => {
+        if (json.ok && Array.isArray(json.decisionRows)) {
+          setDecisionRows(json.decisionRows as DecisionSummaryRow[])
+        } else {
+          setDecisionRows([])
+        }
+      })
+      .catch(() => setDecisionRows([]))
+      .finally(() => setLoadingDecision(false))
+
+    // Non-blocking: ilk versiyonu oluştur (idempotent)
+    const proposalId =
+      (proposal as { id?: string }).id ?? approval.proposal_id ?? ''
+    if (proposalId) {
+      fetch(`/api/yoai/approvals/${approval.id}/versions`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          source: 'original',
+          proposalId,
+          proposalSnapshot: proposal,
+          changeSummary: 'Orijinal öneri',
+          createdBy: 'system',
+        }),
+        credentials: 'include',
+      }).catch(() => {})
+    }
+  }, [approval, proposal])
+
   const fields: Array<{ label: string; value: string | undefined | null }> = [
     { label: 'Platform', value: proposal.platform },
     { label: 'Tür', value: proposal.proposalType },
@@ -632,42 +808,60 @@ function DetailModal({ proposal, onClose }: { proposal: FullAdProposal; onClose:
             <X className="w-5 h-5" />
           </button>
         </div>
-        <div className="p-6 space-y-3 max-h-[70vh] overflow-y-auto">
-          {fields.map(
-            (f) =>
-              f.value && (
-                <div key={f.label} className="grid grid-cols-3 gap-3">
-                  <div className="col-span-1 text-[11px] font-semibold text-gray-500 uppercase tracking-wider pt-0.5">
-                    {f.label}
+        <div className="p-6 space-y-4 max-h-[75vh] overflow-y-auto">
+          {/* Proposal fields */}
+          <div className="space-y-3">
+            {fields.map(
+              (f) =>
+                f.value && (
+                  <div key={f.label} className="grid grid-cols-3 gap-3">
+                    <div className="col-span-1 text-[11px] font-semibold text-gray-500 uppercase tracking-wider pt-0.5">
+                      {f.label}
+                    </div>
+                    <div className="col-span-2 text-sm text-gray-800 leading-relaxed">{f.value}</div>
                   </div>
-                  <div className="col-span-2 text-sm text-gray-800 leading-relaxed">{f.value}</div>
+                ),
+            )}
+            {Array.isArray(proposal.headlines) && proposal.headlines.length > 0 && (
+              <div className="grid grid-cols-3 gap-3">
+                <div className="col-span-1 text-[11px] font-semibold text-gray-500 uppercase tracking-wider pt-0.5">
+                  Başlıklar (Google RSA)
                 </div>
-              ),
-          )}
-          {Array.isArray(proposal.headlines) && proposal.headlines.length > 0 && (
-            <div className="grid grid-cols-3 gap-3">
-              <div className="col-span-1 text-[11px] font-semibold text-gray-500 uppercase tracking-wider pt-0.5">
-                Başlıklar (Google RSA)
+                <ul className="col-span-2 list-disc list-inside text-sm text-gray-800 space-y-0.5">
+                  {proposal.headlines.map((h, i) => (
+                    <li key={i}>{h}</li>
+                  ))}
+                </ul>
               </div>
-              <ul className="col-span-2 list-disc list-inside text-sm text-gray-800 space-y-0.5">
-                {proposal.headlines.map((h, i) => (
-                  <li key={i}>{h}</li>
-                ))}
-              </ul>
+            )}
+            {Array.isArray(proposal.descriptions) && proposal.descriptions.length > 0 && (
+              <div className="grid grid-cols-3 gap-3">
+                <div className="col-span-1 text-[11px] font-semibold text-gray-500 uppercase tracking-wider pt-0.5">
+                  Açıklamalar
+                </div>
+                <ul className="col-span-2 list-disc list-inside text-sm text-gray-800 space-y-0.5">
+                  {proposal.descriptions.map((d, i) => (
+                    <li key={i}>{d}</li>
+                  ))}
+                </ul>
+              </div>
+            )}
+          </div>
+
+          {/* Versiyon geçmişi (Faz 5) */}
+          {approval?.id && (
+            <div className="pt-2 border-t border-gray-100">
+              <ApprovalVersionPanel approvalId={approval.id} />
             </div>
           )}
-          {Array.isArray(proposal.descriptions) && proposal.descriptions.length > 0 && (
-            <div className="grid grid-cols-3 gap-3">
-              <div className="col-span-1 text-[11px] font-semibold text-gray-500 uppercase tracking-wider pt-0.5">
-                Açıklamalar
-              </div>
-              <ul className="col-span-2 list-disc list-inside text-sm text-gray-800 space-y-0.5">
-                {proposal.descriptions.map((d, i) => (
-                  <li key={i}>{d}</li>
-                ))}
-              </ul>
-            </div>
-          )}
+
+          {/* Decision Desk (Faz 5) */}
+          <div className="pt-2 border-t border-gray-100">
+            <DecisionDeskSummary
+              rows={decisionRows}
+              loading={loadingDecision}
+            />
+          </div>
         </div>
       </div>
     </div>
@@ -687,6 +881,10 @@ function ReasonModal({
   onCancel,
   onConfirm,
   submitting,
+  categories,
+  categoryValue,
+  onCategoryChange,
+  categoryLabel,
 }: {
   title: string
   description: string
@@ -698,6 +896,10 @@ function ReasonModal({
   onCancel: () => void
   onConfirm: () => void
   submitting: boolean
+  categories?: Array<{ value: string; label: string }>
+  categoryValue?: string
+  onCategoryChange?: (v: string) => void
+  categoryLabel?: string
 }) {
   const confirmCls =
     confirmVariant === 'danger'
@@ -716,6 +918,27 @@ function ReasonModal({
         </div>
         <div className="p-6 space-y-4">
           <p className="text-sm text-gray-600">{description}</p>
+          {categories && categories.length > 0 && onCategoryChange && (
+            <div>
+              {categoryLabel && (
+                <label className="block text-[11px] font-semibold text-gray-500 uppercase tracking-wide mb-1.5">
+                  {categoryLabel} <span className="text-gray-400 font-normal">(opsiyonel)</span>
+                </label>
+              )}
+              <select
+                value={categoryValue ?? ''}
+                onChange={(e) => onCategoryChange(e.target.value)}
+                className="w-full border border-gray-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-primary/30 bg-white"
+              >
+                <option value="">— Seçiniz —</option>
+                {categories.map((c) => (
+                  <option key={c.value} value={c.value}>
+                    {c.label}
+                  </option>
+                ))}
+              </select>
+            </div>
+          )}
           <textarea
             value={value}
             onChange={(e) => onChange(e.target.value)}

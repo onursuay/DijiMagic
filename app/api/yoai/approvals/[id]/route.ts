@@ -4,8 +4,10 @@ import {
   getApprovalById,
   updateApprovalStatus,
   ALLOWED_USER_TRANSITIONS,
+  listApprovalVersions,
   type ApprovalStatus,
 } from '@/lib/yoai/approvalStore'
+import { listModelDecisionsForApproval } from '@/lib/yoai/modelDecisionStore'
 
 export const dynamic = 'force-dynamic'
 export const maxDuration = 30
@@ -14,7 +16,10 @@ const USER_PATCHABLE_STATUSES: ApprovalStatus[] = ['pending', 'rejected', 'hold'
 
 /**
  * GET /api/yoai/approvals/[id]
- * Tek bir approval kaydının detayını döner (kullanıcı kendi kaydını görebilir).
+ * Tek bir approval kaydının detayını döner.
+ * Ayrıca:
+ *   decisionRows: kaynak kampanya için Multi-AI decision kayıtları
+ *   versionCount: yoai_approval_versions satır sayısı
  */
 export async function GET(
   _request: Request,
@@ -34,7 +39,24 @@ export async function GET(
         { status: 404 },
       )
     }
-    return NextResponse.json({ ok: true, data: record })
+
+    // Decision rows + version count concurrent (non-blocking — empty on error)
+    const [decisionRows, versions] = await Promise.all([
+      record.source_campaign_id
+        ? listModelDecisionsForApproval(userId, {
+            sourceCampaignId: record.source_campaign_id,
+            limit: 20,
+          })
+        : Promise.resolve([]),
+      listApprovalVersions(userId, id),
+    ])
+
+    return NextResponse.json({
+      ok: true,
+      data: record,
+      decisionRows,
+      versionCount: versions.length,
+    })
   } catch (error) {
     console.error('[Approvals.GET[id]] Error:', error)
     return NextResponse.json(
@@ -51,8 +73,8 @@ export async function GET(
  *   rejection_reason?: string,
  *   hold_reason?: string,
  *   status_reason?: string,
- *   edited_payload?: unknown,    // sadece editing için anlamlı
- *   metadata?: Record<string, unknown>,
+ *   edited_payload?: unknown,
+ *   metadata?: Record<string, unknown>,   // rejection_category / hold_category burada
  * }
  *
  * approved/published/failed/expired bu endpoint üzerinden YAZILAMAZ.

@@ -34,6 +34,15 @@ type ApprovalStatus =
   | 'failed'
   | 'expired'
 
+interface DecisionBadge {
+  finalDecision: string | null
+  confidence: number
+  riskLevel: string | null
+  requiresHumanReview: boolean
+  requiredHumanChecksCount: number
+  status: string
+}
+
 interface ApprovalRecord {
   id: string
   proposal_id: string
@@ -48,6 +57,8 @@ interface ApprovalRecord {
   publish_audit_id: string | null
   created_at: string
   updated_at: string
+  metadata?: Record<string, unknown>
+  decision_badge?: DecisionBadge | null
   proposal_snapshot: {
     campaignName?: string
     headline?: string
@@ -55,6 +66,42 @@ interface ApprovalRecord {
     callToAction?: string
     dailyBudget?: number
   } | null
+}
+
+const REJECTION_CATEGORY_LABELS: Record<string, string> = {
+  'yanlış_kampanya_türü': 'Yanlış Kampanya Türü',
+  'düşük_kalite': 'Düşük Kalite',
+  'bütçe_uygunsuz': 'Bütçe Uygunsuz',
+  'kreatif_uygunsuz': 'Kreatif Uygunsuz',
+  'hedefleme_uygunsuz': 'Hedefleme Uygunsuz',
+  'marka_dili_uygunsuz': 'Marka Dili Uygunsuz',
+  'politika_riski': 'Politika Riski',
+  'diğer': 'Diğer',
+}
+
+const HOLD_CATEGORY_LABELS: Record<string, string> = {
+  'daha_sonra': 'Daha Sonra',
+  'müşteri_onayı_bekliyor': 'Müşteri Onayı Bekliyor',
+  'bütçe_bekliyor': 'Bütçe Bekliyor',
+  'kreatif_bekliyor': 'Kreatif Bekliyor',
+  'veri_yetersiz': 'Veri Yetersiz',
+  'diğer': 'Diğer',
+}
+
+const DECISION_BADGE_LABELS: Record<string, string> = {
+  publish_ready: 'Yayına Hazır',
+  needs_edit: 'Düzenleme Gerekli',
+  reject: 'Red',
+  hold: 'Beklet',
+  needs_human_review: 'İnsan Kontrolü',
+}
+
+const DECISION_BADGE_CLASSES: Record<string, string> = {
+  publish_ready: 'bg-emerald-50 text-emerald-700 border-emerald-200',
+  needs_edit: 'bg-primary/5 text-primary border-primary/20',
+  reject: 'bg-red-50 text-red-700 border-red-200',
+  hold: 'bg-gray-100 text-gray-600 border-gray-200',
+  needs_human_review: 'bg-gray-50 text-gray-700 border-gray-200',
 }
 
 interface Props {
@@ -188,6 +235,14 @@ export default function ApprovalHistoryPanel({ refreshKey }: Props) {
             const reason =
               rec.rejection_reason || rec.hold_reason || rec.status_reason || null
 
+            const rejectionCategory = rec.metadata?.rejection_category as string | null | undefined
+            const holdCategory = rec.metadata?.hold_category as string | null | undefined
+            const badge = rec.decision_badge
+            const badgeDecision = badge?.finalDecision
+            const badgeClass = badgeDecision
+              ? (DECISION_BADGE_CLASSES[badgeDecision] ?? 'bg-gray-50 text-gray-500 border-gray-200')
+              : null
+
             return (
               <div key={rec.id} className="px-4 py-3">
                 <div className="flex items-start gap-3">
@@ -199,7 +254,7 @@ export default function ApprovalHistoryPanel({ refreshKey }: Props) {
                   </div>
                   <div className="flex-1 min-w-0">
                     <p className="text-sm font-medium text-gray-900 truncate">{title}</p>
-                    <div className="flex items-center gap-2 text-[11px] text-gray-500 mt-0.5">
+                    <div className="flex items-center gap-2 text-[11px] text-gray-500 mt-0.5 flex-wrap">
                       <span className="uppercase">{rec.platform}</span>
                       <span>·</span>
                       <span>{formatTime(rec.updated_at || rec.created_at)}</span>
@@ -210,6 +265,13 @@ export default function ApprovalHistoryPanel({ refreshKey }: Props) {
                             yayın {formatTime(rec.published_at)}
                           </span>
                         </>
+                      )}
+                      {badgeDecision && badgeClass && (
+                        <span
+                          className={`inline-flex items-center px-1.5 py-0.5 rounded border text-[10px] font-medium ${badgeClass}`}
+                        >
+                          AI: {DECISION_BADGE_LABELS[badgeDecision] ?? badgeDecision}
+                        </span>
                       )}
                     </div>
                     {reason && !expanded && (
@@ -256,6 +318,24 @@ export default function ApprovalHistoryPanel({ refreshKey }: Props) {
                       <DetailRow label="CTA" value={rec.proposal_snapshot.callToAction} />
                     )}
                     {reason && <DetailRow label="Neden" value={reason} />}
+                    {rejectionCategory && (
+                      <DetailRow
+                        label="Red Kategorisi"
+                        value={REJECTION_CATEGORY_LABELS[rejectionCategory] ?? rejectionCategory}
+                      />
+                    )}
+                    {holdCategory && (
+                      <DetailRow
+                        label="Bekletme Kategorisi"
+                        value={HOLD_CATEGORY_LABELS[holdCategory] ?? holdCategory}
+                      />
+                    )}
+                    {badgeDecision && (
+                      <DetailRow
+                        label="AI Kararı"
+                        value={`${DECISION_BADGE_LABELS[badgeDecision] ?? badgeDecision}${badge?.confidence ? ` (${badge.confidence}%)` : ''}`}
+                      />
+                    )}
                     {rec.publish_audit_id && (
                       <DetailRow label="Audit ID" value={rec.publish_audit_id} mono />
                     )}

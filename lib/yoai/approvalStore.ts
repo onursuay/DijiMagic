@@ -554,3 +554,166 @@ export async function countPendingApprovals(userId: string): Promise<number> {
   }
   return count ?? 0
 }
+
+/* ── Approval Versions (Faz 5) ──────────────────────────────────
+   yoai_approval_versions tablosu: öneri versiyon geçmişi.
+   Tablo yoksa soft fail — çağıran flow'u kırmaz.
+   ─────────────────────────────────────────────────────────────── */
+
+const VERSIONS_TABLE = 'yoai_approval_versions'
+const VERSIONS_MIGRATION_HINT =
+  'supabase/migrations/20260510007000_create_yoai_approval_versions.sql'
+
+export type VersionSource = 'original' | 'edited' | 'regenerated' | 'manual'
+
+export interface ApprovalVersionRecord {
+  id: string
+  user_id: string
+  approval_id: string
+  proposal_id: string
+  version_number: number
+  source: VersionSource
+  proposal_snapshot: unknown
+  edited_payload: unknown
+  change_summary: string | null
+  created_at: string
+  created_by: string | null
+  metadata: Record<string, unknown>
+}
+
+export interface CreateApprovalVersionPayload {
+  source: VersionSource
+  proposalId: string
+  proposalSnapshot: unknown
+  editedPayload?: unknown
+  changeSummary?: string
+  createdBy?: string
+}
+
+function logVersionTableMissing(operation: string): void {
+  console.error(
+    `[ApprovalStore][VERSIONS] ${VERSIONS_TABLE} tablosu yok — ${operation} BAŞARISIZ. ` +
+      `Migration: ${VERSIONS_MIGRATION_HINT}`,
+  )
+}
+
+export async function createApprovalVersion(
+  userId: string,
+  approvalId: string,
+  payload: CreateApprovalVersionPayload,
+): Promise<ApprovalVersionRecord | null> {
+  if (!supabase) return null
+
+  const { data: maxData } = await supabase
+    .from(VERSIONS_TABLE)
+    .select('version_number')
+    .eq('user_id', userId)
+    .eq('approval_id', approvalId)
+    .order('version_number', { ascending: false })
+    .limit(1)
+    .maybeSingle()
+
+  const nextVersion =
+    maxData && typeof (maxData as { version_number?: number }).version_number === 'number'
+      ? (maxData as { version_number: number }).version_number + 1
+      : 1
+
+  const { data, error } = await supabase
+    .from(VERSIONS_TABLE)
+    .insert({
+      user_id: userId,
+      approval_id: approvalId,
+      proposal_id: payload.proposalId,
+      version_number: nextVersion,
+      source: payload.source,
+      proposal_snapshot: sanitizeResponseExcerpt(payload.proposalSnapshot),
+      edited_payload: payload.editedPayload
+        ? sanitizeResponseExcerpt(payload.editedPayload)
+        : null,
+      change_summary: payload.changeSummary ?? null,
+      created_by: payload.createdBy ?? null,
+    })
+    .select('*')
+    .single()
+
+  if (error) {
+    if (isTableMissingError(error)) {
+      logVersionTableMissing('createApprovalVersion')
+      return null
+    }
+    if (error.code === '23505') {
+      console.warn('[ApprovalStore][VERSIONS] duplicate version_number, non-fatal skip')
+      return null
+    }
+    console.error('[ApprovalStore][VERSIONS] insert error:', error)
+    return null
+  }
+  return data as ApprovalVersionRecord
+}
+
+export async function listApprovalVersions(
+  userId: string,
+  approvalId: string,
+): Promise<ApprovalVersionRecord[]> {
+  if (!supabase) return []
+  const { data, error } = await supabase
+    .from(VERSIONS_TABLE)
+    .select('*')
+    .eq('user_id', userId)
+    .eq('approval_id', approvalId)
+    .order('version_number', { ascending: false })
+
+  if (error) {
+    if (isTableMissingError(error)) {
+      logVersionTableMissing('listApprovalVersions')
+      return []
+    }
+    console.error('[ApprovalStore][VERSIONS] list error:', error)
+    return []
+  }
+  return (data || []) as ApprovalVersionRecord[]
+}
+
+export async function getLatestApprovalVersion(
+  userId: string,
+  approvalId: string,
+): Promise<ApprovalVersionRecord | null> {
+  if (!supabase) return null
+  const { data, error } = await supabase
+    .from(VERSIONS_TABLE)
+    .select('*')
+    .eq('user_id', userId)
+    .eq('approval_id', approvalId)
+    .order('version_number', { ascending: false })
+    .limit(1)
+    .maybeSingle()
+
+  if (error) {
+    if (isTableMissingError(error)) return null
+    console.error('[ApprovalStore][VERSIONS] getLatest error:', error)
+    return null
+  }
+  return (data as ApprovalVersionRecord) || null
+}
+
+/**
+ * İlk versiyon yoksa approval snapshot'ından oluşturur.
+ * Lazy: detail modal açılınca çağrılır (generate-ad flow'unu bozmaz).
+ */
+export async function ensureInitialApprovalVersion(
+  userId: string,
+  approvalId: string,
+): Promise<ApprovalVersionRecord | null> {
+  if (!supabase) return null
+  const existing = await getLatestApprovalVersion(userId, approvalId)
+  if (existing) return existing
+  const approval = await getApprovalById(userId, approvalId)
+  if (!approval) return null
+  return createApprovalVersion(userId, approvalId, {
+    source: 'original',
+    proposalId: approval.proposal_id,
+    proposalSnapshot: approval.proposal_snapshot,
+    changeSummary: 'Orijinal öneri',
+    createdBy: 'system',
+  })
+}

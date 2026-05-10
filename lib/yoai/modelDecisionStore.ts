@@ -145,6 +145,7 @@ export async function listModelDecisions(
   userId: string,
   filters?: {
     sourceCampaignId?: string
+    proposalId?: string
     role?: string
     provider?: string
     limit?: number
@@ -161,6 +162,9 @@ export async function listModelDecisions(
 
     if (filters?.sourceCampaignId) {
       query = query.eq('source_campaign_id', filters.sourceCampaignId)
+    }
+    if (filters?.proposalId) {
+      query = query.eq('proposal_id', filters.proposalId)
     }
     if (filters?.role) {
       query = query.eq('role', filters.role)
@@ -193,4 +197,74 @@ export async function getLatestDecisionDeskResult(
     sourceCampaignId,
     limit: 10,
   })
+}
+
+export async function getLatestDecisionDeskResultByProposal(
+  userId: string,
+  proposalId: string,
+): Promise<Record<string, unknown>[]> {
+  return listModelDecisions(userId, { proposalId, limit: 10 })
+}
+
+export async function listModelDecisionsForApproval(
+  userId: string,
+  filters: {
+    proposalId?: string
+    sourceCampaignId?: string
+    role?: string
+    limit?: number
+  },
+): Promise<Record<string, unknown>[]> {
+  return listModelDecisions(userId, {
+    sourceCampaignId: filters.sourceCampaignId,
+    proposalId: filters.proposalId,
+    role: filters.role,
+    limit: filters.limit,
+  })
+}
+
+/**
+ * Birden fazla kampanya ID'si için en son judge kararlarını tek sorguda çeker.
+ * Sonuç: { [source_campaign_id]: DB row } map'i (latest per campaign).
+ */
+export async function getJudgeDecisionSummaryByCampaignIds(
+  userId: string,
+  campaignIds: string[],
+): Promise<Record<string, Record<string, unknown>>> {
+  if (!supabase || campaignIds.length === 0) return {}
+  try {
+    const { data, error } = await supabase
+      .from(TABLE)
+      .select(
+        'source_campaign_id, confidence, risk_level, status, publish_ready, requires_human_review, output_json, created_at',
+      )
+      .eq('user_id', userId)
+      .eq('role', 'judge')
+      .in('source_campaign_id', campaignIds)
+      .order('created_at', { ascending: false })
+
+    if (error) {
+      if (error.code === '42P01') {
+        console.warn(`${TAG}[TABLE_MISSING] ${TABLE} not found.`)
+      } else {
+        console.warn(`${TAG}[JUDGE_SUMMARY_ERROR]`, error.message)
+      }
+      return {}
+    }
+
+    const result: Record<string, Record<string, unknown>> = {}
+    for (const row of (data || []) as Record<string, unknown>[]) {
+      const cid = row.source_campaign_id as string | null | undefined
+      if (cid && !result[cid]) {
+        result[cid] = row
+      }
+    }
+    return result
+  } catch (e) {
+    console.warn(
+      `${TAG}[JUDGE_SUMMARY_EXCEPTION]`,
+      e instanceof Error ? e.message : String(e),
+    )
+    return {}
+  }
 }

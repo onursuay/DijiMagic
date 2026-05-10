@@ -2,6 +2,23 @@
 
 ---
 
+## 2026-05-11 — Faz 5: Approval Lifecycle Advanced / Decision Desk Visibility + Versioning + Rejection Learning Foundation
+- **Sorun:** Multi-AI Decision Desk kararları kullanıcıya görünmüyordu; rejection/hold kararları yapısal kategori içermiyordu; approval'ların düzenleme geçmişi kaydedilmiyordu.
+- **Çözüm:**
+  - **yoai_approval_versions tablosu** — `supabase/migrations/20260510007000_create_yoai_approval_versions.sql`: approval başına versiyon satırları (original/edited/regenerated/manual); unique (approval_id, version_number); RLS user-owned; audit immutability (UPDATE/DELETE policy yok).
+  - **approvalStore.ts** — `createApprovalVersion()`, `listApprovalVersions()`, `getLatestApprovalVersion()`, `ensureInitialApprovalVersion()` additive eklendi. Soft-fail pattern (tablo yoksa loglar, flow kırmaz).
+  - **modelDecisionStore.ts** — `listModelDecisions` filtresine `proposalId` eklendi; `getLatestDecisionDeskResultByProposal()`, `listModelDecisionsForApproval()`, `getJudgeDecisionSummaryByCampaignIds()` additive eklendi.
+  - **GET /api/yoai/approvals** — Her kayda `decision_badge` (latest judge decision özeti) eklendi; tek batch sorgusu (N+1 yok). List endpoint korundu.
+  - **GET /api/yoai/approvals/[id]** — `decisionRows` (tam rol çıktıları) + `versionCount` eklendi; concurrent fetch ile performans korundu.
+  - **POST/GET /api/yoai/approvals/[id]/versions** — Yeni route; GET versiyon listesi, POST versiyon oluşturma (`original` için idempotent).
+  - **DecisionDeskSummary.tsx** — Yeni readonly component: judge final decision, confidence, risk, campaignTypeFidelity, rol durumları, final recommendation, creative brief, payload notes, unresolved risks, required human checks. Multi-AI disabled/karar yoksa açık mesaj.
+  - **ApprovalVersionPanel.tsx** — Yeni component: approval başına versiyon listesi (collapse/expand); kaynak (original/edited/regenerated/manual), versiyon numarası, özet ve tarih.
+  - **AiAdSuggestions.tsx** — Rejection/hold kategori dropdown'ları (8 red + 6 beklet kategorisi); kategori `metadata.rejection_category`/`metadata.hold_category` olarak PATCH body'e gidiyor. Kart action row'una `decision_badge` mini-göstergesi (AI karar + güven + kontrol sayısı). Detail modal: `DecisionDeskSummary` + `ApprovalVersionPanel` lazy yükleme; `handleEdit` akışında `source='edited'` version kaydı (non-blocking). Publish behavior korundu.
+  - **ApprovalHistoryPanel.tsx** — `rejection_category`/`hold_category` metadata'sı expand detayında gösteriliyor; judge decision badge satır başlığında görünüyor; `decision_badge` tip eklendi.
+- **Dosyalar:** `supabase/migrations/20260510007000_*`, `lib/yoai/approvalStore.ts`, `lib/yoai/modelDecisionStore.ts`, `app/api/yoai/approvals/route.ts`, `app/api/yoai/approvals/[id]/route.ts`, `app/api/yoai/approvals/[id]/versions/route.ts`, `components/yoai/DecisionDeskSummary.tsx`, `components/yoai/ApprovalVersionPanel.tsx`, `components/yoai/AiAdSuggestions.tsx`, `components/yoai/ApprovalHistoryPanel.tsx`
+
+---
+
 ## 2026-05-10 — Faz 4: Multi-AI Decision Desk / Role-Based AI Evaluation + Judge Layer
 - **Sorun:** Tek model ile üretilen AI proposal'larının karar kalitesi ve gerekçe güvenilirliği sınırlıydı; farklı perspektifler (strateji, kreatif, risk, teknik) tek çağrıda birleştiriliyordu.
 - **Çözüm:**

@@ -5,6 +5,7 @@ import {
   listApprovals,
   type ApprovalStatus,
 } from '@/lib/yoai/approvalStore'
+import { getJudgeDecisionSummaryByCampaignIds } from '@/lib/yoai/modelDecisionStore'
 
 export const dynamic = 'force-dynamic'
 export const maxDuration = 30
@@ -33,12 +34,23 @@ function parseStatusParam(raw: string | null): ApprovalStatus | ApprovalStatus[]
   return valid.length === 1 ? valid[0] : valid
 }
 
+interface DecisionBadge {
+  finalDecision: string | null
+  confidence: number
+  riskLevel: string | null
+  requiresHumanReview: boolean
+  requiredHumanChecksCount: number
+  status: string
+}
+
 /**
  * GET /api/yoai/approvals
  *   ?status=pending,hold       → status filter (csv)
  *   ?platform=Meta             → platform filter
  *   ?limit=50                  → max records
  *   ?count=1                   → only return pendingCount (no list)
+ *
+ * Response includes decision_badge per record (latest judge decision summary).
  */
 export async function GET(request: Request) {
   try {
@@ -66,11 +78,42 @@ export async function GET(request: Request) {
       limit: limit && Number.isFinite(limit) ? limit : undefined,
     })
 
+    // Enrich each record with latest judge decision badge (one batch query)
+    const campaignIds = [
+      ...new Set(
+        records.map((r) => r.source_campaign_id).filter((id): id is string => !!id),
+      ),
+    ]
+    const judgeDecisions =
+      campaignIds.length > 0
+        ? await getJudgeDecisionSummaryByCampaignIds(userId, campaignIds)
+        : {}
+
+    const enrichedRecords = records.map((r) => {
+      const judgeRow = r.source_campaign_id
+        ? judgeDecisions[r.source_campaign_id] ?? null
+        : null
+      if (!judgeRow) return { ...r, decision_badge: null }
+      const outputJson = (judgeRow.output_json || {}) as Record<string, unknown>
+      const badge: DecisionBadge = {
+        finalDecision:
+          typeof outputJson.finalDecision === 'string' ? outputJson.finalDecision : null,
+        confidence: typeof judgeRow.confidence === 'number' ? judgeRow.confidence : 0,
+        riskLevel: typeof judgeRow.risk_level === 'string' ? judgeRow.risk_level : null,
+        requiresHumanReview: !!judgeRow.requires_human_review,
+        requiredHumanChecksCount: Array.isArray(outputJson.requiredHumanChecks)
+          ? outputJson.requiredHumanChecks.length
+          : 0,
+        status: typeof judgeRow.status === 'string' ? judgeRow.status : 'unknown',
+      }
+      return { ...r, decision_badge: badge }
+    })
+
     const pendingCount = records.filter((r) => r.status === 'pending').length
 
     return NextResponse.json({
       ok: true,
-      data: records,
+      data: enrichedRecords,
       total: records.length,
       pendingCount,
     })
