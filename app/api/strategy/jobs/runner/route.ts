@@ -5,9 +5,15 @@ export const dynamic = 'force-dynamic'
 
 // POST /api/strategy/jobs/runner — Job runner'ı tetikle (cron veya manuel)
 export async function POST(request: Request) {
-  // Basit secret kontrolü (cron güvenliği)
+  // Cron güvenliği: production'da CRON_SECRET zorunlu
   const authHeader = request.headers.get('authorization')
   const cronSecret = process.env.CRON_SECRET
+  const isProduction = process.env.NODE_ENV === 'production'
+
+  if (!cronSecret && isProduction) {
+    console.error('[JobRunner] CRON_SECRET not configured — refusing request in production')
+    return NextResponse.json({ ok: false, error: 'Cron not configured' }, { status: 503 })
+  }
   if (cronSecret && authHeader !== `Bearer ${cronSecret}`) {
     return NextResponse.json({ ok: false, error: 'unauthorized' }, { status: 401 })
   }

@@ -27,6 +27,12 @@ export async function GET(request: Request) {
   // Verify cron secret (Vercel sends Authorization: Bearer <CRON_SECRET>)
   const authHeader = request.headers.get('authorization')
   const cronSecret = process.env.CRON_SECRET
+  const isProduction = process.env.NODE_ENV === 'production'
+
+  if (!cronSecret && isProduction) {
+    console.error('[DailyRun Cron] CRON_SECRET not configured — refusing request in production')
+    return NextResponse.json({ ok: false, error: 'Cron not configured' }, { status: 503 })
+  }
   if (cronSecret && authHeader !== `Bearer ${cronSecret}`) {
     return NextResponse.json({ ok: false, error: 'Unauthorized' }, { status: 401 })
   }

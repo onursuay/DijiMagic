@@ -33,6 +33,8 @@ pnpm-debug.log*
 # local env files
 .env*
 .env*.local
+# allow the reference template
+!.env.example
 
 # vercel
 .vercel

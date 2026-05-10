@@ -1,6 +1,6 @@
 import { NextResponse } from 'next/server'
 
-const VERIFY_TOKEN = process.env.META_WEBHOOK_VERIFY_TOKEN || 'yoai_webhook_verify_2024'
+const VERIFY_TOKEN = process.env.META_WEBHOOK_VERIFY_TOKEN
 const DEBUG = process.env.NODE_ENV !== 'production'
 
 /**
@@ -8,6 +8,11 @@ const DEBUG = process.env.NODE_ENV !== 'production'
  * Meta sends: ?hub.mode=subscribe&hub.verify_token=<token>&hub.challenge=<challenge>
  */
 export async function GET(request: Request) {
+  if (!VERIFY_TOKEN) {
+    console.error('[Webhook] META_WEBHOOK_VERIFY_TOKEN not configured — verification disabled')
+    return NextResponse.json({ error: 'webhook not configured' }, { status: 503 })
+  }
+
   const { searchParams } = new URL(request.url)
   const mode = searchParams.get('hub.mode')
   const token = searchParams.get('hub.verify_token')

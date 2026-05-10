@@ -2,6 +2,16 @@
 
 ---
 
+## 2026-05-10 — Faz 3.5: Env Security Hardening (Cron + Webhook + Token + server-only)
+- **Sorun:** Env/API Key Audit'ten gelen 8 kritik/yüksek bulgular: cron endpoint'leri CRON_SECRET yokken production'da açık kalıyordu; Meta webhook'ta hardcoded verify token fallback vardı; META_TOKEN_SECRET eksikken production'da sessiz hata oluşuyordu; `lib/supabase/client.ts` (service role key) `server-only` ile korunmuyordu; `.env.example` hiç yoktu.
+- **Çözüm:**
+  - **CRON_SECRET fail-secure** — `app/api/yoai/daily-run/route.ts` ve `app/api/strategy/jobs/runner/route.ts`: `CRON_SECRET` env yokken production'da 503 döner; local/dev'de bypass açık. Önceki `if (cronSecret && ...)` pattern güvensizdi.
+  - **META_WEBHOOK_VERIFY_TOKEN** — `app/api/meta/webhook/route.ts`: Hardcoded `'yoai_webhook_verify_2024'` fallback kaldırıldı. Env yoksa GET verification 503 döner; production'da sessiz bypass yok.
+  - **META_TOKEN_SECRET production log** — `lib/meta/crypto.ts`: `getSecret()` production ortamında secret eksikse `console.error` ile açık hata loglar; şifreleme null döner, sessiz bozulma yok.
+  - **server-only guard** — `lib/supabase/client.ts` başına `import 'server-only'` eklendi; client component'ten yanlış import edilirse build-time error verir.
+  - **`.env.example` oluşturuldu** — A–I grupları: Supabase, AI Providers (OpenAI/Anthropic/Gemini), Google/Google Ads, Meta, YoAlgoritma Safety Flags, Cron/Security, Competitor Intelligence, Payments, App/Auth. Tüm değerler placeholder.
+- **Dosyalar:** `.env.example` (yeni), `app/api/yoai/daily-run/route.ts`, `app/api/strategy/jobs/runner/route.ts`, `app/api/meta/webhook/route.ts`, `lib/meta/crypto.ts`, `lib/supabase/client.ts`
+
 ## 2026-05-10 — Faz 3: Synthesis Engine v2 (Campaign + Doctrine + Competitor + Diagnosis Fusion)
 - **Sorun:** AI proposal generator (`adCreator`) kampanya performansı, Faz 1 platform doctrine'ı ve Faz 2 kalıcı rakip içgörüsünü ayrı ayrı prompt'a yedikliyordu — birleştirilmiş tek bir karar bağlamı yoktu, kampanya türü sadakati her seferinde prompt'tan tekrar inşa ediliyordu, missing competitor / doctrine durumlarında deterministik fallback merkezi değildi.
 - **Çözüm:**

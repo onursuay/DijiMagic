@@ -10,6 +10,9 @@ const KEY_LENGTH = 32
 function getSecret(): string | null {
   const secret = process.env.META_TOKEN_SECRET
   if (!secret || secret.length < 32) {
+    if (process.env.NODE_ENV === 'production') {
+      console.error('[Meta Crypto] META_TOKEN_SECRET not configured or too short — token encryption disabled')
+    }
     return null
   }
   return secret
