@@ -95,6 +95,30 @@ export interface DeepCampaignInsight {
   channelType?: string
   biddingStrategy?: string
   optimizationScore?: number | null
+  // Faz 1: Campaign Type Intelligence (additive, opsiyonel)
+  campaignTypeIntelligence?: CampaignTypeIntelligenceSnapshot
+}
+
+/* ── Faz 1: Campaign Type Intelligence Snapshot ── */
+export interface CampaignTypeIntelligenceSnapshot {
+  /** Normalize edilmiş kampanya türü anahtarı (örn. meta_traffic, google_pmax). */
+  campaignType: string
+  /** İnferans güveni (0-100). */
+  confidence: number
+  /** Doctrine başlığı (yoai_platform_doctrine.name). */
+  doctrineName?: string | null
+  /** Doctrine fit score (0-100). */
+  doctrineFitScore?: number
+  /** Doctrine fit severity. */
+  doctrineFitSeverity?: 'low' | 'medium' | 'high' | 'critical'
+  /** Eşleşen pozitif prensipler. */
+  matchedPrinciples?: string[]
+  /** Tetiklenen failure signals. */
+  failureSignals?: string[]
+  /** Operatöre/AI'ya tavsiye edilen kontroller (kısa liste). */
+  recommendedChecks?: string[]
+  /** İnferans sırasında çıkan uyarılar (örn. legacy objective remap). */
+  warnings?: string[]
 }
 
 /* ── Google-Specific Problem Tags ── */

@@ -12,6 +12,11 @@
 
 import type { DeepCampaignInsight, Platform, StructuralIssue } from './analysisTypes'
 import type { UserAdProfile, CompetitorComparison, CompetitorAd } from './competitorAnalyzer'
+import { getDoctrineMap } from './platformDoctrineStore'
+import {
+  normalizeCampaignType,
+  buildCampaignTypeContext,
+} from './campaignTypeIntelligence'
 
 /* ── Types ── */
 
@@ -361,6 +366,8 @@ function buildPrompt(
   comparison: CompetitorComparison,
   competitorAds: CompetitorAd[],
   structuralIssues?: StructuralIssue[],
+  /** Faz 1: kampanya türü başına DB-driven doctrine summary'leri. */
+  doctrineSummariesByCampaignId?: Record<string, string>,
 ): { system: string; user: string } {
   const isGoogle = platform === 'Google'
   const knowledge = isGoogle ? GOOGLE_TYPE_KNOWLEDGE : META_OBJECTIVE_KNOWLEDGE
@@ -372,6 +379,8 @@ KRİTİK KURALLAR:
 - Kampanya amacını DEĞİŞTİRME. Etkileşim ise Etkileşim öner, Trafik ise Trafik öner.
 - Mevcut kampanyanın zayıf yönlerini düzeltilmiş haliyle öner.
 - Platform çalışma mantığını kullan.
+- Kampanya türünün DOCTRINE'ına sadık kal: required_assets, success_metrics, failure_signals,
+  bidding_principles ve creative_principles ile uyumlu öneri üret.
 - Her öneri tam yapı: kampanya + reklam seti + reklam + dönüşüm hedefi + teklif stratejisi.
 - Türkçe reklam metinleri.
 
@@ -424,6 +433,7 @@ JSON formatında yanıt ver:
 }`
 
   const analysisDetails = fitAnalyses.map(fa => {
+    const doctrineLine = doctrineSummariesByCampaignId?.[fa.campaignId]
     return `[${fa.objectiveLabel}] ${fa.campaignName} (ID: ${fa.campaignId})
   Uygunluk: ${fa.fitScore}/100
   Güçlü: ${fa.strengths.join(', ') || 'yok'}
@@ -432,7 +442,7 @@ JSON formatında yanıt ver:
   ${fa.currentParams.destination ? `Dönüşüm hedefi: ${fa.currentParams.destination}` : ''}
   ${fa.currentParams.optimizationGoal ? `Opt hedef: ${fa.currentParams.optimizationGoal}` : ''}
   ${fa.currentParams.biddingStrategy ? `Teklif: ${fa.currentParams.biddingStrategy}` : ''}
-  Öneriler: ${fa.optimizationSuggestions.join('; ') || 'yok'}`
+  Öneriler: ${fa.optimizationSuggestions.join('; ') || 'yok'}${doctrineLine ? `\n  DOCTRINE:\n  ${doctrineLine.replace(/\n/g, '\n  ')}` : ''}`
   }).join('\n\n')
 
   const compTexts = competitorAds.slice(0, 5).map((a, i) => `${i + 1}. [${a.pageName}] "${a.body?.slice(0, 80) || a.title || ''}"`).join('\n')
@@ -510,6 +520,22 @@ export async function generateFullAutoProposals(
   // 2. Run deterministic fit analysis for each campaign
   const fitAnalyses = activeCampaigns.map(analyzeCampaignFit)
 
+  // 2b. Faz 1: Doctrine summaries (DB-driven, fallback'lı). Hata durumunda boş objeyle devam.
+  const doctrineSummariesByCampaignId: Record<string, string> = {}
+  try {
+    const doctrineMap = await getDoctrineMap()
+    for (const c of activeCampaigns) {
+      const normalized = normalizeCampaignType(c)
+      const doctrine = doctrineMap[normalized.campaignType] || null
+      const ctx = buildCampaignTypeContext(c, doctrine)
+      if (ctx.promptSummary) {
+        doctrineSummariesByCampaignId[c.id] = ctx.promptSummary
+      }
+    }
+  } catch (e) {
+    console.warn('[AdCreator] doctrine summaries fetch failed (non-fatal):', e)
+  }
+
   // 3. Call AI in batches of 3 to avoid timeout (7 campaigns = 3+3+1 batches)
   const BATCH_SIZE = 3
   let proposals: FullAdProposal[] = []
@@ -522,7 +548,15 @@ export async function generateFullAutoProposals(
     const totalBatches = Math.ceil(fitAnalyses.length / BATCH_SIZE)
 
     console.log(`[AdCreator] ${platform}: batch ${batchNum}/${totalBatches} — ${batch.length} campaigns`)
-    const { system, user: userPrompt } = buildPrompt(platform, batch, userProfile, comparison, competitorAds, structuralIssues)
+    const { system, user: userPrompt } = buildPrompt(
+      platform,
+      batch,
+      userProfile,
+      comparison,
+      competitorAds,
+      structuralIssues,
+      doctrineSummariesByCampaignId,
+    )
     const aiResult = await callAI(system, userPrompt)
 
     if (aiResult.error) {

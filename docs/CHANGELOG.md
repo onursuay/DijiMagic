@@ -2,6 +2,42 @@
 
 ---
 
+## 2026-05-10 — Faz 1: Campaign Type Intelligence + DB-driven platform doctrine
+- **Sorun:** Meta doctrine kısmen güçlü ama kod içinde hardcoded; Google doctrine generic, Display/Video/PMax-spesifik kurallar yok; doctrine DB'de değil yeni kural eklemek deploy gerektiriyor; kampanya tipi normalize edilmiş olsa bile diagnosis/proposal pipeline'ında güçlü kullanılmıyordu.
+- **Çözüm:**
+  - **Yeni migration** `20260510004000_create_yoai_platform_doctrine.sql` — `yoai_platform_doctrine` tablosu (8 JSONB doctrine kolonu: success_metrics, failure_signals, required_assets, targeting_principles, bidding_principles, creative_principles, policy_notes, recommendation_rules, severity_rules) + 6 index + RLS (read: authenticated, write: service_role) + unique partial index `(platform, campaign_type) WHERE is_active`. **Seed: 10 kampanya türü** için gerçek uygulanabilir doctrine kayıtları (placeholder değil): meta_traffic, meta_engagement, meta_lead, meta_message, meta_sales, meta_awareness, google_search, google_display, google_video, google_pmax. 99 JSONB literal'ı tümü valid JSON olarak doğrulandı.
+  - **Yeni helper** `lib/yoai/campaignTypeIntelligence.ts` — `normalizeCampaignType()` (Meta: objective+optimization_goal+destination triple; Google: channelType+biddingStrategy), `inferMetaCampaignType()` ve `inferGoogleCampaignType()` (legacy objective remap'leri uyarılı), `scoreDoctrineFit()` (severity rules DSL ile metrik karşılaştırması, 0-100 score, severity: low/medium/high/critical), `buildCampaignTypeContext()` (AI prompt için ≤500 char özet). Bilinmeyen kombinasyonlarda fallback: `<platform>_unknown` + warning'ler.
+  - **Yeni helper** `lib/yoai/platformDoctrineStore.ts` — `listActiveDoctrine()`, `getDoctrineMap()` (60s in-memory cache), `getDoctrineByCampaignType()`, `getDoctrineForCampaign()`, `clearDoctrineCache()`. Tablo yoksa **`fallbackHardcodedDoctrine()` mirror** devreye girer (10 campaign type için minimal iskelet) — daily-run/adCreator migration uygulanmasa bile **kırılmaz**, sadece kapsam azalır. Tek bir warning log'la kullanıcı bilgilendirilir.
+  - **deepAnalysis.ts wiring** — `runDeepAnalysis()` orchestrator'a additive enrichment eklendi: `getDoctrineMap()` çağrılır, her kampanya için `normalizeCampaignType` + `scoreDoctrineFit` çalıştırılır, sonuç `campaign.campaignTypeIntelligence` opsiyonel alanına yazılır (try/catch ile non-fatal). Aggregation, structural analysis, AI summarization akışı **dokunulmadı** — sadece her campaign object'i zenginleştirildi.
+  - **adCreator.ts wiring** — `generateFullAutoProposals()` başlangıcında `getDoctrineMap()` + `buildCampaignTypeContext()` ile `doctrineSummariesByCampaignId` Record üretilir. `buildPrompt()` opsiyonel parametre kabul eder; `analysisDetails` string'inin sonuna her kampanya için "DOCTRINE: ..." satırı eklenir. System prompt'a tek satır kural: "Kampanya türünün DOCTRINE'ına sadık kal: required_assets, success_metrics, failure_signals, bidding_principles ve creative_principles ile uyumlu öneri üret." **Output JSON schema değişmedi**, prompt aşırı büyütülmedi.
+  - **analysisTypes.ts** — yeni opsiyonel alan `DeepCampaignInsight.campaignTypeIntelligence?: CampaignTypeIntelligenceSnapshot` (campaignType, confidence, doctrineName, doctrineFitScore, doctrineFitSeverity, matchedPrinciples, failureSignals, recommendedChecks, warnings). Tamamen additive — UI hiçbir yerde bu alanı tüketmiyor; varsa kullanır.
+- **Korunanlar:**
+  - `lib/yoai/platformKnowledge.ts` — DOKUNULMADI (legacy hardcoded knowledge devam ediyor; runStructuralAnalysis aynen çalışıyor).
+  - `lib/yoai/googleRuleEngine.ts` — DOKUNULMADI (12 kural aynen).
+  - `lib/yoai/meta/diagnosis.ts`, `decision.ts`, `orchestrator.ts` — DOKUNULMADI.
+  - `lib/yoai/metaDeepFetcher.ts`, `googleDeepFetcher.ts` — DOKUNULMADI (zorunlu değildi).
+  - `app/api/integrations/meta/**`, `app/api/integrations/google-ads/**`, `app/api/integrations/tiktok-ads/**` — DOKUNULMADI.
+  - `app/api/yoai/one-click-approve/route.ts`, `execute-action/route.ts`, daily-run wiring (route'tan değil deepAnalysis'ten orchestre edilir) — DEĞİŞMEDİ.
+  - PAUSED default + budget guard + audit log + approval lifecycle (Faz 0A-0D) — KORUNDU.
+  - AI proposal output JSON schema — DEĞİŞMEDİ; sadece prompt context zenginleşti.
+  - Wizard'lar (Search/Display/PMax/Meta) — DOKUNULMADI.
+- **Davranış garantileri:**
+  - Migration uygulanmazsa: `platformDoctrineStore` tek warning log'u atar, fallback mirror devreye girer; daily-run/adCreator çalışmaya devam eder.
+  - Bilinmeyen campaign type'da: `<platform>_unknown` döner, warnings dolu, doctrine null → `scoreDoctrineFit` nötr 50 score + "no_doctrine_loaded" check döndürür.
+  - Eksik field (objective/channelType/adsets) → crash etmez, confidence düşer, warnings'e eklenir.
+  - DB cache 60s — aynı request içinde tekrar DB roundtrip yapmaz.
+- **Doğrulama:** `npx tsc --noEmit` → 0 error · `npm run build` → ✓ tüm route'lar derlendi · /yoai bundle 24.9 kB sabit (backend-only) · Migration JSONB literal'ları (99 adet) Node.js JSON.parse ile doğrulandı.
+- **Migration apply gereksinimi:** İsteğe bağlı. Uygulanırsa DB-driven doctrine devreye girer (yeni kural eklemek SQL UPDATE ile mümkün); uygulanmazsa fallback ile aynı kapsam minimum-iskelet düzeyinde sürer.
+- **Dosyalar:**
+  - `supabase/migrations/20260510004000_create_yoai_platform_doctrine.sql` (yeni, 10 campaign type seed)
+  - `lib/yoai/campaignTypeIntelligence.ts` (yeni)
+  - `lib/yoai/platformDoctrineStore.ts` (yeni)
+  - `lib/yoai/analysisTypes.ts` (additive `campaignTypeIntelligence` alanı)
+  - `lib/yoai/deepAnalysis.ts` (try/catch enrichment loop)
+  - `lib/yoai/adCreator.ts` (doctrine summaries + buildPrompt opsiyonel param + 1 satır system prompt kural)
+
+---
+
 ## 2026-05-10 — Faz 0D: Approval lifecycle UI completion (pending count + edit prefill + history)
 - **Sorun:** Faz 0C'den sonra approval queue tablosu hazır + AiAdSuggestions'da reject/hold/detail aksiyonları çalışıyor ama: (1) "Bekleyen Onaylar" metriği hala `ccData.drafts.length`'e bağlıydı (gerçek pending approval count değil), (2) "Düzenle" butonu disabled kalmıştı (wizard prefill akışı bağlanmamıştı), (3) kullanıcı geçmiş approval kararlarını göremiyordu.
 - **Çözüm:**

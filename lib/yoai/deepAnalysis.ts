@@ -15,7 +15,13 @@ import type {
   Platform,
   StandardMetrics,
   PeriodComparison,
+  CampaignTypeIntelligenceSnapshot,
 } from './analysisTypes'
+import { getDoctrineMap, type PlatformDoctrine } from './platformDoctrineStore'
+import {
+  normalizeCampaignType,
+  scoreDoctrineFit,
+} from './campaignTypeIntelligence'
 
 /* ── Aggregate KPIs across all campaigns ── */
 function aggregateKpis(campaigns: DeepCampaignInsight[]): AggregatedKpis {
@@ -100,6 +106,32 @@ export async function runDeepAnalysis(userId?: string): Promise<DeepAnalysisResu
   // 2. Combine campaigns, sort by spend
   const allCampaigns = [...metaResult.campaigns, ...googleResult.campaigns]
     .sort((a, b) => b.metrics.spend - a.metrics.spend)
+
+  // 2b. Faz 1: Campaign Type Intelligence — additive, non-blocking enrichment.
+  // Doctrine DB'den (veya fallback'ten) tek seferde okunur, sonra her kampanyaya
+  // normalize + doctrineFit eklenir. Hata durumunda enrichment atlanır.
+  try {
+    const doctrineMap: Record<string, PlatformDoctrine> = await getDoctrineMap()
+    for (const c of allCampaigns) {
+      const normalized = normalizeCampaignType(c)
+      const doctrine = doctrineMap[normalized.campaignType] || null
+      const fit = scoreDoctrineFit(c, doctrine)
+      const snapshot: CampaignTypeIntelligenceSnapshot = {
+        campaignType: normalized.campaignType,
+        confidence: normalized.confidence,
+        doctrineName: doctrine?.name ?? null,
+        doctrineFitScore: fit.score,
+        doctrineFitSeverity: fit.severity,
+        matchedPrinciples: fit.matchedPrinciples,
+        failureSignals: fit.failureSignals,
+        recommendedChecks: fit.recommendedChecks,
+        warnings: normalized.warnings,
+      }
+      c.campaignTypeIntelligence = snapshot
+    }
+  } catch (e) {
+    console.warn('[DeepAnalysis] campaign type intelligence enrichment failed (non-fatal):', e)
+  }
 
   // 3. Aggregate KPIs
   const kpis = aggregateKpis(allCampaigns)
