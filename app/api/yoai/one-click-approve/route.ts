@@ -16,6 +16,9 @@ import {
   markApprovalPublished,
   recordPublishAttemptOnApproval,
 } from '@/lib/yoai/approvalStore'
+import { validatePublishFeatureFlags, assertPausedOnly } from '@/lib/yoai/publishSafety'
+import { validatePublishPayload } from '@/lib/yoai/publishPayloadValidator'
+import { checkPolicyViolations } from '@/lib/yoai/policyGuard'
 
 export const dynamic = 'force-dynamic'
 export const maxDuration = 120
@@ -169,6 +172,40 @@ export async function POST(request: Request) {
       return NextResponse.json(
         { ok: false, error: 'Tek tık onay şu an sadece Meta için destekleniyor.' },
         { status: 400 },
+      )
+    }
+
+    /* ── 0) Feature flags + PAUSED guard ── */
+    try {
+      assertPausedOnly()
+    } catch (safetyErr) {
+      const errMsg = safetyErr instanceof Error ? safetyErr.message : String(safetyErr)
+      console.error('[OneClick] ACTIVE_PUBLISH safety violation:', errMsg)
+      return NextResponse.json(
+        { ok: false, code: 'ACTIVE_PUBLISH_SAFETY_VIOLATION', message: errMsg },
+        { status: 500 },
+      )
+    }
+
+    const flagCheck = validatePublishFeatureFlags()
+    if (!flagCheck.ok) {
+      return NextResponse.json(
+        { ok: false, code: flagCheck.code, message: flagCheck.message },
+        { status: 422 },
+      )
+    }
+
+    /* ── 0B) Payload validation (proposal alanları) ── */
+    const payloadCheck = validatePublishPayload(proposal)
+    if (!payloadCheck.ok) {
+      return NextResponse.json(
+        {
+          ok: false,
+          code: 'PAYLOAD_INVALID',
+          message: payloadCheck.message,
+          missingFields: payloadCheck.missingFields,
+        },
+        { status: 422 },
       )
     }
 
@@ -544,6 +581,33 @@ export async function POST(request: Request) {
           stage: 'meta_upload',
           message: errMsg,
           imageUrl,
+          auditId,
+          ...(auditWarning ? { auditWarning } : {}),
+        },
+        { status: 422 },
+      )
+    }
+
+    /* ── 7B) Policy guard (içerik politikası kontrolü) ── */
+    const policyCheck = checkPolicyViolations(proposal)
+    if (!policyCheck.ok) {
+      if (auditId) {
+        await updatePublishAuditStatus(auditId, 'blocked', {
+          error_message: `POLICY_VIOLATION: ${policyCheck.message}`,
+          response_excerpt: sanitizeResponseExcerpt({
+            violations: policyCheck.violations,
+            riskLevel: policyCheck.riskLevel,
+          }),
+        })
+      }
+      await notifyApprovalAttempt('POLICY_VIOLATION', policyCheck.message || 'İçerik politikası ihlali')
+      return NextResponse.json(
+        {
+          ok: false,
+          code: 'POLICY_VIOLATION',
+          message: policyCheck.message,
+          violations: policyCheck.violations,
+          riskLevel: policyCheck.riskLevel,
           auditId,
           ...(auditWarning ? { auditWarning } : {}),
         },

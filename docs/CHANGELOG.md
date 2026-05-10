@@ -2,6 +2,16 @@
 
 ---
 
+## 2026-05-11 — Faz 6: Direct Publish Safety Layer Advanced
+- **Sorun:** `one-click-approve` route'unda payload doğrulama, içerik politikası kontrolü ve feature flag guard yoktu; güvenlik kontrolleri dağınıktı.
+- **Çözüm:**
+  - **publishSafety.ts** (yeni) — `isDirectPublishEnabled()`, `isActivePublishEnabled()`, `assertPausedOnly()`, `getMaxDailyBudgetTry()`, `validatePublishFeatureFlags()`. Feature flag merkezi; ACTIVE publish açıksa hata fırlatır.
+  - **publishPayloadValidator.ts** (yeni) — `validatePublishPayload()`: platform, campaignName, campaignObjective, headline, dailyBudget, finalUrl (destination'a göre koşullu), primaryText alanlarını kontrol eder. Eksik alan varsa `PAYLOAD_INVALID` döner.
+  - **policyGuard.ts** (yeni) — `checkPolicyViolations()`: deterministic regex tabanlı içerik kontrolü (13 Türkçe/İngilizce kural). Garantili kazanç, risksiz yatırım, kumar, ilaç garantisi, clickbait gibi ifadeler riskLevel=high ise yayını bloklar, low ise uyarı verir. LLM çağrısı yok.
+  - **one-click-approve/route.ts** güncellendi — Meta API çağrısından önce sırayla: assertPausedOnly + validatePublishFeatureFlags (step 0), validatePublishPayload (step 0B), checkPolicyViolations (step 7B). Her blok audit log + approval notifyApprovalAttempt yazar.
+  - **OneClickApproveDialog.tsx** güncellendi — idle state'e "Otomatik güvenlik kontrolleri" bilgi kutusu eklendi (4 madde: feature flags, bütçe limiti, payload doğrulama, içerik politikası).
+- **Dosyalar:** `lib/yoai/publishSafety.ts`, `lib/yoai/publishPayloadValidator.ts`, `lib/yoai/policyGuard.ts`, `app/api/yoai/one-click-approve/route.ts`, `components/yoai/OneClickApproveDialog.tsx`
+
 ## 2026-05-11 — Faz 2B: Google Ads Transparency Connector + Meta Scanner Completion
 - **Sorun:** Google rakip reklam verisi mevcut değildi; `google-auction` route her zaman `supported:false` dönüyordu; `CompetitorDashboard` Google bağlantı durumunu göstermiyordu.
 - **Çözüm:**

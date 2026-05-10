@@ -190,6 +190,26 @@ export default function OneClickApproveDialog({ proposal, onClose, approvalId, o
                 </ul>
               </div>
 
+              <div className="bg-gray-50 border border-gray-200 rounded-xl px-4 py-3 text-xs text-gray-700 space-y-1.5">
+                <p className="font-semibold text-gray-800 mb-1">Otomatik güvenlik kontrolleri:</p>
+                <div className="flex items-center gap-2">
+                  <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 shrink-0" />
+                  <span>Feature flags — doğrudan yayın iznini doğrular</span>
+                </div>
+                <div className="flex items-center gap-2">
+                  <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 shrink-0" />
+                  <span>Bütçe limiti — günlük bütçe üst sınırı kontrol edilir</span>
+                </div>
+                <div className="flex items-center gap-2">
+                  <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 shrink-0" />
+                  <span>Payload doğrulama — zorunlu reklam alanları kontrol edilir</span>
+                </div>
+                <div className="flex items-center gap-2">
+                  <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 shrink-0" />
+                  <span>İçerik politikası — yasaklı ifadeler ve garanti iddiaları taranır</span>
+                </div>
+              </div>
+
               <label className="flex items-start gap-2 cursor-pointer select-none">
                 <input
                   type="checkbox"
