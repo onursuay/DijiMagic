@@ -2,7 +2,10 @@
 
 ---
 
-## 2026-05-10 — Google Ads Wizard: Search + PMax sağ Özet panelleri (Display tasarım dilinde)
+## 2026-05-10 — Search wizard step 0 (Hedef & Tür) ekranında sağ Özet paneli gizlendi
+- **Sorun:** "Kampanya Hedefinizi Seçin / Hedef & Tür" ekranında sağ Özet paneli kolon gibi yer kaplıyordu; kart seçim alanı dengesiz duruyordu.
+- **Çözüm:** `GoogleCampaignWizard` artık `step === 0` iken `rightSummary` prop'unu `undefined` geçiyor. Shell'in `hasRightSummary` flag'i zaten boş kolon bırakmadan düz content layout'a geçiyor; step 1+'da panel eski gibi görünüyor. PMax step 0 (Entry) gerçek form ekranı olduğu için orada panel kalmaya devam ediyor; Display'a dokunulmadı.
+- **Dosyalar:** `components/google/wizard/GoogleCampaignWizard.tsx`
 - **Sorun:** UI shell standardizasyonu (51a7511) sadece full-screen layout'u taşıdı; Search ve PMax wizard'larda Display'deki sağ sticky Özet paneli yoktu.
 - **Çözüm:**
   - `components/google/wizard/shared/SearchSummaryPanel.tsx` — Search wizard'ın 8 step'ine eşlenmiş 8 readonly özet kartı (Goal/Type, Conversion & Name, Bidding, Settings/Lang/EU, AI Max, RSA Reklam, Bütçe, Yayın Kontrolü).

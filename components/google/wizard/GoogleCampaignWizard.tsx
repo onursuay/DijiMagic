@@ -182,7 +182,7 @@ export default function GoogleCampaignWizard({
       currentStep={step}
       campaignTypeLabel={t('display.campaignTypeSearch')}
       onStepClick={goToStep}
-      rightSummary={<SearchSummaryPanel state={state} currentStep={step} t={t} />}
+      rightSummary={step === 0 ? undefined : <SearchSummaryPanel state={state} currentStep={step} t={t} />}
       errorMessage={error}
       resultBanner={resultBanner}
       isFirstStep={isFirstStep}
