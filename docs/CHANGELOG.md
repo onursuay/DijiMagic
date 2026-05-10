@@ -2,6 +2,25 @@
 
 ---
 
+## 2026-05-10 — Faz 0A: YoAlgoritma audit foundation (DB migration + RLS + audit log)
+- **Sorun:** YoAlgoritma Merkezi'nin onay/yayın denetim altyapısı eksikti — `yoai_action_outcomes` migration'da kayıtlı değildi (sadece `docs/sql/` altında manuel SQL), `learningStore.ts` tablo yoksa sessizce no-op'a düşüyordu (audit kaybı), `yoai_daily_runs`/`yoai_articles` için FK + RLS yoktu, publish denetimi için bir tablo da yoktu.
+- **Çözüm:**
+  - Yeni migration `20260510000000_create_yoai_action_outcomes.sql` — `docs/sql/yoai_action_outcomes.sql` formal migration'a taşındı; idempotent (IF NOT EXISTS / DROP POLICY IF EXISTS); RLS aktif; per-user select/insert/update policy; user_id TEXT olarak korundu (mevcut veriyle uyum).
+  - Yeni migration `20260510001000_create_yoai_publish_audit_log.sql` — yeni `yoai_publish_audit_log` tablosu (UUID FK signups(id) ON DELETE CASCADE; status: pending/success/failed/blocked/orphaned/rolled_back; payload_hash, payload/response_excerpt JSONB, orphan_resources JSONB, budget_amount/currency); 4 index; RLS + policies.
+  - Yeni migration `20260510002000_yoai_runs_articles_rls_fk.sql` — `yoai_daily_runs`/`yoai_articles` için TEXT user_id'yi UUID'ye cast eder ve `signups(id) ON DELETE CASCADE` FK ekler. Geçersiz UUID veya orphan referans varsa **RAISE EXCEPTION** ile durur (transaction rollback olur, veri değişmez); manuel cleanup gerektiğini bildirir. RLS aktif; per-user select/insert/update/delete policy. Idempotent (zaten UUID/FK varsa skip eder).
+  - `lib/yoai/learningStore.ts` — tablo yokken sessiz no-op davranışı **AUDIT_LOSS** structured log'a dönüştürüldü (insert için `console.error`, list için `console.warn`); fonksiyon hala `null`/`[]` döner, çağıran flow kırılmaz.
+  - Yeni helper `lib/yoai/publishAuditStore.ts` — `recordPublishAuditAttempt()`, `updatePublishAuditStatus()`, `hashPayload()` (SHA-256), `sanitizeResponseExcerpt()` (recursive token/secret redact + size cap). Faz 0A'da hiçbir publish endpoint'ine bağlanmadı; sonraki fazda non-blocking şekilde kullanılacak.
+- **Korunanlar:** `one-click-approve`, `execute-action`, `meta/orchestrator`, `metaDeepFetcher`, `googleDeepFetcher`, `adCreator`, AI proposal promptları, Meta/Google integration route'ları — hiçbirine dokunulmadı. Publish davranışı, campaign create logic, AI üretimi değişmedi. UI ve wizard akışları olduğu gibi.
+- **Doğrulama:** `npx tsc --noEmit` → 0 error · `npm run build` → ✓ tüm route'lar derlendi.
+- **Dosyalar:**
+  - `supabase/migrations/20260510000000_create_yoai_action_outcomes.sql` (yeni)
+  - `supabase/migrations/20260510001000_create_yoai_publish_audit_log.sql` (yeni)
+  - `supabase/migrations/20260510002000_yoai_runs_articles_rls_fk.sql` (yeni)
+  - `lib/yoai/learningStore.ts` (AUDIT_LOSS log)
+  - `lib/yoai/publishAuditStore.ts` (yeni helper, henüz bağlanmadı)
+
+---
+
 ## 2026-05-10 — PMax asset upload tile/add chrome → Display picker dilinde
 - **Sorun:** PMaxStepAssetGroup içindeki image/logo/video önizleme tile'ları (`w-24 h-24` opacity-driven X) ve add-button'ları (`text-primary hover:underline` text link) Display'in DisplayStepAds tile chrome'undan farklıydı: Display `w-16 h-16 rounded-lg border` thumbnail + `border-2 border-dashed border-gray-300 hover:border-primary` 16x16 add-tile kullanıyordu. Video listesi de tile değil row tarzı görünüyordu.
 - **Çözüm:**

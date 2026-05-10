@@ -6,8 +6,12 @@
    (outcome evaluation) v2'ye bırakıldı.
 
    Persistence: Supabase tablosu `yoai_action_outcomes`.
-   Tablo yoksa tüm operasyonlar sessizce no-op olur (log only).
-   SQL şeması: docs/sql/yoai_action_outcomes.sql
+   Migration: supabase/migrations/20260510000000_create_yoai_action_outcomes.sql
+   (Faz 0A öncesinde sadece docs/sql altında manuel SQL idi.)
+
+   Tablo yoksa: insert/update operasyonları AUDIT_LOSS olarak
+   structured log'a yazılır (sessiz no-op DEĞİL); fonksiyon
+   null/false/[] döner ve çağıran kodu kırmaz.
 
    NOT: mevcut dailyRunStore değiştirilmedi. Bu ayrı bir katman.
    ────────────────────────────────────────────────────────── */
@@ -15,6 +19,14 @@
 import { supabase } from '@/lib/supabase/client'
 import type { RootCauseId } from './meta/diagnosis'
 import type { DecisionActionType } from './meta/decision'
+
+const TABLE_MIGRATION_HINT =
+  'supabase/migrations/20260510000000_create_yoai_action_outcomes.sql'
+
+function isTableMissingError(error: { code?: string; message?: string } | null): boolean {
+  if (!error) return false
+  return error.code === '42P01' || /relation .* does not exist/i.test(error.message || '')
+}
 
 export interface ActionOutcomeRecord {
   id?: string
@@ -71,10 +83,20 @@ export async function recordActionOutcome(
     .single()
 
   if (error) {
-    // Tablo yoksa 42P01 döner — sessiz no-op, sadece log
-    if (error.code === '42P01' || /relation .* does not exist/i.test(error.message || '')) {
-      console.warn(
-        '[LearningStore] yoai_action_outcomes tablosu yok — kayıt atlandı. Şema: docs/sql/yoai_action_outcomes.sql',
+    if (isTableMissingError(error)) {
+      // AUDIT_LOSS: tablo yoksa kayıt KAYBEDILIYOR — sessiz no-op değil,
+      // structured log ile görünür hale getir. Çağıran flow null'a göre
+      // mevcut davranışını koruyabilir; bu fonksiyon HALA throw ETMEZ.
+      console.error(
+        '[LearningStore][AUDIT_LOSS] yoai_action_outcomes tablosu yok — kayıt KAYBEDİLDİ. ' +
+          `Migration uygulayın: ${TABLE_MIGRATION_HINT}`,
+        {
+          campaign_id: rec.campaign_id,
+          action_type: rec.action_type,
+          applied: rec.applied,
+          root_cause: rec.root_cause,
+          timestamp: now,
+        },
       )
       return null
     }
@@ -99,7 +121,13 @@ export async function listActionOutcomes(
     .limit(limit)
 
   if (error) {
-    if (error.code === '42P01') return []
+    if (isTableMissingError(error)) {
+      console.warn(
+        '[LearningStore] yoai_action_outcomes tablosu yok — boş liste döndü. ' +
+          `Migration uygulayın: ${TABLE_MIGRATION_HINT}`,
+      )
+      return []
+    }
     console.error('[LearningStore] list error:', error)
     return []
   }
@@ -121,7 +149,13 @@ export async function listActionOutcomesForCampaign(
     .order('created_at', { ascending: false })
 
   if (error) {
-    if (error.code === '42P01') return []
+    if (isTableMissingError(error)) {
+      console.warn(
+        '[LearningStore] yoai_action_outcomes tablosu yok — boş liste döndü. ' +
+          `Migration uygulayın: ${TABLE_MIGRATION_HINT}`,
+      )
+      return []
+    }
     console.error('[LearningStore] listByCampaign error:', error)
     return []
   }
