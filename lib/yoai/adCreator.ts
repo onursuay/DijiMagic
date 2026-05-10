@@ -17,6 +17,8 @@ import {
   normalizeCampaignType,
   buildCampaignTypeContext,
 } from './campaignTypeIntelligence'
+import type { CampaignSynthesisPackage } from './synthesisTypes'
+import { buildSynthesisContextForPrompt } from './synthesisEngine'
 
 /* ── Types ── */
 
@@ -370,6 +372,8 @@ function buildPrompt(
   doctrineSummariesByCampaignId?: Record<string, string>,
   /** Faz 2: yoai_competitor_insights'tan okunmuş kalıcı rakip içgörü özeti. */
   persistedCompetitorContext?: string | null,
+  /** Faz 3: Synthesis Engine paketleri (campaign_id → package). */
+  synthesisPackagesByCampaignId?: Record<string, CampaignSynthesisPackage>,
 ): { system: string; user: string } {
   const isGoogle = platform === 'Google'
   const knowledge = isGoogle ? GOOGLE_TYPE_KNOWLEDGE : META_OBJECTIVE_KNOWLEDGE
@@ -385,6 +389,11 @@ KRİTİK KURALLAR:
   bidding_principles ve creative_principles ile uyumlu öneri üret.
 - Her öneri tam yapı: kampanya + reklam seti + reklam + dönüşüm hedefi + teklif stratejisi.
 - Türkçe reklam metinleri.
+- "SYNTHESIS" bloğu varsa onu BİRİNCİL bağlam kabul et: mainProblem ve forbidden hareketleri
+  ihlal etme. Rakip içgörüsü "yok" ise rakip uydurma.
+- Meta Traffic kampanyasından Sales/Engagement, Meta Engagement'tan Lead/Sales,
+  Meta Message'tan web traffic önerisi üretme. Google Search'ten Display kreatif,
+  Google Display'de Search keyword expansion ana öneri yapma.
 
 PLATFORM BİLGİSİ:
 ${Object.entries(knowledge).map(([key, k]) => {
@@ -436,6 +445,10 @@ JSON formatında yanıt ver:
 
   const analysisDetails = fitAnalyses.map(fa => {
     const doctrineLine = doctrineSummariesByCampaignId?.[fa.campaignId]
+    const synthesisPkg = synthesisPackagesByCampaignId?.[fa.campaignId]
+    const synthesisBlock = synthesisPkg
+      ? `\n  ${buildSynthesisContextForPrompt(synthesisPkg).replace(/\n/g, '\n  ')}`
+      : ''
     return `[${fa.objectiveLabel}] ${fa.campaignName} (ID: ${fa.campaignId})
   Uygunluk: ${fa.fitScore}/100
   Güçlü: ${fa.strengths.join(', ') || 'yok'}
@@ -444,7 +457,7 @@ JSON formatında yanıt ver:
   ${fa.currentParams.destination ? `Dönüşüm hedefi: ${fa.currentParams.destination}` : ''}
   ${fa.currentParams.optimizationGoal ? `Opt hedef: ${fa.currentParams.optimizationGoal}` : ''}
   ${fa.currentParams.biddingStrategy ? `Teklif: ${fa.currentParams.biddingStrategy}` : ''}
-  Öneriler: ${fa.optimizationSuggestions.join('; ') || 'yok'}${doctrineLine ? `\n  DOCTRINE:\n  ${doctrineLine.replace(/\n/g, '\n  ')}` : ''}`
+  Öneriler: ${fa.optimizationSuggestions.join('; ') || 'yok'}${doctrineLine ? `\n  DOCTRINE:\n  ${doctrineLine.replace(/\n/g, '\n  ')}` : ''}${synthesisBlock}`
   }).join('\n\n')
 
   const compTexts = competitorAds.slice(0, 5).map((a, i) => `${i + 1}. [${a.pageName}] "${a.body?.slice(0, 80) || a.title || ''}"`).join('\n')
@@ -513,6 +526,8 @@ export async function generateFullAutoProposals(
   structuralIssues?: StructuralIssue[],
   /** Faz 2: yoai_competitor_insights'tan okunan kalıcı rakip içgörü özeti (opsiyonel). */
   persistedCompetitorContext?: string | null,
+  /** Faz 3: Synthesis Engine paketleri — varsa prompt'a additive olarak eklenir. */
+  synthesisPackagesByCampaignId?: Record<string, CampaignSynthesisPackage>,
 ): Promise<AdCreationResult> {
   // 1. Filter active campaigns for this platform
   const activeCampaigns = campaigns.filter(c =>
@@ -567,6 +582,7 @@ export async function generateFullAutoProposals(
       structuralIssues,
       doctrineSummariesByCampaignId,
       persistedCompetitorContext,
+      synthesisPackagesByCampaignId,
     )
     const aiResult = await callAI(system, userPrompt)
 

@@ -12,6 +12,8 @@ import type { FullAdProposal } from '@/lib/yoai/adCreator'
 import { bulkInsertPendingApprovalsIfMissing } from '@/lib/yoai/approvalStore'
 import { buildCompetitorContextForPrompt } from '@/lib/yoai/competitorInsightStore'
 import { normalizeCampaignType } from '@/lib/yoai/campaignTypeIntelligence'
+import { buildSynthesisPackagesForCampaigns } from '@/lib/yoai/synthesisEngine'
+import type { CampaignSynthesisPackage } from '@/lib/yoai/synthesisTypes'
 
 export const dynamic = 'force-dynamic'
 export const maxDuration = 120
@@ -89,6 +91,27 @@ export async function POST(request: Request) {
             }
           }
 
+          // Faz 3: Synthesis Engine — kampanya + doctrine + competitor + diagnosis
+          // bilgilerini deterministik tek pakete birleştir. Hata olursa
+          // sessizce undefined kalır; adCreator eski path ile devam eder.
+          let synthesisPackagesByCampaignId: Record<string, CampaignSynthesisPackage> | undefined
+          try {
+            const platformCampaigns = allCampaigns.filter(
+              (c: any) => c.platform === p && (c.status === 'ACTIVE' || c.status === 'ENABLED'),
+            )
+            if (platformCampaigns.length > 0) {
+              const synth = await buildSynthesisPackagesForCampaigns(platformCampaigns, {
+                userId: userId || null,
+              })
+              synthesisPackagesByCampaignId = synth.packageMap
+              console.log(
+                `[GenerateAd] ${p} synthesis: ${synth.count} packages, warnings=${synth.warnings.length}`,
+              )
+            }
+          } catch (e) {
+            console.warn('[GenerateAd] synthesis build failed (non-fatal):', e)
+          }
+
           const result = await generateFullAutoProposals(
             p,
             competitorAnalysis.userProfile,
@@ -97,6 +120,7 @@ export async function POST(request: Request) {
             allCampaigns,
             structuralAnalysis.issues,
             persistedCompetitorContext,
+            synthesisPackagesByCampaignId,
           )
           console.log(`[GenerateAd] ${p}: ${result.proposals.length} proposals, aiGenerated: ${result.aiGenerated}`)
           results.push(result)

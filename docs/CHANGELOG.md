@@ -2,6 +2,35 @@
 
 ---
 
+## 2026-05-10 — Faz 3: Synthesis Engine v2 (Campaign + Doctrine + Competitor + Diagnosis Fusion)
+- **Sorun:** AI proposal generator (`adCreator`) kampanya performansı, Faz 1 platform doctrine'ı ve Faz 2 kalıcı rakip içgörüsünü ayrı ayrı prompt'a yedikliyordu — birleştirilmiş tek bir karar bağlamı yoktu, kampanya türü sadakati her seferinde prompt'tan tekrar inşa ediliyordu, missing competitor / doctrine durumlarında deterministik fallback merkezi değildi.
+- **Çözüm:**
+  - **Yeni** `lib/yoai/synthesisTypes.ts` — `SynthesisInput`, `CampaignSynthesisPackage`, `CampaignSynthesisSource`, `SynthesisRisk`, `SynthesisOpportunity`, `SynthesisRecommendationConstraint`, `SynthesisConfidence`, `SynthesisEngineResult`, `PerformanceSnapshot`, `DoctrineSnapshot`, `DiagnosisSnapshot`, `CompetitorSnapshot`, `SynthesisSummary`. `mustKeepCampaignType: true` literal tipi schema seviyesinde garanti ediyor.
+  - **Yeni** `lib/yoai/synthesisEngine.ts` — Deterministik fonksiyonlar: `summarizePerformanceSnapshot()` (% cinsinden CTR + roas/frequency null-safe), `extractDiagnosisSignals()` (problemTags + metrik tabanlı root-causes), `mergeDoctrineSignals()` (Faz 1 doctrine + fit), `mergeCompetitorSignals()` (Faz 2 insight; yoksa `available=false`), `decideMainProblem`/`decideMainOpportunity`, `buildProposalBrief` (≤1000 char, prompt-safe), `buildSynthesisContextForPrompt`, `buildCampaignSynthesisPackage(input)`, `buildSynthesisPackagesForCampaigns(campaigns, options)` (doctrine map'i tek fetch + competitor lookup cache + non-fatal warnings).
+  - **Campaign type sadakati** — `buildForbiddenMoves(campaignType, platform)`: Meta Traffic→Sales/Engagement yasağı, Engagement→Lead/Sales yasağı, Message→web traffic yasağı, Lead→engagement yasağı, Sales→reach/awareness yasağı, Awareness→sales/lead yasağı, Search→Display kreatif yasağı, Display→Search keyword expansion yasağı, Video→non-video yasağı, PMax→tek kanal yasağı + her tip için `<platform>/<type> DEĞİŞTİRİLEMEZ` genel kuralı. Her paket `synthesis.forbiddenMoves[]` ve `constraints[]` olarak yazılır; ayrıca prompt brief'e "Forbidden:" satırı eklenir.
+  - **Üç kaynak birleşimi** — Her `CampaignSynthesisPackage` (1) `performanceSnapshot` (spend/impr/clicks/ctr/cpc/conversions/cpm/roas/frequency), (2) `doctrine` (name/description/successMetrics/failureSignals/requiredAssets/bidding/creative/targeting/policy + fitScore/fitSeverity/matchedPrinciples/missingRequirements/recommendedChecks), (3) `diagnosis` (rootCauses/problemTags/riskLevel/opportunities/recommendedActions), (4) `competitor` (adsCount/topHooks/topCtas/topValueProps/commonPhrases/offerPatterns/creativePatterns/competitorSummary/confidence) ve (5) `synthesis` (mainProblem/mainOpportunity/recommendedAngle/creative/targeting/biddingDirection + mustKeepCampaignType + forbiddenMoves + proposalBrief + confidence + evidence) içerir. `source` alanı her paketin doctrine/competitor kaynağını (`db`/`fallback`/`missing`) belgeler.
+  - **Missing handling** — Competitor insight yok → `available=false`, summary "Rakip içgörüsü kayıtlı değil.", brief'te "Rakip içgörüsü: yok — uydurma yapma." Doctrine yok → `available=false`, fitScore=null, neutral fallback yön cümleleri (creative/targeting/bidding doctrine yerine performans tabanlı genel ipucuya düşer).
+  - **`lib/yoai/adCreator.ts`** — `generateFullAutoProposals()` ve `buildPrompt()` opsiyonel `synthesisPackagesByCampaignId?: Record<string, CampaignSynthesisPackage>` parametresi kabul eder. Doluysa her kampanya analiz bloğunun sonuna `buildSynthesisContextForPrompt(pkg)` çıktısı eklenir (≤1000 char). System prompt'a campaign-type sadakati kuralları ve "SYNTHESIS bloğu BİRİNCİL bağlam" direktifi eklendi. **`FullAdProposal` output schema DEĞİŞMEDİ**, mevcut doctrine summary ve `persistedCompetitorContext` path'leri korundu (synthesis verilmezse eski akış aynen çalışır).
+  - **`app/api/yoai/generate-ad/route.ts`** — Her platform için aktif kampanyalar üzerinden `buildSynthesisPackagesForCampaigns(platformCampaigns, { userId })` çağrısı yapılır; `packageMap` `generateFullAutoProposals`'a additive olarak geçirilir. Hata durumunda `synthesisPackagesByCampaignId` undefined kalır, rota eski generation path ile devam eder. `forceGenerate` / persisted snapshot dön / pending approval bulk-insert akışı KORUNDU.
+- **Korunanlar:**
+  - `app/api/integrations/meta/**`, `app/api/integrations/google-ads/**`, `app/api/integrations/tiktok-ads/**` — DOKUNULMADI.
+  - `lib/yoai/meta/orchestrator.ts`, `metaDeepFetcher.ts`, `googleDeepFetcher.ts`, `meta/diagnosis.ts`, `meta/decision.ts` — DOKUNULMADI.
+  - `app/api/yoai/one-click-approve/route.ts`, `execute-action/route.ts` — DOKUNULMADI (Faz 0/1/2 lifecycle korundu).
+  - Google/Meta wizard dosyaları, Supabase client config, auth/middleware — DOKUNULMADI.
+  - **AI proposal output JSON schema (`FullAdProposal`) DEĞİŞMEDİ.**
+  - Faz 0A audit log + 0B budget guard + 0C/0D approval lifecycle + Faz 1 doctrine + Faz 2 competitor persistence — KORUNDU.
+  - `bulkInsertPendingApprovalsIfMissing` (pending approval mapping) akışı dokunulmadı.
+- **Yapılmayanlar (bilinçli):** Multi-AI Decision Desk yok; judge/referee yok; yeni LLM provider yok; Google Transparency gerçek entegrasyonu yok; image/video vision analysis yok; publish/approval/payload değişmedi; `command_center_data` UI alanı eklenmedi (additive snapshot riskli görüldü).
+- **Doğrulama:** `npx tsc --noEmit` → temiz. `npm run build` → tüm route'lar derlendi (yalnızca pre-existing dynamic-route warning'leri var, bu fazla ilgisiz). Gerçek publish çağrısı yapılmadı; production DB migration apply edilmedi (synthesis için yeni tablo gerekmiyor).
+- **Dosyalar:**
+  - YENİ `lib/yoai/synthesisTypes.ts`
+  - YENİ `lib/yoai/synthesisEngine.ts`
+  - `lib/yoai/adCreator.ts` (synthesis context entegre)
+  - `app/api/yoai/generate-ad/route.ts` (synthesis packages build + pass)
+  - `docs/CHANGELOG.md`
+
+---
+
 ## 2026-05-10 — Faz 2: Competitor Ad Intelligence Persistence (Meta Ad Library Store + Insights)
 - **Sorun:** Rakip reklam verisi sessionStorage'da 15 dk cache seviyesinde, kalıcı `competitor_ads` tablosu yok; aynı reklam tekrar geldiğinde duplicate kayıt riski var; Google Ads Transparency endpoint'i sahte/boş dönüyor ama UI bunu netleştirmiyor; AI proposal generator rakip insight'a erişebiliyor ama veri tarihsel/güvenilir değil.
 - **Çözüm:**
