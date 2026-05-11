@@ -2,6 +2,11 @@
 
 ---
 
+## 2026-05-11 — Proposal Kart Hizalama + Aksiyon Buton Kontrast Düzeltmesi
+- **Sorun:** Aynı satırdaki proposal kartları farklı yükseklikte bitiyordu. ONAYLA/REDDET butonları şeffaf arka planla okunaksız görünüyordu. Ayraç dikey çizgi ("|") olarak görünüyordu. AI Kontrol Notu bazı kartların yüksekliğini aşırı büyütüyordu. Yazı kontrası düşüktü.
+- **Çözüm:** `AdPreviewCard` kökü `h-full flex flex-col` yapıldı; ana içerik alanı `flex-1`; action footer kart içine taşınarak `border-t` ile ayrıldı. `actionFooter?: ReactNode` prop eklendi, kart artık `div` (eskiden `button`). ONAYLA: `bg-emerald-600 text-white`; REDDET: `bg-red-600 text-white`. Ayraç "/" metin karakteri oldu, tıklanamaz. AI Kontrol Notu `max-h-[110px] overflow-hidden line-clamp-2` ile sınırlandı. Label renkleri `text-slate-500` → `text-slate-400`, açıklama renkleri `text-slate-400` → `text-slate-300`'e yükseltildi. Mini-confirm separator da "|" → "/" güncellendi.
+- **Dosyalar:** `components/yoai/AdPreviewCard.tsx`, `components/yoai/AiAdSuggestions.tsx`, `docs/CHANGELOG.md`
+
 ## 2026-05-11 — Google Competitor Context Injection Düzeltmesi
 - **Sorun:** `generate-ad/route.ts` içinde `platformCompetitorAds = p === 'Meta' ? competitorAnalysis.competitorAds : []` satırı Google proposal'larına her zaman boş rakip context geçiriyordu. `competitorAnalysis.competitorAds` sadece Meta Ad Library'den geldiği için Google'a Meta rakip verisi karışma riski vardı ve DB'deki Google rakip verileri kullanılmıyordu. Ayrıca `adCreator.ts`'deki `hasCompetitorData` guard, `persistedCompetitorContext` var olsa bile sadece `competitorAds.length > 0` bakarak Google proposal'larına "rakip bulunamadı" mesajı yazıyordu.
 - **Çözüm:** (1) `route.ts`: Meta için `competitorAnalysis.competitorAds` (Meta Ad Library) kullanılır; Google için `listCompetitorAds(userId, { platform: 'google', limit: 50 })` ile DB'den Google rakip reklamları çekilir, `compareWithCompetitors` ile Google'a özel comparison üretilir. (2) `adCreator.ts`: `hasCompetitorData = competitorAds.length > 0 || !!persistedCompetitorContext` — `persistedCompetitorContext` (yoai_competitor_insights DB) varken "bulunamadı" mesajı yazılmaz; AI prompt'ta beslenen insight kullanılır. Platformlar arası veri karışması sıfırlandı.
