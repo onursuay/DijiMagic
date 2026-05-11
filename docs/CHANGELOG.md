@@ -2,6 +2,11 @@
 
 ---
 
+## 2026-05-11 — Onay Geçmişi Detay Alanı Kullanıcı Odaklı Hale Getirildi
+- **Sorun:** Detay bölümünde Proposal ID, Audit ID, Kaynak Kampanya ID gibi teknik alanlar kullanıcıya gösteriliyordu; `DetailRow` label'ları iki satıra kırılıyordu.
+- **Çözüm:** Tüm teknik ID alanları (proposal_id, publish_audit_id, source_campaign_id) detay bölümünden kaldırıldı — admin/debug için kod yorumu bırakıldı. Detay bölümünde yalnızca kullanıcıya anlamlı bilgiler kaldı: Başlık, Hedef, Günlük Bütçe, CTA, Neden, Sonuç Notu, AI Güven, Oluşturuldu, Güncellendi. `DetailRow` bileşeni `mono` prop'u kaldırılarak sadeleştirildi; label'lara `whitespace-nowrap` + `minWidth: 5.5rem` uygulandı — tüm label'lar artık tek satırda kalıyor. "Teknik Detaylar" başlığı "Detaylar" olarak değiştirildi.
+- **Dosyalar:** `components/yoai/ApprovalHistoryPanel.tsx`
+
 ## 2026-05-11 — Onay Geçmişi Kart UI Polish
 - **Sorun:** Günlük Bütçe label'ı iki satıra kırılıyor; CTA teknik enum olarak görünüyor (SEND_MESSAGE vb.); kart çerçevesi yeterince belirgin değil; Detay bölümü karta entegre görünmüyor; alan amacı kullanıcıya açık değil.
 - **Çözüm:** Alan başlığının altına Türkçe açıklama eklendi. `InfoRow` label'larına `whitespace-nowrap` + `5.5rem` min-width uygulandı (Günlük Bütçe artık tek satırda). CTA enum'ları için `humanizeCta` fonksiyonu eklendi (SEND_MESSAGE → Mesaj Gönder; bilinmeyenleri otomatik capitalize). Kart border `gray-200`'e güçlendirildi, hover'da `primary/30` border + shadow-md eklendi. Detay bölümü `bg-gray-50/60` + `rounded-xl` ile kart içine entegre edildi, "Teknik Detaylar" başlığı ile ayrıştırıldı. "Detay" butonu "Detayları Gör / Detayları Gizle" olarak güncellendi.
