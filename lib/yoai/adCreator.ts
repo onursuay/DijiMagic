@@ -144,7 +144,7 @@ const META_OBJECTIVE_KNOWLEDGE: Record<string, {
   OUTCOME_ENGAGEMENT: {
     label: 'Etkileşim',
     purpose: 'Beğeni, yorum, paylaşım veya mesaj etkileşimi',
-    bestDestinations: ['ON_AD', 'WHATSAPP', 'MESSENGER', 'INSTAGRAM_DIRECT'],
+    bestDestinations: ['ON_PAGE', 'WEBSITE'],
     bestOptGoals: ['POST_ENGAGEMENT', 'CONVERSATIONS', 'REPLIES', 'THRUPLAY'],
     idealCTAs: ['SEND_MESSAGE', 'LEARN_MORE'],
     minBudget: 35, ctrBenchmark: 1.0,

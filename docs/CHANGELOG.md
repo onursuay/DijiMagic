@@ -2,6 +2,11 @@
 
 ---
 
+## 2026-05-11 — Wizard Dark Premium Tasarım + Meta Preflight Uyumluluk Düzeltmesi
+- **Sorun:** ONAYLA sonrası açılan wizard ve MetaPreflightPanel eski beyaz modal tasarımında kalıyordu. `OUTCOME_ENGAGEMENT + ON_AD` kombinasyonu capability matrix'te yoktu, preflight "v1 kapsamında desteklenmiyor" teknik hatası veriyordu. `PAUSED`, `pageSel.source` gibi teknik stringler kullanıcıya görünüyordu.
+- **Çözüm:** `AdCreationWizard.tsx` tüm adımlar dark premium (`bg-[#0f172a]`, `border-[#1e2d45]`) tasarıma taşındı. `MetaPreflightPanel.tsx` dark renk paleti, koyu input/select/radio, kullanıcı dostu hata mesajları, `ASSET_LABELS` map ile teknik asset adları Türkçe'ye çevrildi, "PAUSED" butonu kaldırıldı. `normalizeMetaDestination()` fonksiyonu ile `OUTCOME_ENGAGEMENT + ON_AD/WHATSAPP/MESSENGER/IG_DIRECT` → `ON_PAGE` normalize edildi. `lib/yoai/adCreator.ts` `OUTCOME_ENGAGEMENT.bestDestinations` sadece desteklenen `['ON_PAGE', 'WEBSITE']` olarak düzeltildi.
+- **Dosyalar:** `components/yoai/AdCreationWizard.tsx`, `components/yoai/MetaPreflightPanel.tsx`, `lib/yoai/adCreator.ts`, `docs/CHANGELOG.md`
+
 ## 2026-05-11 — Diagonal Renk Kesişimi (Slash Karakteri Kaldırıldı)
 - **Sorun:** ONAYLA/REDDET butonları arasında beyaz "/" karakteri görünüyordu.
 - **Çözüm:** Slash span tamamen kaldırıldı. REDDET butonu `clip-path: polygon(16px 0%, 100% 0%, 100% 100%, 0% 100%)` + `margin-left: -16px` ile yeşil/kırmızı renklerin diagonal kesişimi oluşturuldu. Wrapper `overflow-hidden rounded-b-2xl`. Mini-confirm REDDET/VAZGEÇ aynı mantıkla güncellendi.
