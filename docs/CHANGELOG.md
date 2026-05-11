@@ -2,6 +2,11 @@
 
 ---
 
+## 2026-05-11 — Apify Actor Routing + Meta URLs Schema Düzeltildi
+- **Sorun:** (1) Google endpoint response'ında `actorId: curious_coder/facebook-ads-library-scraper` görünüyordu; `getApifyConfig()` her iki actor için hardcoded fallback kullandığından env var eksikliğinde Google route Meta actor ID'sini alabiliyordu. (2) Meta actor `urls: [searchUrl]` (string array) alırken `[{ url: searchUrl }]` (object array) bekliyordu → Apify HTTP 400 "Items in input.urls". (3) `APIFY_ACTOR_ID_missing` reason platform-agnostic'ti; hangi actor'ın eksik olduğu anlaşılamıyordu.
+- **Çözüm:** (1) `getApifyConfig()`: hardcoded fallback actor ID'ler kaldırıldı; her iki alan artık yalnızca env var değeri (yoksa boş string). (2) `buildMetaActorInput`: `urls: [{ url: searchUrl }]` object array formatına çevrildi. (3) `runMetaApifyAdLibraryScan`: reason `'APIFY_META_ACTOR_ID_missing'`; `runGoogleApifyTransparencyScan`: reason `'APIFY_GOOGLE_ACTOR_ID_missing'`. Google route env var eksikse `supported:false` döner, asla Meta actor'a düşmez.
+- **Dosyalar:** `lib/yoai/apifyCompetitorProvider.ts`
+
 ## 2026-05-11 — Apify Actor Input Mapping Düzeltildi + Failure Diagnostics Eklendi
 - **Sorun:** Meta actor `totalRecords`/`limitPerInputUrl` yanlış input key kullanıyordu; boş sonuç riskini artırıyordu. Google actor `platform:'all'` geçersiz enum gönderdiği için FAILED oluyordu. Actor hata verdiğinde `statusMessage`, `exitCode`, `durationMillis` bilgileri route response'ında görünmüyordu.
 - **Çözüm:** (1) `buildMetaActorInput`: `totalRecords` → `count`, `limitPerInputUrl` → `limitPerSource` olarak düzeltildi. (2) `buildGoogleActorInput`: `platform:'all'` tamamen kaldırıldı; `dateFrom`/`dateTo` undefined alanları da temizlendi — actor default tüm platformları tarar. (3) `runApifyActor`: Apify `runData`'dan `statusMessage`, `exitCode`, `stats.durationMillis` yakalanıp `ApifyActorRunResult`'a eklendi. (4) `runMetaApifyAdLibraryScan` / `runGoogleApifyTransparencyScan`: `actor_failed` branch bu diagnostic alanları `ApifyScanResult`'a propagate ediyor. (5) `meta-ad-library` route: `actor_failed` için explicit branch + diagnostic alanlar. (6) `google-auction` route: pending/empty/failed response'a `statusMessage`/`exitCode`/`durationMillis` eklendi.

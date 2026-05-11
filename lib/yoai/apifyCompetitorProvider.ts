@@ -105,12 +105,8 @@ export function getApifyConfig(): ApifyConfig | null {
   if (!apiToken) return null
   return {
     apiToken,
-    metaActorId:
-      process.env.APIFY_META_AD_LIBRARY_ACTOR_ID ||
-      'curious_coder/facebook-ads-library-scraper',
-    googleActorId:
-      process.env.APIFY_GOOGLE_ADS_TRANSPARENCY_ACTOR_ID ||
-      'solidcode/ads-transparency-scraper',
+    metaActorId: process.env.APIFY_META_AD_LIBRARY_ACTOR_ID ?? '',
+    googleActorId: process.env.APIFY_GOOGLE_ADS_TRANSPARENCY_ACTOR_ID ?? '',
   }
 }
 
@@ -131,7 +127,7 @@ export function buildMetaActorInput(params: MetaApifyScanParams): Record<string,
     `&q=${encodedQuery}&search_type=keyword_unordered`
 
   return {
-    urls: [searchUrl],
+    urls: [{ url: searchUrl }],
     scrapeAdDetails: false,
     count: maxRecords,
     limitPerSource: maxRecords,
@@ -516,7 +512,7 @@ export async function runMetaApifyAdLibraryScan(
   if (!actorId) {
     return {
       supported: false,
-      reason: 'APIFY_ACTOR_ID_missing',
+      reason: 'APIFY_META_ACTOR_ID_missing',
       ads: [],
       rawCount: 0,
       normalizedCount: 0,
@@ -656,7 +652,7 @@ export async function runGoogleApifyTransparencyScan(
   if (!actorId) {
     return {
       supported: false,
-      reason: 'APIFY_ACTOR_ID_missing',
+      reason: 'APIFY_GOOGLE_ACTOR_ID_missing',
       ads: [],
       rawCount: 0,
       normalizedCount: 0,
