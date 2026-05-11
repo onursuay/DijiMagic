@@ -210,6 +210,8 @@ export default function AiAdSuggestions({ connectedPlatforms, onOpenWizard, onAp
         googleCount: 0,
       }
       let wasPersisted = false
+      let responseDiagnoses: DiagnosisResult[] = []
+      let responseDecisions: Decision[] = []
 
       try {
         const res = await fetch('/api/yoai/generate-ad', {
@@ -223,8 +225,14 @@ export default function AiAdSuggestions({ connectedPlatforms, onOpenWizard, onAp
           allProposals = json.data.proposals as FullAdProposal[]
           totalSummary = json.data.summary || totalSummary
           wasPersisted = !!json.persisted
-          if (Array.isArray(json.data.diagnoses)) setDiagnoses(json.data.diagnoses)
-          if (Array.isArray(json.data.decisions)) setDecisions(json.data.decisions)
+          if (Array.isArray(json.data.diagnoses)) {
+            responseDiagnoses = json.data.diagnoses
+            setDiagnoses(responseDiagnoses)
+          }
+          if (Array.isArray(json.data.decisions)) {
+            responseDecisions = json.data.decisions
+            setDecisions(responseDecisions)
+          }
         }
       } catch (e) {
         console.error('[AiAdSuggestions] fetch error:', e)
@@ -249,8 +257,8 @@ export default function AiAdSuggestions({ connectedPlatforms, onOpenWizard, onAp
             JSON.stringify({
               proposals: allProposals,
               summary: totalSummary,
-              diagnoses,
-              decisions,
+              diagnoses: responseDiagnoses,
+              decisions: responseDecisions,
               persisted: wasPersisted,
             }),
           )
@@ -259,7 +267,7 @@ export default function AiAdSuggestions({ connectedPlatforms, onOpenWizard, onAp
         }
       }
     },
-    [connectedPlatforms, diagnoses, decisions],
+    [connectedPlatforms],
   )
 
   useEffect(() => {
