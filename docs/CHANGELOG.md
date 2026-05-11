@@ -2,6 +2,11 @@
 
 ---
 
+## 2026-05-11 — Diagonal Renk Kesişimi (Slash Karakteri Kaldırıldı)
+- **Sorun:** ONAYLA/REDDET butonları arasında beyaz "/" karakteri görünüyordu.
+- **Çözüm:** Slash span tamamen kaldırıldı. REDDET butonu `clip-path: polygon(16px 0%, 100% 0%, 100% 100%, 0% 100%)` + `margin-left: -16px` ile yeşil/kırmızı renklerin diagonal kesişimi oluşturuldu. Wrapper `overflow-hidden rounded-b-2xl`. Mini-confirm REDDET/VAZGEÇ aynı mantıkla güncellendi.
+- **Dosyalar:** `components/yoai/AiAdSuggestions.tsx`, `docs/CHANGELOG.md`
+
 ## 2026-05-11 — Slash Divider Overlay + AI Analiz Yetenekleri Kaldırıldı
 - **Sorun:** ONAYLA/REDDET butonları arasında "/" işareti için ayrı padding (px-2) ile boşluk açılıyordu. Slash butonlar arasına gap yaratıyordu. "AI Analiz Yetenekleri" bölümü /yoai sayfasında gereksiz yer kaplıyordu.
 - **Çözüm:** Slash span kaldırıldı, container `relative flex` yapıldı; slash `absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 pointer-events-none z-10` overlay olarak yerleştirildi. ONAYLA `rounded-bl-2xl`, REDDET `rounded-br-2xl`. REDDET/VAZGEÇ mini-confirm aynı mantıkla güncellendi. `AnalysisCapabilities` bileşeni page.tsx'ten kaldırıldı (import + kullanım).
