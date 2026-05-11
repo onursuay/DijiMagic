@@ -2,6 +2,11 @@
 
 ---
 
+## 2026-05-11 — KPI Platform Selector Kompakt Boyuta Küçültüldü
+- **Sorun:** Sol platform selector butonları (Tümü/Meta/Google) fazla büyüktü, sağdaki KPI kart alanını sıkıştırıyordu.
+- **Çözüm:** Kolon genişliği `sm:w-24` → `sm:w-14`, padding `px-3 py-2` → `px-2 py-1.5`, font `text-[13px]` → `text-[11px]`, border-radius `rounded-xl` → `rounded-lg`, wrapper gap `gap-4` → `gap-3` olarak küçültüldü.
+- **Dosyalar:** `components/yoai/KpiDashboard.tsx`
+
 ## 2026-05-11 — KPI Platform Selector Dikey Sol Rail'e Taşındı
 - **Sorun:** Tümü / Meta / Google seçimi KPI kartlarının üstünde yatay tab olarak duruyordu.
 - **Çözüm:** Layout `flex-col sm:flex-row` yapısına çevrildi. Selector desktop'ta KPI kartlarının solunda `w-24` dar kolon olarak alt alta durur; mobilde yatay 3 buton olarak kalır. Aktif buton `bg-primary/10 text-primary border-primary/30`; pasif `bg-gray-50 text-gray-500 border-gray-200`; hover `border-primary/20`. KPI hesaplama mantığı (Tümü/Meta/Google) değişmedi.
