@@ -738,6 +738,43 @@ export default function AiAdSuggestions({ connectedPlatforms, onOpenWizard, onAp
   )
 }
 
+/* ── CTA enum → kullanıcı dostu Türkçe ── */
+const CTA_LABELS: Record<string, string> = {
+  SEND_MESSAGE: 'Mesaj Gönder',
+  LEARN_MORE: 'Daha Fazla Bilgi Al',
+  SHOP_NOW: 'Hemen Alışveriş Yap',
+  SIGN_UP: 'Kayıt Ol',
+  SUBSCRIBE: 'Abone Ol',
+  BOOK_TRAVEL: 'Seyahat Rezervasyonu Yap',
+  WATCH_MORE: 'Daha Fazla İzle',
+  APPLY_NOW: 'Hemen Başvur',
+  CONTACT_US: 'Bize Ulaşın',
+  GET_QUOTE: 'Teklif Al',
+  DOWNLOAD: 'İndir',
+  INSTALL_MOBILE_APP: 'Uygulamayı İndir',
+  OPEN_LINK: 'Bağlantıyı Aç',
+  ORDER_NOW: 'Hemen Sipariş Ver',
+  GET_OFFER: 'Teklifi Gör',
+  LISTEN_NOW: 'Hemen Dinle',
+  GET_DIRECTIONS: 'Yol Tarifi Al',
+  CALL_NOW: 'Hemen Ara',
+  SAVE: 'Kaydet',
+  BUY_NOW: 'Hemen Satın Al',
+  FIND_A_GROUP: 'Grup Bul',
+  BUY_TICKETS: 'Bilet Al',
+  SEE_MENU: 'Menüyü Gör',
+  PLAY_GAME: 'Oyunu Oyna',
+  GET_SHOWTIMES: 'Seans Saatlerini Gör',
+  REQUEST_TIME: 'Randevu Al',
+  SEE_ALL_OFFERS: 'Tüm Teklifleri Gör',
+  FOLLOW_PAGE: 'Sayfayı Takip Et',
+}
+
+function humanizeCta(cta: string | undefined | null): string | undefined {
+  if (!cta) return undefined
+  return CTA_LABELS[cta.toUpperCase()] ?? cta
+}
+
 /* ── Detail modal: proposal_snapshot fields + Decision Desk + Versions (Faz 5) ── */
 
 function DetailModal({
@@ -804,7 +841,7 @@ function DetailModal({
     { label: 'Başlık', value: proposal.headline },
     { label: 'Açıklama', value: proposal.description },
     { label: 'Birincil Metin', value: proposal.primaryText },
-    { label: 'CTA', value: proposal.callToAction },
+    { label: 'CTA', value: humanizeCta(proposal.callToAction) },
     { label: 'Final URL', value: proposal.finalUrl },
     { label: 'Beklenen Performans', value: proposal.expectedPerformance },
     { label: 'Gerekçe', value: proposal.reasoning },

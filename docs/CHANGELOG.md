@@ -2,6 +2,11 @@
 
 ---
 
+## 2026-05-11 — Rakip İçgörüsü Platforma Göre Ayrıldı (Competitor Insight Source Fix)
+- **Sorun:** Google önerilerinde "Meta Ad Library'den rakip reklam bulunamadı" yazıyordu. Google için Meta Ad Library ifadesi hatalıydı. Ayrıca Meta competitor ads (rakip analizi sadece Meta'dan çekiyordu) Google proposals'a da geçiriliyordu. CTA alanı teknik enum değerleri (ör. SEND_MESSAGE) gösteriyordu.
+- **Çözüm:** (1) `adCreator.ts`'de boş rakip mesajı platform bazlı ayrıldı: Meta → "Meta reklam kütüphanesi", Google → "Google reklam şeffaflık merkezi", diğer → genel mesaj. (2) `generate-ad/route.ts`'de `competitorAds` platform filtreli geçirildi: Google proposals için `[]`, Meta proposals için Meta analiz sonuçları. (3) `AiAdSuggestions.tsx` detail modalda CTA enum değerleri Türkçe etikete çevrildi (`humanizeCta` helper + `CTA_LABELS` haritası, 30+ enum).
+- **Dosyalar:** `lib/yoai/adCreator.ts`, `app/api/yoai/generate-ad/route.ts`, `components/yoai/AiAdSuggestions.tsx`
+
 ## 2026-05-11 — KPI Platform Selector Kompakt Boyuta Küçültüldü
 - **Sorun:** Sol platform selector butonları (Tümü/Meta/Google) fazla büyüktü, sağdaki KPI kart alanını sıkıştırıyordu.
 - **Çözüm:** Kolon genişliği `sm:w-24` → `sm:w-14`, padding `px-3 py-2` → `px-2 py-1.5`, font `text-[13px]` → `text-[11px]`, border-radius `rounded-xl` → `rounded-lg`, wrapper gap `gap-4` → `gap-3` olarak küçültüldü.

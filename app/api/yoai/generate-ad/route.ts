@@ -135,11 +135,14 @@ export async function POST(request: Request) {
             }
           }
 
+          // competitorAnalysis.competitorAds sadece Meta Ad Library'den gelir;
+          // Google proposals'a Meta reklamları geçirilmemeli — platform bazlı filtrele.
+          const platformCompetitorAds = p === 'Meta' ? competitorAnalysis.competitorAds : []
           const result = await generateFullAutoProposals(
             p,
             competitorAnalysis.userProfile,
             competitorAnalysis.comparison,
-            competitorAnalysis.competitorAds,
+            platformCompetitorAds,
             allCampaigns,
             structuralAnalysis.issues,
             persistedCompetitorContext,
