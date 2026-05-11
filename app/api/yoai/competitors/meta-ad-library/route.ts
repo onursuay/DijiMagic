@@ -178,6 +178,10 @@ export async function GET(request: Request) {
             insightError = err instanceof Error ? err.message : String(err)
             console.warn('[Meta Ad Library/Apify] insight store error:', insightError)
           }
+          if (insightRow === null && !insightError) {
+            insightError = 'competitor_insight_store_returned_null'
+            console.warn('[Meta Ad Library/Apify] upsertCompetitorInsight returned null without error')
+          }
 
           persisted = {
             inserted: upsertResult.inserted,
@@ -305,6 +309,10 @@ export async function GET(request: Request) {
         } catch (err) {
           insightError = err instanceof Error ? err.message : String(err)
           console.warn('[Meta Ad Library] insight store error:', insightError)
+        }
+        if (insightRow === null && !insightError) {
+          insightError = 'competitor_insight_store_returned_null'
+          console.warn('[Meta Ad Library] upsertCompetitorInsight returned null without error')
         }
 
         persisted = {

@@ -2,6 +2,11 @@
 
 ---
 
+## 2026-05-11 — Competitor Insight insightError Yüzey Çıkarma + Table-Missing Görünürlüğü
+- **Sorun:** `yoai_competitor_insights` tablosu production'da henüz yaratılmamışsa (migration uygulanmamış), `upsertCompetitorInsight` içindeki `isTableMissingError` dalı hata fırlatmak yerine `return null` yapıyordu. Route'un `catch` bloğu bunu yakalamıyordu; `insightRow = null` oluyordu ama `insightError` set edilmiyordu. Sonuç: response'da `insightId=null`, hiç `insightError` yok — sorun tamamen sessiz kalıyordu.
+- **Çözüm:** (1) `upsertCompetitorInsight`'ta table-missing durumları `return null` yerine `throw new Error('competitor_insight_table_missing: apply migration ...')` yapıyor. (2) Aynı şekilde `!supabase` / `!userId` guard'ları da `throw` yapıyor. (3) Her iki route'a (Meta + Google, tüm sağlayıcı path'ları) `if (insightRow === null && !insightError)` safety-net check eklendi; bu durum da `insightError` olarak response'a yansıyor. Artık tüm insight başarısızlıkları response'da görünür; migration uygulanmadıysa `insightError: "competitor_insight_table_missing: apply migration ..."` mesajı gelir.
+- **Dosyalar:** `lib/yoai/competitorInsightStore.ts`, `app/api/yoai/competitors/meta-ad-library/route.ts`, `app/api/yoai/competitors/google-auction/route.ts`
+
 ## 2026-05-11 — Competitor Insight Persist Düzeltildi (insightId artık dolu)
 - **Sorun:** `upsertCompetitorInsight`'ın SELECT sorgusunda `campaign_type_context` ve `query_keyword` için `.eq(col, null)` kullanılıyordu. PostgREST'te `eq.null` SQL NULL'ı eşleştirmiyor (string 'null' karşılaştırması yapıyor). Bu yüzden mevcut insight satırı hiç bulunamıyor, INSERT denenince `COALESCE`-tabanlı unique constraint ihlali oluşuyor ve fonksiyon sessizce `null` dönüyordu. Meta Apify yolunda ayrıca insight hatası `insightError` olarak response'a yansımıyordu.
 - **Çözüm:** (1) `upsertCompetitorInsight` SELECT: null değerler için `.eq()` → `.is()` olarak düzeltildi; artık `IS NULL` sorgusu üretiyor. (2) SELECT/UPDATE/INSERT hataları (table_missing hariç) artık `throw` ediyor; routelar try/catch ile yakalayıp `insightError` olarak response'a ekliyor. (3) Meta Apify + official path, Google SerpApi path: insight üretimi ayrı try/catch'e alındı, `insightError` tüm endpoint response'larında görünüyor.

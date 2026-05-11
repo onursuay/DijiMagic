@@ -216,7 +216,8 @@ export async function upsertCompetitorInsight(
   insight: CompetitorInsightSnapshot,
   options?: { ttlMinutes?: number },
 ): Promise<{ id: string } | null> {
-  if (!supabase || !userId) return null
+  if (!supabase) throw new Error('competitor_insight_supabase_unavailable: SUPABASE_SERVICE_KEY not set')
+  if (!userId) throw new Error('competitor_insight_missing_user_id')
   const nowIso = new Date().toISOString()
   const expiresAt = options?.ttlMinutes
     ? new Date(Date.now() + options.ttlMinutes * 60_000).toISOString()
@@ -251,7 +252,7 @@ export async function upsertCompetitorInsight(
   if (selErr && selErr.code !== 'PGRST116') {
     if (isTableMissingError(selErr)) {
       logTableMissing('upsertCompetitorInsight.select', { userId, platform: insight.platform })
-      return null
+      throw new Error(`competitor_insight_table_missing: apply migration ${TABLE_MIGRATION_HINT}`)
     }
     console.error('[CompetitorInsightStore] select error:', selErr)
     throw new Error(`competitor_insight_select_failed: ${selErr.message || selErr.code}`)
@@ -294,7 +295,7 @@ export async function upsertCompetitorInsight(
     if (error) {
       if (isTableMissingError(error)) {
         logTableMissing('upsertCompetitorInsight.update')
-        return null
+        throw new Error(`competitor_insight_table_missing: apply migration ${TABLE_MIGRATION_HINT}`)
       }
       console.error('[CompetitorInsightStore] update error:', error)
       throw new Error(`competitor_insight_update_failed: ${error.message || error.code}`)
@@ -310,10 +311,13 @@ export async function upsertCompetitorInsight(
   if (error) {
     if (isTableMissingError(error)) {
       logTableMissing('upsertCompetitorInsight.insert')
-      return null
+      throw new Error(`competitor_insight_table_missing: apply migration ${TABLE_MIGRATION_HINT}`)
     }
     console.error('[CompetitorInsightStore] insert error:', error)
     throw new Error(`competitor_insight_insert_failed: ${error.message || error.code}`)
+  }
+  if (!data?.id) {
+    throw new Error('competitor_insight_insert_returned_no_id')
   }
   return data as { id: string }
 }

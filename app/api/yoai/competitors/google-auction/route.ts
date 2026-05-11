@@ -161,6 +161,10 @@ export async function GET(request: Request) {
         insightError = insightErr instanceof Error ? insightErr.message : String(insightErr)
         console.warn('[google-auction/apify] insight store error:', insightError)
       }
+      if (insightRow === null && !insightError) {
+        insightError = 'competitor_insight_store_returned_null'
+        console.warn('[google-auction/apify] upsertCompetitorInsight returned null without error')
+      }
 
       return NextResponse.json({
         ok: true,
@@ -267,6 +271,10 @@ export async function GET(request: Request) {
     } catch (err) {
       insightError = err instanceof Error ? err.message : String(err)
       console.warn('[google-auction/serpapi] insight store error:', insightError)
+    }
+    if (insightRow === null && !insightError) {
+      insightError = 'competitor_insight_store_returned_null'
+      console.warn('[google-auction/serpapi] upsertCompetitorInsight returned null without error')
     }
 
     return NextResponse.json({
