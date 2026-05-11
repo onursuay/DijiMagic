@@ -421,28 +421,35 @@ function ApprovalCard({ rec, expanded, outcomeResult, onToggleDetail }: CardProp
         </p>
       </div>
 
-      {/* Expanded technical details */}
+      {/* Expanded details — user-facing only, no technical IDs */}
       {expanded && (
         <div className="mx-3 mb-3 rounded-xl bg-gray-50/60 border border-gray-100 px-3 py-3">
-          <p className="text-[11px] font-medium text-gray-400 uppercase tracking-wide mb-2">Teknik Detaylar</p>
+          <p className="text-[11px] font-medium text-gray-400 uppercase tracking-wide mb-2">Detaylar</p>
           <div className="space-y-1.5">
-            {rec.proposal_snapshot?.headline && rec.proposal_snapshot?.campaignName && (
-              <DetailRow label="Başlık (tam)" value={rec.proposal_snapshot.headline} />
+            {rec.proposal_snapshot?.headline && (
+              <DetailRow label="Başlık" value={rec.proposal_snapshot.headline} />
             )}
-            {rec.source_campaign_id && (
-              <DetailRow label="Kaynak Kampanya" value={rec.source_campaign_id} mono />
+            {rec.proposal_snapshot?.objectiveLabel && (
+              <DetailRow label="Hedef" value={rec.proposal_snapshot.objectiveLabel} />
+            )}
+            {rec.proposal_snapshot?.dailyBudget != null && (
+              <DetailRow label="Günlük Bütçe" value={`₺${rec.proposal_snapshot.dailyBudget}`} />
+            )}
+            {rec.proposal_snapshot?.callToAction && (
+              <DetailRow label="CTA" value={humanizeCta(rec.proposal_snapshot.callToAction)} />
+            )}
+            {reason && (
+              <DetailRow label="Neden" value={reason} />
             )}
             {outcomeResult?.outcome_summary && (
               <DetailRow label="Sonuç Notu" value={outcomeResult.outcome_summary} />
             )}
-            {rec.publish_audit_id && (
-              <DetailRow label="Audit ID" value={rec.publish_audit_id} mono />
-            )}
-            <DetailRow label="Öneri ID" value={rec.proposal_id} mono />
-            <DetailRow label="Oluşturuldu" value={formatTime(rec.created_at)} />
             {badge?.confidence != null && badge.confidence > 0 && (
               <DetailRow label="AI Güven" value={`${badge.confidence}%`} />
             )}
+            <DetailRow label="Oluşturuldu" value={formatTime(rec.created_at)} />
+            <DetailRow label="Güncellendi" value={formatTime(rec.updated_at)} />
+            {/* proposal_id, publish_audit_id, source_campaign_id: admin/debug only — not shown here */}
           </div>
         </div>
       )}
@@ -481,25 +488,11 @@ function InfoRow({ label, value, truncate }: { label: string; value: string; tru
   )
 }
 
-function DetailRow({
-  label,
-  value,
-  mono,
-}: {
-  label: string
-  value: string
-  mono?: boolean
-}) {
+function DetailRow({ label, value }: { label: string; value: string }) {
   return (
-    <div className="grid grid-cols-3 gap-2 text-[12px]">
-      <span className="text-gray-400">{label}</span>
-      <span
-        className={`col-span-2 text-gray-600 break-words ${
-          mono ? 'font-mono text-[10px]' : ''
-        }`}
-      >
-        {value}
-      </span>
+    <div className="flex items-baseline gap-2 text-[12px]">
+      <span className="text-gray-400 shrink-0 whitespace-nowrap" style={{ minWidth: '5.5rem' }}>{label}</span>
+      <span className="text-gray-600 flex-1 min-w-0 break-words">{value}</span>
     </div>
   )
 }
