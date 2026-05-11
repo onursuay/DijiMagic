@@ -85,6 +85,21 @@ export async function GET(request: Request) {
           })
         }
 
+        // Actor henüz tamamlanmadı — controlled pending response (error değil).
+        if (scanResult.isPending) {
+          return NextResponse.json({
+            ok: true,
+            supported: true,
+            isPending: true,
+            runStatus: scanResult.runStatus,
+            reason: scanResult.reason,
+            provider: 'apify',
+            actorId: scanResult.actorId,
+            runId: scanResult.runId,
+            data: [],
+          })
+        }
+
         // Geriye dönük uyumlu camelCase shape
         const ads = scanResult.ads.map((ad) => ({
           id: ad.source_ad_id ?? undefined,

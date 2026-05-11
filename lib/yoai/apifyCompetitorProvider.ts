@@ -11,6 +11,12 @@
    Boş sonuç:            reason:'empty_result' — fake data yok.
    Google Ads API rakip reklam için KULLANILMAZ.
    Actor demo inputları hardcoded değil — backend dinamik üretir.
+
+   Vercel Timeout Safety (Faz 2C fix):
+   waitForFinish max 45 s (eski 120 s).
+   Actor 45 s içinde bitmezse:
+     isPending:true, reason:'APIFY_RUN_STILL_RUNNING' — error yok.
+   Toplam bütçet: 45 s (actor) + 10 s (dataset) ≈ 55 s < 60 s.
    ────────────────────────────────────────────────────────── */
 
 import type { NormalizedCompetitorAd } from './competitorAdStore'
@@ -50,6 +56,10 @@ export interface ApifyQualityStats {
 export interface ApifyScanResult {
   supported: boolean
   reason?: string
+  /** Actor henüz tamamlanmadıysa true — controlled pending response. */
+  isPending?: boolean
+  /** Apify run status (SUCCEEDED | RUNNING | FAILED | …) */
+  runStatus?: string
   ads: NormalizedCompetitorAd[]
   rawCount: number
   normalizedCount: number
@@ -144,8 +154,30 @@ export function buildGoogleActorInput(params: GoogleApifyScanParams): Record<str
 }
 
 /* ──────────────────────────────────────────────────────────
+   Apify run status helpers
+   RUNNING / READY / ABORTING → actor henüz bitmedi (pending).
+   SUCCEEDED → dataset hazır, devam et.
+   FAILED / ABORTED / TIMED-OUT → hata.
+   ────────────────────────────────────────────────────────── */
+
+const APIFY_STILL_RUNNING_STATUSES = new Set(['READY', 'RUNNING', 'ABORTING'])
+
+export function isApifyRunStillRunning(status: string): boolean {
+  return APIFY_STILL_RUNNING_STATUSES.has(status.toUpperCase())
+}
+
+export function isApifyRunSucceeded(status: string): boolean {
+  return status.toUpperCase() === 'SUCCEEDED'
+}
+
+/* ──────────────────────────────────────────────────────────
    runApifyActor
    Actor'ı başlatır; waitForFinish ile tamamlanmasını bekler.
+   Vercel maxDuration=60 s bütçesini aşmamak için:
+     - waitForFinish default 45 s (eski 120 s)
+     - AbortSignal timeout = waitSecs + 8 s (network buffer)
+   Actor 45 s içinde bitmezse Apify RUNNING status döner;
+   callerlar isApifyRunStillRunning() ile pending response üretir.
    Actor ID'deki "/" → "~" (Apify URL path standardı).
    ────────────────────────────────────────────────────────── */
 
@@ -159,8 +191,9 @@ export async function runApifyActor(
     return { runId: '', datasetId: '', status: 'FAILED', error: 'APIFY_API_TOKEN_missing' }
   }
 
-  const waitSecs = options.waitForFinishSeconds ?? 120
-  const timeoutMs = options.timeoutMs ?? (waitSecs + 30) * 1000
+  // waitForFinish max 45 s — Vercel 60 s budget içinde kalır.
+  const waitSecs = Math.min(options.waitForFinishSeconds ?? 45, 45)
+  const timeoutMs = options.timeoutMs ?? (waitSecs + 8) * 1000
 
   // Apify URL path'i: "/" yerine "~" kullan
   const encodedActorId = actorId.replace(/\//g, '~')
@@ -203,6 +236,8 @@ export async function runApifyActor(
    fetchApifyDatasetItems
    Run tamamlandıktan sonra dataset items'ı çeker.
    datasetId boşsa veya hata varsa empty array döner.
+   Timeout 10 s — actor wait (45 s) + dataset (10 s) ≈ 55 s
+   Vercel 60 s budget'inin içinde kalır.
    ────────────────────────────────────────────────────────── */
 
 export async function fetchApifyDatasetItems(
@@ -218,7 +253,7 @@ export async function fetchApifyDatasetItems(
   try {
     const res = await fetch(url, {
       headers: { Accept: 'application/json' },
-      signal: AbortSignal.timeout(30_000),
+      signal: AbortSignal.timeout(10_000),
     })
 
     if (!res.ok) {
@@ -441,6 +476,7 @@ function computeQualityStats(
    Meta kampanya için → sadece Meta actor.
    APIFY_API_TOKEN yoksa supported:false.
    Actor ID yoksa supported:false.
+   Actor 45 s içinde bitmezse → isPending:true, controlled response.
    Boş sonuç → reason:'empty_result', sahte data yok.
    ────────────────────────────────────────────────────────── */
 
@@ -478,10 +514,32 @@ export async function runMetaApifyAdLibraryScan(
   const input = buildMetaActorInput(params)
   const runResult = await runApifyActor(actorId, input)
 
-  if (runResult.error || runResult.status === 'FAILED') {
+  // Actor henüz çalışıyor — route timeout'u aşmadan controlled pending döndür.
+  if (isApifyRunStillRunning(runResult.status)) {
+    console.info(
+      `[ApifyProvider][Meta] Actor still running (status=${runResult.status}) — returning pending.`,
+    )
+    return {
+      supported: true,
+      isPending: true,
+      runStatus: runResult.status,
+      reason: 'APIFY_RUN_STILL_RUNNING',
+      ads: [],
+      rawCount: 0,
+      normalizedCount: 0,
+      usefulCount: 0,
+      provider: 'apify',
+      actorId,
+      runId: runResult.runId || undefined,
+      datasetId: runResult.datasetId || undefined,
+    }
+  }
+
+  if (runResult.error || !isApifyRunSucceeded(runResult.status)) {
     return {
       supported: true,
       reason: 'actor_failed',
+      runStatus: runResult.status,
       ads: [],
       rawCount: 0,
       normalizedCount: 0,
@@ -497,6 +555,7 @@ export async function runMetaApifyAdLibraryScan(
     return {
       supported: true,
       reason: 'empty_result',
+      runStatus: runResult.status,
       ads: [],
       rawCount: 0,
       normalizedCount: 0,
@@ -553,6 +612,7 @@ export async function runMetaApifyAdLibraryScan(
    Google kampanya için → sadece Google actor.
    APIFY_API_TOKEN yoksa supported:false.
    Actor ID yoksa supported:false.
+   Actor 45 s içinde bitmezse → isPending:true, controlled response.
    Boş sonuç → reason:'empty_result', sahte data yok.
    ────────────────────────────────────────────────────────── */
 
@@ -590,10 +650,32 @@ export async function runGoogleApifyTransparencyScan(
   const input = buildGoogleActorInput(params)
   const runResult = await runApifyActor(actorId, input)
 
-  if (runResult.error || runResult.status === 'FAILED') {
+  // Actor henüz çalışıyor — route timeout'u aşmadan controlled pending döndür.
+  if (isApifyRunStillRunning(runResult.status)) {
+    console.info(
+      `[ApifyProvider][Google] Actor still running (status=${runResult.status}) — returning pending.`,
+    )
+    return {
+      supported: true,
+      isPending: true,
+      runStatus: runResult.status,
+      reason: 'APIFY_RUN_STILL_RUNNING',
+      ads: [],
+      rawCount: 0,
+      normalizedCount: 0,
+      usefulCount: 0,
+      provider: 'apify',
+      actorId,
+      runId: runResult.runId || undefined,
+      datasetId: runResult.datasetId || undefined,
+    }
+  }
+
+  if (runResult.error || !isApifyRunSucceeded(runResult.status)) {
     return {
       supported: true,
       reason: 'actor_failed',
+      runStatus: runResult.status,
       ads: [],
       rawCount: 0,
       normalizedCount: 0,
@@ -609,6 +691,7 @@ export async function runGoogleApifyTransparencyScan(
     return {
       supported: true,
       reason: 'empty_result',
+      runStatus: runResult.status,
       ads: [],
       rawCount: 0,
       normalizedCount: 0,

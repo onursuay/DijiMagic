@@ -103,13 +103,16 @@ export async function GET(request: Request) {
         })
       }
 
-      if (scanResult.ads.length === 0) {
+      if (scanResult.isPending || scanResult.ads.length === 0) {
         return NextResponse.json({
           ok: true,
           supported: true,
+          isPending: scanResult.isPending ?? false,
+          runStatus: scanResult.runStatus,
           reason: scanResult.reason ?? 'empty_result',
           provider: 'apify',
           actorId: scanResult.actorId,
+          runId: scanResult.runId,
           data: {
             ads: [],
             inserted: 0,

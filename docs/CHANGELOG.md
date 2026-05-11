@@ -2,6 +2,18 @@
 
 ---
 
+## 2026-05-11 — Faz 2C (fix): Apify Runtime Timeout Safety
+- **Sorun:** `waitForFinish=120 s` + 30 s buffer = 150 s; Vercel `maxDuration=60 s` → production timeout riski.
+- **Çözüm:**
+  - `waitForFinish` default 120 s → **45 s** (hard cap ile, caller override edemez fazlasını).
+  - `AbortSignal.timeout` = waitSecs + 8 s (eski +30 s).
+  - `fetchApifyDatasetItems` timeout 30 s → **10 s**. Toplam bütçet: 45 + 10 = **55 s** < 60 s.
+  - `isApifyRunStillRunning()` + `isApifyRunSucceeded()` status helper'ları eklendi.
+  - Actor 45 s içinde bitmezse **error fırlatılmaz**; `{ supported:true, isPending:true, reason:'APIFY_RUN_STILL_RUNNING', runId, runStatus }` controlled response döner.
+  - `ApifyScanResult` interface'e `isPending` ve `runStatus` eklendi.
+  - `google-auction/route.ts` ve `meta-ad-library/route.ts` pending response'u 200 OK ile döndürür; `isPending`, `runStatus`, `runId` response'a yansıtıldı.
+- **Dosyalar:** `lib/yoai/apifyCompetitorProvider.ts`, `app/api/yoai/competitors/google-auction/route.ts`, `app/api/yoai/competitors/meta-ad-library/route.ts`
+
 ## 2026-05-11 — Faz 2C: Apify Competitor Provider Layer
 - **Sorun:** SerpApi Google + Meta API rakip reklam taraması için her ikisi de ayrı kimlik gerektiriyordu; birleşik bir Apify provider katmanı yoktu; actor input'ları backend tarafından dinamik üretilmiyordu.
 - **Çözüm:**
