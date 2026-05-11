@@ -7,10 +7,8 @@ import OptionsCard from '@/components/yoai/OptionsCard'
 import CommandCenterHeader from '@/components/yoai/CommandCenterHeader'
 // HealthOverviewCards removed — stats moved into CommandCenterHeader
 import AnalysisCapabilities from '@/components/yoai/AnalysisCapabilities'
-import KpiDashboard from '@/components/yoai/KpiDashboard'
 import AdCreationWizard from '@/components/yoai/AdCreationWizard'
 import AiAdSuggestions from '@/components/yoai/AiAdSuggestions'
-import ApprovalHistoryPanel from '@/components/yoai/ApprovalHistoryPanel'
 import { useCredits } from '@/components/providers/CreditProvider'
 import { CATEGORIES } from '@/lib/yoai/categories'
 import { OFF_TOPIC_MESSAGE } from '@/lib/yoai/prompts'
@@ -47,7 +45,6 @@ export default function YoAiPage() {
 
   // ── Faz 0D: Approval pending count (yoai_pending_approvals tablosundan) ──
   const [approvalsPendingCount, setApprovalsPendingCount] = useState<number | undefined>(undefined)
-  const [historyRefreshKey, setHistoryRefreshKey] = useState(0)
 
   const refreshApprovalsPendingCount = useCallback(async () => {
     try {
@@ -64,7 +61,6 @@ export default function YoAiPage() {
 
   const handleApprovalChanged = useCallback(() => {
     refreshApprovalsPendingCount()
-    setHistoryRefreshKey((k) => k + 1)
   }, [refreshApprovalsPendingCount])
 
   useEffect(() => {
@@ -396,18 +392,12 @@ export default function YoAiPage() {
               approvalsPendingCount={approvalsPendingCount}
             />
 
-            <KpiDashboard kpis={ccData?.kpis ?? null} loading={ccLoading} />
-
             {!ccLoading && ccData && (
               <AiAdSuggestions
                 connectedPlatforms={ccData.connectedPlatforms}
                 onOpenWizard={(proposal) => { setWizardProposal(proposal || null); setShowAdWizard(true) }}
                 onApprovalChanged={handleApprovalChanged}
               />
-            )}
-
-            {!ccLoading && (
-              <ApprovalHistoryPanel refreshKey={historyRefreshKey} />
             )}
 
             <AnalysisCapabilities />

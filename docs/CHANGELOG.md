@@ -2,6 +2,11 @@
 
 ---
 
+## 2026-05-11 — YoAlgoritma Command Center Sadeleştirildi + Öneri Kartları Modernize Edildi
+- **Sorun:** /yoai ekranında KPI alanı ve Onay Geçmişi görünüyordu, sayfa odağını dağıtıyordu. Öneri kartları düzdü, platform bazlı renkli çerçeveler ve üst çizgiler vardı. "Onayla ve Yayınla" butonu kart arka planından ayrışmıyordu.
+- **Çözüm:** (1) KpiDashboard render ve import'u page.tsx'den kaldırıldı. (2) ApprovalHistoryPanel render ve import'u page.tsx'den kaldırıldı, historyRefreshKey state temizlendi. (3) Sayfa sırası: Hero → AI Reklam Önerileri → AI Analiz Yetenekleri. (4) AdPreviewCard'dan Meta mavi ve Google 4-renkli üst çubuklar kaldırıldı. (5) Kart arka planı soft yeşil gradient (`from-white via-emerald-50/30 to-white`), border emerald-100/70, shadow-sm, hover: shadow-md + border-emerald-200/80. (6) Kart içine `radial-gradient` soft glow overlay eklendi (%10 opacity, pointer-events-none). (7) "Onayla ve Yayınla" butonu `bg-emerald-600 hover:bg-emerald-700 text-white font-semibold` ile netleştirildi.
+- **Dosyalar:** `app/yoai/page.tsx`, `components/yoai/AdPreviewCard.tsx`, `components/yoai/AiAdSuggestions.tsx`
+
 ## 2026-05-11 — Rakip İçgörüsü Platforma Göre Ayrıldı (Competitor Insight Source Fix)
 - **Sorun:** Google önerilerinde "Meta Ad Library'den rakip reklam bulunamadı" yazıyordu. Google için Meta Ad Library ifadesi hatalıydı. Ayrıca Meta competitor ads (rakip analizi sadece Meta'dan çekiyordu) Google proposals'a da geçiriliyordu. CTA alanı teknik enum değerleri (ör. SEND_MESSAGE) gösteriyordu.
 - **Çözüm:** (1) `adCreator.ts`'de boş rakip mesajı platform bazlı ayrıldı: Meta → "Meta reklam kütüphanesi", Google → "Google reklam şeffaflık merkezi", diğer → genel mesaj. (2) `generate-ad/route.ts`'de `competitorAds` platform filtreli geçirildi: Google proposals için `[]`, Meta proposals için Meta analiz sonuçları. (3) `AiAdSuggestions.tsx` detail modalda CTA enum değerleri Türkçe etikete çevrildi (`humanizeCta` helper + `CTA_LABELS` haritası, 30+ enum).

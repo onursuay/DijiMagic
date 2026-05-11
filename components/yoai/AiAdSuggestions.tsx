@@ -569,7 +569,7 @@ export default function AiAdSuggestions({ connectedPlatforms, onOpenWizard, onAp
             onClick={() =>
               setOneClickProposal({ proposal, approvalId: approval?.id ?? null })
             }
-            className="w-full inline-flex items-center justify-center gap-1.5 px-3 py-2 bg-primary/10 hover:bg-primary/20 text-primary rounded-lg text-[12px] font-medium transition-colors"
+            className="w-full inline-flex items-center justify-center gap-1.5 px-3 py-2 bg-emerald-600 hover:bg-emerald-700 text-white rounded-lg text-[12px] font-semibold transition-colors shadow-sm"
           >
             <Zap className="w-3.5 h-3.5" /> Onayla ve Yayınla (PAUSED)
           </button>

@@ -63,18 +63,12 @@ export default function AdPreviewCard({ proposal, selected, onSelect }: Props) {
   const impact = IMPACT_STYLE[proposal.impactLevel] || IMPACT_STYLE.medium
 
   return (
-    <button onClick={onSelect} className={`relative text-left w-full rounded-2xl overflow-hidden transition-all duration-200 border ${selected ? 'border-gray-300 shadow-lg' : 'border-gray-200 hover:shadow-md hover:border-gray-300'} bg-white flex flex-col`}>
-      {/* Color bar */}
-      {isGoogle ? (
-        <div className="absolute top-0 left-0 right-0 h-[4px] flex z-10">
-          <div className="flex-1 bg-[#4285F4]" /><div className="flex-1 bg-[#EA4335]" /><div className="flex-1 bg-[#FBBC05]" /><div className="flex-1 bg-[#34A853]" />
-        </div>
-      ) : (
-        <div className="absolute top-0 left-0 right-0 h-[4px] bg-[#1877F2] z-10" />
-      )}
+    <button onClick={onSelect} className={`relative text-left w-full rounded-2xl overflow-hidden transition-all duration-200 border bg-gradient-to-br from-white via-emerald-50/30 to-white flex flex-col ${selected ? 'border-emerald-200 shadow-md' : 'border-emerald-100/70 shadow-sm hover:shadow-md hover:border-emerald-200/80'}`}>
+      {/* Soft glow overlay */}
+      <div className="absolute inset-0 pointer-events-none rounded-2xl bg-[radial-gradient(circle_at_20%_20%,rgba(16,185,129,0.10),transparent_50%)]" />
 
       {/* VERTICAL LAYOUT */}
-      <div className="mt-[4px] flex flex-col flex-1">
+      <div className="flex flex-col flex-1">
 
         {/* TOP: Badges + Confidence */}
         <div className="flex items-center justify-between px-4 pt-3 pb-2">
