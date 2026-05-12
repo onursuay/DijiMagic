@@ -25,6 +25,8 @@ import { getApprovedKnowledgeByPlatform } from './officialAdsKnowledgeStore'
 import type { OfficialAdsKnowledgeItem } from './officialAdsKnowledgeStore'
 import { applyPolicyGuardToProposals } from './proposalPolicyGuard'
 import type { PolicyViolationDetail } from './proposalPolicyGuard'
+import type { CampaignIntentProfile } from './campaignIntentEngine'
+import { formatIntentForPrompt } from './campaignIntentEngine'
 
 /* ── Types ── */
 
@@ -388,9 +390,22 @@ function buildPrompt(
   decisionDeskResultsByCampaignId?: Record<string, MultiAiDecisionDeskResult>,
   /** Faz A: Official Ads Knowledge Base'den yüklenen onaylı bilgi özeti (opsiyonel). */
   officialKnowledgeContext?: string | null,
+  /** Intent Engine: campaign_id → CampaignIntentProfile. */
+  intentProfilesByCampaignId?: Record<string, CampaignIntentProfile>,
 ): { system: string; user: string } {
   const isGoogle = platform === 'Google'
   const knowledge = isGoogle ? GOOGLE_TYPE_KNOWLEDGE : META_OBJECTIVE_KNOWLEDGE
+
+  const intentInstruction = intentProfilesByCampaignId && Object.keys(intentProfilesByCampaignId).length > 0
+    ? `\nKAMPANYA INTENT KURALLARI:
+- Her kampanya için KAMPANYA INTENT bloğu verilmişse onu BİRİNCİL içerik kaynağı say.
+- "service_or_product" alanını başlık ve açıklama metninde spesifik olarak kullan.
+- "target_audience" alanını hedefleme ve reklam tonunda yansıt.
+- "conversion_goal" alanına uygun CTA seç.
+- Jenerik başlıklar kesinlikle üretme: "Sitemizi Ziyaret Edin", "Hemen Tıklayın",
+  "Reklamımızı Ziyaret Edin" gibi ifadeler yasak.
+- Intent confidence < 40 ise landing page + mevcut reklam metnine dayalı öneri üret.\n`
+    : ''
 
   const system = `Sen YoAi karar motorusun. Kullanıcının aktif reklamlarını analiz ettin.
 Her kampanyanın AYNI AMACINA karşılık gelen daha güçlü AI kampanya yapısı önereceksin.
@@ -407,7 +422,7 @@ KRİTİK KURALLAR:
   ihlal etme. Rakip içgörüsü "yok" ise rakip uydurma.
 - Meta Traffic kampanyasından Sales/Engagement, Meta Engagement'tan Lead/Sales,
   Meta Message'tan web traffic önerisi üretme. Google Search'ten Display kreatif,
-  Google Display'de Search keyword expansion ana öneri yapma.
+  Google Display'de Search keyword expansion ana öneri yapma.${intentInstruction}
 
 PLATFORM BİLGİSİ:
 ${Object.entries(knowledge).map(([key, k]) => {
@@ -467,6 +482,10 @@ JSON formatında yanıt ver:
     const deskBlock = deskResult?.decisionContextForPrompt
       ? `\n  DECISION DESK:\n  ${deskResult.decisionContextForPrompt.replace(/\n/g, '\n  ')}`
       : ''
+    const intentProfile = intentProfilesByCampaignId?.[fa.campaignId]
+    const intentBlock = intentProfile
+      ? `\n${formatIntentForPrompt(intentProfile)}`
+      : ''
     return `[${fa.objectiveLabel}] ${fa.campaignName} (ID: ${fa.campaignId})
   Uygunluk: ${fa.fitScore}/100
   Güçlü: ${fa.strengths.join(', ') || 'yok'}
@@ -475,7 +494,7 @@ JSON formatında yanıt ver:
   ${fa.currentParams.destination ? `Dönüşüm hedefi: ${fa.currentParams.destination}` : ''}
   ${fa.currentParams.optimizationGoal ? `Opt hedef: ${fa.currentParams.optimizationGoal}` : ''}
   ${fa.currentParams.biddingStrategy ? `Teklif: ${fa.currentParams.biddingStrategy}` : ''}
-  Öneriler: ${fa.optimizationSuggestions.join('; ') || 'yok'}${doctrineLine ? `\n  DOCTRINE:\n  ${doctrineLine.replace(/\n/g, '\n  ')}` : ''}${synthesisBlock}${deskBlock}`
+  Öneriler: ${fa.optimizationSuggestions.join('; ') || 'yok'}${doctrineLine ? `\n  DOCTRINE:\n  ${doctrineLine.replace(/\n/g, '\n  ')}` : ''}${synthesisBlock}${deskBlock}${intentBlock}`
   }).join('\n\n')
 
   const compTexts = competitorAds.slice(0, 5).map((a, i) => `${i + 1}. [${a.pageName}] "${a.body?.slice(0, 80) || a.title || ''}"`).join('\n')
@@ -548,6 +567,8 @@ export async function generateFullAutoProposals(
   synthesisPackagesByCampaignId?: Record<string, CampaignSynthesisPackage>,
   /** Faz 4: Multi-AI Decision Desk sonuçları — varsa prompt'a additive olarak eklenir. */
   decisionDeskResultsByCampaignId?: Record<string, MultiAiDecisionDeskResult>,
+  /** Intent Engine: campaign_id → CampaignIntentProfile. */
+  intentProfilesByCampaignId?: Record<string, CampaignIntentProfile>,
 ): Promise<AdCreationResult> {
   // 1. Filter active campaigns for this platform
   const activeCampaigns = campaigns.filter(c =>
@@ -625,6 +646,7 @@ export async function generateFullAutoProposals(
       synthesisPackagesByCampaignId,
       decisionDeskResultsByCampaignId,
       officialKnowledgeContext,
+      intentProfilesByCampaignId,
     )
     const aiResult = await callAI(system, userPrompt)
 

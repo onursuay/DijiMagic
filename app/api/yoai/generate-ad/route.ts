@@ -19,6 +19,8 @@ import { buildSynthesisPackagesForCampaigns } from '@/lib/yoai/synthesisEngine'
 import type { CampaignSynthesisPackage } from '@/lib/yoai/synthesisTypes'
 import { runMultiAiDecisionDesk, shouldUseDecisionDesk } from '@/lib/yoai/multiAiDecisionDesk'
 import type { MultiAiDecisionDeskResult } from '@/lib/yoai/multiAiTypes'
+import { buildIntentProfilesForCampaigns } from '@/lib/yoai/campaignIntentEngine'
+import type { CampaignIntentProfile } from '@/lib/yoai/campaignIntentEngine'
 
 export const dynamic = 'force-dynamic'
 export const maxDuration = 120
@@ -138,6 +140,29 @@ export async function POST(request: Request) {
             }
           }
 
+          // Intent Engine: kampanya bağlamını çıkar, proposal öncesine ekle.
+          // Hata durumunda undefined kalır; adCreator eski path ile devam eder.
+          let intentProfilesByCampaignId: Record<string, CampaignIntentProfile> | undefined
+          try {
+            const platformCampaignsForIntent = allCampaigns.filter(
+              (c: any) => c.platform === p && (c.status === 'ACTIVE' || c.status === 'ENABLED'),
+            )
+            if (platformCampaignsForIntent.length > 0) {
+              const intentResult = await buildIntentProfilesForCampaigns(platformCampaignsForIntent, {
+                userId: userId || null,
+              })
+              intentProfilesByCampaignId = intentResult.profileMap
+              console.log(
+                `[GenerateAd] ${p} intent: ${intentResult.count} profiles, warnings=${intentResult.warnings.length}`,
+              )
+              if (intentResult.warnings.length > 0) {
+                console.warn(`[GenerateAd] ${p} intent warnings:`, intentResult.warnings.slice(0, 3))
+              }
+            }
+          } catch (e) {
+            console.warn('[GenerateAd] intent profiles build failed (non-fatal):', e)
+          }
+
           // competitorAnalysis.competitorAds sadece Meta Ad Library'den gelir.
           // Meta için Meta reklamları; Google için DB'den platform='google' filtresiyle ayrıca çek.
           let platformCompetitorAds: CompetitorAd[] = []
@@ -184,6 +209,7 @@ export async function POST(request: Request) {
             persistedCompetitorContext,
             synthesisPackagesByCampaignId,
             decisionDeskResultsByCampaignId,
+            intentProfilesByCampaignId,
           )
           console.log(`[GenerateAd] ${p}: ${result.proposals.length} proposals, aiGenerated: ${result.aiGenerated}`)
           results.push(result)
