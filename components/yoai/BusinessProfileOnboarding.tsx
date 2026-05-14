@@ -340,7 +340,7 @@ export default function BusinessProfileOnboarding({ onComplete, onClose, isEditM
 
   return (
     <div className="fixed inset-0 z-[60] flex items-end md:items-center justify-center bg-black/50 backdrop-blur-sm overflow-y-auto" role="dialog" aria-modal="true" aria-labelledby="onboarding-title">
-      <div className="bg-white w-full max-w-3xl rounded-t-3xl md:rounded-3xl shadow-2xl my-0 md:my-8 max-h-[95vh] flex flex-col overflow-hidden">
+      <div className="bg-white w-full max-w-3xl rounded-t-3xl md:rounded-3xl shadow-2xl my-0 md:my-4 max-h-[95vh] min-h-[70vh] flex flex-col overflow-hidden">
         {/* Header */}
         <div className="flex items-start justify-between px-6 pt-6 pb-4 border-b border-gray-100 bg-white">
           <div className="flex-1">
