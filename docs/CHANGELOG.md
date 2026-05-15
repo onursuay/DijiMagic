@@ -2,6 +2,11 @@
 
 ---
 
+## 2026-05-16 — Strateji Migration Uygulama Script'i
+- **Sorun:** Strateji migration'larını uygulamak için Supabase Dashboard'a girip SQL Editor'a yapıştırmak gerekiyordu — manuel ve hata yapmaya açık.
+- **Çözüm:** `scripts/apply-strategy-migrations.mjs` script'i eklendi. Proje genelindeki `apply-google-ads-migration.mjs` pattern'ine uygun: `DATABASE_URL` `.env.local`'dan okunur, `pg` client ile direkt bağlanır, 2 migration sırasıyla uygulanır, `RAISE NOTICE` çıktıları terminale yansır. `npm run db:migrate:strategy` komutuyla çalışır. `DATABASE_URL` yoksa net hata mesajı ve Supabase Dashboard linki verir.
+- **Dosyalar:** `scripts/apply-strategy-migrations.mjs`, `package.json`
+
 ## 2026-05-16 — Strateji NULL user_id Backfill Migration
 - **Sorun:** `20260516000000` migrasyonu öncesinde oluşturulmuş `strategy_instances` kayıtları `user_id = NULL` taşıyor. Yeni GET filtresinde (`.eq('user_id', ctx.userId)`) bu kayıtlar dışarıda kalıyor — kullanıcı eski stratejilerini göremez.
 - **Çözüm:** Güvenli (unambiguous) backfill migration yazıldı. `meta_connections.selected_ad_account_id` → `strategy_instances.ad_account_id` JOIN ile eşleşme yapılır. Aynı `ad_account_id`'ye birden fazla `user_id` karşılık geliyorsa o kayıtlara dokunulmaz (ambiguous). `act_` prefix normalizasyonu (`REPLACE`) yapılır; eski kayıtlarda prefix olmayabilir. Hiçbir kayıt silinmez. Orphan (eşleşme bulunamayan) kayıtlar NULL kalır, GET'te görünmez — bu kasıtlıdır. Migration idempotent: tekrar çalıştırılabilir. `RAISE NOTICE` ile güncellenen / ambiguous / orphan sayısı raporlanır. 10 yeni statik analiz testi eklendi.
