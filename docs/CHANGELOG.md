@@ -2,6 +2,11 @@
 
 ---
 
+## 2026-05-15 — Hedef Kitle Faz 11: UX Cleanup
+- **Sorun:** (1) Silme butonu tek tıkla kalıcı siliyordu — geri alınamaz. (2) POPULATING/CREATING kitleler cron güncelleyene kadar UI'da bayat kalıyordu. (3) AI sekmesinde "Yeni Kitle" butonu wizard açıyordu ama AI kitleleri wizard'dan değil Strateji modülünden geliyor.
+- **Çözüm:** (1) `AudienceCard` 2-step delete confirm: "Sil" → "Emin misin? Evet / İptal". 4 saniye içinde onaylanmazsa veya kart kapanırsa otomatik iptal. (2) `page.tsx` auto-poll: CREATING/POPULATING audience varken her 30 saniyede `fetchAudiences` çalışır, hepsi terminal duruma geçince interval temizlenir. (3) `activeTab === 'AI'` iken "Yeni Kitle" butonu render edilmez.
+- **Dosyalar:** `components/hedef-kitle/AudienceCard.tsx`, `app/hedef-kitle/page.tsx`
+
 ## 2026-05-15 — Hedef Kitle Faz 9: Arka Plan Sync Cron
 - **Sorun:** POPULATING/CREATING durumundaki Meta kitleleri otomatik olarak READY/ERROR/DELETED durumuna geçmiyordu; kullanıcı "Senkronize Et" butonuna manuel basması gerekiyordu.
 - **Çözüm:** `GET /api/cron/audiences-sync` endpoint'i oluşturuldu. Vercel Cron ile her saat başı çalışır. DB'den `CREATING` veya `POPULATING` statüsündeki ve `meta_audience_id` atanmış tüm kitleleri çeker; `user_id` bazında gruplar; her kullanıcının Meta bağlantısını alır; `/{metaAudienceId}?fields=id,approximate_count_lower_bound,...` ile durum sorgular. `operation_status.code === 200` ya da `approximate_count_lower_bound > 0` → READY; Meta error 100 → DELETED; `opCode >= 400` → ERROR. Tüm DB güncellemeleri `.eq('user_id', userId)` ile güvenli şekilde kısıtlanır. `vercel.json`'a `"schedule": "0 * * * *"` cron kaydı eklendi.
