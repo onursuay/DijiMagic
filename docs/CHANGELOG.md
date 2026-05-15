@@ -2,6 +2,11 @@
 
 ---
 
+## 2026-05-15 — Optimizasyon guard owner bypass (Faz 1 hotfix)
+- **Sorun:** Faz 1 backend guard production'da çalışıyor ancak owner hesabı (onursuay@hotmail.com) `subscriptions` tablosunda paid kayıt taşımadığı için "Optimizasyon için aktif bir abonelik gerekli." mesajıyla bloklanıyordu. Magic-scan tetiklenemediği için `yoai_recommendation_results` tablosuna kayıt düşmüyordu.
+- **Çözüm:** `requireOptimizationAccess()` içine super-admin bypass eklendi — `isSuperAdminEmail(user.email)` allowlist (default `onursuay@hotmail.com`, `SUPER_ADMIN_EMAILS` env ile override) eşleşirse subscription kontrolü atlanıp `enterprise/active` stub state ile erişim veriliyor. Gözetim Merkezi'nde kullanılan tutarlı pattern. Normal kullanıcılar için subscription guard değişmedi.
+- **Dosyalar:** `lib/meta/optimization/serverGuard.ts`
+
 ## 2026-05-15 — Optimizasyon Faz 1: Backend guard + fallback transparency + batch confirm + persistence
 - **Sorun:** Audit raporu 4 kritik açık tespit etti: (1) magic-scan/score endpoint'lerinde subscription kontrolü yoktu, client-side bypass mümkündü; (2) AI istendiği halde fallback'a düşüldüğünde kullanıcı bilemiyordu; (3) "Apply Selected" butonu çoklu Meta mutation'ı tek tıkla onaysız başlatabiliyordu; (4) tarama sonuçları DB'ye yazılmıyor, page refresh'te kayboluyordu.
 - **Çözüm:** Yeni `lib/meta/optimization/serverGuard.ts` — `canUseOptimization` mantığını server tarafına taşıdı, magic-scan + score route başlarına eklendi (mevcut Graph API çağrı mantığına dokunulmadı). `MagicScanResult` tipine `aiRequested`/`aiFallbackUsed` alanları eklendi; backend `useAI && !aiGenerated` durumunu flag'liyor. `ScanHeroBanner` fallback notice gösteriyor (amber yerine `text-orange-300`). `MagicScanResults` artık "Apply Selected" butonunu DiffPanel onay modalından geçiriyor — direkt apply yolu kapandı; DiffPanel `batchSummary` + Meta mutation uyarısı içeriyor. Yeni `POST/GET /api/yoai/optimization/recommendations` endpoint'i `recordBeforeSnapshot` ile her taramayı `yoai_recommendation_results` tablosuna fire-and-forget kaydediyor (Supabase yoksa graceful skip). `bg-amber-500` → `bg-orange-500` (RISK_COLORS), CLAUDE.md renk kuralı.

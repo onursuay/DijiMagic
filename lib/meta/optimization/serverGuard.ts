@@ -3,6 +3,7 @@ import { NextResponse } from 'next/server'
 import { getCurrentUser, type AuthenticatedUser } from '@/lib/billing/user'
 import { getSubscription } from '@/lib/billing/db'
 import { getPlanById, isTrialActive } from '@/lib/subscription/helpers'
+import { isSuperAdminEmail } from '@/lib/admin/superAdmin'
 import type { SubscriptionState, PlanId } from '@/lib/subscription/types'
 
 export interface OptimizationAccessGrant {
@@ -40,6 +41,27 @@ export async function requireOptimizationAccess(): Promise<OptimizationAccessRes
   const user = await getCurrentUser()
   if (!user) {
     return deny(401, 'unauthenticated', 'Oturum bulunamadı.')
+  }
+
+  // Super-admin bypass — owner accounts (allowlisted via SUPER_ADMIN_EMAILS
+  // or the built-in default) get full optimization access without needing a
+  // paid subscription row. This mirrors the pattern used by Gözetim Merkezi
+  // and is scoped strictly to the allowlist — no behavior change for normal
+  // users.
+  if (isSuperAdminEmail(user.email)) {
+    return {
+      ok: true,
+      user,
+      subscription: {
+        planId: 'enterprise',
+        status: 'active',
+        billingCycle: 'yearly',
+        startDate: new Date().toISOString(),
+        trialEndDate: null,
+        currentPeriodEnd: new Date(Date.now() + 365 * 86_400_000).toISOString(),
+      },
+      isPremium: true,
+    }
   }
 
   const sub = await getSubscription(user.id)
