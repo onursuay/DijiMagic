@@ -29,8 +29,18 @@ interface Props {
 
 export default function ApprovalFlowPreview({ drafts, loading, onExecuteAction }: Props) {
   const [dismissed, setDismissed] = useState<Set<string>>(new Set())
+  const [expanded, setExpanded] = useState<Set<string>>(new Set())
   const [executing, setExecuting] = useState<string | null>(null)
   const [results, setResults] = useState<Record<string, { ok: boolean; msg: string }>>({})
+
+  const handleExpand = (draftId: string) => {
+    setExpanded(prev => {
+      const next = new Set(prev)
+      if (next.has(draftId)) next.delete(draftId)
+      else next.add(draftId)
+      return next
+    })
+  }
 
   const visibleDrafts = drafts.filter(d => !dismissed.has(d.id))
 
@@ -125,7 +135,7 @@ export default function ApprovalFlowPreview({ drafts, loading, onExecuteAction }
                 </div>
                 <h3 className="text-sm font-semibold text-gray-900 mb-1">{draft.title}</h3>
                 <p className="text-[10px] text-gray-400 mb-2">{draft.platform} · {draft.campaign}</p>
-                <p className="text-xs text-gray-600 mb-4 leading-relaxed flex-1 line-clamp-3">{draft.description}</p>
+                <p className={`text-xs text-gray-600 mb-4 leading-relaxed flex-1 ${expanded.has(draft.id) ? '' : 'line-clamp-3'}`}>{draft.description}</p>
 
                 {/* Result message */}
                 {result && (
@@ -147,11 +157,10 @@ export default function ApprovalFlowPreview({ drafts, loading, onExecuteAction }
                         Onayla
                       </button>
                       <button
-                        onClick={() => handleApprove(draft)}
-                        disabled={isExecuting}
-                        className="inline-flex items-center gap-1 px-2.5 py-1.5 bg-gray-100 text-gray-600 rounded-lg text-[11px] font-medium hover:bg-gray-200 transition-colors disabled:opacity-50"
+                        onClick={() => handleExpand(draft.id)}
+                        className="inline-flex items-center gap-1 px-2.5 py-1.5 bg-gray-100 text-gray-600 rounded-lg text-[11px] font-medium hover:bg-gray-200 transition-colors"
                       >
-                        <Eye className="w-3 h-3" />İncele
+                        <Eye className="w-3 h-3" />{expanded.has(draft.id) ? 'Kapat' : 'İncele'}
                       </button>
                       <button
                         onClick={() => handleDismiss(draft.id)}
