@@ -2,6 +2,11 @@
 
 ---
 
+## 2026-05-15 — İşletme Profili: sektör formatı, Ana Hedef chip, kaynak grid taşma fix
+- **Sorun:** Sektör etiketleri ham DB değeriyle ("egitim · mesleki_belgelendirme") görünüyordu; Ana Hedef büyük kutu, lokasyon chip'leriyle tutarsız; Marka Kaynakları'nda 5+ kaynak flex-wrap ile taşıyordu
+- **Çözüm:** `formatSector()` helper eklendi (alt çizgi → boşluk, baş harf büyük, Türkçe locale). Ana Hedef lokasyon chip stiliyle eşleştirildi. Marka Kaynakları `grid-cols-2` sabit grid'e alındı — kaç kaynak olursa olsun 2 sütunda dizilir, truncate ile taşmaz
+- **Dosyalar:** `app/yoai/isletme-profili/page.tsx`
+
 ## 2026-05-15 — İşletme Profili: güven ring merkez fix + hedef/kaynaklar 4-sütun grid
 - **Sorun:** %85 güven yazısı daire içinde merkeze hizalı değil (CSS rotate + absolute div kayması); Hedef & Lokasyon + Marka Kaynakları iki ayrı kartda yükseklik dengesizliği ve boş alan sorunu
 - **Çözüm:** Ring: CSS `-rotate-90` kaldırıldı, arc `transform="rotate(-90 40 40)"` SVG attribute ile döndürülüyor; metin `<text>` elementi `textAnchor="middle"` + `dominantBaseline="middle"` ile geometrik merkeze sabitlendi. Layout: iki ayrı kart yerine tek kart `grid-cols-4` + `divide-x` ile 4 eşit sütun (Ana Hedef / Lokasyonlar / Hedef Kitle / Marka Kaynakları)

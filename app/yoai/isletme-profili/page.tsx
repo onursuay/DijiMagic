@@ -9,6 +9,14 @@ import {
 } from 'lucide-react'
 import BusinessProfileOnboarding from '@/components/yoai/BusinessProfileOnboarding'
 
+// DB'de alt çizgili ve küçük harfli gelen sektör etiketlerini okunabilir yapar
+// "mesleki_belgelendirme" → "Mesleki Belgelendirme"
+function formatSector(raw: string): string {
+  return raw
+    .replace(/_/g, ' ')
+    .replace(/(?:^|\s)\S/g, (c) => c.toLocaleUpperCase('tr-TR'))
+}
+
 interface Profile {
   company_name: string
   sector_main: string | null
@@ -266,7 +274,7 @@ export default function IsletmeProfilPage() {
                 <h1 className="text-2xl font-bold text-white drop-shadow-sm truncate">{profile.company_name}</h1>
                 {profile.sector_main && (
                   <p className="text-white/75 text-sm mt-0.5 font-medium">
-                    {profile.sector_main}{profile.sector_sub ? ` · ${profile.sector_sub}` : ''}
+                    {formatSector(profile.sector_main)}{profile.sector_sub ? ` · ${formatSector(profile.sector_sub)}` : ''}
                   </p>
                 )}
                 <div className="flex items-center gap-2 mt-2.5 flex-wrap">
@@ -326,10 +334,9 @@ export default function IsletmeProfilPage() {
             <div className="p-5">
               <p className="text-[10px] font-semibold text-gray-400 uppercase tracking-widest mb-3">Ana Hedef</p>
               {profile.main_conversion_goal ? (
-                <div className="inline-flex items-center gap-2 px-3 py-2 rounded-xl bg-primary/5 border border-primary/15">
-                  <Phone className="w-3.5 h-3.5 text-primary shrink-0" />
-                  <span className="text-sm font-semibold text-gray-800">{profile.main_conversion_goal}</span>
-                </div>
+                <span className="inline-flex items-center gap-1 px-2.5 py-1.5 rounded-lg bg-gray-50 border border-gray-200 text-xs font-medium text-gray-700">
+                  <Phone className="w-3 h-3 text-gray-400 shrink-0" />{profile.main_conversion_goal}
+                </span>
               ) : (
                 <span className="text-sm text-gray-300 italic">—</span>
               )}
@@ -361,15 +368,16 @@ export default function IsletmeProfilPage() {
               )}
             </div>
 
-            {/* Marka Kaynakları */}
+            {/* Marka Kaynakları — 2-col grid, taşma yok */}
             <div className="p-5">
               <p className="text-[10px] font-semibold text-gray-400 uppercase tracking-widest mb-3">Marka Kaynakları</p>
               {allSources.length > 0 ? (
-                <div className="flex flex-wrap gap-1.5">
+                <div className="grid grid-cols-2 gap-1.5">
                   {allSources.map((s) => (
                     <a key={s.label} href={s.url!} target="_blank" rel="noopener noreferrer"
-                      className="inline-flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg bg-gray-50 border border-gray-100 text-xs font-medium text-gray-600 hover:bg-primary/5 hover:text-primary hover:border-primary/20 transition-colors">
-                      <ExternalLink className="w-3 h-3 shrink-0" />{s.label}
+                      className="inline-flex items-center gap-1 px-2 py-1.5 rounded-lg bg-gray-50 border border-gray-100 text-xs font-medium text-gray-600 hover:bg-primary/5 hover:text-primary hover:border-primary/20 transition-colors truncate">
+                      <ExternalLink className="w-3 h-3 shrink-0" />
+                      <span className="truncate">{s.label}</span>
                     </a>
                   ))}
                 </div>
