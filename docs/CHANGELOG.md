@@ -2,6 +2,12 @@
 
 ---
 
+## 2026-05-15 — Apify tüm 5 platform çalışıyor: LinkedIn dev_fusion actor eklendi
+- **Sorun:** LinkedIn için çalışan actor yoktu, input format testi gerekiyordu
+- **Çözüm:** `dev_fusion/Linkedin-Company-Scraper` actor'ı izin onaylandı. Input key: `profileUrls` (startUrls değil). Canlı test: SUCCEEDED, companyName/description/industry/employeeCount döndü. `buildActorInput` LinkedIn dalı güncellendi. Tüm 5 platform (Instagram/Facebook/LinkedIn/YouTube/TikTok) Apify ile çalışıyor
+- **Dosyalar:** `lib/yoai/apifySocialConfig.ts`, `.env.local`, `.env.example`, `CLAUDE.md`
+- **Vercel'e eklenecek:** `APIFY_LINKEDIN_COMPANY_ACTOR_ID=dev_fusion/Linkedin-Company-Scraper`
+
 ## 2026-05-15 — Apify entegrasyonu canlı test + LinkedIn fallback
 - **Sorun:** LinkedIn için FREE plan'da erişilebilir Apify actor yok; env'de actor ID bırakılmıştı
 - **Çözüm:** Canlı test sonuçları: Instagram ✓, Facebook ✓, YouTube ✓, TikTok ✓ (hepsi SUCCEEDED + veri döndü). LinkedIn actor ID boşaltıldı → public metadata fallback otomatik devreye girer. CLAUDE.md güncellendi

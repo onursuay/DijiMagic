@@ -57,6 +57,10 @@ export function buildActorInput(platform: ApifySocialPlatform, sourceUrl: string
       ? { profiles: [`@${username}`], resultsLimit: 12 }
       : { startUrls: [{ url: sourceUrl }] }
   }
-  // Facebook, LinkedIn, YouTube
+  if (platform === 'linkedin') {
+    // dev_fusion/Linkedin-Company-Scraper expects profileUrls, not startUrls
+    return { profileUrls: [sourceUrl] }
+  }
+  // Facebook, YouTube
   return { startUrls: [{ url: sourceUrl }] }
 }
