@@ -21,6 +21,8 @@ export type ApprovalStatus =
   | 'call_scheduled'
   | 'call_declined'
   | 'needs_call'
+  | 'blocked'
+  | 'manual_review'
 
 export type PreMeetingStatus = 'pending' | 'scheduled' | 'declined'
 
@@ -85,9 +87,29 @@ export async function resolveAccountState(): Promise<AccountState | null> {
 /**
  * Iç panellere erişim hakkı var mı?
  * Owner allowlist'i otomatik olarak true döndürür.
+ * blocked ve manual_review kullanıcılar erişemez.
  */
 export function isAccountApprovedForPanel(state: AccountState | null): boolean {
   if (!state) return false
   if (state.isOwner) return true
+  if (state.approvalStatus === 'blocked' || state.approvalStatus === 'manual_review') return false
   return state.approvalStatus === 'approved'
+}
+
+/**
+ * Kullanıcı engellendi mi?
+ */
+export function isAccountBlocked(state: AccountState | null): boolean {
+  if (!state) return false
+  if (state.isOwner) return false
+  return state.approvalStatus === 'blocked'
+}
+
+/**
+ * Kullanıcı manuel inceleme bekliyor mu?
+ */
+export function isAccountManualReview(state: AccountState | null): boolean {
+  if (!state) return false
+  if (state.isOwner) return false
+  return state.approvalStatus === 'manual_review'
 }

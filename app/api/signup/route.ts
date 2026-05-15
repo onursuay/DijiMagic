@@ -1,15 +1,16 @@
-import { NextResponse } from 'next/server'
+import { NextRequest, NextResponse } from 'next/server'
 import { randomUUID } from 'node:crypto'
 import { supabase } from '@/lib/supabase/client'
 import { Resend } from 'resend'
 import bcrypt from 'bcryptjs'
 import { notifyOwnersOfSignupEvent } from '@/lib/notifications/ownerNotifier'
+import { checkBlocklist, extractDomain } from '@/lib/admin/blocklist'
 
 const resend = process.env.RESEND_API_KEY ? new Resend(process.env.RESEND_API_KEY) : null
 const APP_URL = process.env.NEXT_PUBLIC_APP_URL || 'https://yoai.yodijital.com'
 const FROM_EMAIL = process.env.FROM_EMAIL || 'YO Dijital Medya Anonim Şirketi <info@yodijital.com>'
 
-export async function POST(request: Request) {
+export async function POST(request: NextRequest) {
   try {
     const body = await request.json()
     const { name, email, company, phone, password, turnstileToken } = body
@@ -58,6 +59,22 @@ export async function POST(request: Request) {
     if (!supabase) {
       console.error('[Signup] Supabase client not available')
       return NextResponse.json({ ok: false, error: 'service_unavailable' }, { status: 503 })
+    }
+
+    // Blocklist kontrolü — email, domain, IP
+    const clientIp = request.headers.get('x-forwarded-for')?.split(',')[0]?.trim()
+      || request.headers.get('x-real-ip')
+      || null
+    const domain = extractDomain(cleanEmail)
+    const blockChecks: Array<{ type: 'email' | 'domain' | 'ip'; value: string }> = [
+      { type: 'email', value: cleanEmail },
+    ]
+    if (domain) blockChecks.push({ type: 'domain', value: domain })
+    if (clientIp) blockChecks.push({ type: 'ip', value: clientIp })
+
+    const blockResult = await checkBlocklist(blockChecks)
+    if (blockResult.blocked) {
+      return NextResponse.json({ ok: false, error: 'registration_not_available' }, { status: 403 })
     }
 
     // Check if email already registered

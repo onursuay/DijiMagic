@@ -20,6 +20,13 @@ export async function POST() {
   if (!state) {
     return NextResponse.json({ ok: false, error: 'unauthenticated' }, { status: 401 })
   }
+  // Blocked ve manual_review kullanıcı decline yapamaz
+  if (state.approvalStatus === 'blocked') {
+    return NextResponse.json({ ok: false, error: 'access_not_available' }, { status: 403 })
+  }
+  if (state.approvalStatus === 'manual_review') {
+    return NextResponse.json({ ok: false, error: 'pending_review' }, { status: 403 })
+  }
   if (!supabase) {
     return NextResponse.json({ ok: false, error: 'service_unavailable' }, { status: 503 })
   }

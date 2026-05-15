@@ -2,7 +2,7 @@
 
 /**
  * Gözetim Merkezi dashboard — yetkili oturum görür.
- * Kullanıcı-facing metin tek başlık altında: "Gözetim Merkezi".
+ * Sadeleştirilmiş görünüm: KPI + Kullanıcı&Firma listesi + Başvurular paneli.
  */
 import { useEffect, useMemo, useState } from 'react'
 import {
@@ -67,26 +67,6 @@ interface ProfileEntry {
   intelligenceSummary: IntelligenceSummary | null
 }
 
-interface RecentSignup {
-  id: string
-  email: string | null
-  name: string | null
-  status: string | null
-  created_at: string | null
-  hasProfile: boolean
-}
-
-interface FailedScanEntry {
-  id: string
-  profile_id: string | null
-  source_type: string | null
-  source_url: string | null
-  source_owner_type: string | null
-  scanned_at: string | null
-  error_message: string | null
-  error_type: string
-}
-
 interface OverviewPayload {
   ok: boolean
   kpis: {
@@ -107,9 +87,6 @@ interface OverviewPayload {
     totalSources: number
   }
   profiles: ProfileEntry[]
-  recentSignups: RecentSignup[]
-  errorTypeCounts: Record<string, number>
-  recentFailedScans: FailedScanEntry[]
   diagnostics: string[]
 }
 
@@ -227,7 +204,6 @@ export default function GozetimMerkeziClient() {
     if (!data) return [] as ProfileEntry[]
     const q = search.trim().toLowerCase()
     return data.profiles.filter((entry) => {
-      // Search
       if (q) {
         const fields: Array<string | null | undefined> = [
           entry.user?.email,
@@ -240,7 +216,6 @@ export default function GozetimMerkeziClient() {
         ]
         if (!fields.some((f) => (f || '').toLowerCase().includes(q))) return false
       }
-      // Onboarding filter
       if (filterOnboarding !== 'all') {
         const hasProfile = !!entry.profile
         const done = !!entry.profile?.onboarding_completed
@@ -248,7 +223,6 @@ export default function GozetimMerkeziClient() {
         if (filterOnboarding === 'complete' && (!hasProfile || !done)) return false
         if (filterOnboarding === 'incomplete' && (!hasProfile || done)) return false
       }
-      // Scan filter
       if (filterScan !== 'all') {
         const scans = entry.sourceScansSummary || []
         const has = (st: string) => scans.some((s) => (s.scan_status || '').toLowerCase() === st)
@@ -257,7 +231,6 @@ export default function GozetimMerkeziClient() {
         if (filterScan === 'failed' && !(has('failed') || has('error'))) return false
         if (filterScan === 'running' && !(has('running') || has('pending') || has('queued'))) return false
       }
-      // Intelligence filter
       if (filterIntel !== 'all') {
         const hasIntel = !!entry.intelligenceSummary
         if (filterIntel === 'missing' && hasIntel) return false
@@ -303,8 +276,8 @@ export default function GozetimMerkeziClient() {
         </div>
       )}
 
-      {/* KPI Kartları */}
-      <section className="grid grid-cols-2 gap-3 sm:grid-cols-3 lg:grid-cols-5">
+      {/* KPI Kartları — Kullanıcı & Firma */}
+      <section className="grid grid-cols-2 gap-3 sm:grid-cols-3 lg:grid-cols-5" data-testid="kpi-section">
         <KpiCard
           label="Toplam Kullanıcı"
           value={data?.kpis.totalUsers ?? (loading ? '…' : 0)}
@@ -335,13 +308,6 @@ export default function GozetimMerkeziClient() {
           icon={Users}
           tone="gray"
         />
-
-        <KpiCard
-          label="Toplam Tarama"
-          value={data?.kpis.totalScans ?? (loading ? '…' : 0)}
-          icon={Activity}
-          tone="gray"
-        />
         <KpiCard
           label="Tamamlanan Tarama"
           value={data?.kpis.completedScans ?? (loading ? '…' : 0)}
@@ -355,34 +321,19 @@ export default function GozetimMerkeziClient() {
           tone="primary"
         />
         <KpiCard
-          label="Hatalı Tarama"
-          value={data?.kpis.failedScans ?? (loading ? '…' : 0)}
-          icon={AlertTriangle}
-          tone="red"
-        />
-        <KpiCard
-          label="Ort. Confidence"
-          value={
-            data?.kpis.avgIntelConfidence == null
-              ? loading
-                ? '…'
-                : '—'
-              : `${Math.round((data.kpis.avgIntelConfidence as number) * 100)}%`
-          }
-          icon={Sparkles}
-          tone="gray"
-        />
-
-        <KpiCard
           label="Intelligence Eksik"
           value={data?.kpis.intelligenceMissing ?? (loading ? '…' : 0)}
           icon={AlertTriangle}
           tone="primary"
         />
         <KpiCard
-          label="Toplam Rakip"
-          value={data?.kpis.totalCompetitors ?? (loading ? '…' : 0)}
-          icon={Database}
+          label="Ort. Confidence"
+          value={
+            data?.kpis.avgIntelConfidence == null
+              ? loading ? '…' : '—'
+              : `${Math.round((data.kpis.avgIntelConfidence as number) * 100)}%`
+          }
+          icon={Sparkles}
           tone="gray"
         />
         <KpiCard
@@ -390,18 +341,6 @@ export default function GozetimMerkeziClient() {
           value={data?.kpis.signups24h ?? (loading ? '…' : 0)}
           icon={Users}
           tone="emerald"
-        />
-        <KpiCard
-          label="Son 7g Kayıt"
-          value={data?.kpis.signups7d ?? (loading ? '…' : 0)}
-          icon={Users}
-          tone="emerald"
-        />
-        <KpiCard
-          label="Toplam Kaynak"
-          value={data?.kpis.totalSources ?? (loading ? '…' : 0)}
-          icon={Database}
-          tone="gray"
         />
       </section>
 
@@ -417,7 +356,7 @@ export default function GozetimMerkeziClient() {
         </div>
       )}
 
-      {/* Arama ve liste */}
+      {/* Kullanıcı & Firma Listesi */}
       <section className="mt-8">
         <div className="mb-3 flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
           <h2 className="text-base font-semibold text-gray-900">Kullanıcı & Firma Listesi</h2>
@@ -573,132 +512,18 @@ export default function GozetimMerkeziClient() {
         </div>
       </section>
 
-      {/* Başvurular — manuel onay/red akışı */}
+      {/* Başvurular — başvuru yönetim paneli */}
       <SignupApprovalsPanel />
 
-      {/* Son kayıt olan kullanıcılar */}
-      {data && (
-        <section className="mt-8">
-          <h2 className="mb-3 text-base font-semibold text-gray-900">Son Kayıt Olan Kullanıcılar</h2>
-          <div className="overflow-x-auto rounded-xl border border-gray-200 bg-white">
-            <table className="w-full text-sm">
-              <thead className="border-b border-gray-200 bg-gray-50 text-left text-xs uppercase tracking-wide text-gray-500">
-                <tr>
-                  <th className="px-3 py-2">E-posta</th>
-                  <th className="px-3 py-2">İsim</th>
-                  <th className="px-3 py-2">Durum</th>
-                  <th className="px-3 py-2">Profil</th>
-                  <th className="px-3 py-2">Kayıt Tarihi</th>
-                </tr>
-              </thead>
-              <tbody className="divide-y divide-gray-100">
-                {data.recentSignups.map((u) => (
-                  <tr key={u.id} className="hover:bg-gray-50">
-                    <td className="px-3 py-2 font-medium text-gray-900">{u.email || '—'}</td>
-                    <td className="px-3 py-2 text-gray-700">{u.name || '—'}</td>
-                    <td className="px-3 py-2 text-gray-600">{u.status || '—'}</td>
-                    <td className="px-3 py-2">
-                      <span
-                        className={`inline-flex items-center rounded border px-2 py-0.5 text-xs ${
-                          u.hasProfile
-                            ? 'bg-emerald-50 text-emerald-700 border-emerald-200'
-                            : 'bg-gray-50 text-gray-700 border-gray-200'
-                        }`}
-                      >
-                        {u.hasProfile ? 'Var' : 'Yok'}
-                      </span>
-                    </td>
-                    <td className="px-3 py-2 text-gray-500">{formatDate(u.created_at)}</td>
-                  </tr>
-                ))}
-                {data.recentSignups.length === 0 && (
-                  <tr>
-                    <td colSpan={5} className="px-3 py-6 text-center text-gray-400">
-                      Kayıt yok.
-                    </td>
-                  </tr>
-                )}
-              </tbody>
-            </table>
-          </div>
-        </section>
-      )}
-
-      {/* Hata Takibi */}
-      {data && (data.recentFailedScans.length > 0 || Object.keys(data.errorTypeCounts).length > 0) && (
-        <section className="mt-8">
-          <h2 className="mb-3 text-base font-semibold text-gray-900">Hata Takibi</h2>
-          <div className="grid grid-cols-1 gap-3 lg:grid-cols-3">
-            <div className="rounded-xl border border-gray-200 bg-white p-4">
-              <div className="mb-2 text-xs font-semibold uppercase tracking-wide text-gray-500">
-                Hata Tipi Dağılımı
-              </div>
-              {Object.keys(data.errorTypeCounts).length === 0 ? (
-                <div className="text-sm text-gray-500">Kayıt yok.</div>
-              ) : (
-                <ul className="space-y-1">
-                  {Object.entries(data.errorTypeCounts)
-                    .sort((a, b) => b[1] - a[1])
-                    .map(([k, v]) => (
-                      <li
-                        key={k}
-                        className="flex items-center justify-between rounded border border-gray-200 bg-gray-50 px-2 py-1 text-xs"
-                      >
-                        <span className="text-gray-700">{k}</span>
-                        <span className="tabular-nums font-medium text-gray-900">{v}</span>
-                      </li>
-                    ))}
-                </ul>
-              )}
-            </div>
-            <div className="rounded-xl border border-gray-200 bg-white p-4 lg:col-span-2">
-              <div className="mb-2 text-xs font-semibold uppercase tracking-wide text-gray-500">
-                Son Hatalı Tarama
-              </div>
-              {data.recentFailedScans.length === 0 ? (
-                <div className="text-sm text-gray-500">Kayıt yok.</div>
-              ) : (
-                <ul className="space-y-2">
-                  {data.recentFailedScans.map((s) => (
-                    <li
-                      key={s.id}
-                      className="rounded border border-red-200 bg-red-50 px-3 py-2 text-xs text-red-700"
-                    >
-                      <div className="flex flex-wrap items-center justify-between gap-2">
-                        <span className="font-medium">
-                          {s.source_type || '—'}
-                          {s.source_owner_type ? ` · ${s.source_owner_type}` : ''}
-                          {' · '}
-                          <span className="rounded border border-red-200 bg-white px-1.5 py-0.5 text-[10px] text-red-700">
-                            {s.error_type}
-                          </span>
-                        </span>
-                        <span className="text-[11px] opacity-70">{formatDate(s.scanned_at)}</span>
-                      </div>
-                      {s.source_url && (
-                        <div className="mt-1 truncate text-[11px] text-red-800/80">{s.source_url}</div>
-                      )}
-                      {s.error_message && (
-                        <div className="mt-1 text-[11px]">{s.error_message}</div>
-                      )}
-                    </li>
-                  ))}
-                </ul>
-              )}
-            </div>
-          </div>
-        </section>
-      )}
-
-      {/* Detay drawer */}
+      {/* Detay modal (Kullanıcı & Firma Listesi için) */}
       {selectedEntry && (
-        <DetailDrawer entry={selectedEntry} onClose={() => setSelectedKey(null)} />
+        <DetailModal entry={selectedEntry} onClose={() => setSelectedKey(null)} />
       )}
     </div>
   )
 }
 
-function DetailDrawer({
+function DetailModal({
   entry,
   onClose,
 }: {
@@ -709,15 +534,22 @@ function DetailDrawer({
   const intel = entry.intelligenceSummary
   const scans = entry.sourceScansSummary
 
+  // Body scroll lock
+  useEffect(() => {
+    const prev = document.body.style.overflow
+    document.body.style.overflow = 'hidden'
+    return () => { document.body.style.overflow = prev }
+  }, [])
+
   return (
-    <div className="fixed inset-0 z-50 flex">
+    <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
       <div
-        className="absolute inset-0 bg-gray-900/30"
+        className="absolute inset-0 bg-black/50 backdrop-blur-md"
         onClick={onClose}
         aria-hidden="true"
       />
-      <div className="relative ml-auto h-full w-full max-w-3xl overflow-y-auto bg-white shadow-xl">
-        <div className="sticky top-0 z-10 flex items-center justify-between border-b border-gray-200 bg-white px-5 py-3">
+      <div className="relative w-full max-w-3xl max-h-[90vh] overflow-y-auto rounded-2xl bg-white shadow-2xl">
+        <div className="sticky top-0 z-10 flex items-center justify-between border-b border-gray-200 bg-white px-6 py-4">
           <div>
             <div className="text-xs uppercase tracking-wide text-gray-500">
               Gözetim Merkezi · Detay
@@ -738,17 +570,14 @@ function DetailDrawer({
           </button>
         </div>
 
-        <div className="space-y-6 px-5 py-5">
+        <div className="space-y-6 px-6 py-5">
           <Section title="Firma Bilgileri">
             <KeyValue k="İşletme Adı" v={profile.business_name} />
             <KeyValue k="Kullanıcı" v={entry.user?.email} />
             <KeyValue k="Web Sitesi" v={profile.website} />
             <KeyValue k="Sektör" v={[profile.sector_main, profile.sector_sub].filter(Boolean).join(' / ')} />
             <KeyValue k="Lokasyon" v={profile.target_location} />
-            <KeyValue
-              k="Onboarding"
-              v={profile.onboarding_completed ? 'Tamamlandı' : 'Eksik'}
-            />
+            <KeyValue k="Onboarding" v={profile.onboarding_completed ? 'Tamamlandı' : 'Eksik'} />
             <KeyValue k="Marka Tonu" v={profile.brand_tone} />
             <KeyValue k="Açıklama" v={profile.business_description} wide />
             <KeyValue k="Anahtar Kelimeler" vList={toArray(profile.keywords)} />
@@ -762,10 +591,7 @@ function DetailDrawer({
             ) : (
               <ul className="space-y-2">
                 {entry.competitors.map((c: any) => (
-                  <li
-                    key={c.id}
-                    className="rounded-md border border-gray-200 bg-gray-50 px-3 py-2 text-sm"
-                  >
+                  <li key={c.id} className="rounded-md border border-gray-200 bg-gray-50 px-3 py-2 text-sm">
                     <div className="font-medium text-gray-800">{c.name || c.url || '—'}</div>
                     {c.url && <div className="text-xs text-gray-500">{c.url}</div>}
                   </li>
@@ -780,10 +606,7 @@ function DetailDrawer({
             ) : (
               <div className="space-y-3">
                 {scans.map((s) => (
-                  <div
-                    key={s.id}
-                    className="rounded-lg border border-gray-200 bg-white p-3"
-                  >
+                  <div key={s.id} className="rounded-lg border border-gray-200 bg-white p-3">
                     <div className="flex items-center justify-between gap-3">
                       <div className="flex min-w-0 flex-col">
                         <div className="truncate text-sm font-medium text-gray-900">
@@ -795,60 +618,17 @@ function DetailDrawer({
                           {s.provider_used ? ` · provider: ${s.provider_used}` : ''}
                         </div>
                       </div>
-                      <span
-                        className={`shrink-0 rounded border px-2 py-0.5 text-xs ${scanStatusBadgeClass(
-                          s.scan_status,
-                        )}`}
-                      >
+                      <span className={`shrink-0 rounded border px-2 py-0.5 text-xs ${scanStatusBadgeClass(s.scan_status)}`}>
                         {s.scan_status || '—'}
                       </span>
                     </div>
                     <div className="mt-2 grid grid-cols-2 gap-2 text-xs text-gray-600">
-                      <div>
-                        Tarih: <span className="text-gray-800">{formatDate(s.scanned_at)}</span>
-                      </div>
-                      <div>
-                        Confidence:{' '}
-                        <span className="text-gray-800">
-                          {s.confidence == null ? '—' : `${Math.round(Number(s.confidence) * 100)}%`}
-                        </span>
-                      </div>
+                      <div>Tarih: <span className="text-gray-800">{formatDate(s.scanned_at)}</span></div>
+                      <div>Confidence: <span className="text-gray-800">{s.confidence == null ? '—' : `${Math.round(Number(s.confidence) * 100)}%`}</span></div>
                     </div>
                     {s.error_message && (
                       <div className="mt-2 rounded border border-red-200 bg-red-50 px-2 py-1.5 text-xs text-red-700">
                         Hata: {s.error_message}
-                      </div>
-                    )}
-                    {(s.extracted_title || s.extracted_description) && (
-                      <div className="mt-2 space-y-1 rounded border border-gray-200 bg-gray-50 px-2 py-1.5">
-                        {s.extracted_title && (
-                          <div className="text-xs">
-                            <span className="font-medium text-gray-600">Başlık:</span>{' '}
-                            <span className="text-gray-800">{s.extracted_title}</span>
-                          </div>
-                        )}
-                        {s.extracted_description && (
-                          <div className="text-xs">
-                            <span className="font-medium text-gray-600">Açıklama:</span>{' '}
-                            <span className="text-gray-800">{s.extracted_description}</span>
-                          </div>
-                        )}
-                        {s.extracted_keywords.length > 0 && (
-                          <div className="text-xs">
-                            <span className="font-medium text-gray-600">Keywords:</span>{' '}
-                            <span className="text-gray-800">
-                              {s.extracted_keywords.join(', ')}
-                            </span>
-                          </div>
-                        )}
-                        {s.extracted_services.length > 0 && (
-                          <div className="text-xs">
-                            <span className="font-medium text-gray-600">Hizmetler:</span>{' '}
-                            <span className="text-gray-800">
-                              {s.extracted_services.join(', ')}
-                            </span>
-                          </div>
-                        )}
                       </div>
                     )}
                   </div>
@@ -863,14 +643,7 @@ function DetailDrawer({
             ) : (
               <div className="space-y-2">
                 <KeyValue k="Durum" v={intel.status} />
-                <KeyValue
-                  k="Confidence"
-                  v={
-                    intel.confidence == null
-                      ? '—'
-                      : `${Math.round(Number(intel.confidence) * 100)}%`
-                  }
-                />
+                <KeyValue k="Confidence" v={intel.confidence == null ? '—' : `${Math.round(Number(intel.confidence) * 100)}%`} />
                 <KeyValue k="Güncelleme" v={formatDate(intel.updated_at)} />
                 <KeyValue k="Şirket Özeti" v={intel.company_summary} wide />
                 <KeyValue k="İş Modeli" v={intel.business_model} wide />
@@ -892,19 +665,14 @@ function DetailDrawer({
 function Section({ title, children }: { title: string; children: React.ReactNode }) {
   return (
     <div>
-      <div className="mb-2 text-xs font-semibold uppercase tracking-wide text-gray-500">
-        {title}
-      </div>
+      <div className="mb-2 text-xs font-semibold uppercase tracking-wide text-gray-500">{title}</div>
       <div className="rounded-lg border border-gray-200 bg-white p-3">{children}</div>
     </div>
   )
 }
 
 function KeyValue({
-  k,
-  v,
-  vList,
-  wide,
+  k, v, vList, wide,
 }: {
   k: string
   v?: string | number | null
@@ -920,10 +688,7 @@ function KeyValue({
             <span className="text-xs text-gray-400">—</span>
           ) : (
             vList.map((item, idx) => (
-              <span
-                key={idx}
-                className="inline-flex items-center rounded border border-gray-200 bg-gray-50 px-2 py-0.5 text-xs text-gray-700"
-              >
+              <span key={idx} className="inline-flex items-center rounded border border-gray-200 bg-gray-50 px-2 py-0.5 text-xs text-gray-700">
                 {item}
               </span>
             ))
@@ -933,11 +698,7 @@ function KeyValue({
     )
   }
   return (
-    <div
-      className={`flex flex-col gap-1 py-1 sm:flex-row sm:items-start sm:gap-3 ${
-        wide ? '' : ''
-      }`}
-    >
+    <div className="flex flex-col gap-1 py-1 sm:flex-row sm:items-start sm:gap-3">
       <div className="w-40 shrink-0 text-xs font-medium text-gray-500">{k}</div>
       <div className="text-sm text-gray-800">
         {v == null || v === '' ? <span className="text-gray-400">—</span> : String(v)}
@@ -953,10 +714,7 @@ function toArray(v: any): string[] {
       const parsed = JSON.parse(v)
       if (Array.isArray(parsed)) return parsed.map(String).filter(Boolean)
     } catch {}
-    return v
-      .split(',')
-      .map((s) => s.trim())
-      .filter(Boolean)
+    return v.split(',').map((s: string) => s.trim()).filter(Boolean)
   }
   return []
 }
@@ -967,9 +725,7 @@ function socialList(handles: any): string[] {
     return handles.map((h) => (typeof h === 'string' ? h : h?.url || h?.handle || '')).filter(Boolean)
   }
   if (typeof handles === 'object') {
-    return Object.entries(handles)
-      .map(([k, v]) => (v ? `${k}: ${String(v)}` : ''))
-      .filter(Boolean)
+    return Object.entries(handles).map(([k, v]) => (v ? `${k}: ${String(v)}` : '')).filter(Boolean)
   }
   return []
 }

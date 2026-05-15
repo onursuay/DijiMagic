@@ -1,10 +1,11 @@
-import { NextResponse } from 'next/server'
+import { NextRequest, NextResponse } from 'next/server'
 import { randomUUID } from 'node:crypto'
 import { supabase } from '@/lib/supabase/client'
 import bcrypt from 'bcryptjs'
 import { isSuperAdminEmail } from '@/lib/admin/superAdmin'
+import { checkBlocklist, extractDomain } from '@/lib/admin/blocklist'
 
-export async function POST(request: Request) {
+export async function POST(request: NextRequest) {
   try {
     const body = await request.json()
     const { email, password } = body
@@ -44,13 +45,37 @@ export async function POST(request: Request) {
       return NextResponse.json({ ok: false, error: 'invalid_credentials' }, { status: 401 })
     }
 
+    // Blocklist kontrolü — user ID, email, domain, IP (owner bypass)
+    const isOwner = isSuperAdminEmail(user.email as string | null)
+    if (!isOwner) {
+      const clientIp = request.headers.get('x-forwarded-for')?.split(',')[0]?.trim()
+        || request.headers.get('x-real-ip')
+        || null
+      const domain = extractDomain(cleanEmail)
+      const blockChecks: Array<{ type: 'user' | 'email' | 'domain' | 'ip'; value: string }> = [
+        { type: 'user', value: user.id },
+        { type: 'email', value: cleanEmail },
+      ]
+      if (domain) blockChecks.push({ type: 'domain', value: domain })
+      if (clientIp) blockChecks.push({ type: 'ip', value: clientIp })
+
+      const blockResult = await checkBlocklist(blockChecks)
+      if (blockResult.blocked) {
+        return NextResponse.json({ ok: false, error: 'access_not_available' }, { status: 403 })
+      }
+    }
+
     // Manuel onay akışı: owner allowlist'i değilse, approval_status='approved'
     // değilse istemciye 'pending_approval' sinyali ver → client `/basvuru-durumu`'na
     // yönlendirsin. Backend yine de oturumu açıyor ki kullanıcı başvuru
     // durumunu görebilsin ve ön görüşmesini planlayabilsin.
     const approvalStatus = ((user as any).approval_status as string | null) ?? 'pending'
-    const isOwner = isSuperAdminEmail(user.email as string | null)
     const isApprovedForPanel = isOwner || approvalStatus === 'approved'
+
+    // Blocked/manual_review kullanıcı oturum açabilir ama panele gidemez
+    if (!isOwner && (approvalStatus === 'blocked' || approvalStatus === 'manual_review')) {
+      // Oturum cookie'si KURULUR ama /basvuru-durumu'na yönlendirilir
+    }
 
     // Create session
     const sessionId = randomUUID()

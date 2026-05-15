@@ -24,6 +24,8 @@ type ApprovalStatus =
   | 'call_scheduled'
   | 'call_declined'
   | 'needs_call'
+  | 'blocked'
+  | 'manual_review'
 
 type PremeetingStatus = 'pending' | 'scheduled' | 'declined'
 
@@ -144,7 +146,22 @@ export default function BasvuruDurumuPage() {
     'Hesabınızı incelemeye aldık. Ön görüşme tamamlandıktan sonra ekibimiz başvurunuzu nihai olarak onaylayacaktır.'
   let badgeText = 'BAŞVURU ALINDI'
 
-  if (status === 'rejected') {
+  if (status === 'blocked') {
+    icon = <ShieldCheck className="h-10 w-10 text-gray-400" />
+    iconBg = 'bg-gray-500/10 border-gray-500/20'
+    iconGlow = 'shadow-[0_0_28px_0px_rgba(156,163,175,0.2)]'
+    title = 'Başvurunuz işleme alınamıyor'
+    description = 'Başvurunuz şu anda işleme alınamıyor.'
+    badgeText = 'BAŞVURU'
+  } else if (status === 'manual_review') {
+    icon = <CalendarClock className="h-10 w-10 text-emerald-300" />
+    iconBg = 'bg-emerald-400/10 border-emerald-400/20'
+    iconGlow = 'shadow-[0_0_28px_0px_rgba(52,211,153,0.25)]'
+    title = 'Başvurunuz manuel inceleme aşamasında'
+    description =
+      'Başvurunuz ekibimiz tarafından detaylı olarak incelenmektedir. En kısa sürede sizinle iletişime geçeceğiz.'
+    badgeText = 'MANUEL İNCELEME'
+  } else if (status === 'rejected') {
     icon = <XCircle className="h-10 w-10 text-red-400" />
     iconBg = 'bg-red-500/10 border-red-500/20'
     iconGlow = 'shadow-[0_0_28px_0px_rgba(248,113,113,0.2)]'
@@ -260,7 +277,7 @@ export default function BasvuruDurumuPage() {
 
           {/* Actions */}
           <div className="mt-7 flex flex-col gap-3 sm:flex-row sm:justify-center">
-            {premeeting === 'pending' && status !== 'rejected' && (
+            {premeeting === 'pending' && status !== 'rejected' && status !== 'blocked' && status !== 'manual_review' && (
               <button
                 type="button"
                 onClick={() => setShowScheduleModal(true)}
@@ -269,7 +286,7 @@ export default function BasvuruDurumuPage() {
                 Görüşme Planla
               </button>
             )}
-            {premeeting === 'scheduled' && status !== 'rejected' && (
+            {premeeting === 'scheduled' && status !== 'rejected' && status !== 'blocked' && status !== 'manual_review' && (
               <button
                 type="button"
                 onClick={() => setShowScheduleModal(true)}

@@ -1,6 +1,7 @@
-import { NextResponse } from 'next/server'
+import { NextRequest, NextResponse } from 'next/server'
 import { randomUUID } from 'node:crypto'
 import { supabase } from '@/lib/supabase/client'
+import { checkBlocklist, extractDomain } from '@/lib/admin/blocklist'
 
 const APP_URL = process.env.NEXT_PUBLIC_APP_URL || 'https://yoai.yodijital.com'
 
@@ -15,7 +16,7 @@ const APP_URL = process.env.NEXT_PUBLIC_APP_URL || 'https://yoai.yodijital.com'
  *     planlama API'larını kullanabilsin.
  *  4) Dashboard yerine `/basvuru-durumu` sayfasına yönlendirir.
  */
-export async function GET(request: Request) {
+export async function GET(request: NextRequest) {
   const url = new URL(request.url)
   const token = url.searchParams.get('token')
 
@@ -30,11 +31,28 @@ export async function GET(request: Request) {
   // Find signup by token
   const { data: signup, error } = await supabase
     .from('signups')
-    .select('id, email, name, status, created_at')
+    .select('id, email, name, status, approval_status, created_at')
     .eq('verification_token', token)
     .maybeSingle()
 
   if (error || !signup) {
+    return NextResponse.redirect(new URL('/signup/verify?status=invalid', APP_URL))
+  }
+
+  // Blocklist kontrolü — blocked kullanıcı verify akışını tamamlayamaz
+  const signupEmail = (signup.email as string | null) ?? ''
+  const domain = signupEmail ? extractDomain(signupEmail) : ''
+  const clientIp = request.headers.get('x-forwarded-for')?.split(',')[0]?.trim()
+    || request.headers.get('x-real-ip')
+    || null
+  const blockChecks: Array<{ type: 'user' | 'email' | 'domain' | 'ip'; value: string }> = [
+    { type: 'user', value: signup.id as string },
+    { type: 'email', value: signupEmail.toLowerCase() },
+  ]
+  if (domain) blockChecks.push({ type: 'domain', value: domain })
+  if (clientIp) blockChecks.push({ type: 'ip', value: clientIp })
+  const blockResult = await checkBlocklist(blockChecks)
+  if (blockResult.blocked || (signup.approval_status as string) === 'blocked') {
     return NextResponse.redirect(new URL('/signup/verify?status=invalid', APP_URL))
   }
 
