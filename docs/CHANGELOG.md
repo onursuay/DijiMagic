@@ -2,6 +2,11 @@
 
 ---
 
+## 2026-05-15 — İşletme Profili sayfası scroll sorunu düzeltildi
+- **Sorun:** `/yoai/isletme-profili` sayfasında içerik aşağı kaymıyor, bilgiler görünmüyordu
+- **Çözüm:** `MainContent` bileşenindeki `overflow-hidden` → `overflow-y-auto` olarak değiştirildi; içerik artık dikey scroll yapar
+- **Dosyalar:** `components/MainContent.tsx`
+
 ## 2026-05-14 — İşletme Profili yönetim sayfası eklendi
 - **Sorun:** Onboarding'de kaydedilen işletme profili bilgileri düzenlenebilir bir alanda görünmüyordu
 - **Çözüm:** `/yoai/isletme-profili` sayfası oluşturuldu; profil ve rakipler bölüm bölüm görüntülenir, "Düzenle" butonu mevcut onboarding modalını edit modda açar. Sidebar'da YoAi altına "İşletme Profili" sub-item eklendi
