@@ -8,6 +8,8 @@ interface CreditContextValue {
   totalSpent: number
   totalEarned: number
   loading: boolean
+  /** Owner / süper admin hesabı — kredi bariyerleri bu kullanıcıya uygulanmaz. */
+  isOwner: boolean
   refresh: () => Promise<void>
   spendCredits: (amount?: number) => Promise<boolean>
   refundCredits: (amount?: number) => Promise<void>
@@ -20,9 +22,10 @@ interface State {
   balance: number
   totalEarned: number
   totalSpent: number
+  isOwner: boolean
 }
 
-const INITIAL: State = { balance: 0, totalEarned: 0, totalSpent: 0 }
+const INITIAL: State = { balance: 0, totalEarned: 0, totalSpent: 0, isOwner: false }
 
 export function CreditProvider({ children }: { children: ReactNode }) {
   const [state, setState] = useState<State>(INITIAL)
@@ -38,6 +41,7 @@ export function CreditProvider({ children }: { children: ReactNode }) {
           balance: data.credits.balance,
           totalEarned: data.credits.totalEarned,
           totalSpent: data.credits.totalSpent,
+          isOwner: Boolean(data.isOwner),
         })
       }
     } finally {
@@ -56,11 +60,12 @@ export function CreditProvider({ children }: { children: ReactNode }) {
     if (!res.ok) return false
     const data = await res.json()
     if (!data?.ok) return false
-    setState({
+    setState((prev) => ({
       balance: data.credits.balance,
       totalEarned: data.credits.totalEarned,
       totalSpent: data.credits.totalSpent,
-    })
+      isOwner: prev.isOwner,
+    }))
     return true
   }, [])
 
@@ -73,17 +78,22 @@ export function CreditProvider({ children }: { children: ReactNode }) {
     if (!res.ok) return
     const data = await res.json()
     if (data?.ok) {
-      setState({
+      setState((prev) => ({
         balance: data.credits.balance,
         totalEarned: data.credits.totalEarned,
         totalSpent: data.credits.totalSpent,
-      })
+        isOwner: prev.isOwner,
+      }))
     }
   }, [])
 
+  // Owner / süper admin allowlist'i kredi bakiyesinden bağımsız olarak
+  // her aksiyonu geçer — UI bariyeri kullanıcı deneyimi içindir, gerçek
+  // koruma backend guard'ında kalır.
   const hasEnoughCredits = useCallback((amount = COST_PER_GENERATION) => {
+    if (state.isOwner) return true
     return state.balance >= amount
-  }, [state.balance])
+  }, [state.balance, state.isOwner])
 
   return (
     <CreditContext.Provider value={{
@@ -91,6 +101,7 @@ export function CreditProvider({ children }: { children: ReactNode }) {
       totalSpent: state.totalSpent,
       totalEarned: state.totalEarned,
       loading,
+      isOwner: state.isOwner,
       refresh,
       spendCredits,
       refundCredits,

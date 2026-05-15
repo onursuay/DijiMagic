@@ -21,6 +21,7 @@ export async function GET() {
       const credits = await getCreditBalance(user.id)
       return NextResponse.json({
         ok: true,
+        isOwner: true,
         subscription: {
           planId: 'enterprise',
           status: 'active',
@@ -45,6 +46,7 @@ export async function GET() {
 
     return NextResponse.json({
       ok: true,
+      isOwner: false,
       subscription: sub
         ? {
             planId: sub.plan_id,

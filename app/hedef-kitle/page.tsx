@@ -12,6 +12,8 @@ import type { Platform } from '@/components/hedef-kitle/PlatformTabs'
 import AudienceList from '@/components/hedef-kitle/AudienceList'
 import AudienceWizardModal from '@/components/hedef-kitle/AudienceWizardModal'
 import type { AudienceRow, AudienceType, UnifiedAudience } from '@/components/hedef-kitle/wizard/types'
+import AccessRequiredModal from '@/components/billing/AccessRequiredModal'
+import { useSubscription } from '@/components/providers/SubscriptionProvider'
 
 const AUDIENCE_TABS = [
   { id: 'AI', label: 'AI Tabanlı Hedef Kitle', icon: <Sparkles className="w-4 h-4" /> },
@@ -85,8 +87,19 @@ function mapMetaToUnified(meta: MetaAudience): UnifiedAudience {
 
 export default function HedefKitlePage() {
   const t = useTranslations('dashboard.hedefKitle')
+  const { hasSubscription } = useSubscription()
   const [platform, setPlatform] = useState<Platform>('meta')
   const [activeTab, setActiveTab] = useState('SAVED')
+  const [showAudienceAiGate, setShowAudienceAiGate] = useState(false)
+
+  // AI Tabanlı Hedef Kitle sekmesi subscription tier — sekmeye geçiş guard'lı
+  const handleTabChange = useCallback((tabId: string) => {
+    if (tabId === 'AI' && !hasSubscription) {
+      setShowAudienceAiGate(true)
+      return
+    }
+    setActiveTab(tabId)
+  }, [hasSubscription])
   const [audiences, setAudiences] = useState<UnifiedAudience[]>([])
   const [loading, setLoading] = useState(true)
   const [wizardOpen, setWizardOpen] = useState(false)
@@ -257,7 +270,7 @@ export default function HedefKitlePage() {
           {/* Audience Type Tabs + Create Button */}
           <div className="flex items-center justify-between gap-4">
             <div className="flex-1">
-              <Tabs tabs={AUDIENCE_TABS} activeTab={activeTab} onTabChange={setActiveTab} />
+              <Tabs tabs={AUDIENCE_TABS} activeTab={activeTab} onTabChange={handleTabChange} />
             </div>
             <button
               type="button"
@@ -320,6 +333,15 @@ export default function HedefKitlePage() {
 
       {/* Toasts */}
       <ToastContainer toasts={toasts} onClose={removeToast} />
+
+      {/* AI Tabanlı Hedef Kitle subscription gate */}
+      {showAudienceAiGate && (
+        <AccessRequiredModal
+          type="subscription"
+          featureKey="audience_ai"
+          reason="audience_ai_subscription_required"
+        />
+      )}
     </>
   )
 }

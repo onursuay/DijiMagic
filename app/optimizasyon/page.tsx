@@ -9,8 +9,7 @@ import { ToastContainer, type Toast } from '@/components/Toast'
 import CampaignCard from '@/components/optimization/CampaignCard'
 import DetailPanel from '@/components/optimization/DetailPanel'
 import MagicScanResults from '@/components/optimization/MagicScanResults'
-import SubscriptionGateModal from '@/components/subscription/SubscriptionGateModal'
-import CreditRequiredModal from '@/components/billing/CreditRequiredModal'
+import AccessRequiredModal from '@/components/billing/AccessRequiredModal'
 import { metaFetch, TOKEN_EXPIRED_EVENT } from '@/lib/meta/clientFetch'
 import type { OptimizationCampaign, MagicScanResult } from '@/lib/meta/optimization/types'
 import { useSubscription } from '@/components/providers/SubscriptionProvider'
@@ -19,9 +18,12 @@ export default function OptimizasyonPage() {
   const t = useTranslations('dashboard.optimizasyon')
   const { canUseOptimizationAI, canDoAiScan, recordAiScan, aiScanDailyLimit, aiScanUsedToday } = useSubscription()
 
-  // Subscription gate state
+  // Access gate state — credit (Pro AI scan) vs subscription (modül erişimi)
   const [showGateModal, setShowGateModal] = useState(false)
-  const [gateType, setGateType] = useState<'subscription' | 'aiLimit'>('subscription')
+  const [gateAccessType, setGateAccessType] = useState<'credit' | 'subscription'>(
+    'subscription',
+  )
+  const [gateFeatureKey, setGateFeatureKey] = useState<string>('optimization')
 
   // Data state
   const [campaigns, setCampaigns] = useState<OptimizationCampaign[]>([])
@@ -162,15 +164,17 @@ export default function OptimizasyonPage() {
 
   // ── Magic Scan handler ─────────────────────────────────────────────────
   const handleMagicScan = useCallback(async (campaign: OptimizationCampaign, useAI: boolean) => {
-    // Gate: AI Scan requires paid subscription
+    // Gate: AI Scan requires paid subscription (Optimizasyon modülü için)
     if (useAI && !canUseOptimizationAI) {
-      setGateType('subscription')
+      setGateAccessType('subscription')
+      setGateFeatureKey('optimization')
       setShowGateModal(true)
       return
     }
-    // Gate: AI Scan daily limit
+    // Gate: AI Scan günlük limiti aşıldı → Pro AI Scan kredi gerektirir
     if (useAI && !canDoAiScan) {
-      setGateType('aiLimit')
+      setGateAccessType('credit')
+      setGateFeatureKey('optimization_ai_scan_pro')
       setShowGateModal(true)
       return
     }
@@ -361,14 +365,16 @@ export default function OptimizasyonPage() {
 
       <ToastContainer toasts={toasts} onClose={removeToast} />
       {showGateModal && (
-        <SubscriptionGateModal
-          type={gateType}
-          onClose={() => setShowGateModal(false)}
+        <AccessRequiredModal
+          type={gateAccessType}
+          featureKey={gateFeatureKey}
+          reason={`optimization_gate_${gateAccessType}_${gateFeatureKey}`}
         />
       )}
       {accessDenied && (
-        <CreditRequiredModal
-          featureName="Optimizasyon"
+        <AccessRequiredModal
+          type="subscription"
+          featureKey="optimization"
           reason="optimization_score_403"
         />
       )}

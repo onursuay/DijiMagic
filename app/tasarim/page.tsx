@@ -7,6 +7,7 @@ import Topbar from '@/components/Topbar'
 import { Image, Video, Loader2, Sparkles, Download, Coins, Upload, RefreshCw, Trash2, Clock, ImageIcon, Film, Share2, Wand2 } from 'lucide-react'
 import { useCredits } from '@/components/providers/CreditProvider'
 import { COST_PER_GENERATION } from '@/lib/subscription/types'
+import AccessRequiredModal from '@/components/billing/AccessRequiredModal'
 import PublishModal from '@/components/tasarim/PublishModal'
 import TextOverlayControls, { DEFAULT_OVERLAY, type OverlayConfig, type TextPosition } from '@/components/tasarim/TextOverlayControls'
 import { ToastContainer, type Toast, type ToastType } from '@/components/Toast'
@@ -90,6 +91,9 @@ export default function TasarimPage() {
   // Delete confirmation
   const [deleteConfirmId, setDeleteConfirmId] = useState<string | null>(null)
 
+  // Tasarım üretimi kredi gerektirir — bakiye yetersizse global access modal
+  const [showCreditGate, setShowCreditGate] = useState(false)
+
   // Toast notifications
   const [toasts, setToasts] = useState<Toast[]>([])
   const addToast = (message: string, type: ToastType = 'info') => {
@@ -171,7 +175,10 @@ export default function TasarimPage() {
 
   const handleGenerate = async () => {
     if (!prompt.trim()) return
-    if (!hasEnoughCredits()) return
+    if (!hasEnoughCredits()) {
+      setShowCreditGate(true)
+      return
+    }
 
     setIsGenerating(true)
     setError(null)
@@ -543,7 +550,7 @@ export default function TasarimPage() {
             <div className="p-4 border-t border-gray-100 space-y-2">
               <button
                 onClick={handleGenerate}
-                disabled={isGenerating || !prompt.trim() || !hasEnoughCredits()}
+                disabled={isGenerating || !prompt.trim()}
                 className="w-full py-2.5 bg-primary text-white font-medium rounded-lg hover:bg-primary/90 transition-colors disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2 text-sm"
               >
                 {isGenerating ? (
@@ -1000,6 +1007,15 @@ export default function TasarimPage() {
 
       {/* Toast Notifications */}
       <ToastContainer toasts={toasts} onClose={removeToast} />
+
+      {/* Credit gate — yetersiz bakiye */}
+      {showCreditGate && (
+        <AccessRequiredModal
+          type="credit"
+          featureKey="design_generation"
+          reason="design_insufficient_credits"
+        />
+      )}
     </>
   )
 }

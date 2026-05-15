@@ -14,6 +14,8 @@ interface SubscriptionContextValue {
   trialDaysRemaining: number
   canUseOptimizationAI: boolean
   hasSubscription: boolean
+  /** Owner / süper admin hesabı — abonelik bariyerleri bu kullanıcıya uygulanmaz. */
+  isOwner: boolean
   aiScanUsedToday: number
   aiScanDailyLimit: number
   canDoAiScan: boolean
@@ -41,12 +43,14 @@ export function SubscriptionProvider({ children }: { children: ReactNode }) {
   const [loading, setLoading] = useState(true)
   const [aiScanUsedToday, setAiScanUsedToday] = useState(0)
   const [strategyUsedThisMonth, setStrategyUsedThisMonth] = useState(0)
+  const [isOwner, setIsOwner] = useState(false)
 
   const refresh = useCallback(async () => {
     try {
       const res = await fetch('/api/billing/current', { cache: 'no-store' })
       if (!res.ok) { setSub(FREE_DEFAULT); return }
       const data = await res.json()
+      setIsOwner(Boolean(data?.isOwner))
       if (data?.ok && data.subscription) {
         setSub({
           planId: data.subscription.planId,
@@ -105,6 +109,7 @@ export function SubscriptionProvider({ children }: { children: ReactNode }) {
       trialDaysRemaining: trialDays,
       canUseOptimizationAI: canOptimize,
       hasSubscription: active,
+      isOwner,
       aiScanUsedToday,
       aiScanDailyLimit: dailyLimit,
       canDoAiScan: canScan,

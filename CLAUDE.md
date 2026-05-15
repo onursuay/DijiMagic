@@ -23,24 +23,46 @@ Sadece net olumlu sonuçları kaydet: düzeltilen buglar, tamamlanan özellikler
 Başarısız denemeler, geçici fixler veya geri alınan değişiklikler eklenmez.
 
 ## Kredi / Abonelik Erişim Bariyeri (Proje Geneli Standart)
-Kredi, abonelik veya plan erişimi gerektiren **hiçbir** YoAi alanında düz inline hata mesajı gösterilmez. Kullanıcıya **Business Profile onboarding modal standardında**, blur arkalıklı, kapatılamayan, premium tasarımlı bir erişim/kredi modalı gösterilir. Modalda net açıklama ve "Kredi Yükle / Plan Yükselt" CTA'sı bulunur.
+YoAi'de ücretli erişim gerektiren alanlar **iki kategoriye** ayrılır: **kredi gerektiren** ve **abonelik gerektiren**. Kredi veya abonelik gerektiren **hiçbir** alanda düz inline hata mesajı gösterilmez. Kullanıcıya blur arkalıklı, kapatılamayan, premium tasarımlı bir **AccessRequiredModal** gösterilir. Kredi gereken alanlarda kredi yükleme odaklı modal; abonelik gereken alanlarda plan/abonelik yükseltme odaklı modal kullanılır. İki modal aynı tasarım ailesinden olup ikon, başlık, badge ve CTA metniyle birbirinden ayrılır.
 
-**Reusable component:** [components/billing/CreditRequiredModal.tsx](components/billing/CreditRequiredModal.tsx)
+**Reusable component:** [components/billing/AccessRequiredModal.tsx](components/billing/AccessRequiredModal.tsx)
+- `type="credit"` → Sparkles + Zap ikonları, "AI KREDİ" rozeti, "Kredi Yükle" CTA → `/abonelik#krediler`
+- `type="subscription"` → ShieldCheck + Lock ikonları, "ABONELİK" rozeti, "Planları İncele" CTA → `/abonelik`
 
-**Kapsam (istisnasız):**
-- ✅ Optimizasyon
-- ✅ AI Strateji
-- ✅ YoAlgoritma AI reklam oluştur
-- ✅ Hedef Kitle AI generator
-- ✅ Rapor/analiz export
-- ✅ Krediyle çalışan tüm AI aksiyonları
+**Eski API:** [components/billing/CreditRequiredModal.tsx](components/billing/CreditRequiredModal.tsx) — yeni `AccessRequiredModal type="credit"`'a delege eden ince wrapper olarak korunur (geriye dönük uyumluluk için).
 
-**Davranış:**
+**Feature kayıt defteri:** [lib/billing/featureAccessMap.ts](lib/billing/featureAccessMap.ts) — her ücretli alan tek noktada `tier` (credit_required | subscription_required) ile tanımlanır. Yeni alan eklenince modal'a `featureKey` props ile bağlanır.
+
+**Abonelik zorunlu alanlar:**
+- ✅ Optimizasyon (modül erişimi)
+- ✅ Strateji
+- ✅ YoAlgoritma
+- ✅ SEO
+- ✅ Hedef Kitle > AI Tabanlı Hedef Kitle
+
+**Kredi zorunlu alanlar:**
+- ✅ Optimizasyon > AI ile Tara Pro (günlük AI scan limiti aşıldığında)
+- ✅ Tasarım (AI üretim)
+- ✅ Strateji > Aylık limit aşımı (overage)
+- ✅ YoAlgoritma > Sohbet/içerik üretimi
+
+**Davranış (her iki tür için ortak):**
 - Blur backdrop (`backdrop-blur-md` + `bg-black/50`)
 - Kapatma X **yok**, ESC kapatmaz, dış tıklama kapatmaz
-- CTA → `ROUTES.SUBSCRIPTION` (`/abonelik`)
-- Owner allowlist (`SUPER_ADMIN_EMAILS`, default `onursuay@hotmail.com`) modalı görmez
+- Body scroll lock
+- CTA tıklanmadan modal kapanmaz
 - Backend guard ayrıca korunur — modal sadece UX katmanı, güvenlik backend'de kalır
+
+**Owner / Süper Admin bypass:**
+- `SUPER_ADMIN_EMAILS` allowlist (default `onursuay@hotmail.com`) hem kredi hem abonelik modalını görmez
+- `/api/billing/current` → `isOwner: true` döner; `useSubscription().isOwner` ve `useCredits().isOwner` bayrakları true olur
+- `useCredits().hasEnoughCredits()` owner için her zaman true; `canUseOptimizationAI` vb. flag'ler enterprise stub üzerinden true
+- Bypass yalnızca allowlist için — normal kullanıcı güvenliği gevşetilmez
+
+**BusinessProfileGuard önceliği:**
+1. Önce `BusinessProfileGuard` (işletme profili eksikse onun modalı çıkar)
+2. Sonra `AccessRequiredModal` (kredi/abonelik kontrolü)
+İki guard birbirini ezmez — sıra korunur.
 
 ## UI Renk Kuralı (YASAK)
 Bu projede **amber / sarı / hardal / bej ton uyarı renkleri KESİNLİKLE kullanılmaz**.

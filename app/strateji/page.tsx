@@ -9,7 +9,7 @@ import type { StrategyInstance } from '@/lib/strategy/types'
 import { COST_PER_STRATEGY } from '@/lib/subscription/types'
 import { useSubscription } from '@/components/providers/SubscriptionProvider'
 import { useCredits } from '@/components/providers/CreditProvider'
-import SubscriptionGateModal from '@/components/subscription/SubscriptionGateModal'
+import AccessRequiredModal from '@/components/billing/AccessRequiredModal'
 import KPIBar from '@/components/strateji/KPIBar'
 import StrategyList from '@/components/strateji/StrategyList'
 
@@ -19,9 +19,10 @@ export default function StratejiPage() {
   const [loading, setLoading] = useState(true)
   const [creating, setCreating] = useState(false)
   const [toasts, setToasts] = useState<Toast[]>([])
-  const [showGate, setShowGate] = useState(false)
+  const [gateAccessType, setGateAccessType] = useState<'credit' | 'subscription' | null>(null)
+  const [gateFeatureKey, setGateFeatureKey] = useState<string>('strategy')
 
-  const { canUseStrategy, needsCreditsForStrategy, strategyUsedThisMonth, strategyMonthlyLimit, recordStrategyUsage } = useSubscription()
+  const { needsCreditsForStrategy, strategyUsedThisMonth, strategyMonthlyLimit, recordStrategyUsage, hasSubscription } = useSubscription()
   const { credits, hasEnoughCredits, spendCredits } = useCredits()
 
   const addToast = useCallback((message: string, type: 'success' | 'error' | 'info') => {
@@ -49,10 +50,17 @@ export default function StratejiPage() {
   useEffect(() => { fetchInstances() }, [fetchInstances])
 
   const handleCreate = async () => {
-    // Limit kontrolü: Plan limiti aşıldıysa kredi gerekir
+    // Önce abonelik kontrolü — Strateji modülü subscription tier
+    if (!hasSubscription) {
+      setGateAccessType('subscription')
+      setGateFeatureKey('strategy')
+      return
+    }
+    // Limit kontrolü: Plan limiti aşıldıysa kredi gerekir (overage)
     if (needsCreditsForStrategy) {
       if (!hasEnoughCredits(COST_PER_STRATEGY)) {
-        setShowGate(true)
+        setGateAccessType('credit')
+        setGateFeatureKey('strategy_overage')
         return
       }
       // Kredi düş
@@ -186,10 +194,11 @@ export default function StratejiPage() {
         </div>
       </div>
       <ToastContainer toasts={toasts} onClose={removeToast} />
-      {showGate && (
-        <SubscriptionGateModal
-          type="strategyLimit"
-          onClose={() => setShowGate(false)}
+      {gateAccessType && (
+        <AccessRequiredModal
+          type={gateAccessType}
+          featureKey={gateFeatureKey}
+          reason={`strategy_gate_${gateAccessType}_${gateFeatureKey}`}
         />
       )}
     </>

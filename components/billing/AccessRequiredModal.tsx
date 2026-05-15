@@ -1,0 +1,203 @@
+'use client'
+
+import { useEffect } from 'react'
+import { useRouter } from 'next/navigation'
+import { Sparkles, Zap, ShieldCheck, Lock } from 'lucide-react'
+import { ROUTES } from '@/lib/routes'
+import {
+  getFeatureRule,
+  type FeatureAccessRule,
+  type FeatureKey,
+} from '@/lib/billing/featureAccessMap'
+
+export type AccessRequiredType = 'credit' | 'subscription'
+
+export interface AccessRequiredModalProps {
+  /**
+   * Modal türü:
+   *   - 'credit'       → Kredi yükleme odaklı modal
+   *   - 'subscription' → Abonelik / plan yükseltme odaklı modal
+   *
+   * Her iki tür de aynı tasarım ailesinden olup ikon, badge, başlık ve
+   * CTA metniyle birbirinden ayrılır.
+   */
+  type: AccessRequiredType
+  /** Hangi alanın engellendiği — başlığa/açıklamaya katılır */
+  featureName?: string
+  /** Feature key — verilirse `featureAccessMap` kayıtlarından default'lar çekilir */
+  featureKey?: FeatureKey | string
+  /** Modal başlığı; verilmezse type'a göre default Türkçe metin */
+  title?: string
+  /** Açıklama metni; verilmezse type/feature'a göre default */
+  description?: string
+  /** Badge etiketi; verilmezse type'a göre default ('ABONELİK' / 'AI KREDİ') */
+  badgeLabel?: string
+  /** Primary CTA buton metni; verilmezse type'a göre default */
+  ctaLabel?: string
+  /** Primary CTA hedefi — default `/abonelik` */
+  ctaHref?: string
+  /** Telemetri/log için kısa sebep (UI'da gösterilmez) */
+  reason?: string
+}
+
+const SUBSCRIPTION_DEFAULTS = {
+  badge: 'ABONELİK',
+  title: 'Bu özellik için abonelik gereklidir',
+  description:
+    'Bu alanı kullanabilmek için aktif bir abonelik planına sahip olmanız gerekir.',
+  cta: 'Planları İncele',
+}
+
+const CREDIT_DEFAULTS = {
+  badge: 'AI KREDİ',
+  title: 'Bu işlem için kredi gereklidir',
+  description:
+    'Bu AI işlemini çalıştırmak için yeterli kredi bakiyesine sahip olmanız gerekir.',
+  cta: 'Kredi Yükle',
+}
+
+/**
+ * YoAi'de ücretli erişim gerektiren TÜM alanlarda kullanılan global modal.
+ *
+ * Davranış (her iki tür için ortak):
+ *   - Kapatma X yok, ESC kapatmaz, dış tıklama kapatmaz.
+ *   - Backdrop blur + dim.
+ *   - Sadece CTA (kredi yükleme veya plan/abonelik sayfasına yönlendirir).
+ *   - Body scroll mount sırasında kilitlenir, unmount'ta açılır.
+ *
+ * Tür ayrımı (görsel):
+ *   - subscription → Lock + ShieldCheck ikonları, "ABONELİK" rozet, "Planları İncele"
+ *   - credit       → Sparkles + Zap ikonları, "AI KREDİ" rozet, "Kredi Yükle"
+ */
+export default function AccessRequiredModal({
+  type,
+  featureName,
+  featureKey,
+  title,
+  description,
+  badgeLabel,
+  ctaLabel,
+  ctaHref,
+  // eslint-disable-next-line @typescript-eslint/no-unused-vars
+  reason,
+}: AccessRequiredModalProps) {
+  const router = useRouter()
+
+  // Body scroll lock — modal kapatılamadığı sürece arkadaki sayfada
+  // gezilemez. unmount'ta restore edilir.
+  useEffect(() => {
+    const prev = document.body.style.overflow
+    document.body.style.overflow = 'hidden'
+    return () => {
+      document.body.style.overflow = prev
+    }
+  }, [])
+
+  // ESC tuşunu yutuyoruz — kullanıcı kazara kapatamasın.
+  useEffect(() => {
+    const handler = (e: KeyboardEvent) => {
+      if (e.key === 'Escape') {
+        e.preventDefault()
+        e.stopPropagation()
+      }
+    }
+    document.addEventListener('keydown', handler, true)
+    return () => document.removeEventListener('keydown', handler, true)
+  }, [])
+
+  const rule: FeatureAccessRule | null = featureKey
+    ? getFeatureRule(featureKey)
+    : null
+  const resolvedFeatureName = featureName ?? rule?.label
+
+  const isCredit = type === 'credit'
+  const defaults = isCredit ? CREDIT_DEFAULTS : SUBSCRIPTION_DEFAULTS
+
+  const resolvedTitle = title ?? defaults.title
+  const resolvedBadge = badgeLabel ?? defaults.badge
+  const resolvedDescription =
+    description ??
+    rule?.description ??
+    (resolvedFeatureName
+      ? `${resolvedFeatureName} özelliğini kullanabilmek için ${
+          isCredit
+            ? 'yeterli kredi bakiyesine'
+            : 'aktif bir abonelik planına'
+        } sahip olmanız gerekir.`
+      : defaults.description)
+  const resolvedCta = ctaLabel ?? defaults.cta
+  // Tek billing alanı şu an `/abonelik` — kredi sekmesine derin link veriyoruz.
+  const defaultHref = isCredit
+    ? `${ROUTES.SUBSCRIPTION}#krediler`
+    : ROUTES.SUBSCRIPTION
+  const resolvedHref = ctaHref ?? defaultHref
+
+  const accentClass = isCredit
+    ? 'from-primary via-emerald-400 to-primary'
+    : 'from-primary via-primary/70 to-primary'
+
+  const PrimaryIcon = isCredit ? Sparkles : ShieldCheck
+  const SecondaryIcon = isCredit ? Zap : Lock
+
+  return (
+    <div
+      className="fixed inset-0 z-[100] flex items-center justify-center p-4"
+      role="dialog"
+      aria-modal="true"
+      aria-labelledby="access-required-title"
+      data-testid="access-required-modal"
+      data-access-type={type}
+    >
+      {/* Backdrop — pointer events absorb, no click-through */}
+      <div
+        className="absolute inset-0 bg-black/50 backdrop-blur-md"
+        aria-hidden="true"
+        onClick={(e) => {
+          e.preventDefault()
+          e.stopPropagation()
+        }}
+      />
+
+      {/* Card */}
+      <div className="relative w-full max-w-md overflow-hidden rounded-3xl bg-white shadow-2xl ring-1 ring-black/5">
+        {/* Top gradient accent */}
+        <div className={`h-1.5 bg-gradient-to-r ${accentClass}`} />
+
+        <div className="px-8 pt-8 pb-7 text-center">
+          <div className="relative mx-auto mb-5 flex h-16 w-16 items-center justify-center rounded-2xl bg-primary/10 ring-1 ring-primary/15">
+            <PrimaryIcon className="h-8 w-8 text-primary" />
+            <span className="absolute -bottom-1.5 -right-1.5 flex h-7 w-7 items-center justify-center rounded-full bg-white ring-1 ring-primary/15 shadow-sm">
+              <SecondaryIcon className="h-3.5 w-3.5 text-primary" />
+            </span>
+          </div>
+
+          <span
+            className="mb-3 inline-flex items-center gap-1.5 rounded-full bg-primary/5 px-3 py-1 text-[11px] font-semibold uppercase tracking-wider text-primary ring-1 ring-primary/15"
+            data-testid="access-required-badge"
+          >
+            {resolvedBadge}
+          </span>
+
+          <h2
+            id="access-required-title"
+            className="text-xl font-bold tracking-tight text-gray-900"
+          >
+            {resolvedTitle}
+          </h2>
+          <p className="mt-3 text-sm leading-relaxed text-gray-500">
+            {resolvedDescription}
+          </p>
+
+          <button
+            type="button"
+            onClick={() => router.push(resolvedHref)}
+            className="mt-7 w-full rounded-xl bg-primary py-3 text-sm font-semibold text-white shadow-sm transition hover:bg-primary/90 focus:outline-none focus:ring-2 focus:ring-primary/40"
+            data-testid="access-required-cta"
+          >
+            {resolvedCta}
+          </button>
+        </div>
+      </div>
+    </div>
+  )
+}

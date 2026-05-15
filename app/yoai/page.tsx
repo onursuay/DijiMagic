@@ -9,6 +9,8 @@ import CommandCenterHeader from '@/components/yoai/CommandCenterHeader'
 import AdCreationWizard from '@/components/yoai/AdCreationWizard'
 import AiAdSuggestions from '@/components/yoai/AiAdSuggestions'
 import { useCredits } from '@/components/providers/CreditProvider'
+import { useSubscription } from '@/components/providers/SubscriptionProvider'
+import AccessRequiredModal from '@/components/billing/AccessRequiredModal'
 import { CATEGORIES } from '@/lib/yoai/categories'
 import { OFF_TOPIC_MESSAGE } from '@/lib/yoai/prompts'
 import {
@@ -31,6 +33,10 @@ import ReactMarkdown from 'react-markdown'
 export default function YoAiPage() {
   const t = useTranslations('dashboard.yoai')
   const { credits, spendCredits, hasEnoughCredits } = useCredits()
+  const { hasSubscription } = useSubscription()
+
+  // YoAlgoritma erişim modalı — abonelik (modül erişimi) veya kredi (chat tüketimi)
+  const [accessGate, setAccessGate] = useState<{ type: 'credit' | 'subscription'; featureKey: string } | null>(null)
 
   const [messages, setMessages] = useState<ChatMessage[]>([])
   const [phase, setPhase] = useState<ChatPhase>('idle')
@@ -221,8 +227,15 @@ export default function YoAiPage() {
   const handleGenerate = useCallback(
     async (params: Record<string, string>) => {
       if (!detectedIntent || detectedIntent === 'off_topic') return
+      // Önce abonelik kontrolü — YoAlgoritma subscription tier
+      if (!hasSubscription) {
+        setAccessGate({ type: 'subscription', featureKey: 'yoalgoritma' })
+        setPhase('done')
+        return
+      }
+      // Sonra kredi kontrolü — chat üretimi credit tier
       if (!hasEnoughCredits(COST_PER_CHAT)) {
-        setMessages(prev => [...prev, { id: Date.now().toString(), role: 'assistant', content: 'Yeterli krediniz bulunmuyor.', timestamp: new Date().toISOString() }])
+        setAccessGate({ type: 'credit', featureKey: 'yoalgoritma_chat' })
         setPhase('done')
         return
       }
@@ -264,7 +277,7 @@ export default function YoAiPage() {
         setPhase('error')
       }
     },
-    [detectedIntent, hasEnoughCredits, spendCredits]
+    [detectedIntent, hasSubscription, hasEnoughCredits, spendCredits]
   )
 
   // ── Auto-save SEO articles ──
@@ -574,6 +587,15 @@ export default function YoAiPage() {
           action={pendingAction}
           onClose={() => setPendingAction(null)}
           onSuccess={handleActionSuccess}
+        />
+      )}
+
+      {/* Erişim modalı — abonelik veya kredi gerekiyor */}
+      {accessGate && (
+        <AccessRequiredModal
+          type={accessGate.type}
+          featureKey={accessGate.featureKey}
+          reason={`yoai_gate_${accessGate.type}_${accessGate.featureKey}`}
         />
       )}
     </>

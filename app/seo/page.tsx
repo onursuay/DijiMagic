@@ -45,6 +45,8 @@ import {
 } from 'lucide-react'
 import SeoToolsTab from '@/components/seo/SeoToolsTab'
 import SeoArticlesTab from '@/components/seo/SeoArticlesTab'
+import AccessRequiredModal from '@/components/billing/AccessRequiredModal'
+import { useSubscription } from '@/components/providers/SubscriptionProvider'
 
 // ─── Interfaces ───
 
@@ -454,6 +456,10 @@ export default function SEOPage() {
   const [bulkProgress, setBulkProgress] = useState({ current: 0, total: 0 })
   const printRef = useRef<HTMLDivElement>(null)
 
+  // SEO modülü subscription tier — analiz aksiyonunda guard
+  const { hasSubscription } = useSubscription()
+  const [showSubscriptionGate, setShowSubscriptionGate] = useState(false)
+
   // Restore state from localStorage on mount
   useEffect(() => {
     try {
@@ -488,6 +494,10 @@ export default function SEOPage() {
 
   const handleAnalyze = async () => {
     if (!url.trim()) return
+    if (!hasSubscription) {
+      setShowSubscriptionGate(true)
+      return
+    }
 
     setLoading(true)
     setError('')
@@ -528,6 +538,10 @@ export default function SEOPage() {
   const handleBulkScan = async () => {
     const urls = bulkUrls.split('\n').map(u => u.trim()).filter(u => u.length > 0)
     if (urls.length === 0) return
+    if (!hasSubscription) {
+      setShowSubscriptionGate(true)
+      return
+    }
 
     setBulkLoading(true)
     setBulkResults([])
@@ -1129,6 +1143,15 @@ export default function SEOPage() {
           .print\\:p-0 { padding: 0 !important; }
         }
       `}</style>
+
+      {/* SEO modülü subscription gate */}
+      {showSubscriptionGate && (
+        <AccessRequiredModal
+          type="subscription"
+          featureKey="seo"
+          reason="seo_subscription_required"
+        />
+      )}
     </>
   )
 }
