@@ -2,6 +2,11 @@
 
 ---
 
+## 2026-05-15 — Apify entegrasyonu canlı test + LinkedIn fallback
+- **Sorun:** LinkedIn için FREE plan'da erişilebilir Apify actor yok; env'de actor ID bırakılmıştı
+- **Çözüm:** Canlı test sonuçları: Instagram ✓, Facebook ✓, YouTube ✓, TikTok ✓ (hepsi SUCCEEDED + veri döndü). LinkedIn actor ID boşaltıldı → public metadata fallback otomatik devreye girer. CLAUDE.md güncellendi
+- **Dosyalar:** `.env.local`, `.env.example`, `CLAUDE.md`
+
 ## 2026-05-15 — Apify social scan encoding bug fix + env yapılandırması
 - **Sorun:** `apifySocialRunner.ts` actor ID'yi `encodeURIComponent` ile encode ediyordu → `apify%2Finstagram-profile-scraper` gönderiliyor, Apify `~` bekliyor → tüm social scan'ler 404 ile failliyor. Ayrıca 90s polling loop Vercel 60s limitini aşıyordu. `.env.local`'da hiç Apify değişkeni yoktu
 - **Çözüm:** `encodeActorId()` fonksiyonu `replace(/\//g, '~')` kullanır. Polling loop kaldırıldı, `?waitForFinish=50` ile synchronous yaklaşıma geçildi (toplam ~58s < 60s Vercel limiti). `.env.local`'a tüm actor ID'ler + token placeholder eklendi. CLAUDE.md'ye Apify kuralları işlendi
