@@ -34,7 +34,10 @@ import type {
 
 const MAX_ITERATIONS = 15
 const MAX_TOKENS_PER_TURN = 16000
-const SINGLE_PASS_MAX_TOKENS = 16000
+// Single-pass: thinking + visible output toplamı için yeterli pay
+// (adaptive thinking 10K kadar tüketebilir; output JSON 6-10K)
+const SINGLE_PASS_MAX_TOKENS = 24000
+const SINGLE_PASS_THINKING_BUDGET = 8000
 
 export interface RunAiEngineArgs {
   ctx: ToolContext
@@ -272,7 +275,7 @@ export async function runAiEngineSinglePass(args: RunAiEngineArgs): Promise<AiEn
   const response = await client.messages.create({
     model,
     max_tokens: SINGLE_PASS_MAX_TOKENS,
-    thinking: { type: 'adaptive' },
+    thinking: { type: 'enabled', budget_tokens: SINGLE_PASS_THINKING_BUDGET },
     system: [
       {
         type: 'text',
