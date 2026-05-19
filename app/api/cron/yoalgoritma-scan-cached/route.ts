@@ -39,6 +39,7 @@ export async function GET(request: Request) {
   const url = new URL(request.url)
   const userId = url.searchParams.get('userId')
   const mode = (url.searchParams.get('mode') ?? 'singlepass').toLowerCase()
+  const platformFilter = url.searchParams.get('platform') // Meta | Google | null=both
   if (!userId) {
     return NextResponse.json({ ok: false, error: 'userId gerekli' }, { status: 400 })
   }
@@ -79,6 +80,7 @@ export async function GET(request: Request) {
 
   for (const [platform, camps] of [['Meta', metaCampaigns], ['Google', googleCampaigns]] as const) {
     if (camps.length === 0) continue
+    if (platformFilter && platformFilter !== platform) continue
     const accountId = camps[0]?.id ?? 'unknown'
     try {
       const aiResult = await runner({
