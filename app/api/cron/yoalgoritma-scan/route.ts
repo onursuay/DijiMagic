@@ -33,7 +33,13 @@ export async function GET(request: Request) {
     return NextResponse.json({ ok: false, error: 'Unauthorized' }, { status: 401 })
   }
 
-  if (!isAiEngineEnabled()) {
+  // Admin smoke override: ?onlyUser=<id> + valid CRON_SECRET → USE_AI_ENGINE flag'ini bypass et.
+  // Bu yalnızca smoke / kontrollü rollout için. CRON_SECRET zaten gizli, prod'a açılmadan
+  // tek user için test imkânı sağlar.
+  const incomingUrl = new URL(request.url)
+  const adminOverride = Boolean(incomingUrl.searchParams.get('onlyUser')) && Boolean(cronSecret) && authHeader === `Bearer ${cronSecret}`
+
+  if (!isAiEngineEnabled() && !adminOverride) {
     return NextResponse.json({
       ok: true,
       skipped: true,
@@ -61,8 +67,8 @@ export async function GET(request: Request) {
     return NextResponse.json({ ok: false, error: 'Database yok' }, { status: 500 })
   }
 
-  // SMOKE TEST: ?onlyUser= ile tek kullanıcı tetiklenebilir (test branch artefaktı)
-  const url = new URL(request.url)
+  // ?onlyUser=<id>: tek kullanıcı için event çıkar (smoke / admin tek-vuruş tarama)
+  const url = incomingUrl
   const onlyUser = url.searchParams.get('onlyUser')
 
   const userIds = new Set<string>()
