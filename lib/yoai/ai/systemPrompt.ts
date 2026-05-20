@@ -126,6 +126,7 @@ export function buildUserBrief(args: {
   accountId: string
   industry?: string
   businessContext?: string
+  competitorContext?: string | null
   accountSnapshot: unknown
   campaignsDetail: unknown
   benchmarks: unknown
@@ -141,6 +142,11 @@ export function buildUserBrief(args: {
     // İşletme bağlamı = kullanıcı beyanı (birincil) + sentezlenmiş iş zekası.
     // Beyan kırpılmaz — full metin gider (A1). Bloğun kendi başlıkları içeride.
     lines.push(args.businessContext)
+  }
+  if (args.competitorContext) {
+    // Rakip reklam analizi (A4) — üç ayaklı analizin 3. ayağı. Bloğun kendi başlığı içeride.
+    lines.push('')
+    lines.push(args.competitorContext)
   }
   lines.push('')
   lines.push('## account_overview')

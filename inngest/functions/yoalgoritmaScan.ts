@@ -27,6 +27,7 @@ import {
   persistAccountAndDailyRun,
   writeFailedRun,
 } from '@/lib/yoai/ai/scanUser'
+import { scrapeDeclaredCompetitors } from '@/lib/yoai/ai/competitorScanStep'
 import type { AiEngineResult, AiPlatform } from '@/lib/yoai/ai/types'
 
 const POLL_INTERVAL = '60s'
@@ -44,7 +45,23 @@ export const yoalgoritmaScanUser = inngest.createFunction(
     const userId = String(event.data?.userId ?? '')
     if (!userId) throw new Error('userId zorunlu')
 
-    // 1) Fetch user campaign data
+    // 0) Rakip scrape (A4) — YOALGORITMA_SCRAPE_COMPETITORS=true ise beyan
+    //    edilen rakipleri Apify ile tarar (7g cache, max 3 rakip). Flag kapalıysa
+    //    no-op. Soft-fail: scrape hatası taramayı ASLA bozmaz. fetch'ten ÖNCE
+    //    çalışır ki cache'lenmiş rakip verisi payload okumasına yansısın.
+    const scrapeSummary = await step.run('scrape-competitors', async () => {
+      try {
+        return await scrapeDeclaredCompetitors(userId)
+      } catch (e) {
+        logger.warn(`[scan.user] ${userId}: competitor scrape soft-fail: ${e instanceof Error ? e.message : e}`)
+        return { enabled: false, reason: 'exception', attempted: 0, scraped: 0, cachedSkipped: 0, errors: 1 }
+      }
+    })
+    if (scrapeSummary.enabled) {
+      logger.info(`[scan.user] ${userId}: competitor scrape — scraped=${scrapeSummary.scraped} cached=${scrapeSummary.cachedSkipped} errors=${scrapeSummary.errors}`)
+    }
+
+    // 1) Fetch user campaign data (+ business context + rakip analizi)
     const scanInputs = await step.run('fetch-user-data', async () => {
       return await gatherUserScanInputs(userId)
     })
@@ -66,7 +83,14 @@ export const yoalgoritmaScanUser = inngest.createFunction(
       // Anthropic Batch API custom_id pattern: ^[a-zA-Z0-9_-]{1,64}$ — pipe/dot/colon yasak
       const rawCustomId = `${userId}_${ctx.platform}_${ctx.accountId}`.replace(/[^a-zA-Z0-9_-]/g, '_')
       const customId = rawCustomId.slice(0, 64)
-      const params = buildBatchRequestParams({ ctx, industry: scanInputs.industry, businessContext: scanInputs.businessContext })
+      const competitorContext =
+        ctx.platform === 'Meta' ? scanInputs.competitorContext.meta : scanInputs.competitorContext.google
+      const params = buildBatchRequestParams({
+        ctx,
+        industry: scanInputs.industry,
+        businessContext: scanInputs.businessContext,
+        competitorContext,
+      })
       requestEntries.push({ custom_id: customId, platform: ctx.platform, accountId: ctx.accountId })
       batchRequests.push({ custom_id: customId, params })
     }

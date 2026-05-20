@@ -36,6 +36,7 @@ export interface RunAiEngineArgs {
   ctx: AiScanContext
   industry?: string
   businessContext?: string
+  competitorContext?: string | null
 }
 
 export async function runAiEngineForAccount(args: RunAiEngineArgs): Promise<AiEngineResult> {
@@ -50,6 +51,7 @@ export async function runAiEngineForAccount(args: RunAiEngineArgs): Promise<AiEn
     accountId: args.ctx.accountId,
     industry: args.industry ?? args.ctx.industry,
     businessContext: args.businessContext,
+    competitorContext: args.competitorContext,
     accountSnapshot,
     campaignsDetail,
     benchmarks: BENCHMARKS,
@@ -128,6 +130,7 @@ export function buildBatchRequestParams(args: RunAiEngineArgs): {
     accountId: args.ctx.accountId,
     industry: args.industry ?? args.ctx.industry,
     businessContext: args.businessContext,
+    competitorContext: args.competitorContext,
     accountSnapshot,
     campaignsDetail,
     benchmarks: BENCHMARKS,

@@ -12,6 +12,7 @@ import { fetchMetaDeep } from '@/lib/yoai/metaDeepFetcher'
 import { fetchGoogleDeep } from '@/lib/yoai/googleDeepFetcher'
 import { persistAiEngineResult, persistDailyRunWithAi, buildDeepAnalysisFromAi } from './persist'
 import { buildScanBusinessBrief } from './scanBusinessBrief'
+import { loadCompetitorBrief } from './competitorScanStep'
 import type { AiEngineOutput, AiEngineResult, AiPlatform, AiScanContext } from './types'
 import type { DeepCampaignInsight, Platform } from '@/lib/yoai/analysisTypes'
 import { supabase } from '@/lib/supabase/client'
@@ -28,14 +29,16 @@ export interface UserScanInputs {
   userId: string
   industry?: string
   businessContext?: string
+  /** Platforma özel rakip reklam analizi bloğu (A4 — cache'li okuma). */
+  competitorContext: { meta: string | null; google: string | null }
   meta: FetchedPlatformData
   google: FetchedPlatformData
 }
 
-/** Tek user için Meta + Google deep fetch + business context. */
+/** Tek user için Meta + Google deep fetch + business context + rakip analizi. */
 export async function gatherUserScanInputs(userId: string): Promise<UserScanInputs> {
   const { industry, businessContext } = await loadBusinessContext(userId)
-  const [metaResult, googleResult] = await Promise.all([
+  const [metaResult, googleResult, competitorMeta, competitorGoogle] = await Promise.all([
     fetchMetaDeep(userId).catch(e => {
       console.error('[AI Scan] Meta fetch failed:', e)
       return { campaigns: [] as DeepCampaignInsight[], errors: ['Meta veri çekme hatası'], connected: false }
@@ -44,12 +47,15 @@ export async function gatherUserScanInputs(userId: string): Promise<UserScanInpu
       console.error('[AI Scan] Google fetch failed:', e)
       return { campaigns: [] as DeepCampaignInsight[], errors: ['Google Ads veri çekme hatası'], connected: false }
     }),
+    loadCompetitorBrief(userId, 'Meta').catch(() => null),
+    loadCompetitorBrief(userId, 'Google').catch(() => null),
   ])
 
   return {
     userId,
     industry,
     businessContext,
+    competitorContext: { meta: competitorMeta, google: competitorGoogle },
     meta: {
       platform: 'Meta',
       connected: metaResult.connected,

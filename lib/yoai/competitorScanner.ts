@@ -70,6 +70,8 @@ export interface CompetitorScanParams {
   advertiserDomain?: string
   campaignTypeContext?: string | null
   region?: string
+  /** Apify scrape başına maks reklam (cost cap). Belirtilmezse actor default'u (50). */
+  maxRecords?: number
 }
 
 export interface CompetitorScanResult {
@@ -248,6 +250,7 @@ export async function runMetaCompetitorScanForUser(
         query,
         country: params.region ?? 'TR',
         campaignTypeContext: params.campaignTypeContext,
+        maxRecords: params.maxRecords,
       })
 
       if (!scanResult.supported) {
@@ -517,6 +520,7 @@ export async function runGoogleCompetitorScanForUser(
         query,
         region: params.region ?? 'TR',
         campaignTypeContext: params.campaignTypeContext,
+        maxResults: params.maxRecords,
       })
 
       if (!scanResult.supported) {
