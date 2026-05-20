@@ -2,6 +2,16 @@
 
 ---
 
+## 2026-05-21 — YoAlgoritma Faz 3 · Adım 2: Bilingual enum çeviri katmanı
+- **Sorun:** Meta/Google API İngilizce enum döndürüyor (`OUTCOME_ENGAGEMENT`, `CONVERSATIONS`, `Advantage+ Placements`…); UI'da ham enum **asla** görünmemeli ve hem TR hem EN locale tam desteklenmeli. Mevcut `humanizeTr` yalnızca Türkçe idi.
+- **Çözüm:** Yeni `lib/yoai/translations/` katmanı — `types.ts` + `meta-enums.ts` + `google-enums.ts` (objective / optimization goal / CTA / placement / bidding / status / ad type / match type domain'leri, TR+EN map) + `index.ts`: `translateEnum(value, locale, platform?)` + `translateEnumList`, `normKey` normalizasyonu (`Advantage+ Placements` → `ADVANTAGE_PLACEMENTS`), bilinmeyen değer "Title Case"e düşer — ham SNAKE_CASE asla görünmez. `humanizeTr.ts` geriye dönük uyumlu kalıp merkezî `translateEnum`'a delege ediyor (regresyon yok; mevcut kartlar otomatik zenginleşti). `tsc` 0 hata.
+- **Dosyalar:** `lib/yoai/translations/{types,meta-enums,google-enums,index}.ts`, `lib/yoai/ai/humanizeTr.ts`, `docs/CHANGELOG.md`
+
+## 2026-05-21 — YoAlgoritma Faz 3 · Adım 1: Hiyerarşik geliştirme tabloları (omddq'ya uygulandı)
+- **Sorun:** Faz 2'nin düz `ai_ad_improvements` tablosu, hesap → kampanya → ad set → reklam hiyerarşik drill-down modelini desteklemiyordu.
+- **Çözüm:** 4 yeni tablo — `account_alerts` (SEVİYE 0), `campaign_improvements` (SEVİYE 1), `adset_improvements` (SEVİYE 2, campaign FK), `ad_improvements` (SEVİYE 3, adset FK) + RLS + touch trigger + 7-değer status enum (yeni: `rejected_by_user`). Tümü additive + idempotent; eski `ai_ad_improvements` paralel korunuyor. Migration Supabase SQL Editor'de **canonical omddq** projesine uygulandı, 4 tablo doğrulandı.
+- **Dosyalar:** `supabase/migrations/20260520010000_create_hierarchical_improvements.sql`, `scripts/apply-hierarchical-improvements-migration.mjs`, `package.json`, `docs/CHANGELOG.md`
+
 ## 2026-05-20 — /yoai sayfa sadeleştirme: eski "AI Reklam Önerileri" + stale footer kaldırıldı
 - **Sorun:** /yoai sayfasında iki gereksiz/kafa karıştırıcı kalıntı vardı: (1) eski `AiAdSuggestions` ("AI Reklam Önerileri") bölümü kullanıcıya "AI kampanya önerisi üretilemedi" boş empty-state gösteriyordu; (2) eski rule-engine'den kalma "Analiz tarihi: … · Haftalık analiz Pazar gece otomatik güncellenir" footer'ı. Geliştirme Kartları bölümünde zaten "Son: X" rozeti var, footer gereksizdi.
 - **Çözüm:** `app/yoai/page.tsx`'ten yalnızca UI kaldırıldı: `AiAdSuggestions` import + render bloğu, artık dead olan `handleApprovalChanged` handler'ı ve stale footer `<p>`'si silindi. **Generate-ad altyapısı (lib + API route'ları + AdCreationWizard) ve header'daki "AI Reklam Oluştur" butonu (`onCreateAd → setShowAdWizard`) korundu** — kullanıcı oradan başlatabilir. Stale metin locale key değil inline JSX idi (grep ile doğrulandı). Sayfa artık tek bölüm gösteriyor: "Geliştirme Kartları" (ImprovementCardGrid). tsc 0 hata.
