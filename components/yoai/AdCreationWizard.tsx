@@ -12,6 +12,8 @@ interface Props {
   onClose: () => void
   connectedPlatforms: Platform[]
   initialProposal?: FullAdProposal | null
+  /** Yayın denemesi tamamlanınca çağrılır (per-ad improvement kartını "Yayında" yapmak için). */
+  onPublished?: (success: boolean) => void
 }
 
 type Step = 'platform' | 'generating' | 'preview' | 'preflight' | 'creative' | 'confirm' | 'publishing' | 'done'
@@ -40,7 +42,7 @@ const OBJECTIVE_LABELS: Record<string, string> = {
   TARGET_ROAS: 'Hedef ROAS',
 }
 
-export default function AdCreationWizard({ onClose, connectedPlatforms, initialProposal }: Props) {
+export default function AdCreationWizard({ onClose, connectedPlatforms, initialProposal, onPublished }: Props) {
   const [step, setStep] = useState<Step>(initialProposal ? 'preview' : 'platform')
   const [platform, setPlatform] = useState<Platform | null>(initialProposal?.platform as Platform || null)
   const [proposals, setProposals] = useState<FullAdProposal[]>(initialProposal ? [initialProposal] : [])
@@ -132,10 +134,12 @@ export default function AdCreationWizard({ onClose, connectedPlatforms, initialP
       const cleanMsg = rawMsg.replace(/\bPAUSED\b/g, 'taslak').replace(/\bENABLED\b/g, 'aktif')
       setPublishResult({ ok: json.ok, message: cleanMsg })
       setStep('done')
+      onPublished?.(!!json.ok)
     } catch (e) {
       const msg = e instanceof Error ? e.message : String(e)
       setPublishResult({ ok: false, message: `Bağlantı hatası: ${msg}` })
       setStep('done')
+      onPublished?.(false)
     }
   }
 

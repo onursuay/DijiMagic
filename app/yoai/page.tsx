@@ -8,6 +8,7 @@ import CommandCenterHeader from '@/components/yoai/CommandCenterHeader'
 // HealthOverviewCards removed — stats moved into CommandCenterHeader
 import AdCreationWizard from '@/components/yoai/AdCreationWizard'
 import AiAdSuggestions from '@/components/yoai/AiAdSuggestions'
+import ImprovementCardGrid from '@/components/yoai/ImprovementCardGrid'
 import { useCredits } from '@/components/providers/CreditProvider'
 import { useSubscription } from '@/components/providers/SubscriptionProvider'
 import AccessRequiredModal from '@/components/billing/AccessRequiredModal'
@@ -47,6 +48,9 @@ export default function YoAiPage() {
   const [pendingAction, setPendingAction] = useState<ExecutableAction | null>(null)
   const [showAdWizard, setShowAdWizard] = useState(false)
   const [wizardProposal, setWizardProposal] = useState<any>(null)
+  // Per-ad improvement kartı yayın akışı: hangi kart yayınlanıyor + grid refresh
+  const [approvingImprovementId, setApprovingImprovementId] = useState<string | null>(null)
+  const [improvementRefreshKey, setImprovementRefreshKey] = useState(0)
 
   // ── Faz 0D: Approval pending count (yoai_pending_approvals tablosundan) ──
   const [approvalsPendingCount, setApprovalsPendingCount] = useState<number | undefined>(undefined)
@@ -518,6 +522,16 @@ export default function YoAiPage() {
               />
             )}
 
+            {/* Per-Ad Geliştirme Kartları (Faz 2) — generate-ad akışından bağımsız, paralel */}
+            <ImprovementCardGrid
+              refreshKey={improvementRefreshKey}
+              onApprovePublish={(proposal, id) => {
+                setWizardProposal(proposal)
+                setApprovingImprovementId(id)
+                setShowAdWizard(true)
+              }}
+            />
+
             {!ccLoading && ccRunDate && (
               <p className="text-center text-[10px] text-gray-400 pb-4">
                 Analiz tarihi: {ccRunDate} · Günlük analiz her gün 08:00'da otomatik güncellenir
@@ -575,9 +589,19 @@ export default function YoAiPage() {
       {/* Ad Creation Wizard */}
       {showAdWizard && (
         <AdCreationWizard
-          onClose={() => { setShowAdWizard(false); setWizardProposal(null) }}
+          onClose={() => { setShowAdWizard(false); setWizardProposal(null); setApprovingImprovementId(null) }}
           connectedPlatforms={ccData?.connectedPlatforms ?? []}
           initialProposal={wizardProposal}
+          onPublished={(success) => {
+            if (approvingImprovementId) {
+              fetch(`/api/yoai/improvements/${approvingImprovementId}/applied`, {
+                method: 'POST',
+                credentials: 'include',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ success }),
+              }).catch(() => {}).finally(() => setImprovementRefreshKey((k) => k + 1))
+            }
+          }}
         />
       )}
 
