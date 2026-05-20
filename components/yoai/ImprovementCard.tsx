@@ -147,19 +147,18 @@ export default function ImprovementCard({ improvement, onApprove, onReject, busy
       {/* Footer — duruma göre */}
       <div className="border-t border-slate-700/40 mt-auto">
         {status === 'pending' && !confirmReject && (
-          <div className="flex overflow-hidden rounded-b-2xl">
+          <div className="grid grid-cols-2 gap-px rounded-b-2xl overflow-hidden">
             <button
               onClick={onApprove}
               disabled={busy}
-              className="flex-1 py-3 bg-emerald-600 hover:bg-emerald-500 active:bg-emerald-700 text-white font-bold text-[12px] tracking-wider uppercase transition-colors disabled:opacity-40"
+              className="py-3 bg-emerald-600 hover:bg-emerald-500 active:bg-emerald-700 text-white font-bold text-[12px] tracking-wider uppercase transition-colors disabled:opacity-40"
             >
               {busy ? <Loader2 className="w-4 h-4 animate-spin mx-auto" /> : t('approve')}
             </button>
             <button
               onClick={() => setConfirmReject(true)}
               disabled={busy}
-              style={{ clipPath: 'polygon(16px 0%, 100% 0%, 100% 100%, 0% 100%)', marginLeft: '-16px' }}
-              className="flex-1 py-3 bg-red-600 hover:bg-red-500 active:bg-red-700 text-white font-bold text-[12px] tracking-wider uppercase transition-colors disabled:opacity-40"
+              className="py-3 bg-red-600 hover:bg-red-500 active:bg-red-700 text-white font-bold text-[12px] tracking-wider uppercase transition-colors disabled:opacity-40"
             >
               {t('reject')}
             </button>
@@ -183,18 +182,18 @@ export default function ImprovementCard({ improvement, onApprove, onReject, busy
             {improvement.publish_error && (
               <p className="text-[10px] text-red-300 px-3 pt-2">{t('publishFailed')}: {improvement.publish_error}</p>
             )}
-            <div className="flex overflow-hidden rounded-b-2xl">
+            <div className="grid grid-cols-2 gap-px rounded-b-2xl overflow-hidden">
               <button
                 onClick={onApprove}
-                className="flex-1 py-3 bg-emerald-600/80 hover:bg-emerald-500 text-white font-bold text-[12px] tracking-wider uppercase transition-colors"
+                disabled={busy}
+                className="py-3 bg-emerald-600 hover:bg-emerald-500 active:bg-emerald-700 text-white font-bold text-[12px] tracking-wider uppercase transition-colors disabled:opacity-40"
               >
-                {improvement.publish_error ? t('retry') : t('publish')}
+                {busy ? <Loader2 className="w-4 h-4 animate-spin mx-auto" /> : (improvement.publish_error ? t('retry') : t('publish'))}
               </button>
               <button
                 onClick={() => setConfirmReject(true)}
                 disabled={busy}
-                style={{ clipPath: 'polygon(16px 0%, 100% 0%, 100% 100%, 0% 100%)', marginLeft: '-16px' }}
-                className="flex-1 py-3 bg-red-600 hover:bg-red-500 active:bg-red-700 text-white font-bold text-[12px] tracking-wider uppercase transition-colors disabled:opacity-40"
+                className="py-3 bg-red-600 hover:bg-red-500 active:bg-red-700 text-white font-bold text-[12px] tracking-wider uppercase transition-colors disabled:opacity-40"
               >
                 {t('reject')}
               </button>

@@ -1,6 +1,6 @@
 import { NextResponse } from 'next/server'
 import { cookies } from 'next/headers'
-import { approveImprovement } from '@/lib/yoai/ai/improvementStore'
+import { approveImprovement, getImprovementById } from '@/lib/yoai/ai/improvementStore'
 import { improvementToProposal } from '@/lib/yoai/ai/improvementToProposal'
 
 export const dynamic = 'force-dynamic'
@@ -19,9 +19,18 @@ export async function POST(_request: Request, context: { params: Promise<{ id: s
     const userId = cookieStore.get('user_id')?.value
     if (!userId) return NextResponse.json({ ok: false, error: 'Oturum gerekli' }, { status: 401 })
 
-    const row = await approveImprovement(userId, id)
+    // pending → approved geçişi
+    let row = await approveImprovement(userId, id)
+    // Zaten approved ise (kullanıcı "Yayınla"ya tekrar bastı) idempotent davran:
+    // yayın sihirbazını yeniden açabilmek için proposal'ı yine döndür.
     if (!row) {
-      return NextResponse.json({ ok: false, code: 'NOT_FOUND', message: 'Kart bulunamadı veya zaten karara bağlanmış.' }, { status: 404 })
+      const existing = await getImprovementById(userId, id)
+      if (existing && (existing.status === 'approved' || existing.status === 'pending')) {
+        row = existing
+      }
+    }
+    if (!row) {
+      return NextResponse.json({ ok: false, code: 'NOT_FOUND', message: 'Kart bulunamadı veya yayınlanamaz durumda.' }, { status: 404 })
     }
     const proposal = improvementToProposal(row)
     return NextResponse.json({ ok: true, data: { improvement: row, proposal } })
