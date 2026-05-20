@@ -2,6 +2,11 @@
 
 ---
 
+## 2026-05-20 — Per-ad improvement cards refactor planı (Faz 1 audit, kod yok)
+- **Sorun:** YoAlgoritma "düz suggestion listesi" mimarisi terk edilip "her aktif reklam için 1:1 improvement card" modeline geçilecek. Faz 2 implementation öncesi mevcut akışın tam haritası + yeni tablo/worker/UI/maliyet planı gerekiyordu.
+- **Çözüm:** Tam audit yapıldı. Kritik bulgular: (1) `ai_suggestions` yazılıyor ama hiç okunmuyor; `payload.ad_spec` UI'a ulaşmıyor (`buildDeepAnalysisFromAi` payload'ı düşürüyor). (2) Ekrandaki AdPreviewCard kartları `generate-ad` pipeline'ından, `ai_suggestions` ile ilgisiz. (3) Meta full creative çekiliyor, Google RSA creative ÇEKİLMİYOR (Faz 2 GAQL genişletme gerek). (4) Brand Intelligence pipeline'ının %80'i ZATEN VAR ama deterministik — eksik tek parça Claude sentez katmanı; trigger hook + Apify IG/FB scraper'ları zaten kurulu. (5) Meta publish 3-katman create var, Google publish external entegrasyon (doğrulanmadı). Plan: paralel yeni `ai_ad_improvements` tablosu + per-ad Batch AI + lifecycle worker + Claude brand sentez (Inngest). Açık çelişki işaretlendi: manuel "Yenile" butonu vs CLAUDE.md "manuel tara butonu yok" kuralı (Onur kararı bekliyor). Maliyet tahmini: ~$190/ay (100 kullanıcı), brand ingestion ihmal edilebilir.
+- **Dosyalar:** `docs/yoalgoritma_per_ad_refactor_plan.md` (yeni), `docs/CHANGELOG.md`
+
 ## 2026-05-20 — Off-brand reasoning fix (sektör listesi örnekleyici)
 - **Sorun:** AI motoru, profilde deklare edilen sektör listesini "tam ve eksiksiz liste" sanıyordu. MYK belgelendirme firması (Belgemod) örneğinde profilde "Aşçılık" listelenmediği için Aşçı MYK belgesi kampanyasını `pause_campaign` ile durdurmayı öneriyordu — oysa ürün (MYK belgesi) aynı, sadece meslek farklı = on-brand.
 - **Çözüm:** `systemPrompt.ts` içinde kullanıcı beyanı bloğundan sonra "Sektör listesi yorumu (off-brand kararı)" direktifi eklendi: sektör listesi ÖRNEKLEYİCİDİR; önce ürün/hizmet uyumu kontrol edilir; belirsizlikte `pause_campaign` yerine yeni `flag_for_review` action type'ı + "ürün listesiyle uyumlu ama sektör listesinde yok, manuel inceleme" gerekçesi. `recommended_actions[].action_type` enum'una `flag_for_review` eklendi (persist katmanı zaten serbest string kabul ediyor). Değişiklik tamamen prompt metni + enum literal içinde — kod yolu değişmedi. Smoke testi Pazar gece cron'unda gerçek scan ile doğrulanacak.
