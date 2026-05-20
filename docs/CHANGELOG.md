@@ -2,6 +2,11 @@
 
 ---
 
+## 2026-05-20 — Privacy Policy EN sayfası eski içerik gösteriyordu (stale cache fix)
+- **Sorun:** Production'da TR (`/gizlilik-politikasi`) yeni GA4/GTM içeriğini gösteriyordu ama EN (`/en/privacy-policy`) eski deployment cache'inde takılı kalmıştı (eski dpl ID). Kaynak doğru: `en.json` + `tr.json` + paylaşılan `PrivacyPolicyContent` aynı commit'te güncellenmişti. Kök neden: `/en/privacy-policy` middleware rewrite ile `/privacy-policy` filesystem route'una düşüyor; bu sayfada `revalidate`/`dynamic` olmadığı için SSG (full route cache) idi → rewrite edilen EN path Vercel CDN'inde eski static HTML'e takılıyordu (TR route deploy'da invalidate edilirken rewrite hedefi edilmiyordu).
+- **Çözüm:** Her iki gizlilik sayfasına `export const dynamic = 'force-dynamic'` eklendi → static cache devre dışı, EN rewrite path bir daha eski HTML servis edemez. Build sonrası iki route da `ƒ` (Dynamic) oldu. İçerik kaynağına dokunulmadı.
+- **Dosyalar:** `app/privacy-policy/page.tsx`, `app/gizlilik-politikasi/page.tsx`, `docs/CHANGELOG.md`
+
 ## 2026-05-20 — Privacy Policy: GA4 + GTM section'ları (Google OAuth verification)
 - **Sorun:** Google OAuth verification için gizlilik politikasında Google Analytics (GA4) ve Google Tag Manager (GTM) scope açıklamaları yoktu. Ayrıca Section 9 "following channel:" cümlesi bir kanal listelemeden bitiyordu (email eksik) ve "Last updated" tarihi hiç yoktu.
 - **Çözüm:** TEK KAYNAK (`locales/*.json` + paylaşılan `PrivacyPolicyContent`) olduğu doğrulandı — site + panel aynı içeriği kullanıyor. Section 3.2'den sonra 3.3 (GA4: analytics.readonly/edit) ve 3.4 (GTM: tagmanager.readonly/edit.containers/publish) section'ları EN + TR eklendi; component'e JSX render eklendi (anahtarlar otomatik render edilmiyordu). Section 9'a email eklendi, "Last updated: November 20, 2025 / Son güncelleme: 20 Kasım 2025" eklendi. 3.1/3.2 ve 4.1 Limited Use'a dokunulmadı, URL'ler korundu.
