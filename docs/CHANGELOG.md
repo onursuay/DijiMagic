@@ -2,6 +2,11 @@
 
 ---
 
+## 2026-05-20 — Privacy Policy: GA4 + GTM section'ları (Google OAuth verification)
+- **Sorun:** Google OAuth verification için gizlilik politikasında Google Analytics (GA4) ve Google Tag Manager (GTM) scope açıklamaları yoktu. Ayrıca Section 9 "following channel:" cümlesi bir kanal listelemeden bitiyordu (email eksik) ve "Last updated" tarihi hiç yoktu.
+- **Çözüm:** TEK KAYNAK (`locales/*.json` + paylaşılan `PrivacyPolicyContent`) olduğu doğrulandı — site + panel aynı içeriği kullanıyor. Section 3.2'den sonra 3.3 (GA4: analytics.readonly/edit) ve 3.4 (GTM: tagmanager.readonly/edit.containers/publish) section'ları EN + TR eklendi; component'e JSX render eklendi (anahtarlar otomatik render edilmiyordu). Section 9'a email eklendi, "Last updated: November 20, 2025 / Son güncelleme: 20 Kasım 2025" eklendi. 3.1/3.2 ve 4.1 Limited Use'a dokunulmadı, URL'ler korundu.
+- **Dosyalar:** `locales/en.json`, `locales/tr.json`, `components/legal/PrivacyPolicyContent.tsx`, `docs/CHANGELOG.md`
+
 ## 2026-05-20 — A6: Supabase env split-brain teşhisi + kod hardening
 - **Sorun:** İki Supabase projesi karışıklığı. `omddq…` canlı (tüm tablolar var: user_business_profiles, ai_engine_runs, yoai_daily_runs, ai_suggestions — REST 200), `fbqr…` ölü (HTTP 000/DNS yok). 2026-05-19 env düzenlemesinde `NEXT_PUBLIC_SUPABASE_URL` fbqr→omddq değişmiş ama `SUPABASE_URL` fbqr'de kalmış (split). Üstüne kod tutarsızdı: ana server client `SUPABASE_URL||NEXT_PUBLIC` (→ölü fbqr), Meta modülleri `NEXT_PUBLIC||SUPABASE_URL` (→canlı omddq). Sonuç: AI engine'in yazdığı proje ≠ UI'ın okuduğu proje — audit'in "ai_engine_runs boş" bulgusunun kök nedeni.
 - **Çözüm (Onur kararı: omddq canonical + güvenli kod hardening):** `lib/supabase/env.ts` tek noktası eklendi — `resolveSupabaseUrl/ServiceKey/AnonKey` (server-first: `SUPABASE_URL||NEXT_PUBLIC`, ana yazma client'ıyla aynı → kritik AI engine yolu davranış değiştirmez) + `warnIfSupabaseSplitBrain` (SUPABASE_URL≠NEXT_PUBLIC ise bir kez console.warn, crash yok). 4 modül (client.ts, audienceStore, meta/igVerifyStore, meta/discoveryCache) bu helper'a geçirildi → resolution sırası tutarlı. Production env'i Onur Vercel'de düzeltecek (repoint tek başına yapılmadı). 6/6 env testi.

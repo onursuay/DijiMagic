@@ -34,7 +34,8 @@ export default function PrivacyPolicyContent({ locale = 'tr' }: { locale?: 'tr' 
         </Link>
 
         <div className="relative rounded-2xl border border-emerald-400/10 bg-white/[0.02] px-8 py-10 shadow-[0_0_60px_rgba(16,185,129,0.07),inset_0_0_40px_rgba(16,185,129,0.03)]">
-          <h1 className="text-3xl font-bold mb-10 text-white">{g('title')}</h1>
+          <h1 className="text-3xl font-bold mb-2 text-white">{g('title')}</h1>
+          <p className="text-[13px] text-[#6b7280] mb-10">{g('lastUpdated')}</p>
 
           <div className="space-y-8">
             <section>
@@ -63,6 +64,16 @@ export default function PrivacyPolicyContent({ locale = 'tr' }: { locale?: 'tr' 
                 <strong className="text-gray-300">{g('section3GoogleTitle')}</strong>
                 <br />
                 {g('section3GoogleContent')}
+              </p>
+              <p className="text-[14px] text-[#8a8f98] mt-3 whitespace-pre-line">
+                <strong className="text-gray-300">{g('section3GA4Title')}</strong>
+                <br />
+                {g('section3GA4Content')}
+              </p>
+              <p className="text-[14px] text-[#8a8f98] mt-3 whitespace-pre-line">
+                <strong className="text-gray-300">{g('section3GTMTitle')}</strong>
+                <br />
+                {g('section3GTMContent')}
               </p>
             </section>
 
@@ -102,7 +113,7 @@ export default function PrivacyPolicyContent({ locale = 'tr' }: { locale?: 'tr' 
 
             <section>
               <h2 className="text-xl font-semibold mb-3 text-white">{g('section9Title')}</h2>
-              <p className="text-[14px] text-[#8a8f98] leading-relaxed">{g('section9Content')}</p>
+              <p className="text-[14px] text-[#8a8f98] leading-relaxed whitespace-pre-line">{g('section9Content')}</p>
             </section>
 
             <section>
