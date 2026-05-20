@@ -88,17 +88,18 @@ export async function GET(request: Request) {
     return NextResponse.json({ ok: true, message: 'Aktif kullanıcı yok', users: 0 })
   }
 
-  const events = Array.from(userIds).map(userId => ({
-    name: 'yoalgoritma/scan.user' as const,
-    data: { userId },
-  }))
-  await inngest.send(events)
+  const ids = Array.from(userIds)
+  // Hesap-geneli scan (ai_suggestions — paralel korunur)
+  const scanEvents = ids.map(userId => ({ name: 'yoalgoritma/scan.user' as const, data: { userId } }))
+  // Per-ad improvement cards (Faz 2 — ai_ad_improvements)
+  const improvementEvents = ids.map(userId => ({ name: 'yoalgoritma/improvements.user' as const, data: { userId } }))
+  await inngest.send([...scanEvents, ...improvementEvents])
 
   return NextResponse.json({
     ok: true,
     mode: 'inngest',
     users: userIds.size,
-    message: `${userIds.size} kullanıcı için scan event'i gönderildi`,
+    message: `${userIds.size} kullanıcı için scan + per-ad improvement event'i gönderildi`,
   })
 }
 
