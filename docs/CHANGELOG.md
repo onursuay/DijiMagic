@@ -2,6 +2,11 @@
 
 ---
 
+## 2026-05-20 — Meta resmi reklam dokümanları konsolidasyonu
+- **Sorun:** Resmi Meta Ads 2026 eğitim PDF'leri (Temel/Orta + İleri Seviye Mühendislik + kaynak listeleri) proje bilgi tabanında yapılandırılmış tek bir Markdown dosyası olarak yoktu.
+- **Çözüm:** Üç PDF ve iki kaynak `.txt` dosyası birebir (özet değil, sadık transkripsiyon) Markdown'a aktarıldı; tüm spec/limit tabloları Markdown tablosuna çevrildi, karakter limitleri, asset oranları, event parametreleri, kampanya tipleri ve politika kuralları korundu. Türkçe içerik çevrilmedi.
+- **Dosyalar:** `docs/meta_resmi_reklam_dokumanlari.md` (yeni, ~87KB), `docs/CHANGELOG.md`
+
 ## 2026-05-19 — submit-batch fix (custom_id pattern violation)
 - **Sorun:** Sync düzeldikten sonra ilk run `submit-batch` adımında `400 invalid_request_error — requests.0.custom_id: String should match pattern '^[a-zA-Z0-9_-]{1,64}$'` ile düştü. custom_id `${userId}|${platform}|${accountId}` şeklinde üretiliyor, `|` karakteri Anthropic Batch API pattern'inde yasak.
 - **Çözüm:** [inngest/functions/yoalgoritmaScan.ts](inngest/functions/yoalgoritmaScan.ts) içinde separator `|` → `_` ve emniyet için izinli set dışındaki karakterleri `_` ile değiştiren regex eklendi; sonra 64 char slice. Hatanın gerçek mesajı Inngest REST API `GET /v2/runs/{runId}/trace?includeOutput=true` ile çekildi.
