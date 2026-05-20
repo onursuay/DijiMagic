@@ -5,7 +5,7 @@ import {
   Loader2, Pencil, Building2, Target, Globe,
   Users, BarChart2, CheckCircle2, AlertCircle,
   MapPin, Phone, ExternalLink, TrendingUp, Shield,
-  Clock,
+  Clock, RefreshCcw,
 } from 'lucide-react'
 import BusinessProfileOnboarding from '@/components/yoai/BusinessProfileOnboarding'
 
@@ -207,6 +207,23 @@ export default function IsletmeProfilPage() {
   const [competitors, setCompetitors] = useState<Competitor[]>([])
   const [loading, setLoading] = useState(true)
   const [showEdit, setShowEdit] = useState(false)
+  // Marka Bilgilerini Yenile (Brand Intelligence Refresh — haftalık AI scan'den AYRI akış)
+  const [brandRefreshing, setBrandRefreshing] = useState(false)
+  const [brandRefreshMsg, setBrandRefreshMsg] = useState<string | null>(null)
+
+  const handleBrandRefresh = useCallback(async () => {
+    setBrandRefreshing(true)
+    setBrandRefreshMsg(null)
+    try {
+      const res = await fetch('/api/yoai/business-profile/brand-refresh', { method: 'POST', credentials: 'include' })
+      const json = await res.json()
+      setBrandRefreshMsg(json?.message || 'Marka bilgileri yenileniyor.')
+    } catch {
+      setBrandRefreshMsg('Yenileme başlatılamadı, tekrar deneyin.')
+    } finally {
+      setBrandRefreshing(false)
+    }
+  }, [])
 
   const load = useCallback(async () => {
     setLoading(true)
@@ -288,12 +305,28 @@ export default function IsletmeProfilPage() {
                 </div>
               </div>
             </div>
-            <button
-              onClick={() => setShowEdit(true)}
-              className="inline-flex items-center gap-2 px-4 py-2.5 bg-white/20 hover:bg-white/30 border border-white/30 text-white rounded-xl text-sm font-semibold transition-all shrink-0 backdrop-blur-sm"
-            >
-              <Pencil className="w-3.5 h-3.5" /> Düzenle
-            </button>
+            <div className="flex flex-col items-end gap-2 shrink-0">
+              <div className="flex items-center gap-2">
+                <button
+                  onClick={handleBrandRefresh}
+                  disabled={brandRefreshing}
+                  className="inline-flex items-center gap-2 px-4 py-2.5 bg-white/15 hover:bg-white/25 border border-white/25 text-white rounded-xl text-sm font-semibold transition-all backdrop-blur-sm disabled:opacity-60"
+                  title="Kendi website + sosyal hesaplarını yeniden tarayıp marka zekânı günceller"
+                >
+                  {brandRefreshing ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <RefreshCcw className="w-3.5 h-3.5" />}
+                  Marka Bilgilerini Yenile
+                </button>
+                <button
+                  onClick={() => setShowEdit(true)}
+                  className="inline-flex items-center gap-2 px-4 py-2.5 bg-white/20 hover:bg-white/30 border border-white/30 text-white rounded-xl text-sm font-semibold transition-all backdrop-blur-sm"
+                >
+                  <Pencil className="w-3.5 h-3.5" /> Düzenle
+                </button>
+              </div>
+              {brandRefreshMsg && (
+                <span className="text-[11px] text-white/80 bg-black/20 rounded-lg px-2.5 py-1 max-w-[260px] text-right">{brandRefreshMsg}</span>
+              )}
+            </div>
           </div>
         </div>
 

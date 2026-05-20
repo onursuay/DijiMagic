@@ -122,8 +122,13 @@ Token eksikse `isApifyReady()` false döner, sistem public metadata fallback'e g
 1. **İlk kurulum tamamlandığında**: `POST /api/yoai/business-profile` → onboarding bitince `runProfileScansAndIntelligence` fire-and-forget olarak tetiklenir.
 2. **Her revizyondan sonra**: Aynı POST endpoint'i edit modda da kullanılır → her kayıtta otomatik yeniden tarama başlar.
 
-### Manuel Tara Butonu — YOK
-UI'da "Tara", "Yeniden Tara" gibi bir buton **kesinlikle bulunmaz**. Tarama yalnızca otomatik tetiklenir.
+### Manuel Tara Butonu — kapsam netleştirmesi
+Bu kural **yalnızca haftalık YoAlgoritma AI scan** (reklam hesabı taraması — `yoalgoritma/scan.user` + per-ad improvements) için geçerlidir: o akışta UI'da "Tara"/"Yeniden Tara" butonu **bulunmaz**, yalnızca otomatik (cron + on-demand event) tetiklenir.
+
+**İstisna — Brand Intelligence Refresh (ayrı akış):** İşletme Profili sayfasındaki **"Marka Bilgilerini Yenile"** butonu bu kuralın dışındadır. Bu buton reklam hesabını değil, kullanıcının KENDİ marka kaynaklarını (website + Instagram + Facebook …) yeniden tarayıp Claude marka sentezini günceller (`brand/ingest.user`). Manuel buton burada **kasıtlı olarak vardır**.
+- Endpoint: `POST /api/yoai/business-profile/brand-refresh`
+- Inngest: `brandIngestionUser` (`brand/ingest.user`, concurrency 3) → `runBrandProfilePipeline(userId, { withSynthesis: true })`
+- Profil kaydetme/revizyon hâlâ otomatik deterministik taramayı tetikler (route değişmedi); bu buton ek olarak Claude sentezini de çalıştırır.
 
 ### Tarama Nasıl Çalışır
 - `businessSourceScanner.ts` + `socialSourceScanner.ts` ile HTTP scraping (LLM kullanılmaz)
