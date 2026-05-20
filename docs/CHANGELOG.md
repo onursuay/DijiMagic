@@ -2,6 +2,11 @@
 
 ---
 
+## 2026-05-20 — YoAlgoritma bağlam audit raporu
+- **Sorun:** Haftalık AI tarama motorunun, proje amacındaki üç ayaklı analiz prensibine (aktif reklamlar + platform kuralları + rakip analizi) ve business profile zorunluluğuna uyumu denetlenmemişti.
+- **Çözüm:** Salt okuma + kod izleme + canlı Apify testiyle audit yapıldı. Bulgular: aktif filtre Meta/Google ✅; platform docs entegrasyonu ❌ (system prompt'ta yok); Apify altyapısı var ama AI motoruna bağlı değil ❌ (lib/yoai/ai/* içinde sıfır competitor referansı); business profile context kısmi ⚠ (6 alan gidiyor; marka adı/ürünler/rakipler/intelligence gitmiyor); tam ad spec üretilmiyor ❌. Canlı test: iki actor da SUCCEEDED (<$0.01), ama Meta normalizer nested snapshot'ı kaçırıyor + Google actor reklam metni döndürmüyor. 6 öncelikli aksiyon (A1-A6) listelendi; en yüksek getiri A3 (mevcut user_business_intelligence'ı payload'a eklemek).
+- **Dosyalar:** `docs/yoalgoritma_context_audit.md` (yeni)
+
 ## 2026-05-20 — YoAlgoritma proje amacı + Google resmi dokümanlar + index
 - **Sorun:** YoAlgoritma'nın iş kuralları (üç ayaklı analiz, aktif-only, business profile zorunluluğu, tam ad spec çıktısı) ve resmi platform dokümanlarının AI engine'e nasıl bağlanacağı yazılı referans olarak yoktu.
 - **Çözüm:** `docs/yoalgoritma_proje_amaci.md` (sistem amacı + 7 değişmez iş kuralı + DoD) yazıldı. Google Ads 2026 PDF'leri (Temel/Orta + İleri Seviye + kaynakça) sadık transkripsiyonla Markdown'a aktarıldı. `docs/resmi_dokumanlar_index.md` ile her dokümanın hangi AI görevinde referans alınacağı + system prompt'a bağlama stratejisi (Seçenek A cache'li gömme / Seçenek B RAG-lite) tanımlandı.
