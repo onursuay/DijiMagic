@@ -8,12 +8,13 @@
 
 import { createClient } from '@supabase/supabase-js'
 import { supabase as supabaseService } from '@/lib/supabase/client'
+import { resolveSupabaseUrl, resolveSupabaseAnonKey } from '@/lib/supabase/env'
 import type { AudienceDataset, AudienceDatasetMeta } from '@/lib/audience/types'
 
 const DEFAULT_KEY = 'google_ads_audience_tr'
 
-const supabaseUrl = process.env.SUPABASE_URL || process.env.NEXT_PUBLIC_SUPABASE_URL
-const supabaseAnonKey = process.env.SUPABASE_ANON_KEY || process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY
+const supabaseUrl = resolveSupabaseUrl()
+const supabaseAnonKey = resolveSupabaseAnonKey()
 
 // Audience reads should work with anon key + RLS (service role is only needed for writes/admin refresh).
 const supabaseRead =

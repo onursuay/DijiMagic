@@ -38,9 +38,12 @@
  * ─────────────────────────────────────────────────────────────────────────────
  */
 
+import { resolveSupabaseUrl, resolveSupabaseServiceKey } from '@/lib/supabase/env'
+
 function getConfig(): { url: string; key: string } | null {
-  const url = process.env.NEXT_PUBLIC_SUPABASE_URL || process.env.SUPABASE_URL
-  const key = process.env.SUPABASE_SERVICE_ROLE_KEY
+  // A6 — tüm modüllerle tutarlı server-first sıra (lib/supabase/env.ts).
+  const url = resolveSupabaseUrl()
+  const key = resolveSupabaseServiceKey()
   if (!url || !key) return null
   return { url: url.replace(/\/$/, ''), key }
 }

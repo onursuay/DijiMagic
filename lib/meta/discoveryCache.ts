@@ -3,6 +3,8 @@
  * 24h TTL per key. Optional: if env not set, cache is skipped.
  */
 
+import { resolveSupabaseUrl, resolveSupabaseServiceKey } from '@/lib/supabase/env'
+
 const CACHE_TTL_HOURS = 24
 
 export interface CachedPatch {
@@ -13,8 +15,9 @@ export interface CachedPatch {
 }
 
 function getSupabaseConfig(): { url: string; serviceKey: string } | null {
-  const url = process.env.NEXT_PUBLIC_SUPABASE_URL || process.env.SUPABASE_URL
-  const key = process.env.SUPABASE_SERVICE_ROLE_KEY
+  // A6 — tüm modüllerle tutarlı server-first sıra (lib/supabase/env.ts).
+  const url = resolveSupabaseUrl()
+  const key = resolveSupabaseServiceKey()
   if (!url || !key) return null
   return { url: url.replace(/\/$/, ''), serviceKey: key }
 }
