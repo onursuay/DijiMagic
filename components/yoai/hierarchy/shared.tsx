@@ -26,6 +26,11 @@ export function titleCaseTr(s?: string | null): string {
     .join(' ')
 }
 
+/** Mevcut veride geçen yanlış hedef adını düzelt — Meta'da "Müşteri Adayı" yoktur → "Potansiyel Müşteri". */
+export function fixObjectiveTerm(s?: string | null): string {
+  return (s || '').replace(/Müşteri Aday[ıi]/gi, 'Potansiyel Müşteri')
+}
+
 /** Platform logosu (yazı değil ikon). Meta = mavi "f", Google = çok-renkli "G". */
 export function PlatformBadge({ platform }: { platform: 'meta' | 'google' | null }) {
   if (platform === 'meta') {

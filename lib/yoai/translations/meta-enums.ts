@@ -13,7 +13,7 @@ export const META_OBJECTIVES: RawEnumMap = {
   OUTCOME_AWARENESS:     { tr: 'Marka Bilinirliği Hedefi', en: 'Awareness' },
   OUTCOME_TRAFFIC:       { tr: 'Trafik Hedefi',            en: 'Traffic' },
   OUTCOME_ENGAGEMENT:    { tr: 'Etkileşim Hedefi',         en: 'Engagement' },
-  OUTCOME_LEADS:         { tr: 'Müşteri Adayı Hedefi',     en: 'Leads' },
+  OUTCOME_LEADS:         { tr: 'Potansiyel Müşteri Hedefi',     en: 'Leads' },
   OUTCOME_APP_PROMOTION: { tr: 'Uygulama Tanıtımı Hedefi', en: 'App Promotion' },
   OUTCOME_SALES:         { tr: 'Satış Hedefi',             en: 'Sales' },
   // Eski (legacy) amaçlar — hâlâ açık kampanyalarda görülebilir
@@ -25,7 +25,7 @@ export const META_OBJECTIVES: RawEnumMap = {
   EVENT_RESPONSES: { tr: 'Etkinlik Yanıtları',      en: 'Event Responses' },
   APP_INSTALLS:    { tr: 'Uygulama Yüklemeleri',    en: 'App Installs' },
   VIDEO_VIEWS:     { tr: 'Video İzlemeleri',        en: 'Video Views' },
-  LEAD_GENERATION: { tr: 'Müşteri Adayı Toplama',   en: 'Lead Generation' },
+  LEAD_GENERATION: { tr: 'Potansiyel Müşteri Toplama',   en: 'Lead Generation' },
   MESSAGES:        { tr: 'Mesajlaşma',              en: 'Messages' },
   CONVERSIONS:     { tr: 'Dönüşümler',              en: 'Conversions' },
   CATALOG_SALES:   { tr: 'Katalog Satışları',       en: 'Catalog Sales' },
@@ -35,7 +35,7 @@ export const META_OBJECTIVES: RawEnumMap = {
   Engagement:  { tr: 'Etkileşim',         en: 'Engagement' },
   Awareness:   { tr: 'Bilinirlik',        en: 'Awareness' },
   Traffic:     { tr: 'Trafik',            en: 'Traffic' },
-  Leads:       { tr: 'Müşteri Adayı',     en: 'Leads' },
+  Leads:       { tr: 'Potansiyel Müşteri',     en: 'Leads' },
   Sales:       { tr: 'Satış',             en: 'Sales' },
 }
 
@@ -45,7 +45,7 @@ export const META_OPTIMIZATION_GOALS: RawEnumMap = {
   IMPRESSIONS:         { tr: 'Gösterimler',                    en: 'Impressions' },
   OFFSITE_CONVERSIONS: { tr: 'Web Sitesi Dönüşümleri',         en: 'Website Conversions' },
   CONVERSATIONS:       { tr: 'Konuşmalar',                     en: 'Conversations' },
-  QUALITY_LEAD:        { tr: 'Nitelikli Müşteri Adayı',        en: 'Quality Leads' },
+  QUALITY_LEAD:        { tr: 'Nitelikli Potansiyel Müşteri',        en: 'Quality Leads' },
   QUALITY_CALL:        { tr: 'Nitelikli Arama',                en: 'Quality Calls' },
   THRUPLAY:            { tr: 'ThruPlay (Video İzleme)',        en: 'ThruPlay' },
   VALUE:               { tr: 'Değer (ROAS)',                   en: 'Value (ROAS)' },

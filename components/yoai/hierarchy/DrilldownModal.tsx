@@ -38,7 +38,7 @@ export default function DrilldownModal({ campaign, busyId, onDecide, onClose }: 
         onClick={(e) => e.stopPropagation()}
       >
         {/* Header — hiyerarşi yolu */}
-        <div className="sticky top-0 z-10 flex items-start justify-between gap-3 px-5 py-4 border-b border-[#23314d] bg-[#0b1120]/95 backdrop-blur rounded-t-2xl">
+        <div className="flex items-start justify-between gap-3 px-5 py-4 border-b border-[#23314d] rounded-t-2xl">
           <div className="min-w-0">
             <div className="flex items-center gap-1.5 text-[12px] text-slate-400 flex-wrap">
               <Megaphone className="w-3.5 h-3.5 text-emerald-400" />
@@ -77,11 +77,6 @@ export default function DrilldownModal({ campaign, busyId, onDecide, onClose }: 
                       key={as.id}
                       adset={as}
                       horizontal
-                      busy={busyId === as.id}
-                      onApprove={() => onDecide('adset', as.id, 'approve')}
-                      onMarkApplied={() => onDecide('adset', as.id, 'applied')}
-                      onReject={() => onDecide('adset', as.id, 'reject')}
-                      onUndo={() => onDecide('adset', as.id, 'unreject')}
                       onDrillDown={() => setAdsetId(as.id)}
                     />
                   ))}

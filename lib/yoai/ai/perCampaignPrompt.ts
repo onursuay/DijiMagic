@@ -42,6 +42,11 @@ Sana TEK bir aktif kampanya + ona ait tüm ad set'ler + tüm reklamlar verilir. 
    Örnek: Hedef telefon araması/kayıt ama kampanya "Marka Bilinirliği" ise → uyumsuz; "Satış" veya "Potansiyel Müşteri" önerilir.
    Eşleşiyorsa: \`type_mismatch\`=false, \`type_mismatch_alert\`=null.
 
+# Geçerli kampanya türü adları (SADECE bunları kullan — UYDURMA)
+- Meta hedefleri: Bilinirlik, Trafik, Etkileşim, Potansiyel Müşteri, Uygulama Tanıtımı, Satış.
+- Google kampanya türleri: Arama Ağı, Performance Max, Görüntülü Reklam Ağı, Video, Alışveriş, Demand Gen.
+Platformda OLMAYAN ad UYDURMA. "Müşteri Adayı Hedefi" gibi bir hedef Meta'da YOKTUR — doğrusu "Potansiyel Müşteri"dir. \`recommended_type\`, \`current_objective_label\` ve \`campaign_type\` yalnız yukarıdaki gerçek adlardan biri olmalı.
+
 # ÖNEMLİ — Sektör listesi yorumu (off-brand kararı)
 Kullanıcının deklare ettiği sektörler ÖRNEKLEYİCİDİR, eksiksiz değildir. Önce ürün/hizmet uyumuna bak:
 - Reklamın/kampanyanın SATTIĞI ürün/hizmet kullanıcının listesinde geçiyorsa → on-brand (sektör/meslek değişebilir). Örnek: kullanıcı "MYK belgesi" satıyor, kampanya "Aşçı MYK belgesi" → on-brand.
@@ -55,7 +60,7 @@ ASLA sadece sektör listesinde yok diye off-brand deme. Önce ürün/hizmet uyum
 - TÜM metinleri SADE TÜRKÇE üret. Kullanıcı bunları arayüzde okuyacak.
 - Teknik İngilizce enum KULLANMA. YASAK: OUTCOME_ENGAGEMENT, OUTCOME_SALES, OUTCOME_AWARENESS, OUTCOME_TRAFFIC, OUTCOME_LEADS, CONVERSATIONS, MESSAGING_INSTAGRAM_DIRECT, MESSAGING_WHATSAPP, LINK_CLICKS, OFFSITE_CONVERSIONS, ADVANTAGE_PLACEMENTS, RESPONSIVE_SEARCH_AD, primary_text, headline, link_url, "Engagement", "Send WhatsApp Message" vb.
 - Türkçe karşılığını yaz:
-  - kampanya türü: "Etkileşim Hedefi" / "Satış Hedefi" / "Müşteri Adayı Hedefi" / "Trafik Hedefi" / "Marka Bilinirliği Hedefi".
+  - kampanya türü: "Etkileşim Hedefi" / "Satış Hedefi" / "Potansiyel Müşteri Hedefi" / "Trafik Hedefi" / "Marka Bilinirliği Hedefi".
   - CTA: "WhatsApp Mesajı Gönder" / "Mesaj Gönder" / "Hemen Başvur" / "Daha Fazla Bilgi".
   - yayın yeri: "Akıllı Yayın Yerleri" / "Otomatik Yayın Yerleri" / "Manuel Yayın Yerleri".
   - "Reklamın ana metni boş" yaz, "primary_text null" YAZMA.
@@ -111,7 +116,7 @@ SADECE şu şemaya uyan TEK bir JSON nesnesi ver. Markdown fence YOK, açıklama
       "confidence": 0-100,
       "ad_spec": {
         "platform": "meta" | "google",
-        "campaign_type": "Satış" | "Müşteri Adayı" | "Etkileşim" | "Arama Ağı" | "Performance Max" | ...,
+        "campaign_type": "Satış" | "Potansiyel Müşteri" | "Etkileşim" | "Arama Ağı" | "Performance Max" | ...,
         "conversion_goal": "<dönüşüm hedefi — düz Türkçe>",
         "cta": "<platform-uygun CTA — Türkçe>",
         "budget": { "daily": 250, "currency": "TRY" },

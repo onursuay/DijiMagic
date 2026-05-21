@@ -4,6 +4,7 @@
    iki kolona yayılır (dik/uzun değil). Tüm detaylar AÇIK. Onayla/Yayınla → sihirbaz. */
 
 import { useTranslations, useLocale } from 'next-intl'
+import { Swords } from 'lucide-react'
 import HierCardActions from './HierCardActions'
 import { PlatformBadge, StatusBadge, Row, ListBlock, titleCaseTr } from './shared'
 import { translateEnum, translateEnumList } from '@/lib/yoai/translations'
@@ -61,9 +62,11 @@ export default function AdCard({ ad, busy, horizontal, onApprove, onPublish, onR
       ) : null}
 
       {payload.competitor_comparison ? (
-        <div className="mx-4 mb-3 bg-slate-800/50 border border-slate-700/40 rounded-lg px-3 py-2.5 relative">
-          <p className="text-[11px] text-slate-400 font-semibold mb-1 uppercase tracking-wider">{t('competitorComparison')}</p>
-          <p className="text-[12px] text-slate-200 leading-relaxed">{payload.competitor_comparison}</p>
+        <div className="mx-4 mb-3 bg-indigo-950/30 border border-indigo-500/30 rounded-lg px-3 py-2.5 relative">
+          <p className="text-[11px] text-indigo-300 font-semibold mb-1 uppercase tracking-wider flex items-center gap-1.5">
+            <Swords className="w-3.5 h-3.5" />{t('competitorComparison')}
+          </p>
+          <p className="text-[12px] text-slate-100 leading-relaxed">{payload.competitor_comparison}</p>
         </div>
       ) : null}
 

@@ -2,6 +2,11 @@
 
 ---
 
+## 2026-05-21 — YoAlgoritma Faz 3 · UI cila 6: butonlar yalnız reklamda + modal başlık sabit değil + objective adı + rakip vurgu
+- **Sorun:** (1) Ad set'te buton olmamalı — yayın finalde **reklam (ad) kartından**; Onayla/Reddet yalnız reklamda. (2) Modal başlığı `sticky` → kaydırınca sabit kalıp UI bozuyordu; yukarıda kalmalı. (3) AI `recommended_type` = **"Müşteri Adayı Hedefi"** üretmiş; Meta'da böyle hedef yok, doğrusu **"Potansiyel Müşteri"**. (4) "Rakip analizi nerede?" — aslında **reklam kartında dolu** (ad set'te değil).
+- **Çözüm:** `AdsetCard` → Onayla/Reddet **kaldırıldı** (yalnız "Reklamları Gör"); karar/yayın butonları **yalnız `AdCard`'da**. `DrilldownModal` başlığı **sticky değil** (içerikle kayar). `meta-enums.ts` + `perCampaignPrompt.ts`: "Müşteri Adayı" → **"Potansiyel Müşteri"** (Meta gerçek hedef adı) + prompt'a **geçerli kampanya türü adları** direktifi (uydurma yasağı). `CampaignCard` `fixObjectiveTerm` ile mevcut veriyi de gösterimde düzeltir. `AdCard` rakip karşılaştırması bloğu **belirginleştirildi** (indigo + `Swords` ikonu). `build` ✓.
+- **Dosyalar:** `components/yoai/hierarchy/{AdsetCard,DrilldownModal,CampaignCard,AdCard,shared}.tsx`, `lib/yoai/translations/meta-enums.ts`, `lib/yoai/ai/perCampaignPrompt.ts`, `docs/CHANGELOG.md`
+
 ## 2026-05-21 — YoAlgoritma Faz 3 · UI cila 5: flip tap ikonu + ad set butonları geri
 - **Sorun:** (1) Flip kart ön yüzündeki "detay için üzerine gelin" **yazısı** kaldırılıp yerine tıklama-animasyonlu ikon istendi. (2) Ad set kartlarındaki **Onayla/Reddet butonları yanlışlıkla kaldırılmıştı** — popup'ta (drill-down) olmalı.
 - **Çözüm:** `AccountAlertsBanner` ön yüz altı: yazı yerine **animasyonlu `Pointer` (tap) ikonu** (`yoaiTap` keyframe — hafif bas-bırak; kullanıcının `tap.png`'si yerine benzer lucide ikonu). `AdsetCard`'a `HierCardActions` (advisory: Onayla/Reddet/Uygulandı İşaretle/Geri Al) **geri eklendi** + `DrilldownModal`'da karar handler'ları bağlandı. Kampanya kartı yine **butonsuz** (yalnız UYGULA). `build` ✓.

@@ -8,7 +8,7 @@
 
 import { useTranslations, useLocale } from 'next-intl'
 import { ChevronRight, AlertOctagon } from 'lucide-react'
-import { PlatformBadge, StatusBadge, SuggestionList, titleCaseTr } from './shared'
+import { PlatformBadge, StatusBadge, SuggestionList, titleCaseTr, fixObjectiveTerm } from './shared'
 import { translateEnum } from '@/lib/yoai/translations'
 import type { CampaignWithChildren } from '@/lib/yoai/ai/hierarchicalStore'
 
@@ -35,7 +35,7 @@ export default function CampaignCard({ campaign, onDrillDown }: Props) {
   const payload = (campaign.improvement_payload ?? {}) as CampaignPayload
   const mismatch = payload.type_mismatch_alert
   const confidence = campaign.confidence ?? 0
-  const currentType = payload.current_objective_label || translateEnum(campaign.current_objective, locale, campaign.source_platform)
+  const currentType = fixObjectiveTerm(payload.current_objective_label || translateEnum(campaign.current_objective, locale, campaign.source_platform))
   const suggestions = payload.suggestions ?? []
 
   return (
@@ -70,7 +70,7 @@ export default function CampaignCard({ campaign, onDrillDown }: Props) {
                 <span className="text-[12px] font-bold text-red-300 uppercase tracking-wide">{t('typeMismatchTitle')}</span>
               </span>
               {mismatch.recommended_type ? (
-                <span className="text-[12px] text-red-200">{t('recommendedType')}: <span className="font-semibold">{mismatch.recommended_type}</span></span>
+                <span className="text-[12px] text-red-200">{t('recommendedType')}: <span className="font-semibold">{fixObjectiveTerm(mismatch.recommended_type)}</span></span>
               ) : null}
               {mismatch.recommended_action ? (
                 <span className="text-[11px] text-white font-semibold bg-red-600/40 px-2 py-0.5 rounded">{mismatch.recommended_action}</span>
