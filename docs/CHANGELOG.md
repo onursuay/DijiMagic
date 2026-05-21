@@ -2,6 +2,11 @@
 
 ---
 
+## 2026-05-21 — YoAlgoritma Faz 3 · UI cila 5: flip tap ikonu + ad set butonları geri
+- **Sorun:** (1) Flip kart ön yüzündeki "detay için üzerine gelin" **yazısı** kaldırılıp yerine tıklama-animasyonlu ikon istendi. (2) Ad set kartlarındaki **Onayla/Reddet butonları yanlışlıkla kaldırılmıştı** — popup'ta (drill-down) olmalı.
+- **Çözüm:** `AccountAlertsBanner` ön yüz altı: yazı yerine **animasyonlu `Pointer` (tap) ikonu** (`yoaiTap` keyframe — hafif bas-bırak; kullanıcının `tap.png`'si yerine benzer lucide ikonu). `AdsetCard`'a `HierCardActions` (advisory: Onayla/Reddet/Uygulandı İşaretle/Geri Al) **geri eklendi** + `DrilldownModal`'da karar handler'ları bağlandı. Kampanya kartı yine **butonsuz** (yalnız UYGULA). `build` ✓.
+- **Dosyalar:** `components/yoai/hierarchy/{AccountAlertsBanner,AdsetCard,DrilldownModal}.tsx`, `docs/CHANGELOG.md`
+
 ## 2026-05-21 — YoAlgoritma Faz 3 · UI cila 4: simetrik kampanya kartı + Title Case adlar
 - **Sorun:** Kampanya kartı simetrik değildi (gerekçe solda / öneriler sağda yan yana); kimlik dağınık; UYGULA butonu büyük; adlar tamamı BÜYÜK harf ("TRAFFİK").
 - **Çözüm:** Üst **hafif kutu** tek satır → `logo+durum | Kampanya: … | Kampanya Türü: … | Güven Skoru: %… | UYGULA` (buton küçültüldü: `px-4 py-1.5`). Gövde simetrik dik akış: **AI Gerekçesi tam genişlik üstte**, altında **Öneriler yan yana kart grid'i** (responsive 1/2/3 kolon). `titleCaseTr` (Türkçe duyarlı, `tr-TR` locale) → tüm adlar **Title Case**: "6 SET // 28 EKİM 2025 // TRAFFİK" → "6 Set // 28 Ekim 2025 // Traffik" (kampanya/ad set/reklam + modal başlıkları). `build` ✓.

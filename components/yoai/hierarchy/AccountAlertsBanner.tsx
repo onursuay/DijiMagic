@@ -1,13 +1,12 @@
 'use client'
 
 /* SEVİYE 0 — Hesap Sağlık Durumu (account_alerts) — FLIP-BOX kartlar (Faz 3 UI).
-   Ön yüz SİMETRİK: ikon üstte, başlık ortada (merkeze ortalı), ipucu altta.
-   Başlıktaki "—" çizgisi cümle ayırıcıya (". ") çevrilir.
-   Hover → 180° döner, detay görünür. Etrafında dönen shimmer ışık.
-   Açık yeşil zemin, koyu yazı. Severity yalnız ikon rengiyle. */
+   Ön yüz SİMETRİK: ikon üstte, başlık ortada, altta tıklama animasyonlu tap ikonu (yazı yok).
+   Başlıktaki "—" cümleye çevrilir. Hover → 180° döner, detay görünür.
+   Etrafında dönen shimmer ışık. Açık yeşil zemin, koyu yazı. */
 
 import { useTranslations } from 'next-intl'
-import { Activity, AlertOctagon, AlertTriangle, Info, MousePointerClick } from 'lucide-react'
+import { Activity, AlertOctagon, AlertTriangle, Info, Pointer } from 'lucide-react'
 import type { AccountAlertRow } from '@/lib/yoai/ai/hierarchicalStore'
 
 const SEVERITY_ORDER: Record<string, number> = { critical: 0, high: 1, medium: 2, info: 3 }
@@ -29,11 +28,13 @@ export default function AccountAlertsBanner({ alerts }: { alerts: AccountAlertRo
     <div>
       <style>{`
         @keyframes yoaiShimmerSpin { to { transform: rotate(360deg); } }
+        @keyframes yoaiTap { 0%, 55%, 100% { transform: translateY(0) scale(1); } 70% { transform: translateY(4px) scale(.8); } 85% { transform: translateY(0) scale(1); } }
         .yoai-flip { perspective: 1300px; }
         .yoai-flip-inner { position: relative; height: 100%; width: 100%; transition: transform .6s cubic-bezier(.2,.7,.2,1); transform-style: preserve-3d; }
         .yoai-flip:hover .yoai-flip-inner { transform: rotateY(180deg); }
         .yoai-face { position: absolute; inset: 0; backface-visibility: hidden; -webkit-backface-visibility: hidden; border-radius: 1rem; overflow: hidden; }
         .yoai-back { transform: rotateY(180deg); }
+        .yoai-tap { animation: yoaiTap 1.5s ease-in-out infinite; transform-origin: center; }
         .yoai-shimmer { position: absolute; inset: -2px; border-radius: 1.1rem; overflow: hidden; }
         .yoai-shimmer::before {
           content: ''; position: absolute; inset: -60%;
@@ -41,7 +42,7 @@ export default function AccountAlertsBanner({ alerts }: { alerts: AccountAlertRo
           animation: yoaiShimmerSpin 3.4s linear infinite;
         }
         @media (prefers-reduced-motion: reduce) {
-          .yoai-shimmer::before { animation: none; }
+          .yoai-shimmer::before, .yoai-tap { animation: none; }
           .yoai-flip-inner { transition: none; }
         }
       `}</style>
@@ -62,14 +63,11 @@ export default function AccountAlertsBanner({ alerts }: { alerts: AccountAlertRo
             <div key={a.id} className="yoai-flip h-52 relative">
               <div className="yoai-shimmer" aria-hidden="true" />
               <div className="yoai-flip-inner">
-                {/* ÖN YÜZ — simetrik: ikon üst · başlık merkez · ipucu alt */}
+                {/* ÖN YÜZ — ikon üst · başlık merkez · animasyonlu tap ikonu alt */}
                 <div className="yoai-face bg-gradient-to-br from-emerald-50 via-green-50 to-emerald-100 border border-emerald-200 p-4 flex flex-col items-center text-center">
                   <Icon className={`w-6 h-6 ${iconCls}`} />
                   <p className="text-[15px] font-bold text-slate-900 leading-snug flex-1 flex items-center justify-center px-1">{tidyTitle(a.title)}</p>
-                  <div className="flex items-center gap-1.5 text-emerald-700 text-[11px] font-medium">
-                    <MousePointerClick className="w-4 h-4 animate-pulse" />
-                    {t('flipHint')}
-                  </div>
+                  <Pointer className="yoai-tap w-7 h-7 text-emerald-600" aria-label={t('flipHint')} />
                 </div>
                 {/* ARKA YÜZ — detay (hover) */}
                 <div className="yoai-face yoai-back bg-gradient-to-br from-emerald-100 via-green-50 to-emerald-50 border border-emerald-200 p-4 flex flex-col">
