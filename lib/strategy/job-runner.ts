@@ -434,31 +434,102 @@ async function createCampaignStructure(
   return { planned }
 }
 
-// ── Pull Metrics Job (simulated) ───────────────────
+// ── Pull Metrics Job — GERÇEK Meta hesap-geneli son 7 gün insights ─────────
+// Sahte/simüle veri YASAK. Veri yalnızca bağlı Meta hesabının gerçek
+// performansından gelir; gerçek veri yoksa snapshot YAZILMAZ (UI boş durum gösterir).
 async function runPullMetricsJob(job: SyncJob): Promise<void> {
   if (!supabase) throw new Error('DB unavailable')
 
+  await supabase.from('sync_jobs').update({ progress: 30 }).eq('id', job.id)
+
+  // Instance'ın sahibini ve reklam hesabını al — token AMBIENT cookie'den DEĞİL,
+  // instance'ın kendi user_id'sinden çözülür (çapraz-kullanıcı veri sızıntısını önler).
+  const { data: instance } = await supabase
+    .from('strategy_instances')
+    .select('user_id, ad_account_id')
+    .eq('id', job.strategy_instance_id)
+    .single()
+
+  if (!instance?.user_id || !instance.ad_account_id) {
+    // Bağlam eksik — uydurma yapma, sadece kaydı geç.
+    await supabase.from('sync_jobs').update({
+      progress: 100,
+      result: { inserted: false, reason: 'missing_instance_context' },
+    }).eq('id', job.id)
+    return
+  }
+
+  // Bu instance'ın sahibinin Meta token'ı (DB-only, cookie'ye bakmaz)
+  const { getMetaConnection } = await import('@/lib/metaConnectionStore')
+  const conn = await getMetaConnection(instance.user_id)
+  if (!conn?.accessToken || !conn.selectedAdAccountId) {
+    // Meta bağlantısı yok — gerçek veri çekilemez, uydurma yapma.
+    await supabase.from('sync_jobs').update({
+      progress: 100,
+      result: { inserted: false, reason: 'no_meta_connection' },
+    }).eq('id', job.id)
+    return
+  }
+
+  const accountId = instance.ad_account_id.startsWith('act_')
+    ? instance.ad_account_id
+    : `act_${instance.ad_account_id}`
+
   await supabase.from('sync_jobs').update({ progress: 50 }).eq('id', job.id)
 
-  // Simulated metrikler
-  const instance = await getInstanceBudget(job.strategy_instance_id)
-  const budget = instance?.monthly_budget_try ?? 10000
+  // Hesap-geneli gerçek insights (son 7 gün) — mevcut Meta okuma helper'ları,
+  // entegrasyon kodu DEĞİŞTİRİLMEDEN kullanılır.
+  const { metaGraphFetch } = await import('@/lib/metaGraph')
+  const { normalizeInsights } = await import('@/lib/meta/optimization/insightsNormalizer')
+
+  const fields = 'spend,impressions,clicks,ctr,cpc,reach,frequency,cpm,actions,action_values,purchase_roas'
+  const response = await metaGraphFetch(
+    `/${accountId}/insights`,
+    conn.accessToken,
+    { params: { date_preset: 'last_7d', fields } },
+  )
+
+  if (!response.ok) {
+    // Gerçek API hatası — transient olabilir, retry için fırlat.
+    throw new Error(`Meta insights alınamadı (HTTP ${response.status})`)
+  }
+
+  const json = await response.json().catch(() => ({ data: [] }))
+  const row = json?.data?.[0]
+  const n = normalizeInsights(row)
+
+  // Gerçek aktivite yoksa (harcama + gösterim 0) snapshot yazma — boş durum dürüsttür.
+  if (n.spend <= 0 && n.impressions <= 0) {
+    await supabase.from('sync_jobs').update({
+      progress: 100,
+      result: { inserted: false, reason: 'no_activity_last_7d', connected: true },
+    }).eq('id', job.id)
+    return
+  }
+
+  // Dönüşümler: satın alma + lead (pixel dahil) — toStdMetrics ile aynı mantık
+  const conversions =
+    (n.actions['purchase'] ?? 0) +
+    (n.actions['lead'] ?? 0) +
+    (n.actions['offsite_conversion.fb_pixel_purchase'] ?? 0) +
+    (n.actions['offsite_conversion.fb_pixel_lead'] ?? 0)
 
   const snapshot = {
     strategy_instance_id: job.strategy_instance_id,
     range_days: 7,
-    spend_try: Math.round(budget * 0.25 * (0.8 + Math.random() * 0.4)),
-    clicks: Math.round(500 + Math.random() * 2000),
-    impressions: Math.round(10000 + Math.random() * 50000),
-    conversions: Math.round(10 + Math.random() * 100),
-    roas: Math.round((2 + Math.random() * 4) * 100) / 100,
-    cpa_try: Math.round((20 + Math.random() * 80) * 100) / 100,
-    ctr: Math.round((1 + Math.random() * 4) * 100) / 100,
+    spend_try: Math.round(n.spend),
+    clicks: Math.round(n.clicks),
+    impressions: Math.round(n.impressions),
+    conversions: Math.round(conversions),
+    roas: n.websitePurchaseRoas > 0 ? Math.round(n.websitePurchaseRoas * 100) / 100 : 0,
+    cpa_try: conversions > 0 ? Math.round((n.spend / conversions) * 100) / 100 : 0,
+    ctr: Math.round((n.ctr ?? 0) * 100) / 100,
   }
 
   await supabase.from('metrics_snapshots').insert(snapshot)
+  await supabase.from('sync_jobs').update({ progress: 80, result: { inserted: true, connected: true } }).eq('id', job.id)
 
-  // Metrik çekildikten sonra otomatik optimizasyon job'u kuyruğa ekle
+  // Gerçek metrik çekildikten sonra optimizasyon job'u kuyruğa ekle
   await createJob(job.strategy_instance_id, 'optimize')
 }
 
@@ -604,16 +675,6 @@ async function updateInstanceStatus(
     .from('strategy_instances')
     .update(updates)
     .eq('id', instanceId)
-}
-
-async function getInstanceBudget(instanceId: string) {
-  if (!supabase) return null
-  const { data } = await supabase
-    .from('strategy_instances')
-    .select('monthly_budget_try')
-    .eq('id', instanceId)
-    .single()
-  return data
 }
 
 // RUNNING instance'lar için periyodik metrik çekme kontrolü

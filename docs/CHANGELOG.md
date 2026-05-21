@@ -2,6 +2,11 @@
 
 ---
 
+## 2026-05-21 — Strateji · SAHTE metrikler kaldırıldı, GERÇEK Meta verisine bağlandı (K1)
+- **Sorun:** Strateji `runPullMetricsJob` performans metriklerini (spend, clicks, impressions, conversions, roas, cpa, ctr) `Math.random()` ile **uyduruyordu**. Aylık abonelik olarak satılan üründe sahte metrik kabul edilemez.
+- **Çözüm:** Job artık bağlı Meta hesabının **gerçek son-7-gün hesap-geneli insights**'ını çekiyor (`metaGraphFetch('/{account}/insights', date_preset=last_7d)` + `normalizeInsights`; Meta entegrasyon kodu değiştirilmedi). Token **instance'ın kendi `user_id`'sinden** çözülür (`getMetaConnection`) — ambient cookie'ye bakılmaz, çapraz-kullanıcı sızıntısı engellenir. Gerçek veri yoksa (Meta bağlantısı yok / son 7 günde aktivite yok) **snapshot yazılmaz**, uydurma yapılmaz — UI boş durum gösterir. Gerçek veri çekilince optimize job zincirlenir. Kullanılmayan `getInstanceBudget` ölü kodu kaldırıldı. `tsc` ✓.
+- **Dosyalar:** `lib/strategy/job-runner.ts`, `docs/CHANGELOG.md`
+
 ## 2026-05-21 — Strateji · Çift kredi düşme fix (K2) + renk paleti temizliği (K3)
 - **Sorun:** (K2) Aylık limit aşan (overage) kullanıcı strateji oluştururken kredi **iki kez** düşüyordu: client `spendCredits` → `/api/credits/spend` (10 kredi) + backend `deduct_strategy_credit` RPC (10 kredi) → toplam 20. (K3) Strateji alanı CLAUDE.md onaylı paletin dışında **amber/yellow/purple/green** tonları kullanıyordu (özellikle `app/strateji/page.tsx`'te yasaklı `bg-amber-*`).
 - **Çözüm:** (K2) Client tarafı `spendCredits` çağrısı kaldırıldı; kredi düşümü **tek nokta = backend RPC**. Başarılı oluşturmadan sonra `refreshCredits()` ile gerçek bakiye UI'a yansıtılıyor; salt-okunur `hasEnoughCredits` modal kontrolü korundu. (K3) Strateji alanındaki tüm amber/yellow/purple/green ihlalleri onaylı palete taşındı: marka/aksiyon → `primary`, başarı/durum → `emerald`, "med" rozet → `gray`, negatif (düşük ROAS) → `red`; üç faz başlık bandı (yeşil/purple/amber) tek tip `primary` bandına birleştirildi. Strateji akışı, AI üretim, billing RPC, tablolar ve job motoru **değiştirilmedi**. `tsc` ✓.
