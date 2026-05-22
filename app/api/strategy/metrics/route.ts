@@ -34,36 +34,39 @@ export async function GET(request: Request) {
   const instanceIds = instances.map((i) => i.id)
   const totalBudget = instances.reduce((sum, i) => sum + (i.monthly_budget_try || 0), 0)
 
-  // Son snapshot'ları al (her instance için en son)
+  // Seçili aralık (performans) + 30 gün (aylık kalan bütçe) snapshot'larını çek.
+  // total_budget AYLIK plandır → "Kalan Bütçe" de aylık kalmalı (aralıktan bağımsız).
+  const rangesToFetch = Array.from(new Set([rangeDays, 30]))
   const { data: snapshots } = await supabase
     .from('metrics_snapshots')
-    .select('*')
+    .select('strategy_instance_id, range_days, spend_try, clicks, roas, created_at')
     .in('strategy_instance_id', instanceIds)
-    .eq('range_days', rangeDays)
+    .in('range_days', rangesToFetch)
     .order('created_at', { ascending: false })
 
-  // Her instance için en son snapshot'ı al (dedupe)
-  const seen = new Set<string>()
-  const latest: Array<{ spend_try: number; clicks: number; roas: number }> = []
+  // Her (instance, range) için en son snapshot
+  type Snap = { spend_try: number; clicks: number; roas: number }
+  const latestByKey = new Map<string, Snap>()
   for (const snap of snapshots ?? []) {
-    if (!seen.has(snap.strategy_instance_id)) {
-      seen.add(snap.strategy_instance_id)
-      latest.push(snap)
-    }
+    const key = `${snap.strategy_instance_id}:${snap.range_days}`
+    if (!latestByKey.has(key)) latestByKey.set(key, snap as Snap)
   }
 
-  let totalSpend = 0
-  let totalClicks = 0
+  let totalSpend = 0   // seçili aralık
+  let totalClicks = 0  // seçili aralık
   let totalRoasSum = 0
   let roasCount = 0
+  let monthlySpend = 0 // 30 gün → aylık kalan bütçe için
 
-  for (const snap of latest) {
-    totalSpend += snap.spend_try || 0
-    totalClicks += snap.clicks || 0
-    if (snap.roas > 0) {
-      totalRoasSum += snap.roas
-      roasCount++
+  for (const inst of instances) {
+    const sel = latestByKey.get(`${inst.id}:${rangeDays}`)
+    if (sel) {
+      totalSpend += sel.spend_try || 0
+      totalClicks += sel.clicks || 0
+      if (sel.roas > 0) { totalRoasSum += sel.roas; roasCount++ }
     }
+    const monthly = latestByKey.get(`${inst.id}:30`)
+    if (monthly) monthlySpend += monthly.spend_try || 0
   }
 
   const avgRoas = roasCount > 0 ? Math.round((totalRoasSum / roasCount) * 100) / 100 : 0
@@ -71,11 +74,11 @@ export async function GET(request: Request) {
   return NextResponse.json({
     ok: true,
     kpi: {
-      total_budget: totalBudget,
-      remaining_budget: totalBudget - totalSpend,
-      spend: totalSpend,
-      clicks: totalClicks,
-      roas: avgRoas,
+      total_budget: totalBudget,                                  // aylık plan (sabit)
+      remaining_budget: Math.max(0, totalBudget - monthlySpend),  // aylık kalan (30g harcamaya göre)
+      spend: totalSpend,                                          // seçili aralık
+      clicks: totalClicks,                                        // seçili aralık
+      roas: avgRoas,                                              // seçili aralık
     },
   })
 }

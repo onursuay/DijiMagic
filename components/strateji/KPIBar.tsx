@@ -41,12 +41,13 @@ export default function KPIBar() {
 
   useEffect(() => { fetchKPI() }, [fetchKPI])
 
+  const rangeLabel = RANGE_OPTIONS.find((o) => o.value === range)?.label ?? `${range} gün`
   const cards = [
-    { label: 'Toplam Bütçe', value: formatCurrency(kpi?.total_budget ?? 0), icon: Wallet, color: 'text-blue-600' },
-    { label: 'Kalan Bütçe', value: formatCurrency(kpi?.remaining_budget ?? 0), icon: PiggyBank, color: 'text-emerald-600' },
-    { label: 'Harcanan', value: formatCurrency(kpi?.spend ?? 0), icon: DollarSign, color: 'text-primary', hasFilter: true },
-    { label: 'Tıklama', value: formatNumber(kpi?.clicks ?? 0), icon: MousePointerClick, color: 'text-primary', hasFilter: true },
-    { label: 'ROAS', value: kpi?.roas ? `${kpi.roas}x` : '—', icon: TrendingUp, color: 'text-emerald-600' },
+    { label: 'Aylık Bütçe', value: formatCurrency(kpi?.total_budget ?? 0), icon: Wallet, color: 'text-blue-600' },
+    { label: 'Kalan (Bu Ay)', value: formatCurrency(kpi?.remaining_budget ?? 0), icon: PiggyBank, color: 'text-emerald-600' },
+    { label: `Harcanan (${rangeLabel})`, value: formatCurrency(kpi?.spend ?? 0), icon: DollarSign, color: 'text-primary', hasFilter: true },
+    { label: `Tıklama (${rangeLabel})`, value: formatNumber(kpi?.clicks ?? 0), icon: MousePointerClick, color: 'text-primary', hasFilter: true },
+    { label: `ROAS (${rangeLabel})`, value: kpi?.roas ? `${kpi.roas}x` : '—', icon: TrendingUp, color: 'text-emerald-600' },
   ]
 
   return (

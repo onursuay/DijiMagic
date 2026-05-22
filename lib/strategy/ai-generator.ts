@@ -1,9 +1,10 @@
 import type { InputPayload, Blueprint, Persona, CreativeTheme, Experiment, Risk, TaskSeed } from './types'
 import { generateBlueprint as generateTemplateBased } from './blueprint-generator'
+import { strategyClaudeText, extractJsonText, isAnthropicReady } from './claude'
 
 // ════════════════════════════════════════════════════════════
-// AI-Powered Blueprint Generator (OpenAI GPT-4o-mini)
-// Template-based fallback otomatik çalışır
+// AI-Powered Blueprint Generator (Claude — projenin standart motoru)
+// Template-based fallback otomatik çalışır (ANTHROPIC_API_KEY yoksa)
 // ════════════════════════════════════════════════════════════
 
 const SYSTEM_PROMPT = `Sen bir dijital pazarlama stratejisti ve Meta/Google Ads uzmanısın.
@@ -121,54 +122,27 @@ export async function generateBlueprintWithAI(
   input: InputPayload,
   businessContextPromptBlock?: string | null,
 ): Promise<{ blueprint: Blueprint; aiGenerated: boolean }> {
-  const apiKey = process.env.OPENAI_API_KEY
-  const baseUrl = process.env.OPENAI_BASE_URL || 'https://api.openai.com/v1'
-  const model = process.env.OPENAI_MODEL || 'gpt-4o-mini'
-
-  if (!apiKey) {
-    console.log('[Strategy AI] OpenAI API key yok, template fallback kullanılıyor')
+  if (!isAnthropicReady()) {
+    console.log('[Strategy AI] ANTHROPIC_API_KEY yok, template fallback kullanılıyor')
     return { blueprint: generateTemplateBased(input), aiGenerated: false }
   }
 
   try {
-    const controller = new AbortController()
-    const timeout = setTimeout(() => controller.abort(), 30000) // 30s timeout
-
-    const response = await fetch(`${baseUrl}/chat/completions`, {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-        'Authorization': `Bearer ${apiKey}`,
-      },
-      body: JSON.stringify({
-        model,
-        messages: [
-          { role: 'system', content: SYSTEM_PROMPT },
-          { role: 'user', content: businessContextPromptBlock ? `${businessContextPromptBlock}\n\n${buildUserPrompt(input)}` : buildUserPrompt(input) },
-        ],
-        temperature: 0.4,
-        max_tokens: 4000,
-      }),
-      signal: controller.signal,
+    const content = await strategyClaudeText({
+      system: SYSTEM_PROMPT,
+      user: businessContextPromptBlock ? `${businessContextPromptBlock}\n\n${buildUserPrompt(input)}` : buildUserPrompt(input),
+      maxTokens: 4000,
+      temperature: 0.4,
+      timeoutMs: 30000,
     })
 
-    clearTimeout(timeout)
-
-    if (!response.ok) {
-      throw new Error(`OpenAI API error: ${response.status}`)
-    }
-
-    const data = await response.json()
-    const content = data.choices?.[0]?.message?.content || ''
-
     // Parse JSON (markdown code block varsa temizle)
-    const jsonStr = content.replace(/```json?\n?/g, '').replace(/```/g, '').trim()
-    const raw = JSON.parse(jsonStr)
+    const raw = JSON.parse(extractJsonText(content))
 
     // Validate & normalize
     const blueprint = validateBlueprint(raw, input)
 
-    console.log('[Strategy AI] Blueprint başarıyla üretildi')
+    console.log('[Strategy AI] Blueprint başarıyla üretildi (Claude)')
     return { blueprint, aiGenerated: true }
 
   } catch (err) {

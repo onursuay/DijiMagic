@@ -9,6 +9,10 @@
       "schedule": "0 3 * * 0"
     },
     {
+      "path": "/api/cron/strategy-metrics",
+      "schedule": "0 4 * * 1"
+    },
+    {
       "path": "/api/cron/official-ads-refresh",
       "schedule": "0 6 1 * *"
     },

@@ -1,9 +1,18 @@
 import { supabase } from '@/lib/supabase/client'
 import { generateBlueprint, calculateDataQuality } from './blueprint-generator'
 import { generateBlueprintWithAI } from './ai-generator'
+import { strategyClaudeText, extractJsonText, isAnthropicReady } from './claude'
 import { canTransition } from './state-machine'
 import type { InputPayload, InstanceStatus, SyncJob, Blueprint } from './types'
 import { JOB_CONCURRENCY, METRICS_PULL_INTERVAL_DAYS } from './constants'
+
+// Metrik snapshot çekilecek aralıklar — KPI bar 7/14/30 seçeneklerinin
+// hepsinin gerçek verisi olsun diye her çekimde 3'ü de yazılır.
+const METRIC_RANGES: Array<{ days: number; preset: string }> = [
+  { days: 7, preset: 'last_7d' },
+  { days: 14, preset: 'last_14d' },
+  { days: 30, preset: 'last_30d' },
+]
 
 // Exponential backoff + jitter hesapla
 function getBackoffMs(attempt: number): number {
@@ -199,11 +208,19 @@ async function runGeneratePlanJob(job: SyncJob): Promise<void> {
   // Business context prompt block: API route business profile'ı çekip
   // payload._yoai_business_context_prompt alanına yazmış olabilir.
   const rawPayload = inputRow.payload as InputPayload & { _yoai_business_context_prompt?: string | null }
-  const businessContextPromptBlock = typeof rawPayload._yoai_business_context_prompt === 'string'
+  let businessContextPromptBlock = typeof rawPayload._yoai_business_context_prompt === 'string'
     ? rawPayload._yoai_business_context_prompt
     : null
   const cleanPayload = { ...rawPayload }
   delete (cleanPayload as Record<string, unknown>)._yoai_business_context_prompt
+
+  // (#4) Marka bağlamını (kullanıcı beyanı + iş zekası) motora besle — plan
+  // jenerik değil markaya özgü olsun. Payload'da hazır blok yoksa instance
+  // sahibinin brand intelligence'ından taze yükle.
+  if (!businessContextPromptBlock) {
+    businessContextPromptBlock = await loadStrategyBusinessContext(job.strategy_instance_id)
+  }
+
   const { blueprint, aiGenerated } = await generateBlueprintWithAI(cleanPayload as InputPayload, businessContextPromptBlock)
 
   await supabase.from('sync_jobs').update({
@@ -296,14 +313,13 @@ async function runApplyJob(job: SyncJob): Promise<void> {
 
   await supabase.from('sync_jobs').update({ progress: 60 }).eq('id', job.id)
 
-  // ─── 3. Kampanya Yapısı Otomasyonu ───
-  // Blueprint'teki funnel + channel mix'e göre kampanya taslakları oluştur
-  if (input.channels.meta && adAccountId) {
+  // ─── 3. Kampanya Yapısı Otomasyonu (çok-kanallı: Meta + Google) ───
+  // Blueprint'teki funnel + channel mix'e göre kampanya kurulum görevleri oluştur
+  if (adAccountId && (input.channels.meta || input.channels.google)) {
     try {
       const campaignResults = await createCampaignStructure(
         blueprint,
         input,
-        adAccountId,
         job.strategy_instance_id,
       )
       automationResults.campaigns = campaignResults
@@ -367,69 +383,50 @@ async function createAudiencesFromPersonas(
   return { created: drafts.length, drafts }
 }
 
-// ── Kampanya Yapısı Otomasyon ──────────────────────────────────────
+// ── Kampanya Yapısı Otomasyon (çok-kanallı kurulum görevleri) ──────────────
+// Aktif her kanal (Meta + Google) için funnel aşaması bazlı kampanya KURULUM
+// GÖREVLERİ üretir. NOT: Strateji canlıya kampanya OTOMATİK BASMAZ — gerçek
+// para harcayan ve Meta/Google entegrasyonuna dokunan bir aksiyondur; kullanıcı
+// bu görevleri mevcut reklam paneli + AdCreationWizard ile bilinçli yayına alır.
 async function createCampaignStructure(
   blueprint: Blueprint,
   input: InputPayload,
-  adAccountId: string,
   strategyInstanceId: string,
 ): Promise<{ planned: string[] }> {
   if (!supabase) return { planned: [] }
 
   const planned: string[] = []
-  const budget = input.monthly_budget_try
-  const dailyBudget = Math.round(budget / 30)
+  const dailyBudget = Math.round(input.monthly_budget_try / 30)
 
-  // Hedef → Meta objective mapping (Meta'nın 6 kampanya hedefi)
-  const objectiveMap: Record<string, string> = {
-    awareness: 'OUTCOME_AWARENESS',
-    traffic: 'OUTCOME_TRAFFIC',
-    engagement: 'OUTCOME_ENGAGEMENT',
-    leads: 'OUTCOME_LEADS',
-    app: 'OUTCOME_APP_PROMOTION',
-    sales: 'OUTCOME_SALES',
-  }
-  const objective = objectiveMap[input.goal_type] || 'OUTCOME_TRAFFIC'
+  // Aktif kanallar × blueprint kanal ağırlıkları
+  const channels: Array<{ label: string; pct: number }> = []
+  if (input.channels.meta && blueprint.channel_mix.meta > 0) channels.push({ label: 'Meta', pct: blueprint.channel_mix.meta })
+  if (input.channels.google && blueprint.channel_mix.google > 0) channels.push({ label: 'Google', pct: blueprint.channel_mix.google })
+  if (channels.length === 0) return { planned: [] }
 
-  // Funnel bazlı kampanya yapısı oluştur
+  // Funnel bazlı kampanya yapısı (%10 altı stage atlanır)
   const funnelStages = [
-    { name: 'TOFU — Farkındalık', pct: blueprint.funnel_split.tofu, stage: 'tofu' },
-    { name: 'MOFU — Değerlendirme', pct: blueprint.funnel_split.mofu, stage: 'mofu' },
-    { name: 'BOFU — Dönüşüm', pct: blueprint.funnel_split.bofu, stage: 'bofu' },
-  ].filter(s => s.pct >= 10) // %10'dan düşük stage'leri atla
+    { name: 'TOFU — Farkındalık', pct: blueprint.funnel_split.tofu },
+    { name: 'MOFU — Değerlendirme', pct: blueprint.funnel_split.mofu },
+    { name: 'BOFU — Dönüşüm', pct: blueprint.funnel_split.bofu },
+  ].filter(s => s.pct >= 10)
 
-  for (const stage of funnelStages) {
-    const stageBudget = Math.round(dailyBudget * (stage.pct / 100) * (blueprint.channel_mix.meta / 100))
-
-    if (stageBudget < 50) continue // Günlük 50TL'den düşük kampanya kurulmasın
-
-    // Kampanya planını DB'ye kaydet (henüz Meta'ya push yapmıyoruz, draft olarak tutuyoruz)
-    const campaignPlan = {
-      ad_account_id: adAccountId,
-      strategy_instance_id: strategyInstanceId,
-      name: `[Strateji] ${stage.name}`,
-      objective,
-      daily_budget: stageBudget,
-      funnel_stage: stage.stage,
-      status: 'planned',
-      config: {
-        funnel_pct: stage.pct,
-        channel_meta_pct: blueprint.channel_mix.meta,
-        personas: blueprint.personas.map(p => p.name),
-        creative_themes: blueprint.creative_themes.map(t => t.theme),
-      },
+  const taskRows: Array<{ strategy_instance_id: string; title: string; category: string; status: string }> = []
+  for (const channel of channels) {
+    for (const stage of funnelStages) {
+      const stageBudget = Math.round(dailyBudget * (stage.pct / 100) * (channel.pct / 100))
+      if (stageBudget < 50) continue // Günlük 50₺ altı kampanya kurulmasın
+      taskRows.push({
+        strategy_instance_id: strategyInstanceId,
+        title: `${channel.label} Kampanya Kur: ${stage.name} (Günlük ${stageBudget}₺)`,
+        category: 'campaign',
+        status: 'todo',
+      })
+      planned.push(`${channel.label} · ${stage.name} — ${stageBudget}₺/gün`)
     }
-
-    // strategy_tasks'a kampanya kurulum görevi olarak ekle
-    await supabase.from('strategy_tasks').insert({
-      strategy_instance_id: strategyInstanceId,
-      title: `Meta Kampanya Kur: ${stage.name} (Günlük ${stageBudget}₺)`,
-      category: 'campaign',
-      status: 'todo',
-    })
-
-    planned.push(`${stage.name} — ${stageBudget}₺/gün`)
   }
+
+  if (taskRows.length) await supabase.from('strategy_tasks').insert(taskRows)
 
   return { planned }
 }
@@ -477,57 +474,62 @@ async function runPullMetricsJob(job: SyncJob): Promise<void> {
 
   await supabase.from('sync_jobs').update({ progress: 50 }).eq('id', job.id)
 
-  // Hesap-geneli gerçek insights (son 7 gün) — mevcut Meta okuma helper'ları,
-  // entegrasyon kodu DEĞİŞTİRİLMEDEN kullanılır.
+  // Hesap-geneli gerçek insights — mevcut Meta okuma helper'ları, entegrasyon
+  // kodu DEĞİŞTİRİLMEDEN kullanılır. (#5) 7/14/30 günün hepsi çekilir ki KPI
+  // bar'ın aralık seçeneklerinin gerçek verisi olsun.
   const { metaGraphFetch } = await import('@/lib/metaGraph')
   const { normalizeInsights } = await import('@/lib/meta/optimization/insightsNormalizer')
-
   const fields = 'spend,impressions,clicks,ctr,cpc,reach,frequency,cpm,actions,action_values,purchase_roas'
-  const response = await metaGraphFetch(
-    `/${accountId}/insights`,
-    conn.accessToken,
-    { params: { date_preset: 'last_7d', fields } },
-  )
 
-  if (!response.ok) {
-    // Gerçek API hatası — transient olabilir, retry için fırlat.
-    throw new Error(`Meta insights alınamadı (HTTP ${response.status})`)
+  let insertedRanges = 0
+  for (const { days, preset } of METRIC_RANGES) {
+    const response = await metaGraphFetch(
+      `/${accountId}/insights`,
+      conn.accessToken,
+      { params: { date_preset: preset, fields } },
+    )
+    if (!response.ok) {
+      // İlk aralıkta hata transient olabilir → retry için fırlat; sonrakilerde geç.
+      if (days === 7) throw new Error(`Meta insights alınamadı (HTTP ${response.status})`)
+      continue
+    }
+    const json = await response.json().catch(() => ({ data: [] }))
+    const n = normalizeInsights(json?.data?.[0])
+
+    // Gerçek aktivite yoksa (harcama + gösterim 0) o aralık için snapshot yazma — boş durum dürüsttür.
+    if (n.spend <= 0 && n.impressions <= 0) continue
+
+    // Dönüşümler: satın alma + lead (pixel dahil) — toStdMetrics ile aynı mantık
+    const conversions =
+      (n.actions['purchase'] ?? 0) +
+      (n.actions['lead'] ?? 0) +
+      (n.actions['offsite_conversion.fb_pixel_purchase'] ?? 0) +
+      (n.actions['offsite_conversion.fb_pixel_lead'] ?? 0)
+
+    await supabase.from('metrics_snapshots').insert({
+      strategy_instance_id: job.strategy_instance_id,
+      range_days: days,
+      spend_try: Math.round(n.spend),
+      clicks: Math.round(n.clicks),
+      impressions: Math.round(n.impressions),
+      conversions: Math.round(conversions),
+      roas: n.websitePurchaseRoas > 0 ? Math.round(n.websitePurchaseRoas * 100) / 100 : 0,
+      cpa_try: conversions > 0 ? Math.round((n.spend / conversions) * 100) / 100 : 0,
+      ctr: Math.round((n.ctr ?? 0) * 100) / 100,
+    })
+    insertedRanges++
   }
 
-  const json = await response.json().catch(() => ({ data: [] }))
-  const row = json?.data?.[0]
-  const n = normalizeInsights(row)
-
-  // Gerçek aktivite yoksa (harcama + gösterim 0) snapshot yazma — boş durum dürüsttür.
-  if (n.spend <= 0 && n.impressions <= 0) {
+  // Hiçbir aralıkta gerçek aktivite yoksa — uydurma yapma, boş durum bırak.
+  if (insertedRanges === 0) {
     await supabase.from('sync_jobs').update({
       progress: 100,
-      result: { inserted: false, reason: 'no_activity_last_7d', connected: true },
+      result: { inserted: false, reason: 'no_activity', connected: true },
     }).eq('id', job.id)
     return
   }
 
-  // Dönüşümler: satın alma + lead (pixel dahil) — toStdMetrics ile aynı mantık
-  const conversions =
-    (n.actions['purchase'] ?? 0) +
-    (n.actions['lead'] ?? 0) +
-    (n.actions['offsite_conversion.fb_pixel_purchase'] ?? 0) +
-    (n.actions['offsite_conversion.fb_pixel_lead'] ?? 0)
-
-  const snapshot = {
-    strategy_instance_id: job.strategy_instance_id,
-    range_days: 7,
-    spend_try: Math.round(n.spend),
-    clicks: Math.round(n.clicks),
-    impressions: Math.round(n.impressions),
-    conversions: Math.round(conversions),
-    roas: n.websitePurchaseRoas > 0 ? Math.round(n.websitePurchaseRoas * 100) / 100 : 0,
-    cpa_try: conversions > 0 ? Math.round((n.spend / conversions) * 100) / 100 : 0,
-    ctr: Math.round((n.ctr ?? 0) * 100) / 100,
-  }
-
-  await supabase.from('metrics_snapshots').insert(snapshot)
-  await supabase.from('sync_jobs').update({ progress: 80, result: { inserted: true, connected: true } }).eq('id', job.id)
+  await supabase.from('sync_jobs').update({ progress: 80, result: { inserted: true, ranges: insertedRanges, connected: true } }).eq('id', job.id)
 
   // Gerçek metrik çekildikten sonra optimizasyon job'u kuyruğa ekle
   await createJob(job.strategy_instance_id, 'optimize')
@@ -547,72 +549,45 @@ async function runOptimizeJob(job: SyncJob): Promise<void> {
     .order('created_at', { ascending: false })
     .limit(3)
 
-  // Blueprint'i al
-  const { data: output } = await supabase
-    .from('strategy_outputs')
-    .select('blueprint')
-    .eq('strategy_instance_id', job.strategy_instance_id)
-    .order('version', { ascending: false })
-    .limit(1)
-    .single()
+  // Blueprint + instance sahibi (YoAlgoritma uyarıları için)
+  const [outputRes, instanceRes] = await Promise.all([
+    supabase.from('strategy_outputs').select('blueprint').eq('strategy_instance_id', job.strategy_instance_id).order('version', { ascending: false }).limit(1).single(),
+    supabase.from('strategy_instances').select('user_id').eq('id', job.strategy_instance_id).single(),
+  ])
+  const output = outputRes.data
 
   await supabase.from('sync_jobs').update({ progress: 40 }).eq('id', job.id)
 
-  const apiKey = process.env.OPENAI_API_KEY
-  const baseUrl = process.env.OPENAI_BASE_URL || 'https://api.openai.com/v1'
-  const model = process.env.OPENAI_MODEL || 'gpt-4o-mini'
+  // (#6) Strateji ↔ YoAlgoritma köprüsü: aynı kullanıcının açık hesap uyarıları
+  // (Pixel/CAPI/dönüşüm takibi/bütçe dağılımı) optimizasyon önerilerine beslenir.
+  const yoalgoritmaAlerts = await loadYoalgoritmaAlertContext(instanceRes.data?.user_id)
 
   let suggestions: string[] = [
     'Düşük performanslı kreatifi durdur',
     'TOFU bütçesini %10 artır',
     'Yeni lookalike audience test et',
   ]
+  let aiGenerated = false
 
-  if (apiKey && metrics?.length && output?.blueprint) {
+  if (isAnthropicReady() && metrics?.length && output?.blueprint) {
     try {
       const blueprint = output.blueprint as Blueprint
-      const controller = new AbortController()
-      const timeout = setTimeout(() => controller.abort(), 15000)
-
-      const response = await fetch(`${baseUrl}/chat/completions`, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          'Authorization': `Bearer ${apiKey}`,
-        },
-        body: JSON.stringify({
-          model,
-          messages: [
-            {
-              role: 'system',
-              content: `Sen bir dijital reklam optimizasyon uzmanısın. Mevcut performans metriklerini ve strateji planını analiz ederek 5-8 adet somut, uygulanabilir Türkçe öneri üret. Çıktını SADECE JSON array olarak ver: ["öneri 1", "öneri 2", ...]`,
-            },
-            {
-              role: 'user',
-              content: `KPI Hedefleri: CPA ${blueprint.kpi_targets.cpa_range[0]}-${blueprint.kpi_targets.cpa_range[1]} TL, ROAS ${blueprint.kpi_targets.roas_range[0]}-${blueprint.kpi_targets.roas_range[1]}
+      const content = await strategyClaudeText({
+        system: `Sen bir dijital reklam optimizasyon uzmanısın. Mevcut performans metriklerini, strateji planını ve (varsa) YoAlgoritma hesap uyarılarını analiz ederek 5-8 adet somut, uygulanabilir Türkçe öneri üret. YoAlgoritma uyarıları varsa onları önceliklendir. Çıktını SADECE JSON array olarak ver: ["öneri 1", "öneri 2", ...]`,
+        user: `KPI Hedefleri: CPA ${blueprint.kpi_targets.cpa_range[0]}-${blueprint.kpi_targets.cpa_range[1]} TL, ROAS ${blueprint.kpi_targets.roas_range[0]}-${blueprint.kpi_targets.roas_range[1]}
 
 Son Metrikler:
 ${metrics.map(m => `- Harcama: ${m.spend_try}₺, Tıklama: ${m.clicks}, Dönüşüm: ${m.conversions}, ROAS: ${m.roas}, CPA: ${m.cpa_try}₺, CTR: ${m.ctr}%`).join('\n')}
 
-Huni Dağılımı: TOFU %${blueprint.funnel_split.tofu}, MOFU %${blueprint.funnel_split.mofu}, BOFU %${blueprint.funnel_split.bofu}`,
-            },
-          ],
-          temperature: 0.3,
-          max_tokens: 1000,
-        }),
-        signal: controller.signal,
+Huni Dağılımı: TOFU %${blueprint.funnel_split.tofu}, MOFU %${blueprint.funnel_split.mofu}, BOFU %${blueprint.funnel_split.bofu}${yoalgoritmaAlerts ? `\n\nYoAlgoritma Hesap Uyarıları (önceliklendir):\n${yoalgoritmaAlerts}` : ''}`,
+        maxTokens: 1000,
+        temperature: 0.3,
+        timeoutMs: 15000,
       })
-
-      clearTimeout(timeout)
-
-      if (response.ok) {
-        const data = await response.json()
-        const content = data.choices?.[0]?.message?.content || '[]'
-        const jsonStr = content.replace(/```json?\n?/g, '').replace(/```/g, '').trim()
-        const parsed = JSON.parse(jsonStr)
-        if (Array.isArray(parsed) && parsed.length >= 2) {
-          suggestions = parsed
-        }
+      const parsed = JSON.parse(extractJsonText(content))
+      if (Array.isArray(parsed) && parsed.length >= 2) {
+        suggestions = parsed.filter((s): s is string => typeof s === 'string' && s.trim().length > 0)
+        aiGenerated = true
       }
     } catch (err) {
       console.error('[Optimize AI] Fallback kullanılıyor:', err)
@@ -621,7 +596,7 @@ Huni Dağılımı: TOFU %${blueprint.funnel_split.tofu}, MOFU %${blueprint.funne
 
   await supabase.from('sync_jobs').update({
     progress: 80,
-    result: { suggestions, ai_generated: !!apiKey },
+    result: { suggestions, ai_generated: aiGenerated },
   }).eq('id', job.id)
 
   // Önerileri optimizasyon görevleri olarak kaydet
@@ -675,6 +650,45 @@ async function updateInstanceStatus(
     .from('strategy_instances')
     .update(updates)
     .eq('id', instanceId)
+}
+
+// (#4) Strateji instance sahibinin marka bağlamı prompt bloğunu yükler.
+// Brand intelligence yoksa null döner — generator bağlamsız ama yine üretir.
+async function loadStrategyBusinessContext(instanceId: string): Promise<string | null> {
+  if (!supabase) return null
+  try {
+    const { data: inst } = await supabase
+      .from('strategy_instances')
+      .select('user_id')
+      .eq('id', instanceId)
+      .single()
+    if (!inst?.user_id) return null
+    const { getBusinessContextForUser, buildBusinessContextPromptBlock } = await import('@/lib/yoai/businessContextStore')
+    const ctx = await getBusinessContextForUser(inst.user_id)
+    if (!ctx) return null
+    return buildBusinessContextPromptBlock(ctx)
+  } catch (e) {
+    console.warn('[Strategy] Marka bağlamı yüklenemedi:', e)
+    return null
+  }
+}
+
+// (#6) Kullanıcının açık YoAlgoritma hesap uyarılarını optimizasyon promptu için
+// kısa metne çevirir. Yoksa null.
+async function loadYoalgoritmaAlertContext(userId?: string | null): Promise<string | null> {
+  if (!userId) return null
+  try {
+    const { listAccountAlertsForUser } = await import('@/lib/yoai/ai/hierarchicalStore')
+    const alerts = await listAccountAlertsForUser(userId, ['pending'])
+    if (!alerts.length) return null
+    return alerts
+      .slice(0, 8)
+      .map((a) => `- [${a.severity}] ${a.title}${a.recommended_action ? ` → ${a.recommended_action}` : ''}`)
+      .join('\n')
+  } catch (e) {
+    console.warn('[Strategy] YoAlgoritma uyarıları yüklenemedi:', e)
+    return null
+  }
 }
 
 // RUNNING instance'lar için periyodik metrik çekme kontrolü
