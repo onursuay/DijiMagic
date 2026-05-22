@@ -21,6 +21,8 @@ export default function StratejiPage() {
   const [toasts, setToasts] = useState<Toast[]>([])
   const [gateAccessType, setGateAccessType] = useState<'credit' | 'subscription' | null>(null)
   const [gateFeatureKey, setGateFeatureKey] = useState<string>('strategy')
+  // Aktif Meta hesabı — Topbar'da hesap seçici göstermek için (Optimizasyon ile aynı desen)
+  const [adAccountName, setAdAccountName] = useState<string | null>(null)
 
   const { needsCreditsForStrategy, strategyUsedThisMonth, strategyMonthlyLimit, recordStrategyUsage, hasSubscription } = useSubscription()
   const { hasEnoughCredits, refresh: refreshCredits } = useCredits()
@@ -48,6 +50,15 @@ export default function StratejiPage() {
   }, [])
 
   useEffect(() => { fetchInstances() }, [fetchInstances])
+
+  // Aktif Meta hesabını çek (Topbar hesap seçici için). Geçişte sayfa reload olur,
+  // /api/strategy/instances resolveMetaContext ile yeni hesabın verisini döner.
+  useEffect(() => {
+    fetch('/api/meta/status', { cache: 'no-store' })
+      .then(r => (r.ok ? r.json() : null))
+      .then(d => { if (d?.connected && d?.adAccountName) setAdAccountName(d.adAccountName) })
+      .catch(() => {})
+  }, [])
 
   const handleCreate = async () => {
     // Önce abonelik kontrolü — Strateji modülü subscription tier
@@ -132,6 +143,7 @@ export default function StratejiPage() {
       <Topbar
         title="Strateji"
         description="Pazarlama stratejilerinizi oluşturun, yönetin ve optimize edin"
+        adAccountName={adAccountName || undefined}
         actionButton={{
           label: creating ? 'Oluşturuluyor...' : 'Yeni Strateji',
           onClick: handleCreate,

@@ -77,6 +77,11 @@ export default function GoogleAccountModal({
     nameById.get(acc.account_id) ||
     (acc.account_name && acc.account_name !== acc.account_id ? acc.account_name : acc.account_id)
 
+  // "Hesap Ekle" listesinde zaten kayıtlı hesaplar gösterilmez (yöneticiler kalır — derinleşmek için)
+  const registeredGoogleIds = new Set(googleRegistered.map(a => a.account_id))
+  const visibleManagers = managers.filter(m => m.isManager || !registeredGoogleIds.has(m.customerId))
+  const visibleChildren = childAccounts.filter(c => !registeredGoogleIds.has(c.customerId))
+
   // Kayıtlı bir Google hesabına geç — mevcut select-account endpoint'i + reload (Meta ile aynı desen)
   const switchToRegistered = async (acc: typeof googleRegistered[number]) => {
     setBusyId(acc.account_id)
@@ -195,9 +200,9 @@ export default function GoogleAccountModal({
                 <span className="text-sm font-medium text-red-700 leading-relaxed">{accountsError}</span>
               </div>
             )}
-            {accountStep === 'managers' && !managersLoading && managers.length > 0 && (
+            {accountStep === 'managers' && !managersLoading && visibleManagers.length > 0 && (
               <ul className="space-y-2">
-                {managers.map((m) => (
+                {visibleManagers.map((m) => (
                   <li key={m.customerId} className="flex items-center justify-between p-3 border border-gray-200 rounded-lg">
                     <span className="font-medium text-gray-900">
                       {m.name} (ID: {m.customerId}){' '}
@@ -212,12 +217,12 @@ export default function GoogleAccountModal({
                 ))}
               </ul>
             )}
-            {accountStep === 'managers' && !managersLoading && !accountsError && managers.length === 0 && (
-              <p className="text-gray-600 text-sm">{tEnt('noAccounts')}</p>
+            {accountStep === 'managers' && !managersLoading && !accountsError && visibleManagers.length === 0 && (
+              <p className="text-gray-600 text-sm">{managers.length > 0 ? tAcc('noMoreToAdd') : tEnt('noAccounts')}</p>
             )}
-            {accountStep === 'children' && !childrenLoading && childAccounts.length > 0 && (
+            {accountStep === 'children' && !childrenLoading && visibleChildren.length > 0 && (
               <ul className="space-y-2">
-                {childAccounts.map((c) => (
+                {visibleChildren.map((c) => (
                   <li key={c.customerId} className="flex items-center justify-between p-3 border border-gray-200 rounded-lg">
                     <span className="font-medium text-gray-900">{c.name} (ID: {c.customerId})</span>
                     <button type="button" onClick={() => handleBrowsePick(c, true)} disabled={busy} className={`px-3 py-1.5 text-sm font-medium rounded-lg ${isPicking(c.customerId) ? 'bg-primary/60 text-white cursor-wait' : 'bg-primary text-white hover:bg-primary/90'}`}>
@@ -227,8 +232,8 @@ export default function GoogleAccountModal({
                 ))}
               </ul>
             )}
-            {accountStep === 'children' && !childrenLoading && !accountsError && childAccounts.length === 0 && (
-              <p className="text-gray-600 text-sm">{tEnt('noChildren')}</p>
+            {accountStep === 'children' && !childrenLoading && !accountsError && visibleChildren.length === 0 && (
+              <p className="text-gray-600 text-sm">{childAccounts.length > 0 ? tAcc('noMoreToAdd') : tEnt('noChildren')}</p>
             )}
 
             {/* Limit dolu uyarısı (browse alanında) */}

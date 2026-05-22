@@ -2,6 +2,16 @@
 
 ---
 
+## 2026-05-22 — Çoklu Reklam Hesabı Faz 3.1: Strateji'ye hesap seçici
+- **Sorun:** Reklam hesabı seçici yalnızca Optimizasyon'da görünüyordu; Strateji'de yoktu.
+- **Çözüm:** Strateji `/api/meta/status`'tan aktif Meta hesabını çekip Topbar'a `adAccountName` geçiriyor → Meta çoklu-hesap seçici görünür (Optimizasyon ile aynı desen). Strateji instances zaten `ad_account_id`'ye bağlı; geçiş reload → yeni hesabın verisine bağlanır. `tsc` ✓.
+- **Dosyalar:** `app/strateji/page.tsx`
+
+## 2026-05-22 — Düzeltme: Google modalında kayıtlı hesaplar "Hesap Ekle"de görünmesin
+- **Sorun:** Kayıtlı (KAYITLI HESAPLAR) Google hesapları, alttaki "Hesap Ekle" listesinde de görünüyordu (örn. Metropol Yayınları iki yerde).
+- **Çözüm:** Browse listesi (managers + children) zaten kayıtlı hesapları filtreler; yöneticiler (derinleşmek için) kalır. Hepsi kayıtlıysa "Eklenecek başka hesap yok" gösterilir. (Meta dropdown'ında bu zaten vardı.) `tsc` ✓.
+- **Dosyalar:** `components/google/GoogleAccountModal.tsx`
+
 ## 2026-05-22 — Düzeltme: Google çoklu-hesap modalı (ad görünmüyor + busy görseli)
 - **Sorun:** (1) Kayıtlı Google hesabında ad yerine ID görünüyordu (backfill edilen hesap isim taşımıyor). (2) Bir hesap "Seçiliyor..." iken altındaki tüm "Seç" butonları soluklaşıp işaretlenmiş gibi görünüyordu.
 - **Çözüm:** (1) Modalda isim zenginleştirme: aktif hesabın adı (`activeCustomerName`) + managers/children listelerinden ad çözülür; kayıt isim taşımıyorsa bunlardan gösterilir (connection store/backfill'e dokunulmadı). (2) `disabled:opacity-50` global solma kaldırıldı; yalnız tıklanan buton `bg-primary/60` + "Seçiliyor..." gösterir (`isPicking` helper), diğerleri değişmez. `tsc` ✓.
