@@ -2,6 +2,11 @@
 
 ---
 
+## 2026-05-22 — Hedef Kitle: Google sekmesi açıldı (salt-okunur gerçek veri) + BI bandı kaldırıldı
+- **Sorun:** (A) Hedef Kitle yalnız Meta'yı destekliyordu; Google "Yakında" rozetiyle kapalıydı. (B) Sayfa üstünde teknik iç jargon olan "Business Intelligence Memory bağlı" bandı kullanıcıya gösteriliyordu.
+- **Çözüm:** (A) Google sekmesi aktifleştirildi ve **salt-okunur gerçek veri** görünümü eklendi — Google'da Meta gibi kayıtlı kitle nesnesi (Detaylı/Benzer/Retargeting) sistemi olmadığı için sahte oluşturma akışı sunulmadı. **Detaylı Kitle** = Google segment kataloğu (Satın Alma Niyeti/İlgi Alanı/Demografi/Yaşam Olayı, arama+gözat); **Retargeting** = hesabın gerçek user list'leri (boyut/üyelik/uygunluk). **Benzer Kitle** (Google 2023'te kaldırdı) ve **AI Tabanlı** (Strateji→Meta) sekmeleri Google'da gizlendi; Google'da "+ Yeni Kitle" yok. Mevcut read endpoint'leri kullanıldı, **entegrasyon koduna dokunulmadı**, DB migration yapılmadı. Google bağlı değilse zarif "bağlı değil" durumu. (B) BI bandı UI'dan kaldırıldı; arkasındaki business-context sihirbaz ön-doldurmasında çalışmaya devam ediyor, gereksiz fetch temizlendi. `tsc` ✓.
+- **Dosyalar:** `components/hedef-kitle/google/GoogleAudienceView.tsx` (yeni), `components/hedef-kitle/PlatformTabs.tsx`, `app/hedef-kitle/page.tsx`, `docs/hedef-kitle-ve-optimizasyon.md` (yeni)
+
 ## 2026-05-22 — Optimizasyon: Google Ads kanadı Faz 2 (tek-tık canlı apply + rollback)
 - **Sorun:** Google önerileri Faz 1'de yalnız advisory'di — kullanıcı tek tıkla uygulayamıyordu.
 - **Çözüm:** Mevcut Google mutate helper'ları (`updateCampaignStatus`/`updateCampaignBudget`) ile canlı apply: (1) recommender net kararlara `changeSet` ekliyor — NEGATIVE_ROAS → kampanya duraklat, LOW_ROAS/HIGH_CPA → günlük bütçe %20 kıs (hepsi REVIEW_REQUIRED, açık onay; AUTO_APPLY yok). (2) `POST /api/google/optimization/apply` → status için resourceName türetir, bütçe için budget resourceName'i GAQL ile çözer, mutate eder. (3) `GoogleScanResults` "Uygula" + uygulandıktan sonra "Geri Al" (rollback = ters newValue). Apply sonrası sayfa Google verisini tazeler. Entegrasyon koduna dokunulmadı (helper'lar yalnız çağrıldı). `tsc` ✓.

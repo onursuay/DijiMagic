@@ -2,7 +2,7 @@
 
 import { useState, useEffect, useCallback } from 'react'
 import { useTranslations } from 'next-intl'
-import { Plus, Sparkles, Globe, Users, Target, Info } from 'lucide-react'
+import { Plus, Sparkles, Globe, Users, Target } from 'lucide-react'
 import Topbar from '@/components/Topbar'
 import Tabs from '@/components/Tabs'
 import { ToastContainer } from '@/components/Toast'
@@ -11,14 +11,23 @@ import PlatformTabs from '@/components/hedef-kitle/PlatformTabs'
 import type { Platform } from '@/components/hedef-kitle/PlatformTabs'
 import AudienceList from '@/components/hedef-kitle/AudienceList'
 import AudienceWizardModal from '@/components/hedef-kitle/AudienceWizardModal'
+import GoogleAudienceView from '@/components/hedef-kitle/google/GoogleAudienceView'
 import type { AudienceRow, AudienceType, AudienceSource, UnifiedAudience } from '@/components/hedef-kitle/wizard/types'
 import AccessRequiredModal from '@/components/billing/AccessRequiredModal'
 import { useSubscription } from '@/components/providers/SubscriptionProvider'
 
-const AUDIENCE_TABS = [
+// Meta: AI + Detaylı + Benzer + Retargeting
+const META_AUDIENCE_TABS = [
   { id: 'AI', label: 'AI Tabanlı Hedef Kitle', icon: <Sparkles className="w-4 h-4" /> },
   { id: 'SAVED', label: 'Detaylı Kitle', icon: <Globe className="w-4 h-4" /> },
   { id: 'LOOKALIKE', label: 'Benzer Kitle', icon: <Users className="w-4 h-4" /> },
+  { id: 'CUSTOM', label: 'Retargeting', icon: <Target className="w-4 h-4" /> },
+]
+
+// Google: Benzer Kitle (Google'da nesne olarak yok) ve AI (Strateji → Meta) gizli.
+// Detaylı = Google segment kataloğu, Retargeting = hesabın user list'leri (salt-okunur).
+const GOOGLE_AUDIENCE_TABS = [
+  { id: 'SAVED', label: 'Detaylı Kitle', icon: <Globe className="w-4 h-4" /> },
   { id: 'CUSTOM', label: 'Retargeting', icon: <Target className="w-4 h-4" /> },
 ]
 
@@ -26,24 +35,6 @@ interface Assets {
   pixels: { id: string; name: string }[]
   instagramAccounts: { id: string; username: string }[]
   pages: { id: string; name: string }[]
-}
-
-interface AudienceBusinessContextSnapshot {
-  businessContextLoaded: boolean
-  businessContextConfidence: number
-  sectorLabel: string | null
-  location: string[]
-  competitorCount: number
-  hasIntelligenceMemory: boolean
-  summaryText: string
-  audienceSeedHints: {
-    audiencePains: string[]
-    audienceMotivations: string[]
-    audienceTypes: string[]
-    declaredTargetAudience: string | null
-    recommendedMetaObjectives: string[]
-    recommendedGoogleCampaignTypes: string[]
-  }
 }
 
 interface MetaAudience {
@@ -93,6 +84,8 @@ export default function HedefKitlePage() {
   const [activeTab, setActiveTab] = useState('SAVED')
   const [showAudienceAiGate, setShowAudienceAiGate] = useState(false)
 
+  const audienceTabs = platform === 'google' ? GOOGLE_AUDIENCE_TABS : META_AUDIENCE_TABS
+
   // AI Tabanlı Hedef Kitle sekmesi subscription tier — sekmeye geçiş guard'lı
   const handleTabChange = useCallback((tabId: string) => {
     if (tabId === 'AI' && !hasSubscription) {
@@ -101,6 +94,14 @@ export default function HedefKitlePage() {
     }
     setActiveTab(tabId)
   }, [hasSubscription])
+
+  // Platform değişince Google'da olmayan sekmelerden (AI / Benzer Kitle) güvenli sekmeye düş
+  const handlePlatformChange = useCallback((next: Platform) => {
+    setPlatform(next)
+    if (next === 'google') {
+      setActiveTab((cur) => (cur === 'SAVED' || cur === 'CUSTOM' ? cur : 'SAVED'))
+    }
+  }, [])
   const [audiences, setAudiences] = useState<UnifiedAudience[]>([])
   const [loading, setLoading] = useState(true)
   const [wizardOpen, setWizardOpen] = useState(false)
@@ -110,8 +111,6 @@ export default function HedefKitlePage() {
   } | null>(null)
   const [toasts, setToasts] = useState<Toast[]>([])
   const [assets, setAssets] = useState<Assets>({ pixels: [], instagramAccounts: [], pages: [] })
-  const [businessContext, setBusinessContext] =
-    useState<AudienceBusinessContextSnapshot | null>(null)
 
   const addToast = useCallback((message: string, type: 'success' | 'error' | 'info') => {
     const id = crypto.randomUUID()
@@ -164,24 +163,6 @@ export default function HedefKitlePage() {
     }
   }, [])
 
-  const fetchBusinessContext = useCallback(async () => {
-    try {
-      const res = await fetch('/api/audiences/business-context')
-      if (!res.ok) {
-        setBusinessContext(null)
-        return
-      }
-      const json = await res.json()
-      if (json?.ok && json?.data) {
-        setBusinessContext(json.data as AudienceBusinessContextSnapshot)
-      } else {
-        setBusinessContext(null)
-      }
-    } catch {
-      setBusinessContext(null)
-    }
-  }, [])
-
   const fetchAssets = useCallback(async () => {
     try {
       const res = await fetch('/api/meta/capabilities')
@@ -201,8 +182,7 @@ export default function HedefKitlePage() {
   useEffect(() => {
     fetchAudiences()
     fetchAssets()
-    fetchBusinessContext()
-  }, [fetchAudiences, fetchAssets, fetchBusinessContext])
+  }, [fetchAudiences, fetchAssets])
 
   // Auto-poll every 30s while any audience is still transitioning
   useEffect(() => {
@@ -247,61 +227,16 @@ export default function HedefKitlePage() {
       />
       <div className="flex-1 overflow-y-auto bg-gray-50 p-6">
         <div className="max-w-6xl mx-auto space-y-4">
-          {/* Business Intelligence Memory banner — Hedef Kitle runtime context */}
-          {businessContext && businessContext.businessContextLoaded && (
-            <div className="rounded-2xl border border-primary/20 bg-primary/5 p-4">
-              <div className="flex items-start gap-3">
-                <div className="w-9 h-9 rounded-xl bg-primary/10 flex items-center justify-center shrink-0">
-                  <Info className="w-5 h-5 text-primary" />
-                </div>
-                <div className="flex-1 min-w-0">
-                  <div className="flex items-center gap-2 flex-wrap">
-                    <h3 className="text-sm font-semibold text-primary">
-                      Business Intelligence Memory bağlı
-                    </h3>
-                    <span className="text-xs px-2 py-0.5 rounded-full bg-emerald-50 text-emerald-700 border border-emerald-200">
-                      Güven %{businessContext.businessContextConfidence}
-                    </span>
-                    {businessContext.hasIntelligenceMemory && (
-                      <span className="text-xs px-2 py-0.5 rounded-full bg-emerald-50 text-emerald-700 border border-emerald-200">
-                        Hafıza aktif
-                      </span>
-                    )}
-                  </div>
-                  <p className="text-sm text-gray-700 mt-1.5 leading-relaxed">
-                    {businessContext.summaryText}
-                  </p>
-                  {(businessContext.audienceSeedHints.audienceMotivations.length > 0 ||
-                    businessContext.audienceSeedHints.audiencePains.length > 0) && (
-                    <div className="mt-3 grid grid-cols-1 md:grid-cols-2 gap-2 text-xs text-gray-700">
-                      {businessContext.audienceSeedHints.audiencePains.length > 0 && (
-                        <div>
-                          <span className="font-medium text-gray-900">Hedef kitle ihtiyaçları:</span>{' '}
-                          {businessContext.audienceSeedHints.audiencePains.slice(0, 4).join(', ')}
-                        </div>
-                      )}
-                      {businessContext.audienceSeedHints.audienceMotivations.length > 0 && (
-                        <div>
-                          <span className="font-medium text-gray-900">Motivasyonlar:</span>{' '}
-                          {businessContext.audienceSeedHints.audienceMotivations.slice(0, 4).join(', ')}
-                        </div>
-                      )}
-                    </div>
-                  )}
-                </div>
-              </div>
-            </div>
-          )}
-
           {/* Platform Switcher: Meta / Google */}
-          <PlatformTabs activePlatform={platform} onPlatformChange={setPlatform} />
+          <PlatformTabs activePlatform={platform} onPlatformChange={handlePlatformChange} />
 
           {/* Audience Type Tabs + Create Button */}
           <div className="flex items-center justify-between gap-4">
             <div className="flex-1">
-              <Tabs tabs={AUDIENCE_TABS} activeTab={activeTab} onTabChange={handleTabChange} />
+              <Tabs tabs={audienceTabs} activeTab={activeTab} onTabChange={handleTabChange} />
             </div>
-            {activeTab !== 'AI' && (
+            {/* Yeni Kitle yalnızca Meta'da — Google kitleleri kampanya kurulumunda oluşturulur */}
+            {platform === 'meta' && activeTab !== 'AI' && (
               <button
                 type="button"
                 onClick={() => setWizardOpen(true)}
@@ -313,8 +248,13 @@ export default function HedefKitlePage() {
             )}
           </div>
 
-          {/* AI Tab — Strategy-created audiences */}
-          {activeTab === 'AI' && (() => {
+          {/* Google — salt-okunur gerçek veri görünümü (segment kataloğu + user list'ler) */}
+          {platform === 'google' && (
+            <GoogleAudienceView activeTab={activeTab as 'SAVED' | 'CUSTOM'} />
+          )}
+
+          {/* AI Tab — Strategy-created audiences (yalnızca Meta) */}
+          {platform === 'meta' && activeTab === 'AI' && (() => {
             const aiAudiences = audiences.filter((a) => a.source === 'STRATEGY')
             return aiAudiences.length > 0 ? (
               <AudienceList
@@ -339,8 +279,8 @@ export default function HedefKitlePage() {
             )
           })()}
 
-          {/* Audience List (non-AI tabs) */}
-          {activeTab !== 'AI' && (
+          {/* Audience List (non-AI tabs, yalnızca Meta) */}
+          {platform === 'meta' && activeTab !== 'AI' && (
             <AudienceList
               audiences={audiences}
               loading={loading}
