@@ -49,15 +49,15 @@ export default function OptimizasyonPage() {
   const [scanPhase, setScanPhase] = useState(0)
   const [scanResults, setScanResults] = useState<Record<string, MagicScanResult>>({})
 
-  // ── Kaynak seçici (Meta / Google) + Google verisi ──
-  const [source, setSource] = useState<'meta' | 'google'>('meta')
-  const [googleCampaigns, setGoogleCampaigns] = useState<GoogleOptimizationCampaign[]>([])
-  const [googleLoading, setGoogleLoading] = useState(false)
-  const [googleLoaded, setGoogleLoaded] = useState(false)
-  const [googleError, setGoogleError] = useState<string | null>(null)
-  const [googleScanningId, setGoogleScanningId] = useState<string | null>(null)
-  const [googleScanResults, setGoogleScanResults] = useState<Record<string, MagicScanResult>>({})
-  const [googleExpandedId, setGoogleExpandedId] = useState<string | null>(null)
+  // ── Kaynak seçici (Meta / Google / TikTok) + harici (non-Meta) veri ──
+  const [source, setSource] = useState<'meta' | 'google' | 'tiktok'>('meta')
+  const [extCampaigns, setExtCampaigns] = useState<GoogleOptimizationCampaign[]>([])
+  const [extLoading, setExtLoading] = useState(false)
+  const [extLoadedFor, setExtLoadedFor] = useState<string | null>(null)
+  const [extError, setExtError] = useState<string | null>(null)
+  const [extScanningId, setExtScanningId] = useState<string | null>(null)
+  const [extScanResults, setExtScanResults] = useState<Record<string, MagicScanResult>>({})
+  const [extExpandedId, setExtExpandedId] = useState<string | null>(null)
 
   // Connection state
   const [adAccountName, setAdAccountName] = useState<string | null>(null)
@@ -231,38 +231,45 @@ export default function OptimizasyonPage() {
     }
   }, [addToast, canUseOptimizationAI, canDoAiScan, recordAiScan])
 
-  // ── Google: skorlu kampanyaları çek ────────────────────────────────────
-  const fetchGoogleCampaigns = useCallback(async () => {
-    setGoogleLoading(true)
-    setGoogleError(null)
+  // ── Harici (Google / TikTok): skorlu kampanyaları çek ───────────────────
+  const fetchExtCampaigns = useCallback(async (src: 'google' | 'tiktok') => {
+    setExtLoading(true)
+    setExtError(null)
+    const label = src === 'google' ? 'Google Ads' : 'TikTok Ads'
     try {
-      const res = await fetch('/api/google/optimization/score')
+      const res = await fetch(`/api/${src}/optimization/score`)
       const data = await res.json()
       if (res.status === 401) {
-        setGoogleError('Google Ads bağlantısı bulunamadı. Entegrasyon sayfasından bağlayın.')
-        setGoogleCampaigns([])
+        setExtError(`${label} bağlantısı bulunamadı. Entegrasyon sayfasından bağlayın.`)
+        setExtCampaigns([])
         return
       }
       if (!res.ok || !data.ok) {
-        setGoogleError(data.message || 'Google verileri alınamadı')
+        setExtError(data.message || `${label} verileri alınamadı`)
+        setExtCampaigns([])
         return
       }
-      setGoogleCampaigns(data.data?.campaigns ?? [])
+      setExtCampaigns(data.data?.campaigns ?? [])
     } catch {
-      setGoogleError('Google verileri alınamadı')
+      setExtError(`${label} verileri alınamadı`)
+      setExtCampaigns([])
     } finally {
-      setGoogleLoading(false)
-      setGoogleLoaded(true)
+      setExtLoading(false)
+      setExtLoadedFor(src)
     }
   }, [])
 
-  // Google kaynağına ilk geçişte yükle
+  // Kaynak değişince (Meta dışı) ilgili veriyi yükle
   useEffect(() => {
-    if (source === 'google' && !googleLoaded && !googleLoading) fetchGoogleCampaigns()
-  }, [source, googleLoaded, googleLoading, fetchGoogleCampaigns])
+    if (source !== 'meta' && extLoadedFor !== source && !extLoading) {
+      setExtExpandedId(null)
+      setExtScanResults({})
+      fetchExtCampaigns(source)
+    }
+  }, [source, extLoadedFor, extLoading, fetchExtCampaigns])
 
-  // ── Google Magic Scan ──────────────────────────────────────────────────
-  const handleGoogleScan = useCallback(async (campaign: GoogleOptimizationCampaign, useAI: boolean) => {
+  // ── Harici Magic Scan (Google / TikTok ortak) ──────────────────────────
+  const handleExtScan = useCallback(async (campaign: GoogleOptimizationCampaign, useAI: boolean) => {
     if (useAI && !canUseOptimizationAI) {
       setGateAccessType('subscription'); setGateFeatureKey('optimization'); setShowGateModal(true); return
     }
@@ -270,18 +277,19 @@ export default function OptimizasyonPage() {
       setGateAccessType('credit'); setGateFeatureKey('optimization_ai_scan_pro'); setShowGateModal(true); return
     }
     if (useAI) recordAiScan()
-    setGoogleScanningId(campaign.id)
+    const src = source === 'tiktok' ? 'tiktok' : 'google'
+    setExtScanningId(campaign.id)
     try {
       const locale = document.cookie.match(/NEXT_LOCALE=(\w+)/)?.[1] || 'tr'
-      const res = await fetch('/api/google/optimization/magic-scan', {
+      const res = await fetch(`/api/${src}/optimization/magic-scan`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ campaign, locale, useAI }),
       })
       const data = await res.json()
       if (data.ok) {
-        setGoogleScanResults(prev => ({ ...prev, [campaign.id]: data.data }))
-        setGoogleExpandedId(campaign.id)
+        setExtScanResults(prev => ({ ...prev, [campaign.id]: data.data }))
+        setExtExpandedId(campaign.id)
       } else if (res.status === 402 || data.code === 'AI_SCAN_LIMIT') {
         setGateAccessType('credit'); setGateFeatureKey('optimization_ai_scan_pro'); setShowGateModal(true)
       } else {
@@ -290,9 +298,9 @@ export default function OptimizasyonPage() {
     } catch {
       addToast('Tarama başarısız', 'error')
     } finally {
-      setGoogleScanningId(null)
+      setExtScanningId(null)
     }
-  }, [addToast, canUseOptimizationAI, canDoAiScan, recordAiScan])
+  }, [addToast, canUseOptimizationAI, canDoAiScan, recordAiScan, source])
 
   // ── Filter campaigns by search ─────────────────────────────────────────
   const filteredCampaigns = searchQuery
@@ -350,15 +358,15 @@ export default function OptimizasyonPage() {
       />
 
       <div className="flex-1 overflow-auto p-6">
-        {/* Kaynak seçici: Meta / Google */}
+        {/* Kaynak seçici: Meta / Google / TikTok */}
         <div className="flex items-center gap-1 mb-4 bg-gray-100 rounded-lg p-1 w-fit">
-          {(['meta', 'google'] as const).map((s) => (
+          {(['meta', 'google', 'tiktok'] as const).map((s) => (
             <button
               key={s}
               onClick={() => setSource(s)}
               className={`px-4 py-1.5 rounded-md text-sm font-medium transition-colors ${source === s ? 'bg-white text-gray-900 shadow-sm' : 'text-gray-500 hover:text-gray-700'}`}
             >
-              {s === 'meta' ? 'Meta' : 'Google'}
+              {s === 'meta' ? 'Meta' : s === 'google' ? 'Google' : 'TikTok'}
             </button>
           ))}
         </div>
@@ -458,45 +466,46 @@ export default function OptimizasyonPage() {
         </TableShimmer>
         )}
 
-        {source === 'google' && (
+        {source !== 'meta' && (
           <div>
-            {googleLoading && (
+            {extLoading && (
               <div className="space-y-4">
                 {[1, 2, 3].map(i => (
                   <div key={i} className="bg-white rounded-2xl border border-gray-200 p-4 animate-pulse h-20" />
                 ))}
               </div>
             )}
-            {!googleLoading && googleError && (
+            {!extLoading && extError && (
               <div className="text-center py-12">
-                <p className="text-gray-500 text-sm">{googleError}</p>
+                <p className="text-gray-500 text-sm">{extError}</p>
                 <a href="/entegrasyon" className="mt-3 inline-block px-4 py-2 bg-green-600 text-white rounded-lg text-sm font-medium hover:bg-green-700 transition">
                   Entegrasyon
                 </a>
               </div>
             )}
-            {!googleLoading && !googleError && googleCampaigns.length === 0 && (
+            {!extLoading && !extError && extCampaigns.length === 0 && (
               <div className="text-center py-12">
-                <p className="text-gray-400 text-sm">Aktif Google kampanyası bulunamadı.</p>
+                <p className="text-gray-400 text-sm">Aktif {source === 'tiktok' ? 'TikTok' : 'Google'} kampanyası bulunamadı.</p>
               </div>
             )}
-            {!googleLoading && !googleError && googleCampaigns.length > 0 && (
+            {!extLoading && !extError && extCampaigns.length > 0 && (
               <div className="space-y-3">
-                {(searchQuery ? googleCampaigns.filter(c => c.name.toLowerCase().includes(searchQuery.toLowerCase())) : googleCampaigns).map(c => (
+                {(searchQuery ? extCampaigns.filter(c => c.name.toLowerCase().includes(searchQuery.toLowerCase())) : extCampaigns).map(c => (
                   <div key={c.id}>
                     <GoogleCampaignCard
                       campaign={c}
-                      expanded={googleExpandedId === c.id}
-                      onToggle={() => setGoogleExpandedId(googleExpandedId === c.id ? null : c.id)}
-                      onMagicScan={(useAI) => handleGoogleScan(c, useAI)}
-                      scanning={googleScanningId === c.id}
+                      expanded={extExpandedId === c.id}
+                      onToggle={() => setExtExpandedId(extExpandedId === c.id ? null : c.id)}
+                      onMagicScan={(useAI) => handleExtScan(c, useAI)}
+                      scanning={extScanningId === c.id}
                     />
-                    {googleScanResults[c.id] && (
+                    {extScanResults[c.id] && (
                       <GoogleScanResults
-                        result={googleScanResults[c.id]}
-                        onSuccess={(msg) => { addToast(msg, 'success'); setTimeout(() => fetchGoogleCampaigns(), 1500) }}
+                        result={extScanResults[c.id]}
+                        applyEndpoint={source === 'tiktok' ? '/api/tiktok/optimization/apply' : '/api/google/optimization/apply'}
+                        onSuccess={(msg) => { addToast(msg, 'success'); setTimeout(() => fetchExtCampaigns(source === 'tiktok' ? 'tiktok' : 'google'), 1500) }}
                         onError={(msg) => addToast(msg, 'error')}
-                        onClose={() => setGoogleScanResults(prev => { const n = { ...prev }; delete n[c.id]; return n })}
+                        onClose={() => setExtScanResults(prev => { const n = { ...prev }; delete n[c.id]; return n })}
                       />
                     )}
                   </div>

@@ -14,6 +14,8 @@ interface Props {
   onClose: () => void
   onSuccess?: (message: string) => void
   onError?: (message: string) => void
+  /** Canlı apply endpoint'i (platforma göre). Verilmezse öneriler advisory kalır (apply butonu yok). */
+  applyEndpoint?: string
 }
 
 const RISK_LABEL: Record<Recommendation['risk'], string> = {
@@ -34,15 +36,15 @@ function changeLabel(rec: Recommendation): string | null {
   return null
 }
 
-export default function GoogleScanResults({ result, onClose, onSuccess, onError }: Props) {
+export default function GoogleScanResults({ result, onClose, onSuccess, onError, applyEndpoint }: Props) {
   const recs = result.recommendations ?? []
   const [busyId, setBusyId] = useState<string | null>(null)
   const [applied, setApplied] = useState<Record<string, boolean>>({})
 
   async function callApply(rec: Recommendation, newValue: string | number): Promise<boolean> {
     const cs = rec.changeSet
-    if (!cs) return false
-    const res = await fetch('/api/google/optimization/apply', {
+    if (!cs || !applyEndpoint) return false
+    const res = await fetch(applyEndpoint, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ campaignId: result.campaignId, changeType: cs.changeType, newValue }),
@@ -127,8 +129,8 @@ export default function GoogleScanResults({ result, onClose, onSuccess, onError 
                 <p className="text-sm text-gray-700 mt-1.5"><span className="font-medium text-gray-900">Aksiyon:</span> {r.action}</p>
                 {r.expectedImpact && <p className="text-xs text-emerald-700 mt-1">Beklenen etki: {r.expectedImpact}</p>}
 
-                {/* Tek-tık canlı apply (yalnız changeSet'li öneriler) */}
-                {action && (
+                {/* Tek-tık canlı apply (yalnız changeSet'li öneriler + apply endpoint varsa) */}
+                {action && applyEndpoint && (
                   <div className="mt-2.5 flex items-center gap-2">
                     {!isApplied ? (
                       <button
