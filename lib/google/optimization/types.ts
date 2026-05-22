@@ -5,6 +5,7 @@
 
 import type { StandardMetrics, RiskLevel } from '@/lib/yoai/analysisTypes'
 import type { ProblemTag } from '@/lib/meta/optimization/types'
+import type { GateBreakdown } from './gates'
 
 export interface GoogleOptimizationAdset {
   id: string
@@ -27,6 +28,8 @@ export interface GoogleOptimizationCampaign {
   metrics: StandardMetrics
   score: number
   riskLevel: RiskLevel
+  /** 4 kapılı skor kırılımı (Teslimat/Verim/Kalite/Doygunluk) — Meta ile aynı model. */
+  gates?: GateBreakdown
   problemTags: ProblemTag[]
   adsets: GoogleOptimizationAdset[]
 }

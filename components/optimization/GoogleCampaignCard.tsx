@@ -9,7 +9,6 @@ import { useState, useRef, useEffect } from 'react'
 import { ChevronDown, Loader2, Sparkles, Zap, AlertTriangle } from 'lucide-react'
 import ScoreBadge from './ScoreBadge'
 import { translateEnum } from '@/lib/yoai/translations'
-import { problemLabel } from '@/lib/google/optimization/labels'
 import type { ScoreStatus } from '@/lib/meta/optimization/types'
 import type { GoogleOptimizationCampaign } from '@/lib/google/optimization/types'
 
@@ -54,7 +53,6 @@ export default function GoogleCampaignCard({ campaign, expanded, onToggle, onMag
   const hasData = m.impressions > 0
   const status = statusFromScore(campaign.score, hasData)
   const channel = campaign.channelType ? translateEnum(campaign.channelType, 'tr', 'google') : '—'
-  const bidding = campaign.biddingStrategy ? translateEnum(campaign.biddingStrategy, 'tr', 'google') : '—'
   const problemCount = campaign.problemTags.length
   const isActive = (campaign.effectiveStatus || campaign.status).toUpperCase() === 'ENABLED'
 
@@ -132,55 +130,6 @@ export default function GoogleCampaignCard({ campaign, expanded, onToggle, onMag
         </button>
       </div>
 
-      {/* Genişletilmiş: sorunlar + ad grupları */}
-      {expanded && (
-        <div className="border-t border-gray-100 px-4 py-3 space-y-3 bg-gray-50/50">
-          {/* Mobil metrikler */}
-          <div className="md:hidden grid grid-cols-3 gap-2">
-            {metrics.map((mt) => (
-              <div key={mt.label}>
-                <p className="text-[10px] uppercase tracking-wide text-gray-400">{mt.label}</p>
-                <p className="text-sm font-semibold text-gray-800">{mt.value}</p>
-              </div>
-            ))}
-          </div>
-
-          <div className="flex flex-wrap gap-3 text-xs text-gray-600">
-            <span>Teklif: <span className="font-medium text-gray-800">{bidding}</span></span>
-            {campaign.optimizationScore != null && (
-              <span>Optimizasyon skoru: <span className="font-medium text-gray-800">%{Math.round(campaign.optimizationScore)}</span></span>
-            )}
-            {campaign.dailyBudget != null && (
-              <span>Günlük bütçe: <span className="font-medium text-gray-800">{fmtCurrency(campaign.dailyBudget, campaign.currency)}</span></span>
-            )}
-          </div>
-
-          {problemCount > 0 ? (
-            <div className="space-y-1.5">
-              <p className="text-[11px] uppercase tracking-wide text-gray-400 font-semibold">Tespit edilen sorunlar</p>
-              <div className="flex flex-wrap gap-1.5">
-                {campaign.problemTags.map((tag, i) => (
-                  <span
-                    key={i}
-                    className={`text-[11px] px-2 py-1 rounded-md border ${
-                      tag.severity === 'critical'
-                        ? 'bg-red-50 text-red-700 border-red-200'
-                        : tag.severity === 'warning'
-                          ? 'bg-primary/5 text-primary border-primary/20'
-                          : 'bg-gray-50 text-gray-600 border-gray-200'
-                    }`}
-                  >
-                    {problemLabel(tag.id)}
-                  </span>
-                ))}
-              </div>
-              <p className="text-[11px] text-gray-500 pt-1">Öneriler için yukarıdan “Tara” veya “AI ile Tara”yı kullanın.</p>
-            </div>
-          ) : (
-            <p className="text-xs text-emerald-700">Bu kampanyada belirgin bir sorun tespit edilmedi.</p>
-          )}
-        </div>
-      )}
     </div>
   )
 }

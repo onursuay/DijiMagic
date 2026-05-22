@@ -12,6 +12,7 @@
 import { NextResponse } from 'next/server'
 import { requireOptimizationAccess } from '@/lib/meta/optimization/serverGuard'
 import { fetchGoogleDeep } from '@/lib/yoai/googleDeepFetcher'
+import { computeGates, riskFromScore } from '@/lib/google/optimization/gates'
 
 export const dynamic = 'force-dynamic'
 export const maxDuration = 60
@@ -30,28 +31,33 @@ export async function GET() {
     )
   }
 
-  const data = campaigns.map((c) => ({
-    id: c.id,
-    name: c.campaignName,
-    status: c.status,
-    effectiveStatus: c.effectiveStatus ?? c.status,
-    channelType: c.channelType ?? null,
-    biddingStrategy: c.biddingStrategy ?? null,
-    optimizationScore: c.optimizationScore ?? null,
-    currency: c.currency,
-    dailyBudget: c.dailyBudget,
-    metrics: c.metrics,
-    score: c.score,
-    riskLevel: c.riskLevel,
-    problemTags: c.problemTags,
-    adsets: c.adsets.map((a) => ({
-      id: a.id,
-      name: a.name,
-      status: a.status,
-      dailyBudget: a.dailyBudget,
-      metrics: a.metrics,
-    })),
-  }))
+  const data = campaigns.map((c) => {
+    // 4 kapılı skor (Meta ile aynı model) — c.metrics'ten hesaplanır.
+    const { gates, score } = computeGates(c.metrics, c.currency)
+    return {
+      id: c.id,
+      name: c.campaignName,
+      status: c.status,
+      effectiveStatus: c.effectiveStatus ?? c.status,
+      channelType: c.channelType ?? null,
+      biddingStrategy: c.biddingStrategy ?? null,
+      optimizationScore: c.optimizationScore ?? null,
+      currency: c.currency,
+      dailyBudget: c.dailyBudget,
+      metrics: c.metrics,
+      score,
+      riskLevel: riskFromScore(score),
+      gates,
+      problemTags: c.problemTags,
+      adsets: c.adsets.map((a) => ({
+        id: a.id,
+        name: a.name,
+        status: a.status,
+        dailyBudget: a.dailyBudget,
+        metrics: a.metrics,
+      })),
+    }
+  })
 
   return NextResponse.json({ ok: true, data: { campaigns: data, errors } })
 }

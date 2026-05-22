@@ -13,7 +13,8 @@
 
 import { getTikTokContext, tiktokApiRequest } from '@/lib/tiktokAdsAuth'
 import { runGoogleRuleEngine } from '@/lib/yoai/googleRuleEngine'
-import type { GoogleProblemTagId, StandardMetrics, RiskLevel } from '@/lib/yoai/analysisTypes'
+import { computeGates, riskFromScore } from '@/lib/google/optimization/gates'
+import type { GoogleProblemTagId, StandardMetrics } from '@/lib/yoai/analysisTypes'
 import type { ProblemTag, ProblemTagId } from '@/lib/meta/optimization/types'
 import type { GoogleOptimizationCampaign } from '@/lib/google/optimization/types'
 
@@ -31,18 +32,6 @@ const TAG_MAP: Record<GoogleProblemTagId, ProblemTagId> = {
   AD_GROUP_IMBALANCE: 'ADSET_IMBALANCE',
   SINGLE_AD_GROUP_RISK: 'SINGLE_ADSET_RISK',
   LOW_OPT_SCORE: 'QUALITY_BELOW_AVERAGE',
-}
-
-function scoreFromProblems(tags: ProblemTag[]): number {
-  let s = 100
-  for (const t of tags) s -= t.severity === 'critical' ? 25 : t.severity === 'warning' ? 12 : 5
-  return Math.max(0, Math.min(100, s))
-}
-function riskFromScore(score: number): RiskLevel {
-  if (score >= 70) return 'low'
-  if (score >= 45) return 'medium'
-  if (score >= 25) return 'high'
-  return 'critical'
 }
 
 interface TikTokCampaign {
@@ -137,7 +126,7 @@ export async function fetchTiktokScoredCampaigns(): Promise<{ connected: boolean
 
     const gTags = runGoogleRuleEngine({ metrics, adGroupCount: 0, adCount: 0, optimizationScore: null, dailyBudget: c.budget || null, currency })
     const problemTags: ProblemTag[] = gTags.map((g) => ({ id: TAG_MAP[g.id] ?? 'INSUFFICIENT_DATA', severity: g.severity, evidence: g.evidence }))
-    const score = scoreFromProblems(problemTags)
+    const { gates, score } = computeGates(metrics, currency)
     const isEnabled = c.operation_status === 'ENABLE' || c.operation_status === 'CAMPAIGN_STATUS_ENABLE'
 
     return {
@@ -153,6 +142,7 @@ export async function fetchTiktokScoredCampaigns(): Promise<{ connected: boolean
       metrics,
       score,
       riskLevel: riskFromScore(score),
+      gates,
       problemTags,
       adsets: [],
     }

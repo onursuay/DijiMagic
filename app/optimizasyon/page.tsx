@@ -11,6 +11,7 @@ import DetailPanel from '@/components/optimization/DetailPanel'
 import MagicScanResults from '@/components/optimization/MagicScanResults'
 import GoogleCampaignCard from '@/components/optimization/GoogleCampaignCard'
 import GoogleScanResults from '@/components/optimization/GoogleScanResults'
+import GoogleDetailPanel from '@/components/optimization/GoogleDetailPanel'
 import AccessRequiredModal from '@/components/billing/AccessRequiredModal'
 import { metaFetch, TOKEN_EXPIRED_EVENT } from '@/lib/meta/clientFetch'
 import type { OptimizationCampaign, MagicScanResult } from '@/lib/meta/optimization/types'
@@ -499,7 +500,7 @@ export default function OptimizasyonPage() {
                       onMagicScan={(useAI) => handleExtScan(c, useAI)}
                       scanning={extScanningId === c.id}
                     />
-                    {extScanResults[c.id] && (
+                    {extScanResults[c.id] ? (
                       <GoogleScanResults
                         result={extScanResults[c.id]}
                         applyEndpoint={source === 'tiktok' ? '/api/tiktok/optimization/apply' : '/api/google/optimization/apply'}
@@ -507,7 +508,9 @@ export default function OptimizasyonPage() {
                         onError={(msg) => addToast(msg, 'error')}
                         onClose={() => setExtScanResults(prev => { const n = { ...prev }; delete n[c.id]; return n })}
                       />
-                    )}
+                    ) : extExpandedId === c.id ? (
+                      <GoogleDetailPanel campaign={c} />
+                    ) : null}
                   </div>
                 ))}
               </div>
