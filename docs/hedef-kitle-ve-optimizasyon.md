@@ -66,11 +66,28 @@ Dört sekme:
 - `components/hedef-kitle/PlatformTabs.tsx` (Google sekmesi aktifleştirildi, "Yakında" rozeti kaldırıldı)
 - `app/hedef-kitle/page.tsx` (platform-bazlı sekme listesi, Google görünümü bağlandı, "Business Intelligence Memory bağlı" bandı kaldırıldı)
 
-### 1.6 Kaldırılan: "Business Intelligence Memory bağlı" bandı
+### 1.6 Google'da "Benzer Kitle" neden yok — karşılığı nedir?
+
+Meta'da **Benzer Kitle (Lookalike)** bir kez oluşturulan, kaydedilen ve kampanyalara tekrar tekrar takılan bir **nesnedir**. Google'da bunun **bağımsız nesne karşılığı yoktur**:
+
+- Google'ın eski karşılığı **"Similar Audiences / Benzer Segmentler"** idi; Google bunu **1 Ağustos 2023'te tamamen kaldırdı ve sildi.** API ile artık benzer kitle oluşturulamaz.
+- "Müşterilerime benzeyen yeni kişilere ulaş" **yeteneği** durur — ama artık ayrı bir kitle değil, **kampanya seviyesinde otomatik bir ayar/sinyal**tir. İş akışı: önce tohum listeyi (remarketing/müşteri eşleştirme) hazırla → benzerlik genişletmesi kampanya çalışırken otomatik olur.
+
+Bu yetenek **YoAi kampanya sihirbazlarında zaten mevcut**:
+
+| Google mekanizması | Ne yapar | Projede yeri |
+|---|---|---|
+| **Optimized Targeting** (Display/Demand Gen) | Seçilen kitleye benzeyen, dönüşüm olasılığı yüksek yeni kişileri otomatik bulur | `components/google/wizard/display/steps/DisplayStepTargeting.tsx` (toggle) + `lib/google-ads/create-campaign.ts` (API'ye yazar) |
+| **Audience Signals** (Performance Max) | Tohum liste/segment verilir, Google AI benzer dönüşüm getirenleri bulur | `components/google/wizard/pmax/steps/PMaxStepAssetGroup.tsx` (`AudienceSignalsPanel`) |
+| **AI Max / broad** (Search) | Geniş + AI eşleştirme | `components/google/wizard/steps/StepAIMax.tsx` |
+
+**Sonuç:** Hedef Kitle'de Google için ayrı bir "Benzer Kitle" nesnesi listelenemez (Google öyle veri döndürmez; sahte üretmek `feedback_no_fake_data`'ya aykırı olur). Bu yüzden Google sekmesinde Benzer Kitle **gizlendi**; yeteneğin kendisi kampanya kurulumunda yaşıyor.
+
+### 1.7 Kaldırılan: "Business Intelligence Memory bağlı" bandı
 
 Sayfanın üstündeki teknik bilgi bandı (iç jargon) kullanıcıya gösterilmek üzere **kaldırıldı**. Arkasındaki business-context verisi sihirbaz ön-doldurması için **çalışmaya devam eder** (`AudienceWizardModal` içinde); sadece görsel band ve sayfadaki gereksiz `business-context` fetch'i temizlendi.
 
-### 1.7 Hâlâ geliştirilebilecek noktalar
+### 1.8 Hâlâ geliştirilebilecek noktalar
 
 - `audiences` tablosu Meta-only (`platform` kolonu yok). Google kitlelerini YoAi'de **kalıcı** yönetmek istenirse migration gerekir (şu an salt-okunur olduğu için gerekmedi).
 - Google Customer Match (CRM upload) arayüzü yok — istenirse ayrı, gerçek bir akış olarak eklenebilir.
