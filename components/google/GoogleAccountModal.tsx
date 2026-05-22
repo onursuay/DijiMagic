@@ -24,6 +24,8 @@ interface GoogleAccountModalProps {
   selectedManagerId?: string | null
   /** Aktif (seçili) Google customer id — kayıtlı listede vurgulama için */
   activeCustomerId?: string | null
+  /** Aktif hesabın adı — kayıtlı listede isim göstermek için (backfill'de isim yok) */
+  activeCustomerName?: string | null
 }
 
 export default function GoogleAccountModal({
@@ -41,6 +43,7 @@ export default function GoogleAccountModal({
   backToManagers,
   selectedManagerId,
   activeCustomerId,
+  activeCustomerName,
 }: GoogleAccountModalProps) {
   const tEnt = useTranslations('dashboard.entegrasyon.google')
   const tAcc = useTranslations('dashboard.meta.accounts')
@@ -58,6 +61,21 @@ export default function GoogleAccountModal({
     ? tAcc('accountsUsedUnlimited', { count: reg.count })
     : tAcc('accountsUsed', { count: reg.count, limit: reg.limit })
   const busy = !!selectingKey || !!busyId
+
+  // Browse "Seçiliyor..." durumu — yalnız tıklanan hesapta görünür (diğerleri değişmez)
+  const isPicking = (customerId: string) =>
+    busyId === customerId ||
+    selectingKey === `account:${customerId}` ||
+    selectingKey === `manager:${customerId}`
+
+  // İsim zenginleştirme: kayıt isim taşımıyorsa (backfill) aktif/browse isimlerinden çöz
+  const nameById = new Map<string, string>()
+  managers.forEach(m => nameById.set(m.customerId, m.name))
+  childAccounts.forEach(c => nameById.set(c.customerId, c.name))
+  if (activeCustomerId && activeCustomerName) nameById.set(activeCustomerId, activeCustomerName)
+  const displayName = (acc: { account_id: string; account_name: string | null }) =>
+    nameById.get(acc.account_id) ||
+    (acc.account_name && acc.account_name !== acc.account_id ? acc.account_name : acc.account_id)
 
   // Kayıtlı bir Google hesabına geç — mevcut select-account endpoint'i + reload (Meta ile aynı desen)
   const switchToRegistered = async (acc: typeof googleRegistered[number]) => {
@@ -134,7 +152,7 @@ export default function GoogleAccountModal({
                     return (
                       <li key={acc.account_id} className={`flex items-center justify-between p-3 border rounded-lg ${active ? 'border-green-300 bg-green-50' : 'border-gray-200'}`}>
                         <button type="button" onClick={() => !active && switchToRegistered(acc)} disabled={active || busy} className="min-w-0 text-left flex-1">
-                          <p className="font-medium text-gray-900 truncate">{acc.account_name || acc.account_id}</p>
+                          <p className="font-medium text-gray-900 truncate">{displayName(acc)}</p>
                           <p className="text-caption text-gray-500 font-mono">ID: {acc.account_id}</p>
                         </button>
                         <div className="flex items-center gap-2 shrink-0">
@@ -187,8 +205,8 @@ export default function GoogleAccountModal({
                         {m.isManager ? tEnt('managerBadge') : tEnt('accountBadge')}
                       </span>
                     </span>
-                    <button type="button" onClick={() => handleBrowsePick(m, false)} disabled={busy} className="px-3 py-1.5 text-sm font-medium bg-primary text-white rounded-lg hover:bg-primary/90 disabled:opacity-50">
-                      {busyId === m.customerId || selectingKey === `account:${m.customerId}` || selectingKey === `manager:${m.customerId}` ? tEnt('selecting') : tEnt('selectLabel')}
+                    <button type="button" onClick={() => handleBrowsePick(m, false)} disabled={busy} className={`px-3 py-1.5 text-sm font-medium rounded-lg ${isPicking(m.customerId) ? 'bg-primary/60 text-white cursor-wait' : 'bg-primary text-white hover:bg-primary/90'}`}>
+                      {isPicking(m.customerId) ? tEnt('selecting') : tEnt('selectLabel')}
                     </button>
                   </li>
                 ))}
@@ -202,8 +220,8 @@ export default function GoogleAccountModal({
                 {childAccounts.map((c) => (
                   <li key={c.customerId} className="flex items-center justify-between p-3 border border-gray-200 rounded-lg">
                     <span className="font-medium text-gray-900">{c.name} (ID: {c.customerId})</span>
-                    <button type="button" onClick={() => handleBrowsePick(c, true)} disabled={busy} className="px-3 py-1.5 text-sm font-medium bg-primary text-white rounded-lg hover:bg-primary/90 disabled:opacity-50">
-                      {busyId === c.customerId || selectingKey === `account:${c.customerId}` ? tEnt('selecting') : tEnt('selectLabel')}
+                    <button type="button" onClick={() => handleBrowsePick(c, true)} disabled={busy} className={`px-3 py-1.5 text-sm font-medium rounded-lg ${isPicking(c.customerId) ? 'bg-primary/60 text-white cursor-wait' : 'bg-primary text-white hover:bg-primary/90'}`}>
+                      {isPicking(c.customerId) ? tEnt('selecting') : tEnt('selectLabel')}
                     </button>
                   </li>
                 ))}

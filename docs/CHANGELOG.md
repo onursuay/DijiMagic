@@ -2,6 +2,11 @@
 
 ---
 
+## 2026-05-22 — Düzeltme: Google çoklu-hesap modalı (ad görünmüyor + busy görseli)
+- **Sorun:** (1) Kayıtlı Google hesabında ad yerine ID görünüyordu (backfill edilen hesap isim taşımıyor). (2) Bir hesap "Seçiliyor..." iken altındaki tüm "Seç" butonları soluklaşıp işaretlenmiş gibi görünüyordu.
+- **Çözüm:** (1) Modalda isim zenginleştirme: aktif hesabın adı (`activeCustomerName`) + managers/children listelerinden ad çözülür; kayıt isim taşımıyorsa bunlardan gösterilir (connection store/backfill'e dokunulmadı). (2) `disabled:opacity-50` global solma kaldırıldı; yalnız tıklanan buton `bg-primary/60` + "Seçiliyor..." gösterir (`isPicking` helper), diğerleri değişmez. `tsc` ✓.
+- **Dosyalar:** `components/google/GoogleAccountModal.tsx`, `app/dashboard/reklam/google/GooglePage.tsx`
+
 ## 2026-05-22 — Çoklu Reklam Hesabı Faz 2.2b: Google çoklu-hesap modalı (flag arkasında)
 - **Sorun:** Google sayfasındaki hesap modalı tek-seçimdi; Meta'daki gibi birden fazla hesap kaydetme + aralarında geçiş + limit (toplam Meta+Google) yoktu.
 - **Çözüm:** `GoogleAccountModal` geliştirildi (flag açıkken): üstte **"Kayıtlı Hesaplar (X/Y)"** bölümü (geçiş = mevcut `select-account` endpoint + reload; çıkar), browse listesinde **"seçince kaydet"** akışı (yöneticide derinleş, hesapta önce `addAccount` ile kaydet → limit kontrol → sonra mevcut select). Limit dolunca **AccessRequiredModal** (`ad_account_slot`, dismissible). Limit toplam (Meta+Google) `/api/account/registered` üzerinden. **Hook/entegrasyon mantığına dokunulmadı** (mevcut handler'lar + endpoint çağrıldı). Bonus: modaldaki yasak amber yönetici rozeti `primary`'ye çekildi. Flag kapalıyken modal birebir eski davranış. `tsc` ✓.

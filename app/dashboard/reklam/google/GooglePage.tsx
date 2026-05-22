@@ -872,6 +872,7 @@ export default function GooglePage() {
         backToManagers={connection.backToManagers}
         selectedManagerId={connection.selectedManagerId}
         activeCustomerId={connection.selected?.customerId ?? null}
+        activeCustomerName={connection.selected?.customerName ?? null}
       />
       {editingCampaignId && (
         <CampaignEditPanel
