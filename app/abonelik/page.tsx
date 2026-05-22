@@ -7,9 +7,12 @@ import PlanCard from '@/components/subscription/PlanCard'
 import CreditLoadSection from '@/components/subscription/CreditLoadSection'
 import { useSubscription } from '@/components/providers/SubscriptionProvider'
 import { useCredits } from '@/components/providers/CreditProvider'
-import { SUBSCRIPTION_PLANS } from '@/lib/subscription/plans'
+import { SUBSCRIPTION_PLANS, MIN_AD_ACCOUNTS, ENTERPRISE_MIN_AD_ACCOUNTS } from '@/lib/subscription/plans'
 import type { BillingCycle } from '@/lib/subscription/types'
 import { Calendar, CreditCard, Shield } from 'lucide-react'
+
+// Sales contact for the Enterprise (contact-sales) plan — matches landing ScheduleModal
+const SALES_EMAIL = 'info@yodijital.com'
 
 export default function AbonelikPage() {
   const t = useTranslations('subscription')
@@ -23,7 +26,12 @@ export default function AbonelikPage() {
   const { refresh: refreshCredits } = useCredits()
 
   const [billingCycle, setBillingCycle] = useState<BillingCycle>('monthly')
-  const [adAccountCount, setAdAccountCount] = useState(2)
+  // Per-plan ad-account counters — each card scales independently (no shared state).
+  const [accountCounts, setAccountCounts] = useState<Record<string, number>>(() =>
+    Object.fromEntries(
+      SUBSCRIPTION_PLANS.map(p => [p.id, p.id === 'enterprise' ? ENTERPRISE_MIN_AD_ACCOUNTS : MIN_AD_ACCOUNTS]),
+    ),
+  )
   const [paymentBanner, setPaymentBanner] = useState<'success' | 'failed' | null>(null)
   const [starting, setStarting] = useState(false)
 
@@ -55,14 +63,23 @@ export default function AbonelikPage() {
   }, [refreshSubscription, refreshCredits])
 
   const handleSelectPlan = async (planId: string) => {
-    if (planId === 'enterprise') return
+    if (planId === 'enterprise') {
+      // Contact-sales: no self-serve checkout. Open a pre-filled mail to the sales inbox.
+      const count = accountCounts.enterprise ?? ENTERPRISE_MIN_AD_ACCOUNTS
+      const subject = encodeURIComponent('Enterprise Plan — Reklam Ajansı Talebi')
+      const body = encodeURIComponent(
+        `Merhaba,\n\nEnterprise plan ile ilgileniyorum. İhtiyacım olan reklam hesabı sayısı: ${count}.\n\nTeşekkürler.`,
+      )
+      window.location.href = `mailto:${SALES_EMAIL}?subject=${subject}&body=${body}`
+      return
+    }
     if (starting) return
     setStarting(true)
     try {
       const res = await fetch('/api/billing/iyzico/start', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ type: 'subscription', planId, billingCycle, adAccounts: adAccountCount }),
+        body: JSON.stringify({ type: 'subscription', planId, billingCycle, adAccounts: accountCounts[planId] ?? MIN_AD_ACCOUNTS }),
       })
       const data = await res.json()
       if (!res.ok || !data?.ok || !data.paymentPageUrl) {
@@ -142,8 +159,8 @@ export default function AbonelikPage() {
                   isCurrentPlan={subscription.planId === plan.id}
                   onSelect={handleSelectPlan}
                   highlighted={plan.id === 'premium'}
-                  adAccountCount={adAccountCount}
-                  onAccountChange={setAdAccountCount}
+                  adAccountCount={accountCounts[plan.id] ?? MIN_AD_ACCOUNTS}
+                  onAccountChange={(count) => setAccountCounts(prev => ({ ...prev, [plan.id]: count }))}
                 />
               ))}
             </div>
@@ -151,7 +168,7 @@ export default function AbonelikPage() {
             {/* Notes */}
             <div className="mt-5 space-y-1">
               <p className="text-sm text-gray-500">* {t('trialBadge')} — Premium plan için geçerlidir.</p>
-              <p className="text-sm text-amber-400 font-medium">* {t('optimizationNote')}</p>
+              <p className="text-sm text-primary font-medium">* {t('optimizationNote')}</p>
             </div>
           </div>
         </div>
@@ -173,7 +190,7 @@ export default function AbonelikPage() {
                   <span className="text-sm font-semibold text-gray-900">
                     {currentPlan?.name || 'Free'}
                     {trial && (
-                      <span className="ml-2 px-2 py-0.5 text-[10px] font-bold bg-amber-100 text-amber-700 rounded">
+                      <span className="ml-2 px-2 py-0.5 text-[10px] font-bold bg-primary/10 text-primary rounded">
                         {t('currentPlan.trial')}
                       </span>
                     )}
@@ -185,7 +202,7 @@ export default function AbonelikPage() {
                     <Calendar className="w-4 h-4" />
                     <span>{t('currentPlan.status')}</span>
                   </div>
-                  <span className={`text-sm font-medium ${trial ? 'text-amber-600' : isPaid ? 'text-primary' : 'text-gray-600'}`}>
+                  <span className={`text-sm font-medium ${trial ? 'text-primary' : isPaid ? 'text-primary' : 'text-gray-600'}`}>
                     {statusLabel}
                   </span>
                 </div>

@@ -20,6 +20,13 @@ const EXTRA_ACCOUNT_COST: Record<string, number> = {
 /** Yearly discount multiplier (30% off) */
 export const YEARLY_DISCOUNT = 0.70
 
+/** Ad-account count bounds for the self-serve plans (Basic / Starter / Premium) */
+export const MIN_AD_ACCOUNTS = 2
+export const MAX_AD_ACCOUNTS = 6
+/** Enterprise is contact-sales and starts where the self-serve plans cap out (7+) */
+export const ENTERPRISE_MIN_AD_ACCOUNTS = 7
+export const ENTERPRISE_MAX_AD_ACCOUNTS = 50
+
 /**
  * Get monthly price for a plan based on ad account count.
  */
@@ -145,7 +152,7 @@ export const SUBSCRIPTION_PLANS: SubscriptionPlan[] = [
     monthlyPrice: 0,
     yearlyPrice: 0,
     features: ENTERPRISE_FEATURES,
-    adAccountLimit: 6,
+    adAccountLimit: 7,
     includesOptimization: true,
     aiScanDailyLimit: -1,
     strategyMonthlyLimit: -1,

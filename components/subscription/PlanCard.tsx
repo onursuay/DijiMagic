@@ -2,7 +2,7 @@
 
 import { Check, Minus, Plus } from 'lucide-react'
 import type { SubscriptionPlan, BillingCycle } from '@/lib/subscription/types'
-import { getMonthlyPrice, getYearlyPrice, getYearlyMonthlyPrice, PLAN_SECTION_TITLES } from '@/lib/subscription/plans'
+import { getMonthlyPrice, getYearlyPrice, getYearlyMonthlyPrice, PLAN_SECTION_TITLES, MIN_AD_ACCOUNTS, MAX_AD_ACCOUNTS, ENTERPRISE_MIN_AD_ACCOUNTS, ENTERPRISE_MAX_AD_ACCOUNTS } from '@/lib/subscription/plans'
 import { useTranslations } from 'next-intl'
 
 interface Props {
@@ -19,7 +19,7 @@ export default function PlanCard({ plan, billingCycle, isCurrentPlan, onSelect, 
   const t = useTranslations('subscription')
   const isEnterprise = plan.id === 'enterprise'
 
-  const accounts = isEnterprise ? plan.adAccountLimit : adAccountCount
+  const accounts = adAccountCount
   const monthlyPrice = getMonthlyPrice(plan.id, accounts)
   const yearlyTotal = getYearlyPrice(plan.id, accounts)
   const yearlyMonthly = getYearlyMonthlyPrice(plan.id, accounts)
@@ -30,14 +30,18 @@ export default function PlanCard({ plan, billingCycle, isCurrentPlan, onSelect, 
 
   const sectionTitle = PLAN_SECTION_TITLES[plan.id] || t('features')
 
+  // Self-serve plans scale 2→6; Enterprise (contact-sales) starts at 7 and goes up.
+  const minAccounts = isEnterprise ? ENTERPRISE_MIN_AD_ACCOUNTS : MIN_AD_ACCOUNTS
+  const maxAccounts = isEnterprise ? ENTERPRISE_MAX_AD_ACCOUNTS : MAX_AD_ACCOUNTS
+
   const handleDecrease = () => {
-    if (!isEnterprise && adAccountCount > 2) {
+    if (adAccountCount > minAccounts) {
       onAccountChange(adAccountCount - 1)
     }
   }
 
   const handleIncrease = () => {
-    if (!isEnterprise && adAccountCount < 10) {
+    if (adAccountCount < maxAccounts) {
       onAccountChange(adAccountCount + 1)
     }
   }
@@ -99,48 +103,40 @@ export default function PlanCard({ plan, billingCycle, isCurrentPlan, onSelect, 
       </div>
 
       {/* Ad accounts */}
-      <div className="flex items-center gap-2 mb-5 pb-5 border-b border-gray-700">
-        {isEnterprise ? (
-          <>
-            <button disabled className="p-1 rounded border border-gray-600 text-gray-500 cursor-not-allowed">
-              <Minus className="w-3 h-3" />
-            </button>
-            <span className="text-sm text-gray-300">
-              {plan.adAccountLimit} {t('adAccounts')}
-            </span>
-            <button disabled className="p-1 rounded border border-gray-600 text-gray-500 cursor-not-allowed">
-              <Plus className="w-3 h-3" />
-            </button>
-          </>
-        ) : (
-          <>
-            <button
-              onClick={handleDecrease}
-              disabled={adAccountCount <= 2}
-              className={`p-1 rounded border transition-colors ${
-                adAccountCount <= 2
-                  ? 'border-gray-700 text-gray-600 cursor-not-allowed'
-                  : 'border-gray-600 text-gray-400 hover:text-white hover:border-gray-500 cursor-pointer'
-              }`}
-            >
-              <Minus className="w-3 h-3" />
-            </button>
-            <span className="text-sm text-gray-300">
-              {adAccountCount} {t('adAccounts')}
-            </span>
-            <button
-              onClick={handleIncrease}
-              disabled={adAccountCount >= 10}
-              className={`p-1 rounded border transition-colors ${
-                adAccountCount >= 10
-                  ? 'border-gray-700 text-gray-600 cursor-not-allowed'
-                  : 'border-gray-600 text-gray-400 hover:text-white hover:border-gray-500 cursor-pointer'
-              }`}
-            >
-              <Plus className="w-3 h-3" />
-            </button>
-          </>
-        )}
+      <div className="mb-5 pb-5 border-b border-gray-700">
+        <div className="flex items-center gap-2">
+          <button
+            onClick={handleDecrease}
+            disabled={adAccountCount <= minAccounts}
+            className={`p-1 rounded border transition-colors ${
+              adAccountCount <= minAccounts
+                ? 'border-gray-700 text-gray-600 cursor-not-allowed'
+                : 'border-gray-600 text-gray-400 hover:text-white hover:border-gray-500 cursor-pointer'
+            }`}
+          >
+            <Minus className="w-3 h-3" />
+          </button>
+          <span className="text-sm text-gray-300">
+            {adAccountCount} {t('adAccounts')}
+          </span>
+          <button
+            onClick={handleIncrease}
+            disabled={adAccountCount >= maxAccounts}
+            className={`p-1 rounded border transition-colors ${
+              adAccountCount >= maxAccounts
+                ? 'border-gray-700 text-gray-600 cursor-not-allowed'
+                : 'border-gray-600 text-gray-400 hover:text-white hover:border-gray-500 cursor-pointer'
+            }`}
+          >
+            <Plus className="w-3 h-3" />
+          </button>
+        </div>
+        {/* Reserved hint slot — keeps every card the same height (symmetry) */}
+        <div className="min-h-[18px] mt-1.5">
+          {!isEnterprise && adAccountCount >= MAX_AD_ACCOUNTS && (
+            <p className="text-xs text-primary">{t('maxAccountsHint')}</p>
+          )}
+        </div>
       </div>
 
       {/* Features */}

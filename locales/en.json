@@ -2852,6 +2852,7 @@
     "currentPlanBadge": "Current Plan",
     "contactUs": "Contact Us",
     "adAccounts": "Ad Account",
+    "maxAccountsHint": "Enterprise for 7+ accounts",
     "features": "Key Features",
     "currentPlan": {
       "title": "Current Subscription",

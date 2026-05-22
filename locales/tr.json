@@ -2852,6 +2852,7 @@
     "currentPlanBadge": "Mevcut Plan",
     "contactUs": "İletişime Geç",
     "adAccounts": "Reklam Hesabı",
+    "maxAccountsHint": "7+ hesap için Enterprise",
     "features": "Öne Çıkan Özellikler",
     "currentPlan": {
       "title": "Mevcut Aboneliğiniz",
