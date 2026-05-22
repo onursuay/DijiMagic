@@ -2,6 +2,11 @@
 
 ---
 
+## 2026-05-22 — Optimizasyon: TikTok sekmesi "Yakında" (devre dışı) + Meta Genel Bakış'tan tekrar eden Ana Metrik kaldırıldı
+- **Sorun:** (1) TikTok kaynak sekmesi tıklanabilirdi ama henüz tam hazır değildi. (2) Meta detay panelinde **Genel Bakış** sekmesindeki "Ana Metrik" bloğu (örn. Tıklama) ile **Metrikler** sekmesindeki aynı metrik tekrar ediyordu.
+- **Çözüm:** (1) `OptimizasyonPage` kaynak seçicisinde TikTok sekmesi `disabled` + gri "Yakında" rozetiyle işaretlendi (onaylı palet, amber yok); `?platform=tiktok` derin linki de artık TikTok'u zorla açmaz. (2) `DetailPanel` Genel Bakış sekmesinden tekrar eden North Star (Ana Metrik) `KpiDisplay` kaldırıldı — aynı metrik Metrikler sekmesinde duruyor. `tsc` ✓.
+- **Dosyalar:** `app/optimizasyon/page.tsx`, `components/optimization/DetailPanel.tsx`
+
 ## 2026-05-22 — Düzeltme: Per-account — damgasız (eski) analizler de yeniden üretilir
 - **Sorun:** `YOAI_PER_ACCOUNT_SCOPE` açıkken YoAlgoritma'da hesap değiştirince veri değişmiyordu — mevcut günlük analizler flag öncesi üretildiği için `account_scope=null`'dı; kapı null'ı "geriye-uyum" sayıp eski (birleşik) veriyi gösteriyordu.
 - **Çözüm:** Kapı artık null damgayı da "uyuşmazlık" sayar → o hesap için `/refresh` ile yeniden üretir + damgalar (ilk yüklemede bir kez; sonra eşleşir). `/refresh` damgayı **cookie** (anlık) seçiminden verir; command-center kapısı da cookie okuduğu için DB fire-and-forget gecikmesi kaynaklı yanlış uyuşmazlık olmaz. `tsc` ✓.

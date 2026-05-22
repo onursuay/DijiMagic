@@ -97,14 +97,7 @@ export default function DetailPanel({ campaign, onSuccess, onError }: DetailPane
             {scoreResult.alerts.length > 0 && (
               <AlertList alerts={scoreResult.alerts} />
             )}
-
-            {/* North Star KPI */}
-            <KpiDisplay
-              title={t('metrics.northStar')}
-              metrics={[kpiTemplate.northStar]}
-              insights={insights}
-              currency={campaign.currency}
-            />
+            {/* Ana Metrik kaldırıldı — Metrikler sekmesinde zaten gösteriliyor */}
           </div>
         )}
 

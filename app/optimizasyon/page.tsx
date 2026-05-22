@@ -56,7 +56,7 @@ export default function OptimizasyonPage() {
   // (örn. Google hesabı seçilince Optimizasyon'da kalıp Google sekmesi açılır)
   useEffect(() => {
     const p = new URLSearchParams(window.location.search).get('platform')
-    if (p === 'google' || p === 'tiktok') setSource(p)
+    if (p === 'google') setSource(p) // TikTok yakında — zorla açılmaz
   }, [])
 
   // Aktif Google hesabı adını çek (Google sekmesinde buton etiketi için)
@@ -383,17 +383,31 @@ export default function OptimizasyonPage() {
       />
 
       <div className="flex-1 overflow-auto p-6">
-        {/* Kaynak seçici: Meta / Google / TikTok */}
+        {/* Kaynak seçici: Meta / Google / TikTok (TikTok yakında) */}
         <div className="flex items-center gap-1 mb-4 bg-gray-100 rounded-lg p-1 w-fit">
-          {(['meta', 'google', 'tiktok'] as const).map((s) => (
-            <button
-              key={s}
-              onClick={() => setSource(s)}
-              className={`px-4 py-1.5 rounded-md text-sm font-medium transition-colors ${source === s ? 'bg-white text-gray-900 shadow-sm' : 'text-gray-500 hover:text-gray-700'}`}
-            >
-              {s === 'meta' ? 'Meta' : s === 'google' ? 'Google' : 'TikTok'}
-            </button>
-          ))}
+          {(['meta', 'google', 'tiktok'] as const).map((s) => {
+            const comingSoon = s === 'tiktok'
+            return (
+              <button
+                key={s}
+                onClick={() => !comingSoon && setSource(s)}
+                disabled={comingSoon}
+                title={comingSoon ? 'Yakında' : undefined}
+                className={`inline-flex items-center gap-1.5 px-4 py-1.5 rounded-md text-sm font-medium transition-colors ${
+                  comingSoon
+                    ? 'text-gray-400 cursor-not-allowed'
+                    : source === s
+                      ? 'bg-white text-gray-900 shadow-sm'
+                      : 'text-gray-500 hover:text-gray-700'
+                }`}
+              >
+                {s === 'meta' ? 'Meta' : s === 'google' ? 'Google' : 'TikTok'}
+                {comingSoon && (
+                  <span className="text-[9px] font-semibold px-1.5 py-0.5 rounded-full bg-gray-200 text-gray-500">Yakında</span>
+                )}
+              </button>
+            )
+          })}
         </div>
 
         {source === 'meta' && (
