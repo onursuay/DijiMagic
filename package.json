@@ -15,6 +15,7 @@
     "db:migrate:hierarchical": "node scripts/apply-hierarchical-improvements-migration.mjs",
     "db:migrate:billing": "node scripts/apply-billing-atomic-migration.mjs",
     "db:migrate:aiscan": "node scripts/apply-ai-scan-usage-migration.mjs",
+    "db:migrate:registered-accounts": "node scripts/apply-registered-accounts-migration.mjs",
     "verify:google-ads": "node scripts/verify-google-ads-prod.mjs",
     "pmax:smoke": "node scripts/pmax-smoke-test.mjs",
     "search:isolation": "node scripts/search-isolation-check.mjs"

@@ -2,6 +2,11 @@
 
 ---
 
+## 2026-05-22 — Çoklu Reklam Hesabı Faz 2.0: Kayıt veri modeli + limit kaynağı (backend temel)
+- **Sorun:** Kullanıcı tek reklam hesabı seçebiliyordu; plan limitine kadar birden fazla hesap kaydedip aralarında geçiş yapabilmeli (faturalama toplam adede göre). Bunun için önce kayıt veri modeli + limit çözümleyici gerekiyordu.
+- **Çözüm:** Additive `user_registered_ad_accounts` tablosu (kullanıcı başına platform+hesap, `UNIQUE(user_id,platform,account_id)`) — mevcut tablolara/davranışa dokunmaz. `lib/account/registeredAccounts.ts`: `list/add/remove/count/isRegistered` + `resolveAccountLimit(userId)` (limit = `subscriptions.ad_accounts` TOPLAM; owner = sınırsız, paylaşılan `isSuperAdminEmail` allowlist). `addRegisteredAccount` plan limitini zorlar (`limit_reached`), zaten kayıtlıysa slot tüketmez. Aktif hesap hâlâ `meta_connections`/`google_ads_connections`'ta; bu tablo geçiş için izinli kümedir. Migration + idempotent apply-script (`npm run db:migrate:registered-accounts`). Hiçbir akış henüz çağırmıyor → sıfır davranış değişikliği; Meta/Google entegrasyonuna dokunulmadı. `tsc` ✓.
+- **Dosyalar:** `supabase/migrations/20260522010000_create_user_registered_ad_accounts.sql` (yeni), `lib/account/registeredAccounts.ts` (yeni), `scripts/apply-registered-accounts-migration.mjs` (yeni), `package.json`
+
 ## 2026-05-22 — YoAlgoritma: Hesap değişiminde bayat client cache temizliği (Madde 1 ön hazırlık)
 - **Sorun:** Aktif reklam hesabı değiştiğinde YoAlgoritma'nın `localStorage`/`sessionStorage` snapshot'ı önceki hesaba aitti ve sayfa yenilemede eski hesabın kartları kısa süre "yanıp sönüyordu". (Optimizasyon, Strateji, Hedef Kitle zaten sunucuda `ad_account_id`'ye göre filtreli/önbellekli olduğu için hesap değişiminde doğru yeniden bağlanıyor — onlarda değişiklik gerekmedi.)
 - **Çözüm:** Cache anahtarlarını ve geçersiz kılmayı tek kaynakta toplayan `lib/yoai/clientCache.ts` (`clearYoAlgoritmaClientCache()`, SSR-güvenli). Meta hesap geçişinde (`Topbar.handleSelectAccount`) `window.location.reload()` öncesi çağrılıyor; YoAlgoritma sayfası anahtarları artık bu modülden alıyor (drift yok). Tarama pipeline'ına ve şemaya dokunulmadı. `tsc` ✓.
