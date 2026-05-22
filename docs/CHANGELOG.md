@@ -2,6 +2,11 @@
 
 ---
 
+## 2026-05-22 — Düzeltme: Yalnız-Meta modüllerde (Strateji) Google hesapları gizlenir
+- **Sorun:** Strateji yalnız Meta reklam hesabı altında strateji oluşturur (Google-hesap kavramı yok), ama birleşik dropdown Google hesaplarını da gösteriyor ve seçilince `/google-ads`'e yönlendiriyordu (istenmeyen). Ayrıca rozet toplam (9) gösterip yalnız Meta listeliyordu.
+- **Çözüm:** Dropdown artık modülün platformuna göre kapsamlı: `/strateji` ve `/meta-ads` yalnız-Meta → Google bölümü + "Google hesabı ekle" gizlenir; rozet o sayfada görünen hesap sayısını gösterir. `/optimizasyon`, `/hedef-kitle`, `/yoai` (iki platformu da kullanan) hepsini gösterir. Böylece Strateji'de Google seçimi/yönlendirmesi olmaz. `tsc` ✓.
+- **Dosyalar:** `components/account/MultiAccountDropdown.tsx`
+
 ## 2026-05-22 — Düzeltme: Birleşik seçici bağlam-duyarlı (sekmeli modülde sekmeyi aç, çıkma)
 - **Sorun:** Optimizasyon (Meta/Google/TikTok sekmeli) birleşik dropdown'ında Google hesabı seçilince `/google-ads`'e atıyor, modülden çıkarıyordu. Doğrusu: Optimizasyon'da kal + Google sekmesini aç.
 - **Çözüm:** Hesap seçimi artık bağlam-duyarlı (`navigateAfterSwitch`): çok-platformlu modülde (`/optimizasyon`, `/hedef-kitle`) aynı sayfa + `?platform=X` (ilgili sekme açılır, modülden çıkılmaz); `/yoai` reload; sadece-Meta modülde (Strateji/Meta sayfası) Meta → reload, Google → `/google-ads`. Optimizasyon `?platform` okuyup `source` sekmesini ayarlar. Meta seçimi de aynı mantıkla yönlendirir (stale `?platform` sorunu olmaz). `tsc` ✓.

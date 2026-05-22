@@ -81,7 +81,11 @@ export default function MultiAccountDropdown({
   const googleVisible = googleRegistered.filter(a => matches(googleName(a), a.account_id))
 
   const atLimit = limit !== null && remaining !== null && remaining <= 0
-  const usedLabel = limit === null ? t('accountsUsedUnlimited', { count }) : t('accountsUsed', { count, limit })
+  // Strateji ve Meta sayfası yalnız Meta hesabı kullanır → orada Google gizlenir.
+  // Çok-platformlu modüller (Optimizasyon/Hedef Kitle/YoAlgoritma) ikisini de gösterir.
+  const showGoogle = !['/strateji', '/meta-ads'].some(p => pathname?.startsWith(p))
+  const shownCount = showGoogle ? count : registered.filter(r => r.platform === 'meta').length
+  const usedLabel = t('accountsUsedUnlimited', { count: shownCount })
 
   // Hesap seçilince nereye gidilecek (bağlam-duyarlı). Çok-platformlu modülde
   // modülden çıkmadan ilgili sekme açılır; sadece-Meta modülde Google → Google sayfası.
@@ -230,8 +234,8 @@ export default function MultiAccountDropdown({
         })}
         {metaSwitchable.length === 0 && <p className="px-4 py-2 text-sm text-gray-400">—</p>}
 
-        {/* Google hesapları */}
-        {googleVisible.length > 0 && (
+        {/* Google hesapları (yalnız Google kullanan modüllerde) */}
+        {showGoogle && googleVisible.length > 0 && (
           <>
             <div className="px-3 pt-3 pb-1 border-t border-gray-100">
               <p className="text-[11px] font-semibold uppercase tracking-wide text-gray-400">{t('googleAccounts')}</p>
@@ -299,10 +303,12 @@ export default function MultiAccountDropdown({
               </button>
             ))}
             {metaAddable.length === 0 && <p className="px-4 py-2 text-sm text-gray-400">{t('noMoreToAdd')}</p>}
-            <button type="button" onClick={() => router.push('/google-ads')} className="w-full text-left px-4 py-2 hover:bg-gray-50 transition-colors flex items-center justify-between border-t border-gray-100 mt-1 pt-2">
-              <span className="text-sm text-gray-700">{t('addGoogleAccount')}</span>
-              <ArrowUpRight className="w-4 h-4 text-primary shrink-0" />
-            </button>
+            {showGoogle && (
+              <button type="button" onClick={() => router.push('/google-ads')} className="w-full text-left px-4 py-2 hover:bg-gray-50 transition-colors flex items-center justify-between border-t border-gray-100 mt-1 pt-2">
+                <span className="text-sm text-gray-700">{t('addGoogleAccount')}</span>
+                <ArrowUpRight className="w-4 h-4 text-primary shrink-0" />
+              </button>
+            )}
           </div>
         )}
       </div>
