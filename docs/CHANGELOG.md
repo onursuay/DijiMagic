@@ -2,6 +2,11 @@
 
 ---
 
+## 2026-05-22 — Çoklu Reklam Hesabı Faz 2.1: Kayıt API + limit gate (default-off flag)
+- **Sorun:** Faz 2.0 veri modeli vardı ama kayıt/limit zorlamasını yapan bir uç nokta yoktu; ayrıca özellik canlıya açılmadan önce mevcut davranışı etkilememeli.
+- **Çözüm:** `GET/POST/DELETE /api/account/registered` — kayıtlı hesapları listeler (limit + kalan), ekler (plan limitini zorlar → `limit_reached` 403, UI AccessRequiredModal için yapısal yanıt), çıkarır. Limit gate yalnız burada; Meta/Google **seçim route'larına dokunulmadı** (UI "önce kaydet → sonra seç" akışıyla çağıracak). `MULTI_ACCOUNT_ENABLED` flag'i **default kapalı** — kapalıyken GET `enabled:false`, POST/DELETE `feature_disabled` döner, hiçbir prod davranışı değişmez. `ensureBackfilled`: set boşsa mevcut seçili Meta+Google hesabını seed eder (geriye uyum, idempotent). Owner sınırsız. `tsc` ✓.
+- **Dosyalar:** `app/api/account/registered/route.ts` (yeni), `lib/account/registeredAccounts.ts` (`isMultiAccountEnabled` + `ensureBackfilled`)
+
 ## 2026-05-22 — Çoklu Reklam Hesabı Faz 2.0: Kayıt veri modeli + limit kaynağı (backend temel)
 - **Sorun:** Kullanıcı tek reklam hesabı seçebiliyordu; plan limitine kadar birden fazla hesap kaydedip aralarında geçiş yapabilmeli (faturalama toplam adede göre). Bunun için önce kayıt veri modeli + limit çözümleyici gerekiyordu.
 - **Çözüm:** Additive `user_registered_ad_accounts` tablosu (kullanıcı başına platform+hesap, `UNIQUE(user_id,platform,account_id)`) — mevcut tablolara/davranışa dokunmaz. `lib/account/registeredAccounts.ts`: `list/add/remove/count/isRegistered` + `resolveAccountLimit(userId)` (limit = `subscriptions.ad_accounts` TOPLAM; owner = sınırsız, paylaşılan `isSuperAdminEmail` allowlist). `addRegisteredAccount` plan limitini zorlar (`limit_reached`), zaten kayıtlıysa slot tüketmez. Aktif hesap hâlâ `meta_connections`/`google_ads_connections`'ta; bu tablo geçiş için izinli kümedir. Migration + idempotent apply-script (`npm run db:migrate:registered-accounts`). Hiçbir akış henüz çağırmıyor → sıfır davranış değişikliği; Meta/Google entegrasyonuna dokunulmadı. `tsc` ✓.

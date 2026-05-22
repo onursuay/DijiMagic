@@ -16,6 +16,8 @@
 import { supabase } from '@/lib/supabase/client'
 import { getSubscription } from '@/lib/billing/db'
 import { isSuperAdminEmail } from '@/lib/admin/superAdmin'
+import { getMetaConnection } from '@/lib/metaConnectionStore'
+import { getConnection as getGoogleConnection } from '@/lib/googleAdsConnectionStore'
 
 export type AdPlatform = 'meta' | 'google'
 
@@ -31,6 +33,14 @@ export interface RegisteredAdAccount {
 
 /** Abonelik satırı yokken (deneme/temel) varsayılan dahil hesap adedi. */
 export const DEFAULT_ACCOUNT_LIMIT = 2
+
+/**
+ * Çoklu-hesap özelliği açık mı? Default KAPALI — açılana dek mevcut tek-hesap
+ * davranışı birebir korunur (`feedback_prod_risk_minimization`).
+ */
+export function isMultiAccountEnabled(): boolean {
+  return process.env.MULTI_ACCOUNT_ENABLED === 'true'
+}
 
 /** userId → owner mu? (signups.email + paylaşılan allowlist). */
 async function isOwnerById(userId: string): Promise<boolean> {
@@ -70,6 +80,43 @@ export async function countRegisteredAccounts(userId: string): Promise<number> {
     .select('id', { count: 'exact', head: true })
     .eq('user_id', userId)
   return count ?? 0
+}
+
+/**
+ * Set boşsa kullanıcının mevcut seçili Meta + Google hesaplarını kümeye seed
+ * eder (mevcut tek-hesap kullanıcıları için geriye uyum). Idempotent; limit
+ * kontrolü uygulanmaz — yalnız mevcut gerçeği yansıtır.
+ */
+export async function ensureBackfilled(userId: string): Promise<void> {
+  if (!supabase) return
+  if ((await countRegisteredAccounts(userId)) > 0) return
+
+  const rows: Array<{
+    user_id: string
+    platform: AdPlatform
+    account_id: string
+    account_name: string | null
+    login_customer_id: string | null
+  }> = []
+
+  try {
+    const meta = await getMetaConnection(userId)
+    if (meta?.selectedAdAccountId) {
+      rows.push({ user_id: userId, platform: 'meta', account_id: meta.selectedAdAccountId, account_name: null, login_customer_id: null })
+    }
+  } catch { /* meta bağlantısı yok/expired — geç */ }
+
+  try {
+    const g = await getGoogleConnection(userId)
+    if (g?.customerId) {
+      rows.push({ user_id: userId, platform: 'google', account_id: g.customerId, account_name: null, login_customer_id: g.loginCustomerId ?? null })
+    }
+  } catch { /* google bağlantısı yok — geç */ }
+
+  if (rows.length === 0) return
+  await supabase
+    .from('user_registered_ad_accounts')
+    .upsert(rows, { onConflict: 'user_id,platform,account_id' })
 }
 
 /** Belirli bir hesap kullanıcının kümesinde kayıtlı mı? */
