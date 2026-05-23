@@ -2,6 +2,11 @@
 
 ---
 
+## 2026-05-23 — Login gerektirmeyen public Fiyatlandırma sayfası
+- **Sorun:** Ana sayfa header'ındaki "Fiyatlandırma" linki `/abonelik`'e gidiyordu; o sayfa `AccountApprovalGuard` ile korunduğu için ziyaretçiyi login ekranına atıyordu. Fiyatlar sadece panele giren kullanıcıya görünüyordu — login olmadan görünmesi gerekiyordu.
+- **Çözüm:** Login gerektirmeyen yeni public `/fiyatlandirma` sayfası eklendi (landing teması: koyu emerald, hero + aylık/yıllık toggle + 4 plan kartı + SSS + alt CTA + footer). Planlar mevcut `SUBSCRIPTION_PLANS` + ortak `PlanCard` ile gösterilir (yeni veri tanımı yok). Anonim ziyaretçi plan seçince `/signup`'a, Enterprise'da satış e-postasına yönlenir; gerçek İyzico checkout hâlâ auth arkasındaki `/abonelik`'te kalır. Header linki `/abonelik` → `/fiyatlandirma`. EN/TR: `pricing` namespace `tr.json`+`en.json`'a eklendi, middleware'e `fiyatlandirma ↔ pricing` eşlemesi (EN'de `/en/pricing`). `tsc` ✓, `next build` ✓.
+- **Dosyalar:** `app/fiyatlandirma/page.tsx` (yeni), `components/landing/PricingPlans.tsx` (yeni), `components/landing/LandingHeader.tsx`, `middleware.ts`, `locales/tr.json`, `locales/en.json`
+
 ## 2026-05-23 — YoAlgoritma Geliştirme Kartları da işletmeye scope edildi (asıl belgemod fix)
 - **Sorun:** İşletme seçimi Command Center'ı doğru filtreliyordu (DB kanıtlı) ama kullanıcının asıl baktığı **"Geliştirme Kartları"** hâlâ tüm hesapların kartlarını (örn. belgemod "Çelik Kaynakçı") gösteriyordu. Kök neden: kartlar `GET /api/yoai/improvements/hierarchy` → `getImprovementHierarchy(userId)`'den geliyor; tablo (`campaign_improvements`) `source_platform` + `campaign_id` taşıyor ama **hesap kimliği sütunu yok** ve okuma yalnız `user_id`'ye göreydi → işletmeden bağımsız tüm kartlar dönüyordu.
 - **Çözüm:** hierarchy endpoint'i, seçili işletmenin **scope'lu günlük analizindeki kampanya kimliklerine** göre kartları filtreler (`{platform}:{campaignId}` eşleşmesi). Böylece migration/şema değişikliği gerekmeden başka hesabın kartları düşer; aynı platformdaki iki hesap (Metropol vs belgemod, ikisi de Google) bile ayrılır. Eşleşen scope'lu analiz hazır değilse `scopePending` döner (yanlış kart yerine "hazırlanıyor"). Sayfa, Command Center scope'u oturunca `improvementRefreshKey` bump ederek kartları yeniden çeker. `YOAI_PER_ACCOUNT_SCOPE` kapalıyken tüm kartlar (mevcut davranış). `tsc` ✓.

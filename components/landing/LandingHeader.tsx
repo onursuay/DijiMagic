@@ -125,7 +125,7 @@ export default function LandingHeader({ locale, ctaSchedule, ctaTrial }: Props) 
           </div>
 
           {/* Fiyatlandırma */}
-          <Link href="/abonelik" className={`${pillBase} hover:bg-emerald-400/10`}>
+          <Link href="/fiyatlandirma" className={`${pillBase} hover:bg-emerald-400/10`}>
             {isEn ? 'Pricing' : 'Fiyatlandırma'}
           </Link>
         </nav>

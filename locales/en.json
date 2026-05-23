@@ -2916,6 +2916,30 @@
       "enterprise": "Unlimited ad power for agencies."
     }
   },
+  "pricing": {
+    "badge": "Transparent Pricing",
+    "heroTitle": "Choose the Right Plan",
+    "heroTitleAccent": "for Your Business",
+    "heroSubtitle": "Plans that scale with the number of ad accounts you manage — no hidden fees. Upgrade or cancel anytime.",
+    "monthly": "Monthly",
+    "yearly": "Yearly",
+    "yearlyBadge": "-30%",
+    "trialNote": "* 14-day free trial — available on the Premium plan.",
+    "optimizationNote": "The Optimization feature is not available during the trial.",
+    "faqTitle": "Frequently Asked Questions",
+    "faqSubtitle": "Quick answers to the questions you may have.",
+    "faq": [
+      { "q": "Can I change or cancel my plan anytime?", "a": "Yes. You can upgrade, downgrade or cancel your plan at any time. There is no commitment." },
+      { "q": "Can I add more ad accounts later?", "a": "Yes. Every plan scales with the number of ad accounts; you can add new accounts whenever you need them." },
+      { "q": "What is the difference between monthly and yearly billing?", "a": "When you choose yearly billing, a 30% discount applies to all plans." },
+      { "q": "Which ad platforms do you support?", "a": "You can create and manage your Google Ads and Meta (Facebook, Instagram) ads from a single panel." },
+      { "q": "Do I need a credit card to start the free trial?", "a": "No. You don't need to enter any credit card details to start your free trial." },
+      { "q": "Who is the Enterprise plan for?", "a": "It is designed for agencies and large teams managing 7 or more ad accounts, with custom pricing based on your needs." }
+    ],
+    "ctaTitle": "Ready to get started?",
+    "ctaSubtitle": "Start your free trial. No credit card required.",
+    "ctaButton": "7-Day Free Trial"
+  },
   "invoices": {
     "title": "My Invoices",
     "description": "Manage your invoices and payment details.",

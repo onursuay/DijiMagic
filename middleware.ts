@@ -13,6 +13,7 @@ const EN_TO_TR: Record<string, string> = {
   'reports': 'raporlar',
   'integration': 'entegrasyon',
   'terms-of-service': 'terms',
+  'pricing': 'fiyatlandirma',
 }
 
 /** TR slug → EN slug (for redirect when locale=en on TR URL) */
@@ -27,6 +28,7 @@ const TR_TO_EN: Record<string, string> = {
   'cerez-politikasi': 'cookie-policy',
   'kullanim-kosullari': 'terms-of-service',
   'veri-silme': 'data-deletion',
+  'fiyatlandirma': 'pricing',
 }
 
 /** All app slugs that need /en/ prefix when locale=en (includes same-slug routes) */
