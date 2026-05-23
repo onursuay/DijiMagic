@@ -13,7 +13,7 @@ import { useSubscription } from '@/components/providers/SubscriptionProvider'
 import AccessRequiredModal from '@/components/billing/AccessRequiredModal'
 import { CATEGORIES } from '@/lib/yoai/categories'
 import { OFF_TOPIC_MESSAGE } from '@/lib/yoai/prompts'
-import { YOAI_CC_CACHE_KEY, YOAI_CC_DEEP_CACHE_KEY } from '@/lib/yoai/clientCache'
+import { YOAI_CC_CACHE_KEY, YOAI_CC_DEEP_CACHE_KEY, readYoaiBusinessScopeCookie } from '@/lib/yoai/clientCache'
 import {
   COST_PER_CHAT,
   type ChatMessage,
@@ -86,18 +86,24 @@ export default function YoAiPage() {
   // localStorage önbelleğinden anında yükle — sayfa yenilemede "Taranıyor" gösterme.
   // Backend'den sessizce arka planda yenile, state'i güncelle.
   const CC_CACHE_KEY = YOAI_CC_CACHE_KEY
-  const readCachedCc = (): { data: DeepAnalysisResult | null; runDate: string | null } => {
-    if (typeof window === 'undefined') return { data: null, runDate: null }
+  const readCachedCc = (): { data: DeepAnalysisResult | null; runDate: string | null; scopeSig: string } => {
+    if (typeof window === 'undefined') return { data: null, runDate: null, scopeSig: '' }
     try {
       const raw = localStorage.getItem(CC_CACHE_KEY)
-      if (!raw) return { data: null, runDate: null }
+      if (!raw) return { data: null, runDate: null, scopeSig: '' }
       const parsed = JSON.parse(raw)
-      return { data: parsed.data || null, runDate: parsed.runDate || null }
+      return { data: parsed.data || null, runDate: parsed.runDate || null, scopeSig: parsed.scopeSig ?? '' }
     } catch {
-      return { data: null, runDate: null }
+      return { data: null, runDate: null, scopeSig: '' }
     }
   }
-  const initialCache = typeof window !== 'undefined' ? readCachedCc() : { data: null, runDate: null }
+  // Cache yalnız AYNI işletme scope'una aitse kullanılır — başka işletmenin (örn.
+  // eski belgemod) snapshot'ı asla flaş etmesin. İmza uyuşmazsa boş başla → taze fetch.
+  const rawInitial = typeof window !== 'undefined' ? readCachedCc() : { data: null, runDate: null, scopeSig: '' }
+  const currentScopeSig = typeof window !== 'undefined' ? readYoaiBusinessScopeCookie() : ''
+  const initialCache = rawInitial.scopeSig === currentScopeSig
+    ? { data: rawInitial.data, runDate: rawInitial.runDate }
+    : { data: null, runDate: null }
 
   const [ccData, setCcData] = useState<DeepAnalysisResult | null>(initialCache.data)
   // Cache varsa loading=false (hiç spinner gösterme); yoksa true (ilk yükleme)
@@ -165,7 +171,9 @@ export default function YoAiPage() {
         try {
           localStorage.setItem(
             CC_CACHE_KEY,
-            JSON.stringify({ data: json.data, runDate: json.run_date || null }),
+            // scopeSig: snapshot hangi işletme scope'una ait — sonraki yüklemede
+            // imza değişmişse (başka işletme) bu snapshot gösterilmez.
+            JSON.stringify({ data: json.data, runDate: json.run_date || null, scopeSig: readYoaiBusinessScopeCookie() }),
           )
         } catch {}
         return 'ok'
