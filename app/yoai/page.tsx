@@ -119,8 +119,12 @@ export default function YoAiPage() {
       // İlk kurulum: hiç veri yoksa (cache de yok, backend'de de yok) arka planda
       // otomatik analiz tetikle — kullanıcı butona basmak zorunda kalmasın.
       if (result === 'empty' && !initialCache.data) {
-        triggerBackgroundBootstrap()
+        await triggerBackgroundBootstrap()
       }
+      // Command Center scope'u oturduktan SONRA Geliştirme Kartları'nı yeniden çek:
+      // kartlar seçili işletmenin (scope'lu) günlük analizindeki kampanyalara göre
+      // filtrelenir; analiz tazelenince kartlar da doğru işletmeye göre gelir.
+      setImprovementRefreshKey(k => k + 1)
     })()
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [])

@@ -2,6 +2,16 @@
 
 ---
 
+## 2026-05-23 — YoAlgoritma Geliştirme Kartları da işletmeye scope edildi (asıl belgemod fix)
+- **Sorun:** İşletme seçimi Command Center'ı doğru filtreliyordu (DB kanıtlı) ama kullanıcının asıl baktığı **"Geliştirme Kartları"** hâlâ tüm hesapların kartlarını (örn. belgemod "Çelik Kaynakçı") gösteriyordu. Kök neden: kartlar `GET /api/yoai/improvements/hierarchy` → `getImprovementHierarchy(userId)`'den geliyor; tablo (`campaign_improvements`) `source_platform` + `campaign_id` taşıyor ama **hesap kimliği sütunu yok** ve okuma yalnız `user_id`'ye göreydi → işletmeden bağımsız tüm kartlar dönüyordu.
+- **Çözüm:** hierarchy endpoint'i, seçili işletmenin **scope'lu günlük analizindeki kampanya kimliklerine** göre kartları filtreler (`{platform}:{campaignId}` eşleşmesi). Böylece migration/şema değişikliği gerekmeden başka hesabın kartları düşer; aynı platformdaki iki hesap (Metropol vs belgemod, ikisi de Google) bile ayrılır. Eşleşen scope'lu analiz hazır değilse `scopePending` döner (yanlış kart yerine "hazırlanıyor"). Sayfa, Command Center scope'u oturunca `improvementRefreshKey` bump ederek kartları yeniden çeker. `YOAI_PER_ACCOUNT_SCOPE` kapalıyken tüm kartlar (mevcut davranış). `tsc` ✓.
+- **Dosyalar:** `app/api/yoai/improvements/hierarchy/route.ts`, `components/yoai/hierarchy/HierarchicalImprovements.tsx`, `app/yoai/page.tsx`
+
+## 2026-05-23 — YoAlgoritma scope-duyarlı client cache (v2) + işletme cookie düzeltmesi
+- **Sorun:** (1) İşletme cookie'si Next 15 route handler'da `cookies().set()` ile yazılınca yanıta eklenmiyordu → scope hep boşa düşüyordu. (2) `/yoai` localStorage cache (v1) scope'tan bağımsızdı → işletme değişse de eski (belgemod) snapshot ekranda kalıyordu.
+- **Çözüm:** (1) Cookie `res.cookies.set` ile YANIT üzerine yazılır (garantili Set-Cookie). (2) Cache anahtarı v1→v2; snapshot `yoai_business_scope` imzasıyla etiketlenir, yüklemede imza uyuşmazsa gösterilmez → taze fetch. `tsc` ✓.
+- **Dosyalar:** `app/api/yoai/business-scope/route.ts`, `lib/yoai/clientCache.ts`, `app/yoai/page.tsx`
+
 ## 2026-05-23 — Proje standardı: tüm değişiklikler EN/TR uyumlu zorunlu
 - **Sorun:** Kullanıcı, projede yapılan her değişikliğin iki dilde (EN/TR) çalışmasını ve bu kuralın kalıcı kayda geçmesini istedi.
 - **Çözüm:** `CLAUDE.md`'ye **"EN/TR İki Dil Uyumu (ZORUNLU)"** bölümü eklendi: kullanıcı-yüzlü hiçbir metin hardcoded olamaz; her yeni anahtar HEM `tr.json` HEM `en.json`'a aynı key path ile eklenir; `next-intl` (`useTranslations`/`getTranslations`), default locale `tr`. Bir iş iki dil dosyası da güncellenmeden bitmiş sayılmaz.

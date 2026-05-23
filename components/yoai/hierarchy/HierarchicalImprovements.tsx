@@ -27,6 +27,8 @@ export default function HierarchicalImprovements({ onApprovePublish, refreshKey 
   const t = useTranslations('dashboard.yoai.hierarchy')
   const [data, setData] = useState<ImprovementHierarchy>(EMPTY)
   const [loading, setLoading] = useState(true)
+  // İşletme scope'u: seçili işletmenin analizi henüz hazır değil → "hazırlanıyor" göster
+  const [pending, setPending] = useState(false)
   const [busyId, setBusyId] = useState<string | null>(null)
   const [modalCampaignId, setModalCampaignId] = useState<string | null>(null)
 
@@ -34,6 +36,14 @@ export default function HierarchicalImprovements({ onApprovePublish, refreshKey 
     try {
       const res = await fetch('/api/yoai/improvements/hierarchy', { credentials: 'include' })
       const json = await res.json()
+      if (json.ok && json.scopePending) {
+        // Seçili işletmenin scope'lu analizi hazır değil — Command Center yenilenince
+        // (refreshKey bump) tekrar çekilir. O ana dek boş+hazırlanıyor göster (yanlış kart yok).
+        setData(EMPTY)
+        setPending(true)
+        return
+      }
+      setPending(false)
       if (json.ok && json.data) setData(json.data as ImprovementHierarchy)
     } catch (e) {
       console.warn('[HierarchicalImprovements] fetch failed:', e)
@@ -100,7 +110,7 @@ export default function HierarchicalImprovements({ onApprovePublish, refreshKey 
         <h2 className="text-lg font-semibold text-gray-900">{t('title')}</h2>
       </div>
 
-      {loading ? (
+      {(loading || pending) ? (
         <div className="bg-white rounded-2xl border border-gray-100 p-8 text-center">
           <Loader2 className="w-6 h-6 text-gray-300 mx-auto mb-2 animate-spin" />
           <p className="text-sm text-gray-500">{t('loading')}</p>
