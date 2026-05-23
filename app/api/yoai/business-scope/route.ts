@@ -74,19 +74,26 @@ export async function POST(request: Request) {
   }
 
   const value = serializeBusinessScope({ businessId, metaAccountId, googleCustomerId, googleLoginCustomerId })
-  const cookieStore = await (await import('next/headers')).cookies()
-  cookieStore.set(BUSINESS_SCOPE_COOKIE, value, {
+
+  // Cookie'yi YANIT üzerine yaz — Next 15 route handler'da garantili Set-Cookie
+  // (next/headers cookies().set() route handler'da yanıta eklenmeyebiliyor).
+  const res = NextResponse.json(
+    { ok: true, scope: { businessId, metaAccountId, googleCustomerId, googleLoginCustomerId } },
+    { headers: { 'Cache-Control': 'no-store' } },
+  )
+  res.cookies.set({
+    name: BUSINESS_SCOPE_COOKIE,
+    value,
     httpOnly: false, // UI vurgusu için client de okuyabilir (gizli veri değil — kullanıcının kendi hesap id'leri)
     sameSite: 'lax',
     path: '/',
     maxAge: COOKIE_MAX_AGE,
   })
-
-  return NextResponse.json({ ok: true }, { headers: { 'Cache-Control': 'no-store' } })
+  return res
 }
 
 export async function DELETE() {
-  const cookieStore = await (await import('next/headers')).cookies()
-  cookieStore.delete(BUSINESS_SCOPE_COOKIE)
-  return NextResponse.json({ ok: true }, { headers: { 'Cache-Control': 'no-store' } })
+  const res = NextResponse.json({ ok: true }, { headers: { 'Cache-Control': 'no-store' } })
+  res.cookies.set({ name: BUSINESS_SCOPE_COOKIE, value: '', path: '/', maxAge: 0 })
+  return res
 }
