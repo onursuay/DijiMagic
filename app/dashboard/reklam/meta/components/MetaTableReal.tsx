@@ -76,7 +76,7 @@ export default function MetaTableReal({
   onDeselectAll,
   onRowSelect,
 }: MetaTableRealProps) {
-  const rightAlignKeys = ['budget', 'spent', 'impressions', 'clicks', 'ctr', 'cpc', 'results']
+  const centerAlignKeys = ['budget', 'spent', 'impressions', 'clicks', 'ctr', 'cpc', 'results']
 
   const getResultTypeLabel = (resultType: string | undefined, t: (key: string) => string): string => {
     switch (resultType) {
@@ -187,7 +187,7 @@ export default function MetaTableReal({
                   data-colkey={col.key}
                   style={w ? { width: w } : undefined}
                   className={`relative px-4 py-3 text-xs font-semibold text-green-800/70 uppercase whitespace-nowrap select-none ${
-                    rightAlignKeys.includes(col.key) ? 'text-right' : 'text-left'
+                    centerAlignKeys.includes(col.key) ? 'text-center' : 'text-left'
                   }`}
                 >
                   {col.key === 'checkbox' ? (
@@ -349,7 +349,7 @@ export default function MetaTableReal({
                           const budgetValue = item.daily_budget || item.lifetime_budget || 0
                           return (
                             <td key={col.key} className="px-4 py-4 text-sm">
-                              <div className="flex items-center justify-end gap-2">
+                              <div className="flex items-center justify-center gap-2">
                                 <span className="text-gray-900">{num(budgetValue).toLocaleString(localeString, { minimumFractionDigits: 2 })} TRY</span>
                                 <button onClick={(e) => { e.stopPropagation(); onEditBudgetAdset(item) }} className="p-1 text-gray-400 hover:text-blue-600 transition-colors" title={t('actions.editBudget')}>
                                   <Edit className="w-3.5 h-3.5" />
@@ -359,8 +359,8 @@ export default function MetaTableReal({
                           )
                         }
                         return (
-                          <td key={col.key} className="px-4 py-4 text-sm text-right text-gray-500">
-                            <div className="flex items-center justify-end gap-1.5">
+                          <td key={col.key} className="px-4 py-4 text-sm text-center text-gray-500">
+                            <div className="flex items-center justify-center gap-1.5">
                               <span>{t('labels.campaignBudgetCbo')}</span>
                               <div className="group relative">
                                 <Info className="w-3.5 h-3.5 text-gray-400 cursor-help" />
@@ -377,8 +377,8 @@ export default function MetaTableReal({
                         if (!hasBudget) {
                           // Kampanya bütçesi yok → bütçe reklam seti seviyesinde yönetiliyor
                           return (
-                            <td key={col.key} className="px-4 py-4 text-sm text-right text-gray-500">
-                              <div className="flex items-center justify-end gap-1.5">
+                            <td key={col.key} className="px-4 py-4 text-sm text-center text-gray-500">
+                              <div className="flex items-center justify-center gap-1.5">
                                 <span>{t('labels.adsetBudget')}</span>
                                 <div className="group relative">
                                   <Info className="w-3.5 h-3.5 text-gray-400 cursor-help" />
@@ -392,7 +392,7 @@ export default function MetaTableReal({
                         }
                         return (
                           <td key={col.key} className="px-4 py-4 text-sm">
-                            <div className="flex items-center justify-end gap-2">
+                            <div className="flex items-center justify-center gap-2">
                               <span className="text-gray-900">{`${num(item.budget).toLocaleString(localeString, { minimumFractionDigits: 2 })} TRY`}</span>
                               <button onClick={(e) => { e.stopPropagation(); onEditCampaignBudgetClick(item) }} className="p-1 text-gray-400 hover:text-blue-600 transition-colors" title={t('actions.editBudget')}>
                                 <Edit className="w-3.5 h-3.5" />
@@ -401,28 +401,28 @@ export default function MetaTableReal({
                           </td>
                         )
                       }
-                      return <td key={col.key} className="px-4 py-4 text-sm text-right text-gray-900">-</td>
+                      return <td key={col.key} className="px-4 py-4 text-sm text-center text-gray-900">-</td>
                     }
 
                     // ── Diğer sayısal sütunlar ───────────────────────────────
                     if (col.key === 'spent') {
                       return (
-                        <td key={col.key} className="px-4 py-4 text-sm text-right text-gray-900">
+                        <td key={col.key} className="px-4 py-4 text-sm text-center text-gray-900">
                           {num(item.spent).toLocaleString(localeString, { minimumFractionDigits: 2 })} TRY
                         </td>
                       )
                     }
                     if (col.key === 'impressions') {
-                      return <td key={col.key} className="px-4 py-4 text-sm text-right text-gray-900">{fmtInt(item.impressions)}</td>
+                      return <td key={col.key} className="px-4 py-4 text-sm text-center text-gray-900">{fmtInt(item.impressions)}</td>
                     }
                     if (col.key === 'clicks') {
-                      return <td key={col.key} className="px-4 py-4 text-sm text-right text-gray-900">{fmtInt(item.clicks)}</td>
+                      return <td key={col.key} className="px-4 py-4 text-sm text-center text-gray-900">{fmtInt(item.clicks)}</td>
                     }
                     if (col.key === 'ctr') {
-                      return <td key={col.key} className="px-4 py-4 text-sm text-right text-gray-900">{fmtFixed(item.ctr, 2)}%</td>
+                      return <td key={col.key} className="px-4 py-4 text-sm text-center text-gray-900">{fmtFixed(item.ctr, 2)}%</td>
                     }
                     if (col.key === 'cpc') {
-                      return <td key={col.key} className="px-4 py-4 text-sm text-right text-gray-900">{fmtFixed(item.cpc, 2)} TRY</td>
+                      return <td key={col.key} className="px-4 py-4 text-sm text-center text-gray-900">{fmtFixed(item.cpc, 2)} TRY</td>
                     }
 
                     // ── Sonuçlar (Results) ───────────────────────────────────
@@ -430,9 +430,9 @@ export default function MetaTableReal({
                       const resultCount = item.results ?? 0
                       const resultLabel = getResultTypeLabel(item.resultType, t)
                       return (
-                        <td key={col.key} className="px-4 py-4 text-sm text-right">
+                        <td key={col.key} className="px-4 py-4 text-sm text-center">
                           {resultCount > 0 ? (
-                            <div className="flex flex-col items-end gap-0.5">
+                            <div className="flex flex-col items-center gap-0.5">
                               <span className="font-medium text-gray-900">{fmtInt(resultCount)}</span>
                               <span className="text-[10px] text-gray-400 leading-tight">{resultLabel}</span>
                             </div>

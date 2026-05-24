@@ -2,6 +2,11 @@
 
 ---
 
+## 2026-05-24 — Meta & Google Reklam Yöneticisi: metrik sütunları ortalandı
+- **Sorun:** Reklam Yöneticisi tablolarında metrik sütunlarının (SONUÇLAR, BÜTÇE, HARCANAN TUTAR, GÖSTERİMLER, TIKLAMALAR, CTR, CPC, ROAS) başlıkları sağa yaslıydı; başlık ile altındaki içerik aynı eksende ortalanmış görünmüyordu.
+- **Çözüm:** Hem Meta hem Google tablosunda metrik sütunlarının başlığı (`th`) ve hücre içeriği (`td`) `text-center` yapıldı; bütçe/sonuç hücrelerindeki flex hizalama `justify-end`/`items-end` → `justify-center`/`items-center` çevrildi. İsim (KAMPANYA) ve durum (DURUM/ETKİNLİK) sütunları sola yaslı bırakıldı. `rightAlignKeys` → `centerAlignKeys` olarak yeniden adlandırıldı.
+- **Dosyalar:** `app/dashboard/reklam/meta/components/MetaTableReal.tsx`, `app/dashboard/reklam/google/components/GoogleTableReal.tsx`
+
 ## 2026-05-23 — Kampanyalar BÜTÇE sütunu: reklam seti bütçesinde "Reklam Seti" etiketi
 - **Sorun:** Kampanyalar sekmesinde, bütçesi kampanya seviyesinde olmayan (reklam seti / ABO bütçeli) kampanyalarda BÜTÇE sütunu boş bir "-" gösteriyordu; kullanıcı bütçenin nerede yönetildiğini anlamıyordu.
 - **Çözüm:** Kampanya bütçesi yokken "-" yerine "Reklam Seti" etiketi + bilgi tooltip'i ("Bu kampanyada bütçe reklam seti seviyesinden yönetiliyor") gösteriliyor — Reklam Setleri sekmesindeki "Kampanya bütçesi (CBO)" bloğuyla simetrik. EN/TR: `labels.adsetBudget` / `tooltips.adsetBudget` `tr.json`+`en.json`'a eklendi. `tsc` ✓.

@@ -33,7 +33,7 @@ export interface GoogleTableRealProps {
   onRowSelect?: (id: string, checked: boolean) => void
 }
 
-const rightAlignKeys = ['budget', 'spent', 'impressions', 'clicks', 'ctr', 'cpc', 'roas']
+const centerAlignKeys = ['budget', 'spent', 'impressions', 'clicks', 'ctr', 'cpc', 'roas']
 const STANDARD_PILL = 'bg-gray-50 text-gray-600 border-gray-200'
 const ACTIVE_PILL = 'bg-green-50 text-green-600 border-green-200'
 
@@ -130,7 +130,7 @@ export default function GoogleTableReal({
                   data-colkey={col.key}
                   style={w ? { width: w } : undefined}
                   className={`relative px-4 py-3 text-xs font-semibold text-green-800/70 uppercase whitespace-nowrap select-none ${
-                    rightAlignKeys.includes(col.key) ? 'text-right' : 'text-left'
+                    centerAlignKeys.includes(col.key) ? 'text-center' : 'text-left'
                   }`}
                 >
                   {col.key === 'checkbox' ? (
@@ -280,13 +280,13 @@ export default function GoogleTableReal({
                     // ── Budget (campaigns only) ─────────────────────────────
                     if (col.key === 'budget') {
                       if (!isCampaign) {
-                        return <td key={col.key} className="px-4 py-4 text-sm text-right text-gray-400">—</td>
+                        return <td key={col.key} className="px-4 py-4 text-sm text-center text-gray-400">—</td>
                       }
                       const campaign = item as GoogleCampaign
                       const hasBudget = campaign.budget != null && campaign.budget > 0
                       return (
                         <td key={col.key} className="px-4 py-4 text-sm">
-                          <div className="flex items-center justify-end gap-2">
+                          <div className="flex items-center justify-center gap-2">
                             <span className="text-gray-900">
                               {hasBudget
                                 ? `${num(campaign.budget).toLocaleString(localeString, { minimumFractionDigits: 2 })} TRY`
@@ -315,7 +315,7 @@ export default function GoogleTableReal({
                     // ── Spent ───────────────────────────────────────────────
                     if (col.key === 'spent') {
                       return (
-                        <td key={col.key} className="px-4 py-4 text-sm text-right text-gray-900">
+                        <td key={col.key} className="px-4 py-4 text-sm text-center text-gray-900">
                           {num(item.amountSpent).toLocaleString(localeString, { minimumFractionDigits: 2 })} TRY
                         </td>
                       )
@@ -323,28 +323,28 @@ export default function GoogleTableReal({
 
                     // ── Impressions ─────────────────────────────────────────
                     if (col.key === 'impressions') {
-                      return <td key={col.key} className="px-4 py-4 text-sm text-right text-gray-900">{fmtInt(item.impressions)}</td>
+                      return <td key={col.key} className="px-4 py-4 text-sm text-center text-gray-900">{fmtInt(item.impressions)}</td>
                     }
 
                     // ── Clicks ──────────────────────────────────────────────
                     if (col.key === 'clicks') {
-                      return <td key={col.key} className="px-4 py-4 text-sm text-right text-gray-900">{fmtInt(item.clicks)}</td>
+                      return <td key={col.key} className="px-4 py-4 text-sm text-center text-gray-900">{fmtInt(item.clicks)}</td>
                     }
 
                     // ── CTR ─────────────────────────────────────────────────
                     if (col.key === 'ctr') {
-                      return <td key={col.key} className="px-4 py-4 text-sm text-right text-gray-900">{fmtFixed(item.ctr, 2)}%</td>
+                      return <td key={col.key} className="px-4 py-4 text-sm text-center text-gray-900">{fmtFixed(item.ctr, 2)}%</td>
                     }
 
                     // ── CPC ─────────────────────────────────────────────────
                     if (col.key === 'cpc') {
-                      return <td key={col.key} className="px-4 py-4 text-sm text-right text-gray-900">{fmtFixed(item.cpc, 2)} TRY</td>
+                      return <td key={col.key} className="px-4 py-4 text-sm text-center text-gray-900">{fmtFixed(item.cpc, 2)} TRY</td>
                     }
 
                     // ── ROAS ────────────────────────────────────────────────
                     if (col.key === 'roas') {
                       return (
-                        <td key={col.key} className="px-4 py-4 text-sm text-right text-gray-900">
+                        <td key={col.key} className="px-4 py-4 text-sm text-center text-gray-900">
                           {item.roas != null && item.roas > 0 ? `${fmtFixed(item.roas, 1)}x` : '—'}
                         </td>
                       )
