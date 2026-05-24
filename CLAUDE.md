@@ -60,7 +60,7 @@ YoAi'de ücretli erişim gerektiren alanlar **iki kategoriye** ayrılır: **kred
 - Backend guard ayrıca korunur — modal sadece UX katmanı, güvenlik backend'de kalır
 
 **Owner / Süper Admin bypass:**
-- `SUPER_ADMIN_EMAILS` allowlist (default `onursuay@hotmail.com`) hem kredi hem abonelik modalını görmez
+- `SUPER_ADMIN_EMAILS` allowlist (default `onursuay@hotmail.com`) hem kredi hem abonelik modalını **hem de İşletme Profili kurulumunu (BusinessProfileGuard)** görmez
 - `/api/billing/current` → `isOwner: true` döner; `useSubscription().isOwner` ve `useCredits().isOwner` bayrakları true olur
 - `useCredits().hasEnoughCredits()` owner için her zaman true; `canUseOptimizationAI` vb. flag'ler enterprise stub üzerinden true
 - Bypass yalnızca allowlist için — normal kullanıcı güvenliği gevşetilmez
@@ -69,6 +69,8 @@ YoAi'de ücretli erişim gerektiren alanlar **iki kategoriye** ayrılır: **kred
 1. Önce `BusinessProfileGuard` (işletme profili eksikse onun modalı çıkar)
 2. Sonra `AccessRequiredModal` (kredi/abonelik kontrolü)
 İki guard birbirini ezmez — sıra korunur.
+
+**BusinessProfileGuard owner bypass (KRİTİK):** `GET /api/yoai/business-profile` owner için `onboarding_completed: true` + `isOwner: true` döner (`getIsCurrentUserSuperAdmin` → `signups.email` → `SUPER_ADMIN_EMAILS`). Owner profil kurulumuna **ASLA zorlanmaz**; normal kullanıcılarda zorunluluk **korunur**. Çoklu işletme (`YOAI_PER_ACCOUNT_SCOPE`) açıkken bu şart — flag açıkken guard her aktif hesabın profilini arar; owner bypass olmadan owner'a zorla kurulum çıkar. İlgili: [project_multi_business_phase](memory).
 
 ## UI Renk Kuralı (YASAK)
 Bu projede **amber / sarı / hardal / bej ton uyarı renkleri KESİNLİKLE kullanılmaz**.
