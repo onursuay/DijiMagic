@@ -2,6 +2,13 @@
 
 ---
 
+## 2026-05-24 — Çoklu işletme Faz 2.4: her reklam hesabına ayrı işletme profili (backend)
+- **Sorun:** Kullanıcı ajans yapısında (Antso Denizcilik, Fikret Petrol, Metropol Yayınları… her biri ayrı marka/müşteri) ama sistem kullanıcı başına TEK işletme profili tutuyordu — her hesabın kendi profili olamıyordu, dolayısıyla AI her kampanyayı doğru markayla değerlendiremiyordu.
+- **Çözüm:** `upsertProfile` constraint-agnostik **find-then-write** yapıldı (business_key varsa `(user_id, business_key)`, yoksa legacy `(user_id, business_key IS NULL)` ile bul → update/insert; `onConflict`'e bağlı değil). `business-profile` GET/POST, `YOAI_PER_ACCOUNT_SCOPE` açıkken aktif işletme scope'una göre çalışır: GET `getProfileForScope` ile o işletmenin profilini çeker (yoksa null → UI "profil oluştur"), POST `business_key`/`meta_account_id`/`google_customer_id`'yi profile bağlar. Migration: `user_business_profiles` `UNIQUE(user_id)` → partial unique `(user_id, business_key) WHERE business_key IS NOT NULL` (çoklu profile izin; bağsız/legacy NULL serbest — geriye uyumlu). Account switcher işletme seçince full reload yaptığından profil sayfası otomatik doğru profili yükler. `tsc` ✓, `next build` ✓.
+- **Dosyalar:** `lib/yoai/businessProfileStore.ts`, `app/api/yoai/business-profile/route.ts`, `supabase/migrations/20260524010000_business_profiles_per_account_unique.sql`
+
+---
+
 ## 2026-05-24 — Reklam Yöneticisi: metrik görünürlük filtresi + sütunlar tek satır (içeriğe göre genişler)
 - **Sorun:** (Madde 1) Meta/Google Reklam Yöneticisi'nde kullanıcı hangi metrik sütunlarını göreceğini seçemiyordu (tüm metrikler sabit görünür). (Madde 3) Uzun kampanya adı / "Reklam Seti" bütçe etiketi hücrede alt satıra kayıyordu (wrap), tablo dağınık duruyordu.
 - **Çözüm:** (1) Ortak `MetricFilterDropdown` component'i (dış-tıklama kapanır — proje picker standardı; en az 1 metrik açık kalır; yalnız primary/emerald/gray palet, amber yok). MetaPage + GooglePage toolbar'ına **takvimin sağına** eklendi. Kullanıcı seçimi localStorage'da kalıcı (`meta_visible_metrics` / `google_visible_metrics` — bağımsız). `getTableColumns` metrik sütunlarını `visibleMetrics`'e göre süzer; isim/durum sütunları her zaman görünür. Çok metrik seçilince tablo container'ı zaten `overflow-x-auto` → yatay scroll. (3) `<table>`'a `[&_td]:whitespace-nowrap` → tüm hücreler tek satır; table-layout resize yokken `auto` (içeriğe göre genişler), taşınca yatay scroll; ekran genişliğine esnek. Meta + Google ortak. EN/TR: `toolbar.metrics` / `metricsTitle` / `metricsAll`. Meta/Google API'ye dokunulmadı. `tsc` ✓, `next build` ✓.

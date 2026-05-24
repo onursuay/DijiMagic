@@ -2,8 +2,10 @@ import { NextResponse } from 'next/server'
 import { cookies } from 'next/headers'
 import {
   getProfileByUserId,
+  getProfileForScope,
   upsertProfile,
   listCompetitors,
+  listCompetitorsForProfile,
   replaceCompetitors,
   validateProfileForOnboarding,
   insertSourceScans,
@@ -15,6 +17,9 @@ import {
 } from '@/lib/yoai/businessProfileStore'
 import { scanBusinessSources, type SourceScanInput, type SourceType } from '@/lib/yoai/businessSourceScanner'
 import { buildBusinessIntelligenceRow } from '@/lib/yoai/businessIntelligenceBuilder'
+import { isPerAccountScopeEnabled } from '@/lib/yoai/featureFlag'
+import { resolveYoaiScope } from '@/lib/yoai/businessScope'
+import { buildBusinessKey, normalizeMetaAccountId, normalizeGoogleCustomerId } from '@/lib/yoai/businessKey'
 
 export const dynamic = 'force-dynamic'
 export const maxDuration = 60
@@ -79,8 +84,18 @@ export async function GET() {
     if (!userId) {
       return NextResponse.json({ ok: false, error: 'Oturum gerekli' }, { status: 401 })
     }
-    const profile = await getProfileByUserId(userId)
-    const competitors = profile ? await listCompetitors(userId) : []
+    // Çoklu işletme (Faz 2.4): flag açıksa aktif işletmenin profilini çek
+    // (yoksa null → UI "bu işletme için profil oluştur" akışına düşer).
+    const scope = isPerAccountScopeEnabled() ? await resolveYoaiScope() : null
+    let profile: BusinessProfileRow | null
+    let competitors: BusinessCompetitorRow[]
+    if (scope?.scoped) {
+      profile = await getProfileForScope(userId, { metaAccountId: scope.metaId, googleCustomerId: scope.googleCustomerId })
+      competitors = profile?.id ? await listCompetitorsForProfile(profile.id) : []
+    } else {
+      profile = await getProfileByUserId(userId)
+      competitors = profile ? await listCompetitors(userId) : []
+    }
     return NextResponse.json({
       ok: true,
       data: {
@@ -146,6 +161,15 @@ export async function POST(request: Request) {
       profile_confidence: 0,
       scan_status: 'pending',
       intelligence_status: 'pending',
+    }
+
+    // Çoklu işletme (Faz 2.4): flag açıksa profili aktif işletme scope'una bağla.
+    // upsertProfile business_key'e göre find-then-write yapar → her hesap kendi profili.
+    const scope = isPerAccountScopeEnabled() ? await resolveYoaiScope() : null
+    if (scope?.scoped) {
+      profilePayload.business_key = buildBusinessKey(scope.metaId, scope.googleCustomerId)
+      profilePayload.meta_account_id = normalizeMetaAccountId(scope.metaId)
+      profilePayload.google_customer_id = normalizeGoogleCustomerId(scope.googleCustomerId)
     }
 
     const validation = validateProfileForOnboarding(profilePayload, competitorsInput)

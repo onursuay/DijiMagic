@@ -235,13 +235,42 @@ export async function listProfiles(userId: string): Promise<BusinessProfileRow[]
 export async function upsertProfile(profile: BusinessProfileRow): Promise<BusinessProfileRow | null> {
   if (!supabase || !profile.user_id) return null
   try {
+    const payload = { ...profile, updated_at: new Date().toISOString() }
+    // Çoklu işletme (Faz 2.4): constraint-agnostik find-then-write.
+    // Eşleşen kaydı bul → business_key varsa (user_id, business_key); yoksa
+    // (user_id, business_key IS NULL = legacy/bağsız profil). Bulunursa update,
+    // yoksa insert. UNIQUE(user_id) ister kalsın ister partial olsun çalışır
+    // (onConflict'e bağlı değil) → migration güvenli.
+    let finder = supabase
+      .from('user_business_profiles')
+      .select('id')
+      .eq('user_id', profile.user_id)
+    finder = profile.business_key
+      ? finder.eq('business_key', profile.business_key)
+      : finder.is('business_key', null)
+    const { data: existing } = await finder.maybeSingle()
+
+    if (existing?.id) {
+      const { data, error } = await supabase
+        .from('user_business_profiles')
+        .update(payload)
+        .eq('id', existing.id)
+        .select('*')
+        .single()
+      if (error) {
+        console.error('[businessProfileStore] upsertProfile update error:', JSON.stringify(error))
+        throw new Error(`supabase_error: ${error.message} (code: ${error.code})`)
+      }
+      return data as BusinessProfileRow
+    }
+
     const { data, error } = await supabase
       .from('user_business_profiles')
-      .upsert({ ...profile, updated_at: new Date().toISOString() }, { onConflict: 'user_id' })
+      .insert(payload)
       .select('*')
       .single()
     if (error) {
-      console.error('[businessProfileStore] upsertProfile error:', JSON.stringify(error))
+      console.error('[businessProfileStore] upsertProfile insert error:', JSON.stringify(error))
       throw new Error(`supabase_error: ${error.message} (code: ${error.code})`)
     }
     return data as BusinessProfileRow
