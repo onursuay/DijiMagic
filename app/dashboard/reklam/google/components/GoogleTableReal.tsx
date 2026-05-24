@@ -350,6 +350,25 @@ export default function GoogleTableReal({
                       )
                     }
 
+                    // ── Ek metrikler (Google API'den çekilen objede mevcut / hesaplanan; fetch'e dokunulmadı) ──
+                    if (col.key === 'conversions') {
+                      const c = item.conversions ?? 0
+                      return <td key={col.key} className="px-4 py-4 text-sm text-center text-gray-900">{c > 0 ? num(c).toLocaleString(localeString, { maximumFractionDigits: 2 }) : '—'}</td>
+                    }
+                    if (col.key === 'conversionRate') {
+                      const cr = item.clicks > 0 ? ((item.conversions ?? 0) / item.clicks) * 100 : 0
+                      return <td key={col.key} className="px-4 py-4 text-sm text-center text-gray-900">{cr > 0 ? `${fmtFixed(cr, 2)}%` : '—'}</td>
+                    }
+                    if (col.key === 'cpa') {
+                      const conv = item.conversions ?? 0
+                      const cpa = conv > 0 ? (num(item.amountSpent) / conv) : 0
+                      return <td key={col.key} className="px-4 py-4 text-sm text-center text-gray-900">{cpa > 0 ? `${fmtFixed(cpa, 2)} TRY` : '—'}</td>
+                    }
+                    if (col.key === 'cpm') {
+                      const cpm = item.impressions > 0 ? (num(item.amountSpent) / item.impressions) * 1000 : 0
+                      return <td key={col.key} className="px-4 py-4 text-sm text-center text-gray-900">{cpm > 0 ? `${fmtFixed(cpm, 2)} TRY` : '—'}</td>
+                    }
+
                     return <td key={col.key} className="px-4 py-4 text-sm" />
                   })}
                 </tr>

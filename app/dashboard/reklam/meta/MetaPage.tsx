@@ -186,17 +186,18 @@ export default function MetaPage() {
   // Metrik görünürlük filtresi (Madde 1) — kullanıcı tabloda hangi metrik sütunlarını görür.
   // localStorage'da kalıcı; en az 1 metrik açık kalır (dropdown garantiler).
   const [visibleMetrics, setVisibleMetrics] = useState<Set<string>>(() => {
-    const DEFAULTS = ['results', 'budget', 'spent', 'impressions', 'clicks', 'ctr', 'cpc']
+    // v2: genişletilmiş metrik seti (yeni metrikler varsayılan görünür). Eski v1 anahtarı yoksayılır.
+    const DEFAULTS = ['results', 'budget', 'spent', 'impressions', 'reach', 'clicks', 'ctr', 'cpc', 'cpm', 'conversions', 'conversionRate', 'engagement', 'roas']
     if (typeof window !== 'undefined') {
       try {
-        const s = localStorage.getItem('meta_visible_metrics')
+        const s = localStorage.getItem('meta_visible_metrics_v2')
         if (s) { const arr = JSON.parse(s); if (Array.isArray(arr) && arr.length) return new Set(arr as string[]) }
       } catch {}
     }
     return new Set(DEFAULTS)
   })
   useEffect(() => {
-    try { localStorage.setItem('meta_visible_metrics', JSON.stringify([...visibleMetrics])) } catch {}
+    try { localStorage.setItem('meta_visible_metrics_v2', JSON.stringify([...visibleMetrics])) } catch {}
   }, [visibleMetrics])
   const [showCreateModal, setShowCreateModal] = useState(false)
   const [showObjectiveSelector, setShowObjectiveSelector] = useState(false)
@@ -2498,9 +2499,15 @@ export default function MetaPage() {
         ...m('budget', t('table.budget')),
         ...m('spent', t('table.spent')),
         ...m('impressions', t('table.impressions')),
+        ...m('reach', t('table.reach')),
         ...m('clicks', t('table.clicks')),
         ...m('ctr', t('table.ctr')),
         ...m('cpc', t('table.cpc')),
+        ...m('cpm', t('table.cpm')),
+        ...m('conversions', t('table.conversions')),
+        ...m('conversionRate', t('table.conversionRate')),
+        ...m('engagement', t('table.engagement')),
+        ...m('roas', t('table.roas')),
       ]
     } else if (activeTab === 'reklam-setleri') {
       return [
@@ -2513,6 +2520,10 @@ export default function MetaPage() {
         ...m('clicks', t('table.clicks')),
         ...m('ctr', t('table.ctr')),
         ...m('cpc', t('table.cpc')),
+        ...m('cpm', t('table.cpm')),
+        ...m('conversions', t('table.conversions')),
+        ...m('conversionRate', t('table.conversionRate')),
+        ...m('roas', t('table.roas')),
       ]
     } else {
       return [
@@ -2524,6 +2535,10 @@ export default function MetaPage() {
         ...m('clicks', t('table.clicks')),
         ...m('ctr', t('table.ctr')),
         ...m('cpc', t('table.cpc')),
+        ...m('cpm', t('table.cpm')),
+        ...m('conversions', t('table.conversions')),
+        ...m('conversionRate', t('table.conversionRate')),
+        ...m('roas', t('table.roas')),
       ]
     }
   }
@@ -2851,9 +2866,15 @@ export default function MetaPage() {
                       { key: 'budget', label: t('table.budget') },
                       { key: 'spent', label: t('table.spent') },
                       { key: 'impressions', label: t('table.impressions') },
+                      { key: 'reach', label: t('table.reach') },
                       { key: 'clicks', label: t('table.clicks') },
                       { key: 'ctr', label: t('table.ctr') },
                       { key: 'cpc', label: t('table.cpc') },
+                      { key: 'cpm', label: t('table.cpm') },
+                      { key: 'conversions', label: t('table.conversions') },
+                      { key: 'conversionRate', label: t('table.conversionRate') },
+                      { key: 'engagement', label: t('table.engagement') },
+                      { key: 'roas', label: t('table.roas') },
                     ]}
                     visible={visibleMetrics}
                     onChange={setVisibleMetrics}

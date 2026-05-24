@@ -408,6 +408,27 @@ export default function MetaTableReal({
                     if (col.key === 'cpc') {
                       return <td key={col.key} className="px-4 py-4 text-sm text-center text-gray-900">{fmtFixed(item.cpc, 2)} TRY</td>
                     }
+                    // ── Ek metrikler (Meta API'den çekilen objede mevcut / hesaplanan; fetch'e dokunulmadı) ──
+                    if (col.key === 'roas') {
+                      return <td key={col.key} className="px-4 py-4 text-sm text-center text-gray-900">{item.roas != null && item.roas > 0 ? `${fmtFixed(item.roas, 1)}x` : '—'}</td>
+                    }
+                    if (col.key === 'reach') {
+                      return <td key={col.key} className="px-4 py-4 text-sm text-center text-gray-900">{item.reach != null && item.reach > 0 ? fmtInt(item.reach) : '—'}</td>
+                    }
+                    if (col.key === 'cpm') {
+                      const cpm = item.impressions > 0 ? ((item.spent ?? 0) / item.impressions) * 1000 : 0
+                      return <td key={col.key} className="px-4 py-4 text-sm text-center text-gray-900">{cpm > 0 ? `${fmtFixed(cpm, 2)} TRY` : '—'}</td>
+                    }
+                    if (col.key === 'conversions') {
+                      return <td key={col.key} className="px-4 py-4 text-sm text-center text-gray-900">{item.purchases != null && item.purchases > 0 ? fmtInt(item.purchases) : '—'}</td>
+                    }
+                    if (col.key === 'conversionRate') {
+                      const cr = item.clicks > 0 ? ((item.purchases ?? 0) / item.clicks) * 100 : 0
+                      return <td key={col.key} className="px-4 py-4 text-sm text-center text-gray-900">{cr > 0 ? `${fmtFixed(cr, 2)}%` : '—'}</td>
+                    }
+                    if (col.key === 'engagement') {
+                      return <td key={col.key} className="px-4 py-4 text-sm text-center text-gray-900">{item.engagement != null && item.engagement > 0 ? fmtInt(item.engagement) : '—'}</td>
+                    }
 
                     // ── Sonuçlar (Results) ───────────────────────────────────
                     if (col.key === 'results') {

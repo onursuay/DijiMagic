@@ -39,17 +39,18 @@ export default function GooglePage() {
   const [emptyBannerDismissed, setEmptyBannerDismissed] = useState(false)
   // Metrik görünürlük filtresi (Madde 1) — Google; Meta'dan bağımsız localStorage anahtarı.
   const [visibleMetrics, setVisibleMetrics] = useState<Set<string>>(() => {
-    const DEFAULTS = ['budget', 'spent', 'impressions', 'clicks', 'ctr', 'cpc', 'roas']
+    // v2: genişletilmiş metrik seti (yeni metrikler varsayılan görünür). Eski v1 anahtarı yoksayılır.
+    const DEFAULTS = ['budget', 'spent', 'impressions', 'clicks', 'ctr', 'cpc', 'cpm', 'conversions', 'conversionRate', 'cpa', 'roas']
     if (typeof window !== 'undefined') {
       try {
-        const s = localStorage.getItem('google_visible_metrics')
+        const s = localStorage.getItem('google_visible_metrics_v2')
         if (s) { const arr = JSON.parse(s); if (Array.isArray(arr) && arr.length) return new Set(arr as string[]) }
       } catch {}
     }
     return new Set(DEFAULTS)
   })
   useEffect(() => {
-    try { localStorage.setItem('google_visible_metrics', JSON.stringify([...visibleMetrics])) } catch {}
+    try { localStorage.setItem('google_visible_metrics_v2', JSON.stringify([...visibleMetrics])) } catch {}
   }, [visibleMetrics])
 
   // Selection state — one per tab
@@ -183,6 +184,10 @@ export default function GooglePage() {
         ...m('clicks', tTable('table.clicks')),
         ...m('ctr', tTable('table.ctr')),
         ...m('cpc', tTable('table.cpc')),
+        ...m('cpm', tTable('table.cpm')),
+        ...m('conversions', tTable('table.conversions')),
+        ...m('conversionRate', tTable('table.conversionRate')),
+        ...m('cpa', tTable('table.cpa')),
         ...m('roas', tTable('table.roas')),
       ]
     } else if (activeTab === 'reklam-gruplari') {
@@ -194,6 +199,10 @@ export default function GooglePage() {
         ...m('clicks', tTable('table.clicks')),
         ...m('ctr', tTable('table.ctr')),
         ...m('cpc', tTable('table.cpc')),
+        ...m('cpm', tTable('table.cpm')),
+        ...m('conversions', tTable('table.conversions')),
+        ...m('conversionRate', tTable('table.conversionRate')),
+        ...m('cpa', tTable('table.cpa')),
         ...m('roas', tTable('table.roas')),
       ]
     } else {
@@ -205,6 +214,10 @@ export default function GooglePage() {
         ...m('clicks', tTable('table.clicks')),
         ...m('ctr', tTable('table.ctr')),
         ...m('cpc', tTable('table.cpc')),
+        ...m('cpm', tTable('table.cpm')),
+        ...m('conversions', tTable('table.conversions')),
+        ...m('conversionRate', tTable('table.conversionRate')),
+        ...m('cpa', tTable('table.cpa')),
         ...m('roas', tTable('table.roas')),
       ]
     }
@@ -610,6 +623,10 @@ export default function GooglePage() {
                   { key: 'clicks', label: tTable('table.clicks') },
                   { key: 'ctr', label: tTable('table.ctr') },
                   { key: 'cpc', label: tTable('table.cpc') },
+                  { key: 'cpm', label: tTable('table.cpm') },
+                  { key: 'conversions', label: tTable('table.conversions') },
+                  { key: 'conversionRate', label: tTable('table.conversionRate') },
+                  { key: 'cpa', label: tTable('table.cpa') },
                   { key: 'roas', label: tTable('table.roas') },
                 ]}
                 visible={visibleMetrics}

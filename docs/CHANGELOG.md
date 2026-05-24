@@ -2,6 +2,13 @@
 
 ---
 
+## 2026-05-24 — Reklam Yöneticisi: metrik filtresine yeni metrikler (Meta +6, Google +4 — fetch'e dokunmadan)
+- **Sorun:** Metrik filtresinde yalnız 7 metrik vardı (Sonuçlar/Bütçe/Harcanan/Gösterim/Tıklama/CTR/CPC); Meta & Google çok daha fazlasını sunuyor.
+- **Çözüm:** Keşifte bu metriklerin çoğunun API'den ZATEN çekildiği ama UI'da gösterilmediği tespit edildi → Meta/Google fetch koduna **DOKUNMADAN** (yalnız sunum katmanı) eklendi. **Meta:** ROAS, Erişim (reach — kampanya), CPM, Dönüşümler (purchases), Dönüşüm Oranı, Etkileşim (kampanya). **Google:** Dönüşümler, CPM, Dönüşüm Oranı, Dönüşüm Başına Maliyet (CPA). CPM / Dönüşüm Oranı / CPA, mevcut alanlardan hesaplanır (spent/impressions×1000, dönüşüm/tıklama×100, spent/dönüşüm) — render anında, 0'a bölme korumalı. `MetricFilterDropdown` + `getTableColumns` + tablo render genişletildi; localStorage `_v2` anahtarı (yeni metrikler varsayılan görünür, eski seçim sıfırlanır). EN/TR: `reach`/`cpm`/`conversions`/`conversionRate`/`engagement`/`cpa`. `tsc` ✓, `next build` ✓.
+- **Dosyalar:** `app/dashboard/reklam/meta/components/MetaTableReal.tsx`, `app/dashboard/reklam/google/components/GoogleTableReal.tsx`, `app/dashboard/reklam/meta/MetaPage.tsx`, `app/dashboard/reklam/google/GooglePage.tsx`, `locales/tr.json`, `locales/en.json`
+
+---
+
 ## 2026-05-24 — Çoklu işletme Faz 2.4: her reklam hesabına ayrı işletme profili (backend)
 - **Sorun:** Kullanıcı ajans yapısında (Antso Denizcilik, Fikret Petrol, Metropol Yayınları… her biri ayrı marka/müşteri) ama sistem kullanıcı başına TEK işletme profili tutuyordu — her hesabın kendi profili olamıyordu, dolayısıyla AI her kampanyayı doğru markayla değerlendiremiyordu.
 - **Çözüm:** `upsertProfile` constraint-agnostik **find-then-write** yapıldı (business_key varsa `(user_id, business_key)`, yoksa legacy `(user_id, business_key IS NULL)` ile bul → update/insert; `onConflict`'e bağlı değil). `business-profile` GET/POST, `YOAI_PER_ACCOUNT_SCOPE` açıkken aktif işletme scope'una göre çalışır: GET `getProfileForScope` ile o işletmenin profilini çeker (yoksa null → UI "profil oluştur"), POST `business_key`/`meta_account_id`/`google_customer_id`'yi profile bağlar. Migration: `user_business_profiles` `UNIQUE(user_id)` → partial unique `(user_id, business_key) WHERE business_key IS NOT NULL` (çoklu profile izin; bağsız/legacy NULL serbest — geriye uyumlu). Account switcher işletme seçince full reload yaptığından profil sayfası otomatik doğru profili yükler. `tsc` ✓, `next build` ✓.
