@@ -390,7 +390,10 @@
       "showInactive": "Show Inactive",
       "toolbar": {
         "refresh": "Refresh",
-        "searchPlaceholder": "Search by name or id..."
+        "searchPlaceholder": "Search by name or id...",
+        "metrics": "Metrics",
+        "metricsTitle": "Visible Metrics",
+        "metricsAll": "All"
       },
       "fetchErrors": {
         "campaignsLoadFailed": "Failed to load campaigns: {error}",

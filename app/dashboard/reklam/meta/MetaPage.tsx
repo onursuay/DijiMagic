@@ -14,6 +14,7 @@ const TrafficWizard = dynamic(() => import('@/components/meta/TrafficWizard'), {
 const CampaignWizard = dynamic(() => import('@/components/meta/CampaignWizard'), { ssr: false })
 import type { MetaCapabilities } from '@/lib/meta/capabilityRules'
 import TableShimmer from '@/components/TableShimmer'
+import MetricFilterDropdown from '@/components/reklam/MetricFilterDropdown'
 import DashboardKpiCard from '@/components/DashboardKpiCard'
 import AlertBanner from '@/components/AlertBanner'
 import { ToastContainer, Toast, ToastType } from '@/components/Toast'
@@ -182,6 +183,21 @@ export default function MetaPage() {
   })
   const [showInactive, setShowInactive] = useState(false)
   const [searchQuery, setSearchQuery] = useState('')
+  // Metrik görünürlük filtresi (Madde 1) — kullanıcı tabloda hangi metrik sütunlarını görür.
+  // localStorage'da kalıcı; en az 1 metrik açık kalır (dropdown garantiler).
+  const [visibleMetrics, setVisibleMetrics] = useState<Set<string>>(() => {
+    const DEFAULTS = ['results', 'budget', 'spent', 'impressions', 'clicks', 'ctr', 'cpc']
+    if (typeof window !== 'undefined') {
+      try {
+        const s = localStorage.getItem('meta_visible_metrics')
+        if (s) { const arr = JSON.parse(s); if (Array.isArray(arr) && arr.length) return new Set(arr as string[]) }
+      } catch {}
+    }
+    return new Set(DEFAULTS)
+  })
+  useEffect(() => {
+    try { localStorage.setItem('meta_visible_metrics', JSON.stringify([...visibleMetrics])) } catch {}
+  }, [visibleMetrics])
   const [showCreateModal, setShowCreateModal] = useState(false)
   const [showObjectiveSelector, setShowObjectiveSelector] = useState(false)
   const [showTrafficWizard, setShowTrafficWizard] = useState(false)
@@ -2471,40 +2487,43 @@ export default function MetaPage() {
       baseCols.push({ key: 'recommendations', label: t('table.recommendations') })
     }
 
+    // Metrik sütunu yalnız kullanıcı görünür seçtiyse eklenir (Madde 1 — metrik filtresi)
+    const m = (key: string, label: string) => (visibleMetrics.has(key) ? [{ key, label }] : [])
+
     if (activeTab === 'kampanyalar') {
       return [
         ...baseCols,
         { key: 'campaign', label: t('table.campaign') },
-        { key: 'results', label: t('table.results') },
-        { key: 'budget', label: t('table.budget') },
-        { key: 'spent', label: t('table.spent') },
-        { key: 'impressions', label: t('table.impressions') },
-        { key: 'clicks', label: t('table.clicks') },
-        { key: 'ctr', label: t('table.ctr') },
-        { key: 'cpc', label: t('table.cpc') },
+        ...m('results', t('table.results')),
+        ...m('budget', t('table.budget')),
+        ...m('spent', t('table.spent')),
+        ...m('impressions', t('table.impressions')),
+        ...m('clicks', t('table.clicks')),
+        ...m('ctr', t('table.ctr')),
+        ...m('cpc', t('table.cpc')),
       ]
     } else if (activeTab === 'reklam-setleri') {
       return [
         ...baseCols,
         { key: 'adset', label: t('table.adset') },
-        { key: 'results', label: t('table.results') },
-        { key: 'budget', label: t('table.budget') },
-        { key: 'spent', label: t('table.spent') },
-        { key: 'impressions', label: t('table.impressions') },
-        { key: 'clicks', label: t('table.clicks') },
-        { key: 'ctr', label: t('table.ctr') },
-        { key: 'cpc', label: t('table.cpc') },
+        ...m('results', t('table.results')),
+        ...m('budget', t('table.budget')),
+        ...m('spent', t('table.spent')),
+        ...m('impressions', t('table.impressions')),
+        ...m('clicks', t('table.clicks')),
+        ...m('ctr', t('table.ctr')),
+        ...m('cpc', t('table.cpc')),
       ]
     } else {
       return [
         ...baseCols,
         { key: 'ad', label: t('table.ad') },
-        { key: 'results', label: t('table.results') },
-        { key: 'spent', label: t('table.spent') },
-        { key: 'impressions', label: t('table.impressions') },
-        { key: 'clicks', label: t('table.clicks') },
-        { key: 'ctr', label: t('table.ctr') },
-        { key: 'cpc', label: t('table.cpc') },
+        ...m('results', t('table.results')),
+        ...m('spent', t('table.spent')),
+        ...m('impressions', t('table.impressions')),
+        ...m('clicks', t('table.clicks')),
+        ...m('ctr', t('table.ctr')),
+        ...m('cpc', t('table.cpc')),
       ]
     }
   }
@@ -2824,6 +2843,22 @@ export default function MetaPage() {
 
                   {/* Date range picker */}
                   <DateRangePicker onDateChange={handleDateChange} locale={localeString === 'en-US' ? 'en' : 'tr'} />
+
+                  {/* Metrik görünürlük filtresi (Madde 1) — takvimin sağında */}
+                  <MetricFilterDropdown
+                    metrics={[
+                      { key: 'results', label: t('table.results') },
+                      { key: 'budget', label: t('table.budget') },
+                      { key: 'spent', label: t('table.spent') },
+                      { key: 'impressions', label: t('table.impressions') },
+                      { key: 'clicks', label: t('table.clicks') },
+                      { key: 'ctr', label: t('table.ctr') },
+                      { key: 'cpc', label: t('table.cpc') },
+                    ]}
+                    visible={visibleMetrics}
+                    onChange={setVisibleMetrics}
+                    labels={{ button: t('toolbar.metrics'), title: t('toolbar.metricsTitle'), all: t('toolbar.metricsAll') }}
+                  />
                 </div>
               )
             })()}

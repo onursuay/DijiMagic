@@ -119,7 +119,7 @@ export default function GoogleTableReal({
 
   return (
     <div className="overflow-x-auto">
-      <table ref={tableRef} className="w-full" style={{ tableLayout: Object.keys(colWidths).length > 0 ? 'fixed' : 'auto' }}>
+      <table ref={tableRef} className="w-full [&_td]:whitespace-nowrap" style={{ tableLayout: Object.keys(colWidths).length > 0 ? 'fixed' : 'auto' }}>
         <thead>
           <tr className="bg-green-50/60">
             {columns.map((col, idx) => {

@@ -14,6 +14,7 @@ import DisplayCampaignWizard from '@/components/google/wizard/display/DisplayCam
 import type { CampaignGoal } from '@/components/google/wizard/shared/WizardTypes'
 import GoogleAccountModal from '@/components/google/GoogleAccountModal'
 import DateRangePicker from '@/components/DateRangePicker'
+import MetricFilterDropdown from '@/components/reklam/MetricFilterDropdown'
 import GoogleTableReal from './components/GoogleTableReal'
 import GoogleTableSkeleton from './components/GoogleTableSkeleton'
 import GoogleCampaignEditOverlay from '@/components/google/GoogleCampaignEditOverlay'
@@ -36,6 +37,20 @@ export default function GooglePage() {
   const [showDisplayWizard, setShowDisplayWizard] = useState(false)
   const [displayCampaignGoal, setDisplayCampaignGoal] = useState<CampaignGoal>('SALES')
   const [emptyBannerDismissed, setEmptyBannerDismissed] = useState(false)
+  // Metrik görünürlük filtresi (Madde 1) — Google; Meta'dan bağımsız localStorage anahtarı.
+  const [visibleMetrics, setVisibleMetrics] = useState<Set<string>>(() => {
+    const DEFAULTS = ['budget', 'spent', 'impressions', 'clicks', 'ctr', 'cpc', 'roas']
+    if (typeof window !== 'undefined') {
+      try {
+        const s = localStorage.getItem('google_visible_metrics')
+        if (s) { const arr = JSON.parse(s); if (Array.isArray(arr) && arr.length) return new Set(arr as string[]) }
+      } catch {}
+    }
+    return new Set(DEFAULTS)
+  })
+  useEffect(() => {
+    try { localStorage.setItem('google_visible_metrics', JSON.stringify([...visibleMetrics])) } catch {}
+  }, [visibleMetrics])
 
   // Selection state — one per tab
   const [selectedCampaignId, setSelectedCampaignId] = useState<string | null>(null)
@@ -155,39 +170,42 @@ export default function GooglePage() {
       { key: 'effectiveStatus', label: tTable('table.statusColumn') },
     ]
 
+    // Metrik sütunu yalnız kullanıcı görünür seçtiyse eklenir (Madde 1 — metrik filtresi)
+    const m = (key: string, label: string) => (visibleMetrics.has(key) ? [{ key, label }] : [])
+
     if (activeTab === 'kampanyalar') {
       return [
         ...baseCols,
         { key: 'campaign', label: tTable('table.campaign') },
-        { key: 'budget', label: tTable('table.budget') },
-        { key: 'spent', label: tTable('table.spent') },
-        { key: 'impressions', label: tTable('table.impressions') },
-        { key: 'clicks', label: tTable('table.clicks') },
-        { key: 'ctr', label: tTable('table.ctr') },
-        { key: 'cpc', label: tTable('table.cpc') },
-        { key: 'roas', label: tTable('table.roas') },
+        ...m('budget', tTable('table.budget')),
+        ...m('spent', tTable('table.spent')),
+        ...m('impressions', tTable('table.impressions')),
+        ...m('clicks', tTable('table.clicks')),
+        ...m('ctr', tTable('table.ctr')),
+        ...m('cpc', tTable('table.cpc')),
+        ...m('roas', tTable('table.roas')),
       ]
     } else if (activeTab === 'reklam-gruplari') {
       return [
         ...baseCols,
         { key: 'adgroup', label: t('tabs.adGroups') },
-        { key: 'spent', label: tTable('table.spent') },
-        { key: 'impressions', label: tTable('table.impressions') },
-        { key: 'clicks', label: tTable('table.clicks') },
-        { key: 'ctr', label: tTable('table.ctr') },
-        { key: 'cpc', label: tTable('table.cpc') },
-        { key: 'roas', label: tTable('table.roas') },
+        ...m('spent', tTable('table.spent')),
+        ...m('impressions', tTable('table.impressions')),
+        ...m('clicks', tTable('table.clicks')),
+        ...m('ctr', tTable('table.ctr')),
+        ...m('cpc', tTable('table.cpc')),
+        ...m('roas', tTable('table.roas')),
       ]
     } else {
       return [
         ...baseCols,
         { key: 'ad', label: tTable('table.ad') },
-        { key: 'spent', label: tTable('table.spent') },
-        { key: 'impressions', label: tTable('table.impressions') },
-        { key: 'clicks', label: tTable('table.clicks') },
-        { key: 'ctr', label: tTable('table.ctr') },
-        { key: 'cpc', label: tTable('table.cpc') },
-        { key: 'roas', label: tTable('table.roas') },
+        ...m('spent', tTable('table.spent')),
+        ...m('impressions', tTable('table.impressions')),
+        ...m('clicks', tTable('table.clicks')),
+        ...m('ctr', tTable('table.ctr')),
+        ...m('cpc', tTable('table.cpc')),
+        ...m('roas', tTable('table.roas')),
       ]
     }
   }
@@ -582,6 +600,22 @@ export default function GooglePage() {
 
               {/* Date range picker */}
               <DateRangePicker onDateChange={handleDateChange} locale={locale} />
+
+              {/* Metrik görünürlük filtresi (Madde 1) — takvimin sağında */}
+              <MetricFilterDropdown
+                metrics={[
+                  { key: 'budget', label: tTable('table.budget') },
+                  { key: 'spent', label: tTable('table.spent') },
+                  { key: 'impressions', label: tTable('table.impressions') },
+                  { key: 'clicks', label: tTable('table.clicks') },
+                  { key: 'ctr', label: tTable('table.ctr') },
+                  { key: 'cpc', label: tTable('table.cpc') },
+                  { key: 'roas', label: tTable('table.roas') },
+                ]}
+                visible={visibleMetrics}
+                onChange={setVisibleMetrics}
+                labels={{ button: tTable('toolbar.metrics'), title: tTable('toolbar.metricsTitle'), all: tTable('toolbar.metricsAll') }}
+              />
             </div>
 
             {/* Table */}

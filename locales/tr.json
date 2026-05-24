@@ -390,7 +390,10 @@
       "showInactive": "Pasifleri Göster",
       "toolbar": {
         "refresh": "Yenile",
-        "searchPlaceholder": "İsim veya id ile ara..."
+        "searchPlaceholder": "İsim veya id ile ara...",
+        "metrics": "Metrikler",
+        "metricsTitle": "Görünür Metrikler",
+        "metricsAll": "Tümü"
       },
       "fetchErrors": {
         "campaignsLoadFailed": "Kampanyalar yüklenemedi: {error}",
