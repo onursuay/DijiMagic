@@ -20,6 +20,7 @@ import { buildBusinessIntelligenceRow } from '@/lib/yoai/businessIntelligenceBui
 import { isPerAccountScopeEnabled } from '@/lib/yoai/featureFlag'
 import { resolveYoaiScope } from '@/lib/yoai/businessScope'
 import { buildBusinessKey, normalizeMetaAccountId, normalizeGoogleCustomerId } from '@/lib/yoai/businessKey'
+import { getIsCurrentUserSuperAdmin } from '@/lib/admin/superAdmin'
 
 export const dynamic = 'force-dynamic'
 export const maxDuration = 60
@@ -84,6 +85,11 @@ export async function GET() {
     if (!userId) {
       return NextResponse.json({ ok: false, error: 'Oturum gerekli' }, { status: 401 })
     }
+    // Süper admin (owner, SUPER_ADMIN_EMAILS) profil kurulumuna ZORLANMAZ →
+    // BusinessProfileGuard bypass (onboarding_completed:true). Normal kullanıcılar
+    // için profil zorunluluğu AYNEN korunur.
+    const isOwner = await getIsCurrentUserSuperAdmin()
+
     // Çoklu işletme (Faz 2.4): flag açıksa aktif işletmenin profilini çek
     // (yoksa null → UI "bu işletme için profil oluştur" akışına düşer).
     const scope = isPerAccountScopeEnabled() ? await resolveYoaiScope() : null
@@ -101,7 +107,8 @@ export async function GET() {
       data: {
         profile,
         competitors,
-        onboarding_completed: !!profile?.onboarding_completed,
+        onboarding_completed: isOwner || !!profile?.onboarding_completed,
+        isOwner,
       },
     })
   } catch (e) {
