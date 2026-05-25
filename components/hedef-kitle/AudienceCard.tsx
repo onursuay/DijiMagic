@@ -78,6 +78,39 @@ function formatCreatedAt(v?: string | null): string | null {
   return isNaN(d.getTime()) ? null : d.toLocaleDateString('tr-TR')
 }
 
+/** Meta saved audience targeting'ini okunur özet satırlarına çevirir (konum/yaş/cinsiyet/ilgi).
+    SAVED kitlelerde subtype/boyut/tarih gelmeyince kartın anlamlı dolması için kullanılır. */
+function targetingSummary(t?: Record<string, unknown>): { label: string; value: string }[] {
+  if (!t || typeof t !== 'object') return []
+  const rows: { label: string; value: string }[] = []
+  const geo = t.geo_locations as Record<string, unknown> | undefined
+  if (geo && typeof geo === 'object') {
+    const locs: string[] = []
+    if (Array.isArray(geo.countries)) locs.push(...(geo.countries as string[]))
+    for (const k of ['cities', 'regions', 'zips']) {
+      const arr = geo[k]
+      if (Array.isArray(arr)) locs.push(...arr.map((x: any) => x?.name ?? x?.key).filter(Boolean))
+    }
+    if (locs.length) rows.push({ label: 'Konum', value: locs.join(', ') })
+  }
+  const ageMin = t.age_min as number | undefined
+  const ageMax = t.age_max as number | undefined
+  if (ageMin != null || ageMax != null) rows.push({ label: 'Yaş', value: `${ageMin ?? 13}–${ageMax ?? 65}` })
+  if (Array.isArray(t.genders) && (t.genders as number[]).length) {
+    const g = (t.genders as number[]).map((x) => (x === 1 ? 'Erkek' : x === 2 ? 'Kadın' : '')).filter(Boolean).join(', ')
+    if (g) rows.push({ label: 'Cinsiyet', value: g })
+  }
+  const interests: string[] = []
+  if (Array.isArray(t.interests)) interests.push(...(t.interests as any[]).map((i) => i?.name).filter(Boolean))
+  if (Array.isArray(t.flexible_spec)) {
+    for (const fs of t.flexible_spec as any[]) {
+      if (fs && Array.isArray(fs.interests)) interests.push(...fs.interests.map((i: any) => i?.name).filter(Boolean))
+    }
+  }
+  if (interests.length) rows.push({ label: 'İlgi Alanları', value: interests.slice(0, 10).join(', ') })
+  return rows
+}
+
 export default function AudienceCard({
   audience,
   expanded,
@@ -91,6 +124,7 @@ export default function AudienceCard({
   const typeConfig = TYPE_ICONS[audience.type]
   const TypeIcon = typeConfig.icon
   const [pendingDelete, setPendingDelete] = useState(false)
+  const tSummary = targetingSummary(audience.targeting)
 
   // Auto-cancel confirm after 4s, or when card collapses
   useEffect(() => {
@@ -180,12 +214,10 @@ export default function AudienceCard({
                 <p className="text-sm text-gray-800 font-medium">{SOURCE_LABELS[audience.source]?.tr ?? audience.source}</p>
               </div>
             )}
-            {audience.subtype && (
-              <div className="space-y-0.5">
-                <p className="text-[11px] uppercase tracking-wide text-gray-400 font-medium">Alt Tür</p>
-                <p className="text-sm text-gray-800 font-medium">{subtypeLabel(audience.subtype)}</p>
-              </div>
-            )}
+            <div className="space-y-0.5">
+              <p className="text-[11px] uppercase tracking-wide text-gray-400 font-medium">Alt Tür</p>
+              <p className="text-sm text-gray-800 font-medium">{audience.subtype ? subtypeLabel(audience.subtype) : TYPE_LABELS[audience.type].tr}</p>
+            </div>
             {hasValidCount(audience.approximateCount) && (
               <div className="space-y-0.5">
                 <p className="text-[11px] uppercase tracking-wide text-gray-400 font-medium">Tahmini Boyut</p>
@@ -205,6 +237,18 @@ export default function AudienceCard({
               </div>
             )}
           </div>
+
+          {/* Hedefleme özeti — SAVED audience targeting (konum/yaş/cinsiyet/ilgi) */}
+          {tSummary.length > 0 && (
+            <div className="space-y-1.5 pt-3 border-t border-gray-100">
+              {tSummary.map((row) => (
+                <div key={row.label} className="flex gap-3 text-sm">
+                  <span className="text-[11px] uppercase tracking-wide text-gray-400 font-medium shrink-0 min-w-[88px] pt-0.5">{row.label}</span>
+                  <span className="text-sm text-gray-700">{row.value}</span>
+                </div>
+              ))}
+            </div>
+          )}
 
           {/* Actions */}
           <div className="flex items-center gap-2 pt-1">
