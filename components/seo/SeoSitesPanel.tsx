@@ -33,6 +33,7 @@ interface Props {
 
 export default function SeoSitesPanel({ banner, onConnectionsChange, autoOpenConnect }: Props) {
   const t = useTranslations('dashboard.seo.articles.sites')
+  const tCommon = useTranslations('dashboard.seo.articles')
 
   const [connections, setConnections] = useState<SiteConnection[]>([])
   const [loading, setLoading] = useState(true)
@@ -119,12 +120,14 @@ export default function SeoSitesPanel({ banner, onConnectionsChange, autoOpenCon
           </h3>
           <p className="text-xs text-gray-500 mt-0.5">{t('description')}</p>
         </div>
-        <button
-          onClick={() => setShowConnect((v) => !v)}
-          className="inline-flex items-center gap-1.5 px-3 py-1.5 text-sm text-white bg-purple-600 rounded-lg hover:bg-purple-700 transition-colors"
-        >
-          <Plus className="w-3.5 h-3.5" /> {t('connect')}
-        </button>
+        {!showConnect && (
+          <button
+            onClick={() => setShowConnect(true)}
+            className="inline-flex items-center gap-1.5 px-3 py-1.5 text-sm text-white bg-purple-600 rounded-lg hover:bg-purple-700 transition-colors"
+          >
+            <Plus className="w-3.5 h-3.5" /> {t('connect')}
+          </button>
+        )}
       </div>
 
       {/* Banner */}
@@ -159,7 +162,13 @@ export default function SeoSitesPanel({ banner, onConnectionsChange, autoOpenCon
             />
           </div>
           <p className="text-xs text-gray-500">{t('connectHint')}</p>
-          <div className="flex justify-end">
+          <div className="flex justify-end gap-2">
+            <button
+              onClick={() => setShowConnect(false)}
+              className="px-4 py-2 text-sm text-gray-600 border border-gray-300 rounded-lg hover:bg-gray-50"
+            >
+              {tCommon('cancel')}
+            </button>
             <button
               onClick={handleConnect}
               disabled={!siteUrl.trim()}
