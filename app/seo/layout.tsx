@@ -1,6 +1,7 @@
 'use client'
 
 import SidebarNav from '@/components/SidebarNav'
+import BusinessProfileGuard from '@/components/yoai/BusinessProfileGuard'
 import AccountApprovalGuard from '@/components/auth/AccountApprovalGuard'
 
 export default function SeoLayout({
@@ -12,7 +13,9 @@ export default function SeoLayout({
     <AccountApprovalGuard>
       <div className="flex h-screen bg-gray-50">
         <SidebarNav />
-        <div className="flex-1 flex flex-col overflow-hidden">{children}</div>
+        <div className="flex-1 flex flex-col overflow-hidden">
+          <BusinessProfileGuard area="SEO">{children}</BusinessProfileGuard>
+        </div>
       </div>
     </AccountApprovalGuard>
   )

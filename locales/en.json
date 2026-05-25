@@ -2798,7 +2798,15 @@
           "errTestFailed": "Connection test failed.",
           "errSiteMismatch": "The approved site does not match the entered address.",
           "errSaveFailed": "Could not save the connection.",
-          "errGeneric": "An error occurred."
+          "errGeneric": "An error occurred.",
+          "publishTarget": "Publish Target",
+          "publishTargetDesc": "Your articles are published to the website in your business profile.",
+          "yourSiteFromProfile": "Your website (from your business profile)",
+          "authorize": "Authorize publishing",
+          "authorizeHint": "You approve with one click in your own WordPress panel; your password is never entered into YoAi.",
+          "notAuthorizedDesc": "You need to authorize once to publish articles to your site.",
+          "noProfileUrl": "No website address found in your business profile. Please complete your profile first.",
+          "openProfile": "Open Business Profile"
         },
         "setup": "Setup",
         "setupHint": "Connect your website first, then configure how articles are produced.",

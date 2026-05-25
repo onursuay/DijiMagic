@@ -55,7 +55,7 @@ export default function SeoArticlesTab() {
 
   // View machine + site durumu
   const [view, setView] = useState<'articles' | 'setup'>('articles')
-  const [siteCount, setSiteCount] = useState<number | null>(null)
+  const [profileUrl, setProfileUrl] = useState<string | null>(null) // işletme profilindeki web sitesi
   const [siteBanner, setSiteBanner] = useState<{ kind: 'connected' | 'rejected' | 'error'; reason?: string } | null>(null)
 
   // Generator form
@@ -102,19 +102,18 @@ export default function SeoArticlesTab() {
     router.replace('/seo', { scroll: false })
   }, [searchParams, router])
 
-  /* ═══════ Site sayısı (onboarding kararı) ═══════ */
-  const fetchSiteCount = useCallback(async () => {
+  /* ═══════ İşletme profilindeki web sitesi (SEO bu URL'den beslenir) ═══════ */
+  const fetchProfileUrl = useCallback(async () => {
     try {
-      const res = await fetch('/api/seo/sites', { cache: 'no-store' })
+      const res = await fetch('/api/yoai/business-profile', { cache: 'no-store' })
       const data = await res.json()
-      if (data.ok) setSiteCount(data.connections.length)
-      else setSiteCount(0)
+      setProfileUrl(data?.data?.profile?.website_url ?? null)
     } catch {
-      setSiteCount(0)
+      setProfileUrl(null)
     }
   }, [])
 
-  useEffect(() => { fetchSiteCount() }, [fetchSiteCount])
+  useEffect(() => { fetchProfileUrl() }, [fetchProfileUrl])
 
   /* ═══════ Fetch Articles ═══════ */
   const fetchArticles = useCallback(async () => {
@@ -356,8 +355,7 @@ export default function SeoArticlesTab() {
   }
 
   /* ═══════ Render ═══════ */
-  // Site durumu netleşene kadar (siteCount null) makale görünümünü ASLA gösterme.
-  if (loading || siteCount === null) {
+  if (loading) {
     return (
       <div className="flex items-center justify-center py-16 text-gray-400">
         <Loader2 className="w-6 h-6 animate-spin" />
@@ -371,22 +369,6 @@ export default function SeoArticlesTab() {
         <AlertCircle className="w-10 h-10 text-gray-300 mx-auto mb-3" />
         <p className="text-sm text-gray-500">{error}</p>
         <button onClick={fetchArticles} className="mt-3 text-sm text-blue-600 hover:text-blue-700">{t('retry')}</button>
-      </div>
-    )
-  }
-
-  /* ═══════ Site bağlama ZORUNLU: site yokken makale üretimi gösterilmez ═══════ */
-  if (siteCount === 0) {
-    return (
-      <div className="space-y-4">
-        <div className="bg-primary/5 border border-primary/20 rounded-xl p-4 flex items-start gap-3">
-          <Globe className="w-5 h-5 text-primary mt-0.5 shrink-0" />
-          <div>
-            <h3 className="text-sm font-semibold text-gray-900">{t('connectFirstTitle')}</h3>
-            <p className="text-sm text-gray-600 mt-0.5">{t('onboardingHint')}</p>
-          </div>
-        </div>
-        <SeoSitesPanel banner={siteBanner} onConnectionsChange={setSiteCount} autoOpenConnect />
       </div>
     )
   }
@@ -416,10 +398,10 @@ export default function SeoArticlesTab() {
         </div>
       </div>
 
-      {/* Setup view: önce site bağla, sonra üretim ayarları */}
+      {/* Setup view: yayın hedefi (profil URL'inden) + üretim ayarları */}
       {view === 'setup' && (
         <div className="space-y-4">
-          <SeoSitesPanel banner={siteBanner} onConnectionsChange={setSiteCount} />
+          <SeoSitesPanel banner={siteBanner} profileUrl={profileUrl} />
           <SeoAutomationPanel />
         </div>
       )}

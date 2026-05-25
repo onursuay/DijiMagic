@@ -2798,7 +2798,15 @@
           "errTestFailed": "Bağlantı testi başarısız.",
           "errSiteMismatch": "Onaylanan site, girilen adresle eşleşmiyor.",
           "errSaveFailed": "Bağlantı kaydedilemedi.",
-          "errGeneric": "Bir hata oluştu."
+          "errGeneric": "Bir hata oluştu.",
+          "publishTarget": "Yayın Hedefi",
+          "publishTargetDesc": "Makaleleriniz işletme profilinizdeki web sitesine yayınlanır.",
+          "yourSiteFromProfile": "Web siteniz (işletme profilinizden)",
+          "authorize": "Yayın için yetkilendir",
+          "authorizeHint": "Tek tıkla kendi WordPress panelinizde onaylarsınız; şifreniz YoAi'ye girilmez.",
+          "notAuthorizedDesc": "Makaleleri sitenize yayınlamak için bir kez yetki vermeniz gerekir.",
+          "noProfileUrl": "İşletme profilinizde web sitesi adresi bulunamadı. Önce profilinizi tamamlayın.",
+          "openProfile": "İşletme Profilini Aç"
         },
         "setup": "Kurulum",
         "setupHint": "Önce web sitenizi bağlayın, ardından makalelerin nasıl üretileceğini ayarlayın.",

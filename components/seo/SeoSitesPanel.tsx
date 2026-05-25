@@ -3,8 +3,8 @@
 import { useState, useEffect, useCallback } from 'react'
 import { useTranslations } from 'next-intl'
 import {
-  Loader2, Globe, Plus, Trash2, CheckCircle2, AlertCircle,
-  Star, RefreshCw, ExternalLink,
+  Loader2, Globe, Trash2, CheckCircle2, AlertCircle,
+  RefreshCw, ExternalLink, ArrowRight,
 } from 'lucide-react'
 
 /* ═══════ Types ═══════ */
@@ -24,21 +24,17 @@ interface SiteConnection {
 interface Props {
   /** callback'ten dönen durum: 'connected' | 'rejected' | 'error', reason ile */
   banner?: { kind: 'connected' | 'rejected' | 'error'; reason?: string } | null
-  onConnectionsChange?: (count: number) => void
-  /** onboarding'de bağlama formunu otomatik açık başlat */
-  autoOpenConnect?: boolean
+  /** İşletme profilindeki web sitesi URL'i (SEO bu siteden beslenir) */
+  profileUrl?: string | null
 }
 
 /* ═══════ Component ═══════ */
 
-export default function SeoSitesPanel({ banner, onConnectionsChange, autoOpenConnect }: Props) {
+export default function SeoSitesPanel({ banner, profileUrl }: Props) {
   const t = useTranslations('dashboard.seo.articles.sites')
-  const tCommon = useTranslations('dashboard.seo.articles')
 
   const [connections, setConnections] = useState<SiteConnection[]>([])
   const [loading, setLoading] = useState(true)
-  const [siteUrl, setSiteUrl] = useState('')
-  const [showConnect, setShowConnect] = useState(Boolean(autoOpenConnect))
   const [testingId, setTestingId] = useState<string | null>(null)
   const [testResult, setTestResult] = useState<Record<string, boolean>>({})
 
@@ -47,13 +43,10 @@ export default function SeoSitesPanel({ banner, onConnectionsChange, autoOpenCon
     try {
       const res = await fetch('/api/seo/sites', { cache: 'no-store' })
       const data = await res.json()
-      if (data.ok) {
-        setConnections(data.connections)
-        onConnectionsChange?.(data.connections.length)
-      }
+      if (data.ok) setConnections(data.connections)
     } catch { /* ignore */ }
     finally { setLoading(false) }
-  }, [onConnectionsChange])
+  }, [])
 
   useEffect(() => { fetchConnections() }, [fetchConnections])
 
@@ -75,11 +68,10 @@ export default function SeoSitesPanel({ banner, onConnectionsChange, autoOpenCon
     }
   }
 
-  const handleConnect = () => {
-    const url = siteUrl.trim()
-    if (!url) return
-    // Tek-tık yetkilendirme akışı: connect route WP'ye yönlendirir.
-    window.location.href = `/api/seo/sites/connect?siteUrl=${encodeURIComponent(url)}&platform=wordpress`
+  // Yayın yetkisi akışı — URL profildEN gelir, kullanıcı URL girmez.
+  const handleAuthorize = () => {
+    if (!profileUrl) return
+    window.location.href = `/api/seo/sites/connect?siteUrl=${encodeURIComponent(profileUrl)}&platform=wordpress`
   }
 
   const handleTest = async (id: string) => {
@@ -96,15 +88,6 @@ export default function SeoSitesPanel({ banner, onConnectionsChange, autoOpenCon
     }
   }
 
-  const handleMakeDefault = async (id: string) => {
-    await fetch(`/api/seo/sites/${id}`, {
-      method: 'PATCH',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ isDefault: true }),
-    })
-    fetchConnections()
-  }
-
   const handleDelete = async (id: string) => {
     if (!confirm(t('removeConfirm'))) return
     await fetch(`/api/seo/sites/${id}`, { method: 'DELETE' })
@@ -113,21 +96,11 @@ export default function SeoSitesPanel({ banner, onConnectionsChange, autoOpenCon
 
   return (
     <div className="bg-white border border-gray-200 rounded-xl p-5 space-y-4">
-      <div className="flex items-center justify-between">
-        <div>
-          <h3 className="text-sm font-semibold text-gray-900 flex items-center gap-2">
-            <Globe className="w-4 h-4" /> {t('title')}
-          </h3>
-          <p className="text-xs text-gray-500 mt-0.5">{t('description')}</p>
-        </div>
-        {!showConnect && (
-          <button
-            onClick={() => setShowConnect(true)}
-            className="inline-flex items-center gap-1.5 px-3 py-1.5 text-sm text-white bg-purple-600 rounded-lg hover:bg-purple-700 transition-colors"
-          >
-            <Plus className="w-3.5 h-3.5" /> {t('connect')}
-          </button>
-        )}
+      <div>
+        <h3 className="text-sm font-semibold text-gray-900 flex items-center gap-2">
+          <Globe className="w-4 h-4" /> {t('publishTarget')}
+        </h3>
+        <p className="text-xs text-gray-500 mt-0.5">{t('publishTargetDesc')}</p>
       </div>
 
       {/* Banner */}
@@ -147,63 +120,39 @@ export default function SeoSitesPanel({ banner, onConnectionsChange, autoOpenCon
         </div>
       )}
 
-      {/* Connect form */}
-      {showConnect && (
-        <div className="border border-purple-200 rounded-xl p-4 space-y-3 bg-purple-50/30">
-          <h4 className="text-sm font-medium text-gray-900">{t('connectWordPress')}</h4>
-          <div>
-            <label className="block text-xs font-medium text-gray-600 mb-1">{t('siteUrlLabel')}</label>
-            <input
-              type="url"
-              value={siteUrl}
-              onChange={(e) => setSiteUrl(e.target.value)}
-              placeholder={t('siteUrlPlaceholder')}
-              className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:ring-2 focus:ring-purple-500 focus:border-purple-500"
-            />
-          </div>
-          <p className="text-xs text-gray-500">{t('connectHint')}</p>
-          <div className="flex justify-end gap-2">
-            <button
-              onClick={() => setShowConnect(false)}
-              className="px-4 py-2 text-sm text-gray-600 border border-gray-300 rounded-lg hover:bg-gray-50"
-            >
-              {tCommon('cancel')}
-            </button>
-            <button
-              onClick={handleConnect}
-              disabled={!siteUrl.trim()}
-              className="inline-flex items-center gap-1.5 px-4 py-2 text-sm text-white bg-purple-600 rounded-lg hover:bg-purple-700 disabled:opacity-50"
-            >
-              <ExternalLink className="w-3.5 h-3.5" /> {t('connect')}
-            </button>
-          </div>
-
-          {/* Diğer platformlar — yakında */}
-          <div className="flex flex-wrap gap-2 pt-2 border-t border-gray-100">
-            {(['shopify', 'ideasoft', 'generic'] as const).map((p) => (
-              <span
-                key={p}
-                className="inline-flex items-center gap-1 px-2.5 py-1 text-xs text-gray-400 bg-gray-50 border border-gray-200 rounded-full"
-              >
-                {t(`platform${p.charAt(0).toUpperCase() + p.slice(1)}` as 'platformShopify')} · {t('comingSoon')}
-              </span>
-            ))}
-          </div>
-        </div>
-      )}
-
-      {/* List */}
       {loading ? (
         <div className="flex justify-center py-8 text-gray-400">
           <Loader2 className="w-5 h-5 animate-spin" />
         </div>
+      ) : !profileUrl ? (
+        /* İşletme profilinde web sitesi yok → profili tamamla */
+        <div className="bg-primary/5 border border-primary/20 rounded-lg p-4">
+          <p className="text-sm text-gray-700">{t('noProfileUrl')}</p>
+          <a
+            href="/yoai"
+            className="inline-flex items-center gap-1.5 mt-3 px-4 py-2 text-sm text-white bg-purple-600 rounded-lg hover:bg-purple-700"
+          >
+            {t('openProfile')} <ArrowRight className="w-3.5 h-3.5" />
+          </a>
+        </div>
       ) : connections.length === 0 ? (
-        <div className="text-center py-8">
-          <Globe className="w-10 h-10 text-gray-200 mx-auto mb-3" />
-          <p className="text-sm font-medium text-gray-700">{t('noSites')}</p>
-          <p className="text-xs text-gray-500 mt-1">{t('noSitesDesc')}</p>
+        /* Profil URL'i var ama yayın yetkisi yok → tek-tık yetkilendir */
+        <div className="border border-purple-200 rounded-xl p-4 bg-purple-50/30 space-y-3">
+          <div>
+            <p className="text-xs font-medium text-gray-500">{t('yourSiteFromProfile')}</p>
+            <p className="text-sm font-medium text-gray-900 mt-0.5 break-all">{profileUrl}</p>
+          </div>
+          <p className="text-sm text-gray-600">{t('notAuthorizedDesc')}</p>
+          <p className="text-xs text-gray-500">{t('authorizeHint')}</p>
+          <button
+            onClick={handleAuthorize}
+            className="inline-flex items-center gap-1.5 px-4 py-2 text-sm text-white bg-purple-600 rounded-lg hover:bg-purple-700"
+          >
+            <ExternalLink className="w-3.5 h-3.5" /> {t('authorize')}
+          </button>
         </div>
       ) : (
+        /* Yetkilendirilmiş yayın hedefleri */
         <div className="space-y-2">
           {connections.map((c) => (
             <div key={c.id} className="flex items-center justify-between gap-3 border border-gray-200 rounded-lg p-3">
@@ -211,11 +160,6 @@ export default function SeoSitesPanel({ banner, onConnectionsChange, autoOpenCon
                 <div className="flex items-center gap-2">
                   <Globe className="w-4 h-4 text-gray-400 shrink-0" />
                   <span className="text-sm font-medium text-gray-900 truncate">{c.label || c.baseUrl}</span>
-                  {c.isDefault && (
-                    <span className="inline-flex items-center gap-1 px-2 py-0.5 text-xs font-medium rounded-full bg-emerald-50 text-emerald-700">
-                      <Star className="w-3 h-3" /> {t('default')}
-                    </span>
-                  )}
                   <span className={`inline-flex px-2 py-0.5 text-xs font-medium rounded-full ${
                     c.status === 'active' ? 'bg-emerald-50 text-emerald-700'
                       : c.status === 'error' ? 'bg-red-50 text-red-700'
@@ -243,15 +187,6 @@ export default function SeoSitesPanel({ banner, onConnectionsChange, autoOpenCon
                 >
                   {testingId === c.id ? <Loader2 className="w-4 h-4 animate-spin" /> : <RefreshCw className="w-4 h-4" />}
                 </button>
-                {!c.isDefault && (
-                  <button
-                    onClick={() => handleMakeDefault(c.id)}
-                    className="p-1.5 text-gray-400 hover:text-emerald-600 rounded"
-                    title={t('makeDefault')}
-                  >
-                    <Star className="w-4 h-4" />
-                  </button>
-                )}
                 <button
                   onClick={() => handleDelete(c.id)}
                   className="p-1.5 text-gray-400 hover:text-red-500 rounded"
