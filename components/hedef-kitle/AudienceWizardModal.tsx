@@ -396,9 +396,10 @@ export default function AudienceWizardModal({ isOpen, onClose, onSuccess, onToas
         throw new Error(json.message ?? 'Kayıt oluşturulamadı')
       }
 
-      // DRAFT oluşturuldu — şimdi Meta'ya gönder
+      // Custom/Lookalike → Meta'ya gönder. SAVED (Detaylı Kitle) Meta API ile
+      // oluşturulamadığından otomatik gönderme YAPILMAZ; yalnız kaydedilir.
       const audienceId = json.audience?.id
-      if (audienceId) {
+      if (audienceId && body.type !== 'SAVED') {
         onToast?.('Kitle kaydedildi, Meta\'ya gönderiliyor...', 'info')
         try {
           const createRes = await fetch(`/api/audiences/${audienceId}/create`, { method: 'POST' })
@@ -412,7 +413,7 @@ export default function AudienceWizardModal({ isOpen, onClose, onSuccess, onToas
           onToast?.('Meta\'ya gönderim sırasında hata — liste ekranından tekrar deneyebilirsiniz', 'error')
         }
       } else {
-        onToast?.('Kitle DRAFT olarak kaydedildi', 'success')
+        onToast?.('Kitle kaydedildi', 'success')
       }
 
       onSuccess?.()

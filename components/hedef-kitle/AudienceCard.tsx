@@ -265,7 +265,7 @@ export default function AudienceCard({
                     Düzenle
                   </button>
                 )}
-                {(audience.status === 'DRAFT' || audience.status === 'ERROR') && onSendToMeta && (
+                {audience.type !== 'SAVED' && (audience.status === 'DRAFT' || audience.status === 'ERROR') && onSendToMeta && (
                   <button
                     type="button"
                     onClick={(e) => { e.stopPropagation(); onSendToMeta(audience.id) }}
