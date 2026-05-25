@@ -5,7 +5,7 @@ import { useRouter, usePathname } from 'next/navigation'
 import { useTranslations, useLocale } from 'next-intl'
 import Link from 'next/link'
 import { mapPathToLocale } from '@/lib/routes'
-import { User, FileText, CreditCard, HelpCircle, Globe, LogOut, ChevronRight, Check, Briefcase, ShieldCheck, Lock } from 'lucide-react'
+import { User, FileText, CreditCard, HelpCircle, Globe, LogOut, ChevronRight, Check, Briefcase, ShieldCheck } from 'lucide-react'
 import { ROUTES } from '@/lib/routes'
 import { useSubscription } from '@/components/providers/SubscriptionProvider'
 
@@ -168,27 +168,6 @@ export default function UserProfileDropdown({ collapsed, hasGozetimAccess = fals
                 </button>
               </div>
             )}
-          </div>
-
-          {/* Kurumsal — legal links */}
-          <div className="border-t border-white/10 py-1">
-            <p className="px-4 pt-2 pb-1 text-xs text-gray-500 uppercase tracking-wide">Kurumsal</p>
-            {[
-              { label: 'Gizlilik Politikası', href: '/gizlilik-politikasi' },
-              { label: 'Çerez Politikası', href: '/cerez-politikasi' },
-              { label: 'Kullanım Koşulları', href: '/kullanim-kosullari' },
-              { label: 'Veri Silme', href: '/veri-silme' },
-            ].map(link => (
-              <Link
-                key={link.href}
-                href={link.href}
-                onClick={() => setOpen(false)}
-                className="flex items-center gap-3 px-4 py-2 text-sm text-gray-400 hover:bg-white/10 transition-colors"
-              >
-                <Lock className="w-3.5 h-3.5 text-gray-500" />
-                <span>{link.label}</span>
-              </Link>
-            ))}
           </div>
 
           {/* Logout */}

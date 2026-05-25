@@ -2,6 +2,13 @@
 
 ---
 
+## 2026-05-25 — Kullanıcı menüsünden "Kurumsal" kaldırıldı + Ana sayfa footer'ına dil seçici
+- **Sorun:** Kullanıcı hesabı dropdown'ında "Kurumsal" (Gizlilik/Çerez/Kullanım Koşulları/Veri Silme) bölümü vardı; bu linkler zaten ana sayfa footer'ında olduğu için gereksiz tekrar. Ayrıca footer'da dil seçici yoktu.
+- **Çözüm:** `UserProfileDropdown`'dan "Kurumsal" bloğu (ve kullanılmayan `Lock` import'u) kaldırıldı. Ana sayfa footer'ına referans tasarımındaki dark dropdown dil seçici (Globe ikon + bayrak + chevron, 🇹🇷 Türkçe / 🇬🇧 English) eklendi — YoAi'nin gerçek i18n mekanizmasıyla (`NEXT_LOCALE` cookie + `mapPathToLocale`), dışarı tıklayınca kapanır, aktif dil emerald ile işaretli.
+- **Dosyalar:** `components/UserProfileDropdown.tsx`, `components/landing/FooterLangSwitcher.tsx` (yeni), `app/page.tsx`
+
+---
+
 ## 2026-05-25 — Hedef Kitle kartı (Invalid Date / -1 kişi / ham enum / tipografi) + Advantage+ toggle
 - **Sorun:** (#2) Kitle kartında "Invalid Date" (`new Date(createdAt)` fallback'siz) ve "-1 kişi" (Meta boyut vermeyince `approximateCount=-1` yine gösteriliyordu). (#3) Etiketler `text-caption` (çok küçük), "Alt Tür" değeri **ham enum** (LOOKALIKE/WEBSITE) basılıyor, grid simetrisi bozuk, tipografi tutarsız. (#4) Advantage+ toggle knob'u asimetrik (`left` yok, kapalı `translate-x-0.5`/açık `translate-x-5`).
 - **Çözüm:** `AudienceCard`: `formatCreatedAt` (geçersiz/boş tarih → "—"), `hasValidCount` (boyut < 0 → satır hiç gösterilmez), `subtypeLabel` (ham enum → sade TR: WEBSITE→Web Sitesi, LOOKALIKE→Benzer Kitle, …). Etiket/değer tutarlı tipografi (etiket `11px uppercase gray-400`, değer `text-sm gray-800`), `grid-cols-2 gap-x-6 gap-y-3` simetrik hizalama. `StepInterests` Advantage+ toggle simetrik (`left-0.5` + `translate-x-0`/`translate-x-5`) + `role="switch"`/`aria-checked`. `tsc` ✓, `next build` ✓.

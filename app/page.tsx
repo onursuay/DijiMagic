@@ -4,6 +4,7 @@ import { cookies } from 'next/headers'
 import ScheduleModal from '@/components/landing/ScheduleModal'
 import DemoModal from '@/components/landing/DemoModal'
 import LandingHeader from '@/components/landing/LandingHeader'
+import FooterLangSwitcher from '@/components/landing/FooterLangSwitcher'
 
 export default async function RootPage() {
   const cookieStore = await cookies()
@@ -376,17 +377,20 @@ export default async function RootPage() {
 
       {/* ═══════════ FOOTER ═══════════ */}
       <footer className="w-full border-t border-white/[0.05] py-6 px-6 bg-[#060609]">
-        <div className="max-w-7xl mx-auto flex flex-col sm:flex-row items-center justify-between gap-3 text-sm">
+        <div className="max-w-7xl mx-auto flex flex-col sm:flex-row flex-wrap items-center justify-between gap-3 text-sm">
           <div className="flex items-center gap-3 text-gray-500">
             <Image src="/logos/yoai-logo.png" alt="YoAI" width={40} height={16} className="object-contain brightness-0 invert opacity-40" />
             <span>{c.footer}</span>
           </div>
-          <nav className="flex gap-5 text-gray-500">
-            <a href={legal.privacy.href} className="hover:text-gray-300 transition-colors">{legal.privacy.label}</a>
-            <a href={legal.cookie.href} className="hover:text-gray-300 transition-colors">{legal.cookie.label}</a>
-            <a href={legal.terms.href} className="hover:text-gray-300 transition-colors">{legal.terms.label}</a>
-            <a href={legal.dataDeletion.href} className="hover:text-gray-300 transition-colors">{legal.dataDeletion.label}</a>
-          </nav>
+          <div className="flex flex-wrap items-center gap-x-5 gap-y-3">
+            <nav className="flex flex-wrap gap-5 text-gray-500">
+              <a href={legal.privacy.href} className="hover:text-gray-300 transition-colors">{legal.privacy.label}</a>
+              <a href={legal.cookie.href} className="hover:text-gray-300 transition-colors">{legal.cookie.label}</a>
+              <a href={legal.terms.href} className="hover:text-gray-300 transition-colors">{legal.terms.label}</a>
+              <a href={legal.dataDeletion.href} className="hover:text-gray-300 transition-colors">{legal.dataDeletion.label}</a>
+            </nav>
+            <FooterLangSwitcher />
+          </div>
         </div>
       </footer>
     </div>
