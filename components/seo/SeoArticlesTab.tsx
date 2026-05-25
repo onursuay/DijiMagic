@@ -6,7 +6,7 @@ import { useSearchParams, useRouter } from 'next/navigation'
 import {
   Loader2, FileText, Pencil, Trash2, Eye, EyeOff,
   AlertCircle, X, Save, Plus, Sparkles, Send,
-  Globe, ChevronDown, ChevronUp, Image as ImageIcon, Zap,
+  Globe, ChevronDown, ChevronUp, Image as ImageIcon, Settings,
 } from 'lucide-react'
 import ReactMarkdown from 'react-markdown'
 import { useCredits } from '@/components/providers/CreditProvider'
@@ -54,7 +54,7 @@ export default function SeoArticlesTab() {
   const [error, setError] = useState<string | null>(null)
 
   // View machine + site durumu
-  const [view, setView] = useState<'articles' | 'sites' | 'automation'>('articles')
+  const [view, setView] = useState<'articles' | 'setup'>('articles')
   const [siteCount, setSiteCount] = useState<number | null>(null)
   const [siteBanner, setSiteBanner] = useState<{ kind: 'connected' | 'rejected' | 'error'; reason?: string } | null>(null)
 
@@ -97,7 +97,7 @@ export default function SeoArticlesTab() {
     if (siteParam === 'connected') setSiteBanner({ kind: 'connected' })
     else if (siteParam === 'rejected') setSiteBanner({ kind: 'rejected' })
     else if (siteParam === 'error') setSiteBanner({ kind: 'error', reason: searchParams.get('reason') || undefined })
-    setView('sites')
+    setView('setup')
     // URL'i temizle
     router.replace('/seo', { scroll: false })
   }, [searchParams, router])
@@ -394,20 +394,12 @@ export default function SeoArticlesTab() {
         <h2 className="text-lg font-semibold text-gray-900">{t('title')}</h2>
         <div className="flex items-center gap-2">
           <button
-            onClick={() => setView((v) => (v === 'sites' ? 'articles' : 'sites'))}
+            onClick={() => setView((v) => (v === 'setup' ? 'articles' : 'setup'))}
             className={`inline-flex items-center gap-1.5 px-3 py-1.5 text-sm border rounded-lg transition-colors ${
-              view === 'sites' ? 'bg-gray-100 text-gray-900 border-gray-300' : 'text-gray-600 border-gray-200 hover:bg-gray-50'
+              view === 'setup' ? 'bg-gray-100 text-gray-900 border-gray-300' : 'text-gray-600 border-gray-200 hover:bg-gray-50'
             }`}
           >
-            <Globe className="w-3.5 h-3.5" /> {t('sites.title')}
-          </button>
-          <button
-            onClick={() => setView((v) => (v === 'automation' ? 'articles' : 'automation'))}
-            className={`inline-flex items-center gap-1.5 px-3 py-1.5 text-sm border rounded-lg transition-colors ${
-              view === 'automation' ? 'bg-gray-100 text-gray-900 border-gray-300' : 'text-gray-600 border-gray-200 hover:bg-gray-50'
-            }`}
-          >
-            <Zap className="w-3.5 h-3.5" /> {t('automation.title')}
+            <Settings className="w-3.5 h-3.5" /> {t('setup')}
           </button>
           {view === 'articles' && (
             <button
@@ -420,11 +412,13 @@ export default function SeoArticlesTab() {
         </div>
       </div>
 
-      {/* Sites view */}
-      {view === 'sites' && <SeoSitesPanel banner={siteBanner} onConnectionsChange={setSiteCount} />}
-
-      {/* Automation view */}
-      {view === 'automation' && <SeoAutomationPanel />}
+      {/* Setup view: önce site bağla, sonra üretim ayarları */}
+      {view === 'setup' && (
+        <div className="space-y-4">
+          <SeoSitesPanel banner={siteBanner} onConnectionsChange={setSiteCount} />
+          <SeoAutomationPanel />
+        </div>
+      )}
 
       {/* Articles view */}
       {view === 'articles' && (
