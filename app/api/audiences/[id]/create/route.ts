@@ -140,13 +140,21 @@ export async function POST(_request: Request, { params }: { params: Promise<{ id
       const err = metaResponse.error ?? {}
       console.error(`[${requestId}] Meta API error:`, err)
 
+      // Ham Meta hatasını kullanıcı dostu Türkçe mesaja çevir (özellikle #3 = yetki/capability).
+      // NOT: Meta API çağrısına dokunulmaz; yalnız hata gösterimi (sunum) iyileştirilir.
+      const metaCode = Number(err.code ?? 0)
+      const rawMsg = (err.error_user_msg as string) ?? (err.message as string) ?? 'Meta API hatası'
+      const friendlyMsg = metaCode === 3
+        ? 'Meta reklam hesabınızın bu işlem için yetkisi yok. Meta Business Yöneticisi’nde reklam hesabı için "Özel Kitle Koşulları"nı (Custom Audience Terms of Service) kabul edin ve bağlı uygulamanın reklam yönetimi (ads_management) iznine sahip olduğundan emin olun. Mevcut kitleleri görüntüleme çalışır; yeni kitle oluşturmak için bu yetki gerekir.'
+        : rawMsg
+
       // Mark as ERROR
       await supabase
         .from('audiences')
         .update({
           status: 'ERROR',
           error_code: String(err.code ?? metaResponse.status ?? 'unknown'),
-          error_message: (err.message as string) ?? (err.error_user_msg as string) ?? 'Meta API hatası',
+          error_message: friendlyMsg,
           meta_payload_json: metaResponse,
           updated_at: new Date().toISOString(),
         })
@@ -155,7 +163,7 @@ export async function POST(_request: Request, { params }: { params: Promise<{ id
       return NextResponse.json({
         ok: false,
         error: 'meta_api_error',
-        message: (err.error_user_msg as string) ?? (err.message as string) ?? 'Meta API hatası',
+        message: friendlyMsg,
         meta_error: err,
       }, { status: metaResponse.status ?? 500 })
     }
