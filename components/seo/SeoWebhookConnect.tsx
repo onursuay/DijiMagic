@@ -1,6 +1,6 @@
 'use client'
 
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import { useTranslations } from 'next-intl'
 import {
   Loader2, Webhook, ChevronDown, ChevronUp, RefreshCw, Copy, Check, Code,
@@ -9,6 +9,8 @@ import {
 interface Props {
   /** Bağlantı başarıyla eklenince listeyi tazelemek için. */
   onConnected: () => void
+  /** WordPress tek-tık uygun değilse panel otomatik açık başlasın (asıl yayın yolu webhook olur). */
+  defaultOpen?: boolean
 }
 
 /* Geliştiriciye gösterilen örnek kodlar — API alanı adlarıdır, çeviriye tabi değildir. */
@@ -61,10 +63,12 @@ $data = json_decode($raw, true);
 http_response_code(200);
 echo json_encode(['url' => 'https://siteniz.com/yazi/' . $data['article']['slug']]);`
 
-export default function SeoWebhookConnect({ onConnected }: Props) {
+export default function SeoWebhookConnect({ onConnected, defaultOpen = false }: Props) {
   const t = useTranslations('dashboard.seo.articles.sites.webhook')
 
-  const [open, setOpen] = useState(false)
+  const [open, setOpen] = useState(defaultOpen)
+  // WP uyumsuzluğu sonradan (localStorage/callback) anlaşılırsa paneli aç.
+  useEffect(() => { if (defaultOpen) setOpen(true) }, [defaultOpen])
   const [showDocs, setShowDocs] = useState(false)
   const [url, setUrl] = useState('')
   const [secret, setSecret] = useState('')

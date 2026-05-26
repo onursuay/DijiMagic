@@ -52,7 +52,6 @@ export default function SeoAutomationPanel() {
   const [tone, setTone] = useState('Samimi')
   const [wordCount, setWordCount] = useState(500)
   const [autoPublish, setAutoPublish] = useState(true)
-  const [generateImage, setGenerateImage] = useState(true)
   const [keywords, setKeywords] = useState<string[]>([])
   const [kwInput, setKwInput] = useState('')
   const [lastStatus, setLastStatus] = useState<string | null>(null)
@@ -86,7 +85,6 @@ export default function SeoAutomationPanel() {
         setTone(s.tone)
         setWordCount(s.word_count)
         setAutoPublish(s.auto_publish)
-        setGenerateImage(s.generate_image)
         setKeywords(s.keyword_pool || [])
         setLastStatus(s.last_status)
       }
@@ -118,7 +116,7 @@ export default function SeoAutomationPanel() {
         tone,
         wordCount,
         autoPublish,
-        generateImage,
+        generateImage: true, // her makaleye görsel otomatik üretilir — kullanıcıya seçenek sunulmaz
         keywordPool: keywords,
       }
       const res = await fetch(scheduleId ? `/api/seo/schedules/${scheduleId}` : '/api/seo/schedules', {
@@ -260,15 +258,11 @@ export default function SeoAutomationPanel() {
         </div>
       </div>
 
-      {/* Toggles */}
+      {/* Toggles — görsel üretimi otomatik & gizli (kullanıcı seçimine sunulmaz) */}
       <div className="space-y-2">
         <label className="flex items-center gap-2 cursor-pointer">
           <input type="checkbox" checked={autoPublish} onChange={(e) => setAutoPublish(e.target.checked)} className="w-4 h-4 rounded accent-purple-600" />
           <span className="text-sm text-gray-700">{t('autoPublish')}</span>
-        </label>
-        <label className="flex items-center gap-2 cursor-pointer">
-          <input type="checkbox" checked={generateImage} onChange={(e) => setGenerateImage(e.target.checked)} className="w-4 h-4 rounded accent-purple-600" />
-          <span className="text-sm text-gray-700">{t('generateImage')}</span>
         </label>
       </div>
 

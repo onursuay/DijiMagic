@@ -41,6 +41,25 @@ export default function SeoSitesPanel({ banner, profileUrl }: Props) {
   const [loading, setLoading] = useState(true)
   const [testingId, setTestingId] = useState<string | null>(null)
   const [testResult, setTestResult] = useState<Record<string, boolean>>({})
+  // Site WordPress tek-tık yayına uygun değilse (callback'te anlaşılır) yetkilendir kutusu tamamen kalkar,
+  // asıl yayın yolu webhook olur. Tarayıcıda kalıcı tutulur (profil URL'i başına).
+  const [wpIncompatible, setWpIncompatible] = useState(false)
+
+  const wpKey = profileUrl ? `yoai_seo_wp_incompatible:${profileUrl}` : null
+
+  // Daha önce uyumsuz işaretlendiyse hatırla.
+  useEffect(() => {
+    if (!wpKey) { setWpIncompatible(false); return }
+    try { setWpIncompatible(localStorage.getItem(wpKey) === '1') } catch { /* ignore */ }
+  }, [wpKey])
+
+  // Callback "site WordPress değil / yayına uygun değil" döndüyse kalıcı işaretle.
+  useEffect(() => {
+    if (wpKey && banner?.kind === 'error' && SOFT_REASONS.has(banner.reason || '')) {
+      try { localStorage.setItem(wpKey, '1') } catch { /* ignore */ }
+      setWpIncompatible(true)
+    }
+  }, [banner, wpKey])
 
   const fetchConnections = useCallback(async () => {
     setLoading(true)
@@ -200,8 +219,8 @@ export default function SeoSitesPanel({ banner, profileUrl }: Props) {
             </div>
           )}
 
-          {/* WordPress tek-tık (işletme profilindeki site) — henüz hiç hedef yokken */}
-          {connections.length === 0 && profileUrl && (
+          {/* WordPress tek-tık (işletme profilindeki site) — henüz hiç hedef yok + site uyumsuz işaretlenmemişken */}
+          {connections.length === 0 && profileUrl && !wpIncompatible && (
             <div className="border border-purple-200 rounded-xl p-4 bg-purple-50/30 space-y-3">
               <div>
                 <p className="text-xs font-medium text-gray-500">{t('yourSiteFromProfile')}</p>
@@ -218,6 +237,13 @@ export default function SeoSitesPanel({ banner, profileUrl }: Props) {
             </div>
           )}
 
+          {/* Site WordPress tek-tık yayına uygun değil → yetkilendir kutusu yok, nötr bilgi notu */}
+          {connections.length === 0 && profileUrl && wpIncompatible && (
+            <div className="bg-gray-50 border border-gray-200 rounded-lg p-3 text-sm text-gray-700 flex items-start gap-2">
+              <AlertCircle className="w-4 h-4 mt-0.5 shrink-0 text-gray-400" /> {t('wpIncompatibleNote')}
+            </div>
+          )}
+
           {/* İşletme profilinde web sitesi yok + hiç hedef yok → profili tamamla */}
           {connections.length === 0 && !profileUrl && (
             <div className="bg-primary/5 border border-primary/20 rounded-lg p-4">
@@ -231,8 +257,8 @@ export default function SeoSitesPanel({ banner, profileUrl }: Props) {
             </div>
           )}
 
-          {/* Her zaman: WordPress dışı / özel yazılım için webhook ile bağla */}
-          <SeoWebhookConnect onConnected={fetchConnections} />
+          {/* WordPress dışı / özel yazılım için webhook ile bağla — site uyumsuzsa asıl yol budur, otomatik açılır */}
+          <SeoWebhookConnect onConnected={fetchConnections} defaultOpen={connections.length === 0 && wpIncompatible} />
         </div>
       )}
     </div>

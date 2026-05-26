@@ -2813,6 +2813,7 @@
           "notAuthorizedDesc": "Makaleleri sitenize yayınlamak için bir kez yetki vermeniz gerekir.",
           "noProfileUrl": "İşletme profilinizde web sitesi adresi bulunamadı. Önce profilinizi tamamlayın.",
           "openProfile": "İşletme Profilini Aç",
+          "wpIncompatibleNote": "Web siteniz tek-tıkla otomatik yayına uygun değil. Aşağıdan kendi sisteminize webhook ile bağlanıp makalelerinizi otomatik gönderebilirsiniz.",
           "webhook": {
             "title": "Başka bir site / özel yazılım",
             "subtitle": "WordPress dışı bir siteye (özel yazılım, kendi sisteminiz) makaleleri webhook ile gönderin.",

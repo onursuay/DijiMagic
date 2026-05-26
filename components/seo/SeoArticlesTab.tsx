@@ -136,6 +136,46 @@ export default function SeoArticlesTab() {
 
   useEffect(() => { fetchArticles() }, [fetchArticles])
 
+  /* ═══════ Featured Image — her makaleye otomatik üretilir ═══════
+     silent: true  → otomatik akış (kaydetme sonrası); kredi yoksa sessizce atlar, modal açmaz.
+     silent: false → manuel "görseli yeniden üret" butonu; kredi yoksa AccessRequiredModal açar. */
+  const runImageGeneration = useCallback(async (article: Article, opts: { silent?: boolean } = {}) => {
+    if (!hasEnoughCredits()) {
+      if (!opts.silent) setShowCreditGate(true)
+      return
+    }
+    setImageGenId(article.id)
+    const ok = await spendCredits()
+    if (!ok) {
+      setImageGenId(null)
+      if (!opts.silent) setShowCreditGate(true)
+      return
+    }
+    try {
+      const prompt = `Professional blog header image about "${article.title || article.params?.keyword || ''}". Photorealistic, high quality, clean composition, no text or words in the image.`
+      const res = await fetch('/api/tasarim/generate-image', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ prompt, aspect_ratio: '16:9' }),
+      })
+      const data = await res.json()
+      if (data.url) {
+        await fetch(`/api/yoai/articles/${article.id}`, {
+          method: 'PATCH',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ featured_image_url: data.url, featured_image_alt: article.title }),
+        })
+        setArticles((prev) => prev.map((a) => (a.id === article.id ? { ...a, featured_image_url: data.url } : a)))
+      } else {
+        await refundCredits()
+      }
+    } catch {
+      await refundCredits()
+    } finally {
+      setImageGenId(null)
+    }
+  }, [hasEnoughCredits, spendCredits, refundCredits])
+
   /* ═══════ Generate Article (streaming) ═══════ */
   const handleGenerate = async () => {
     if (!keyword.trim()) return
@@ -220,6 +260,8 @@ export default function SeoArticlesTab() {
         setGeneratedTitle('')
         setKeyword('')
         setShowGenerator(false)
+        // Her yeni içeriğe görsel otomatik üretilir — kullanıcıya seçenek sunulmaz (arka planda, sessiz).
+        void runImageGeneration(data.article, { silent: true })
       }
     } catch { /* ignore */ }
     finally { setSaving(false) }
@@ -282,36 +324,8 @@ export default function SeoArticlesTab() {
     } catch { /* ignore */ }
   }
 
-  /* ═══════ Featured Image (manuel) ═══════ */
-  const handleGenerateImage = async (article: Article) => {
-    if (!hasEnoughCredits()) { setShowCreditGate(true); return }
-    setImageGenId(article.id)
-    const ok = await spendCredits()
-    if (!ok) { setImageGenId(null); setShowCreditGate(true); return }
-    try {
-      const prompt = `Professional blog header image about "${article.title || article.params?.keyword || ''}". Photorealistic, high quality, clean composition, no text or words in the image.`
-      const res = await fetch('/api/tasarim/generate-image', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ prompt, aspect_ratio: '16:9' }),
-      })
-      const data = await res.json()
-      if (data.url) {
-        await fetch(`/api/yoai/articles/${article.id}`, {
-          method: 'PATCH',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ featured_image_url: data.url, featured_image_alt: article.title }),
-        })
-        setArticles((prev) => prev.map((a) => (a.id === article.id ? { ...a, featured_image_url: data.url } : a)))
-      } else {
-        await refundCredits()
-      }
-    } catch {
-      await refundCredits()
-    } finally {
-      setImageGenId(null)
-    }
-  }
+  /* ═══════ Featured Image (manuel "yeniden üret" butonu) ═══════ */
+  const handleGenerateImage = (article: Article) => runImageGeneration(article, { silent: false })
 
   /* ═══════ Publish (site seçimli) ═══════ */
   const openPublish = async (article: Article) => {

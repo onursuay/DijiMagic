@@ -87,8 +87,9 @@ export const seoArticleGeneratePublish = inngest.createFunction(
       return { skipped: 'no_site_connection' }
     }
 
-    // 3) Kredi kontrolü (görsel üretilecekse)
-    const wantImage = schedule.generate_image && isImageReady()
+    // 3) Kredi kontrolü — her makaleye görsel otomatik üretilir (kullanıcı seçimine bakılmaz).
+    //    Yalnız görsel altyapısı hazır değilse (env eksik) atlanır.
+    const wantImage = isImageReady()
     if (wantImage) {
       const skip = await step.run('check-credits', async () => {
         const email = await getUserEmail(userId)
