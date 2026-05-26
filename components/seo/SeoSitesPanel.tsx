@@ -64,6 +64,8 @@ export default function SeoSitesPanel({ banner, profileUrl }: Props) {
       case 'test_failed': return t('errTestFailed')
       case 'site_mismatch': return t('errSiteMismatch')
       case 'save_failed': return t('errSaveFailed')
+      case 'rest_blocked': return t('errRestBlocked')
+      case 'no_app_passwords': return t('errNoAppPasswords')
       default: return t('errGeneric')
     }
   }

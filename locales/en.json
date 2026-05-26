@@ -2799,6 +2799,8 @@
           "errSiteMismatch": "The approved site does not match the entered address.",
           "errSaveFailed": "Could not save the connection.",
           "errGeneric": "An error occurred.",
+          "errRestBlocked": "This site's WordPress REST API is not reachable (a firewall may be blocking it). Automatic publishing requires the REST API to be publicly accessible. You can still generate and edit articles.",
+          "errNoAppPasswords": "Application Passwords is disabled on this WordPress site. Ask the site admin to enable it, or download the articles and add them manually.",
           "publishTarget": "Publish Target",
           "publishTargetDesc": "Your articles are published to the website in your business profile.",
           "yourSiteFromProfile": "Your website (from your business profile)",

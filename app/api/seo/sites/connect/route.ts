@@ -55,6 +55,8 @@ export async function GET(request: Request) {
   }
 
   // WP REST API + Application Passwords desteğini doğrula, authorize endpoint'ini al.
+  // Site WordPress değilse / REST API kapalıysa kullanıcıyı authorize ekranına
+  // GÖNDERME — önce net hata ile geri döndür (403 ekranı yaşatma).
   let authEndpoint = `${site}/wp-admin/authorize-application.php`
   try {
     const probe = await fetch(`${site}/wp-json/`, { headers: { Accept: 'application/json' } })
@@ -63,8 +65,16 @@ export async function GET(request: Request) {
         authentication?: { 'application-passwords'?: { endpoints?: { authorization?: string } } }
       }
       const ep = data?.authentication?.['application-passwords']?.endpoints?.authorization
-      if (ep) authEndpoint = ep
-    } else if (probe.status === 404) {
+      if (ep) {
+        authEndpoint = ep
+      } else {
+        // WordPress ama uygulama şifresi (application passwords) desteği yok/kapalı
+        return NextResponse.redirect(new URL(seoUrl('site=error&reason=no_app_passwords'), origin), { status: 302 })
+      }
+    } else if (probe.status === 401 || probe.status === 403) {
+      // REST API güvenlik duvarı/koruma ile kapalı — otomatik yayın yapılamaz
+      return NextResponse.redirect(new URL(seoUrl('site=error&reason=rest_blocked'), origin), { status: 302 })
+    } else {
       return NextResponse.redirect(new URL(seoUrl('site=error&reason=not_wordpress'), origin), { status: 302 })
     }
   } catch {

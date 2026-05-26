@@ -117,6 +117,18 @@ export default function SeoArticlesTab() {
 
   useEffect(() => { fetchProfileUrl() }, [fetchProfileUrl])
 
+  /* ═══════ Yayın hedefi yoksa varsayılan görünüm = Kurulum ═══════ */
+  const checkInitialView = useCallback(async () => {
+    try {
+      const res = await fetch('/api/seo/sites', { cache: 'no-store' })
+      const data = await res.json()
+      // Henüz yayın hedefi yetkilendirilmemişse kullanıcıyı doğrudan kuruluma al
+      if (data.ok && data.connections.length === 0) setView('setup')
+    } catch { /* ignore */ }
+  }, [])
+
+  useEffect(() => { checkInitialView() }, [checkInitialView])
+
   /* ═══════ Fetch Articles ═══════ */
   const fetchArticles = useCallback(async () => {
     setLoading(true)

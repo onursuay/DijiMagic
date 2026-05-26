@@ -2799,6 +2799,8 @@
           "errSiteMismatch": "Onaylanan site, girilen adresle eşleşmiyor.",
           "errSaveFailed": "Bağlantı kaydedilemedi.",
           "errGeneric": "Bir hata oluştu.",
+          "errRestBlocked": "Bu sitenin WordPress REST API'sine erişilemiyor (güvenlik duvarı engelliyor olabilir). Otomatik yayın için REST API'nin dışarı açık olması gerekir. Makaleleri yine de üretip düzenleyebilirsiniz.",
+          "errNoAppPasswords": "Bu WordPress sitesinde Uygulama Şifresi (Application Passwords) özelliği kapalı. Site yöneticisinden açmasını isteyin veya makaleleri indirip elle ekleyin.",
           "publishTarget": "Yayın Hedefi",
           "publishTargetDesc": "Makaleleriniz işletme profilinizdeki web sitesine yayınlanır.",
           "yourSiteFromProfile": "Web siteniz (işletme profilinizden)",
