@@ -6,9 +6,10 @@ import { useSearchParams, useRouter } from 'next/navigation'
 import {
   Loader2, FileText, Pencil, Trash2, Eye, EyeOff,
   AlertCircle, X, Save, Plus, Sparkles, Send,
-  Globe, ChevronDown, ChevronUp, Image as ImageIcon, Settings,
+  Globe, ChevronDown, ChevronUp, Image as ImageIcon, Settings, Copy, Download, Check,
 } from 'lucide-react'
 import ReactMarkdown from 'react-markdown'
+import { marked } from 'marked'
 import { useCredits } from '@/components/providers/CreditProvider'
 import { useSubscription } from '@/components/providers/SubscriptionProvider'
 import AccessRequiredModal from '@/components/billing/AccessRequiredModal'
@@ -79,6 +80,7 @@ export default function SeoArticlesTab() {
 
   // Preview modal
   const [previewArticle, setPreviewArticle] = useState<Article | null>(null)
+  const [copied, setCopied] = useState(false)
 
   // Publish modal
   const [publishArticle, setPublishArticle] = useState<Article | null>(null)
@@ -368,6 +370,35 @@ export default function SeoArticlesTab() {
     }
   }
 
+  /* ═══════ Kopyala / İndir (yayın yapılamayan siteler için) ═══════ */
+  const handleCopy = async (article: Article) => {
+    try {
+      await navigator.clipboard.writeText(article.content)
+      setCopied(true)
+      setTimeout(() => setCopied(false), 2000)
+    } catch { /* ignore */ }
+  }
+
+  const handleDownloadHtml = async (article: Article) => {
+    const bodyHtml = await marked(article.content)
+    const img = article.featured_image_url
+      ? `<img src="${article.featured_image_url}" alt="${article.featured_image_alt || ''}" style="max-width:100%;height:auto;"/>`
+      : ''
+    const meta = article.meta_description
+      ? `<meta name="description" content="${article.meta_description.replace(/"/g, '&quot;')}">`
+      : ''
+    const full = `<!DOCTYPE html>
+<html lang="tr"><head><meta charset="utf-8">${meta}<title>${article.title}</title></head>
+<body>${img}<h1>${article.title}</h1>${bodyHtml}</body></html>`
+    const blob = new Blob([full], { type: 'text/html;charset=utf-8' })
+    const url = URL.createObjectURL(blob)
+    const a = document.createElement('a')
+    a.href = url
+    a.download = `${article.slug || 'makale'}.html`
+    a.click()
+    URL.revokeObjectURL(url)
+  }
+
   /* ═══════ Render ═══════ */
   if (loading || subLoading) {
     return (
@@ -639,9 +670,26 @@ export default function SeoArticlesTab() {
       {previewArticle && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40">
           <div className="bg-white rounded-xl shadow-xl w-full max-w-3xl max-h-[90vh] flex flex-col m-4">
-            <div className="flex items-center justify-between px-5 py-4 border-b border-gray-200">
-              <h3 className="text-base font-semibold text-gray-900">{previewArticle.title || '(—)'}</h3>
-              <button onClick={() => setPreviewArticle(null)} className="p-1 text-gray-400 hover:text-gray-600"><X className="w-5 h-5" /></button>
+            <div className="flex items-center justify-between px-5 py-4 border-b border-gray-200 gap-2">
+              <h3 className="text-base font-semibold text-gray-900 truncate flex-1">{previewArticle.title || '(—)'}</h3>
+              <div className="flex items-center gap-1.5 shrink-0">
+                <button
+                  onClick={() => handleCopy(previewArticle)}
+                  className="inline-flex items-center gap-1 px-2.5 py-1.5 text-xs text-gray-600 border border-gray-300 rounded-lg hover:bg-gray-50"
+                  title={t('copy')}
+                >
+                  {copied ? <Check className="w-3.5 h-3.5 text-emerald-600" /> : <Copy className="w-3.5 h-3.5" />}
+                  {copied ? t('copied') : t('copy')}
+                </button>
+                <button
+                  onClick={() => handleDownloadHtml(previewArticle)}
+                  className="inline-flex items-center gap-1 px-2.5 py-1.5 text-xs text-gray-600 border border-gray-300 rounded-lg hover:bg-gray-50"
+                  title={t('downloadHtml')}
+                >
+                  <Download className="w-3.5 h-3.5" /> {t('downloadHtml')}
+                </button>
+                <button onClick={() => setPreviewArticle(null)} className="p-1 text-gray-400 hover:text-gray-600"><X className="w-5 h-5" /></button>
+              </div>
             </div>
             <div className="flex-1 overflow-y-auto p-5 prose prose-sm max-w-none">
               {previewArticle.featured_image_url && (

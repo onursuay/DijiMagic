@@ -2762,6 +2762,9 @@
         "publishSuccessToast": "Makale yayınlandı!",
         "publishErrorToast": "Yayınlama başarısız oldu",
         "noSiteForPublish": "Önce bir site bağlayın.",
+        "copy": "Kopyala",
+        "copied": "Kopyalandı",
+        "downloadHtml": "HTML İndir",
         "sites": {
           "title": "Sitelerim",
           "description": "Makalelerinizi yayınlamak için web sitenizi bağlayın.",

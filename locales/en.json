@@ -2762,6 +2762,9 @@
         "publishSuccessToast": "Article published!",
         "publishErrorToast": "Publishing failed",
         "noSiteForPublish": "Connect a site first.",
+        "copy": "Copy",
+        "copied": "Copied",
+        "downloadHtml": "Download HTML",
         "sites": {
           "title": "My Sites",
           "description": "Connect your website to publish your articles.",
