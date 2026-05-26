@@ -2,6 +2,11 @@
 
 ---
 
+## 2026-05-26 — SEO Yayın Hedefi: dili WordPress'ten arındırma + nötr bağlanamama uyarısı
+- **Sorun:** Yayın hedefi akışındaki tüm metinler "WordPress" varsayıyordu (hata mesajları, yetkilendirme ipucu, otomasyon uyarısı). Sitesi WordPress olmayan (özel yazılım / hazır sistem) kullanıcılar hem yanlış yönlendiriliyor hem de bağlanamayınca ürkütücü kırmızı "WordPress REST API erişilemiyor" hatası görüyordu.
+- **Çözüm:** Kullanıcı-yüzlü metinler platform-bağımsız hale getirildi (`errNotWordpress`, `errRestBlocked`, `errNoAppPasswords`, `authorizeHint`, `noSiteWarning`) — WordPress yalnızca tek-tık bağlantının koşullu bir seçeneği olarak anılıyor, her durumda çalışan **Kopyala / HTML İndir** elle yayın yolu öne çıkarıldı. Bağlanamama bannerı, "site otomatik yayına uygun değil" anlamına gelen sebeplerde (not_wordpress / rest_blocked / no_app_passwords) kırmızı hata yerine nötr gri bilgi kutusuna çevrildi. EN/TR uyumlu; amber/sarı yok; bağlantı mekanizması (WP Application Passwords) ve Meta/Google entegrasyonuna dokunulmadı.
+- **Dosyalar:** `components/seo/SeoSitesPanel.tsx`, `locales/tr.json`, `locales/en.json`
+
 ## 2026-05-26 — SEO İçerikler: "Yeni İçerik" butonu konumu + bağlı site yokken boş "Hedef Site" dropdown'u
 - **Sorun:** (1) "Yeni İçerik" butonu sekmenin en üstündeydi; tıklayınca açtığı üretici form "Yayın Hedefi" ve "Üretim Ayarları" panellerinin **altında** render edildiğinden görünür alanın çok altında açılıyor, kullanıcıya buton "çalışmıyor" gibi görünüyordu. (2) Üretim Ayarları'nda bağlı site yokken "Hedef Site" dropdown'u boş/seçeneksiz kalıyor, kaydedilemeyen yarım bir form bozuk görünüyordu.
 - **Çözüm:** (1) Buton üst başlıktan alınıp panellerin altına, yeni "Makalelerim" başlığıyla aynı satıra taşındı — üretici form artık butonun hemen altında, görünür açılıyor. (2) `noSites` durumunda boş dropdown'lı form gizlenip yerine net bir bilgilendirme gösteriliyor (otomatik üretim için önce yayın hedefi bağlanmalı; bağlı site yokken makaleler elle üretilip Kopyala/HTML İndir ile kullanılabilir). EN/TR i18n (`myArticles` eklendi, `noSiteWarning` zenginleştirildi); amber/sarı yok; Meta/Google entegrasyonuna dokunulmadı.
