@@ -43,9 +43,29 @@ interface SiteOption {
   baseUrl: string
 }
 
+interface Props {
+  /** Analiz tabında analiz edilen aktif site URL'i — İçerikler bu siteye göre hareket eder.
+      Null ise işletme profilindeki web sitesine düşülür (fallback). */
+  activeSiteUrl?: string | null
+}
+
+/** URL'i karşılaştırılabilir host'a indirger: protokol, www ve path/query atılır. */
+function normalizeSiteHost(raw?: string | null): string | null {
+  if (!raw) return null
+  let s = raw.trim().toLowerCase()
+  if (!s) return null
+  if (!/^https?:\/\//.test(s)) s = `https://${s}`
+  try {
+    const host = new URL(s).hostname.replace(/^www\./, '')
+    return host || null
+  } catch {
+    return null
+  }
+}
+
 /* ═══════ Main Component ═══════ */
 
-export default function SeoArticlesTab() {
+export default function SeoArticlesTab({ activeSiteUrl }: Props) {
   const t = useTranslations('dashboard.seo.articles')
   const searchParams = useSearchParams()
   const router = useRouter()
@@ -117,6 +137,18 @@ export default function SeoArticlesTab() {
   }, [])
 
   useEffect(() => { fetchProfileUrl() }, [fetchProfileUrl])
+
+  /* ═══════ Etkin site (İçerikler bu URL'e göre hareket eder) ═══════
+     Analiz tabındaki aktif URL öncelikli; yoksa işletme profili URL'ine düşülür. */
+  const effectiveSiteUrl = activeSiteUrl ?? profileUrl
+  const activeHost = normalizeSiteHost(effectiveSiteUrl)
+  // Makaleler etkin siteye göre listelenir. siteUrl'i atanmamış (eski) makaleler her sitede görünür kalır.
+  const visibleArticles = activeHost
+    ? articles.filter((a) => {
+        const h = normalizeSiteHost(a.params?.siteUrl)
+        return !h || h === activeHost
+      })
+    : articles
 
   /* ═══════ Fetch Articles ═══════ */
   const fetchArticles = useCallback(async () => {
@@ -193,7 +225,7 @@ export default function SeoArticlesTab() {
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
           category: 'seo_article',
-          params: { keyword: keyword.trim(), wordCount, tone },
+          params: { keyword: keyword.trim(), wordCount, tone, ...(effectiveSiteUrl ? { siteUrl: effectiveSiteUrl } : {}) },
         }),
         signal: controller.signal,
       })
@@ -249,7 +281,7 @@ export default function SeoArticlesTab() {
           title: generatedTitle || `${keyword} - SEO`,
           content: generatedContent,
           category: 'seo_article',
-          params: { keyword, wordCount, tone },
+          params: { keyword, wordCount, tone, ...(effectiveSiteUrl ? { siteUrl: effectiveSiteUrl } : {}) },
           word_count: generatedContent.split(/\s+/).filter(Boolean).length,
         }),
       })
@@ -433,15 +465,20 @@ export default function SeoArticlesTab() {
         <h2 className="text-lg font-semibold text-gray-900">{t('title')}</h2>
       </div>
 
-      {/* Yayın Hedefi (profil URL'inden) + Üretim Ayarları — tek akış */}
-      <SeoSitesPanel banner={siteBanner} profileUrl={profileUrl} />
+      {/* Yayın Hedefi (etkin site URL'inden = analiz tabındaki aktif URL) + Üretim Ayarları — tek akış */}
+      <SeoSitesPanel banner={siteBanner} profileUrl={effectiveSiteUrl} />
       <SeoAutomationPanel />
 
       {/* Makale yönetimi başlığı + Yeni İçerik (üretici form hemen altında açılır) */}
       <div className="flex items-center justify-between flex-wrap gap-2 pt-2">
-        <h3 className="text-base font-semibold text-gray-900 flex items-center gap-2">
-          <FileText className="w-4 h-4 text-gray-400" /> {t('myArticles')}
-        </h3>
+        <div className="min-w-0">
+          <h3 className="text-base font-semibold text-gray-900 flex items-center gap-2">
+            <FileText className="w-4 h-4 text-gray-400" /> {t('myArticles')}
+          </h3>
+          {effectiveSiteUrl && (
+            <p className="text-xs text-gray-500 mt-0.5 truncate">{t('showingForSite', { site: effectiveSiteUrl })}</p>
+          )}
+        </div>
         <button
           onClick={() => setShowGenerator((v) => !v)}
           className="inline-flex items-center gap-1.5 px-3 py-1.5 text-sm text-white bg-purple-600 rounded-lg hover:bg-purple-700 transition-colors"
@@ -537,17 +574,26 @@ export default function SeoArticlesTab() {
         </div>
       )}
 
-      {/* Empty State — tek 'Yeni Makale' butonu header'da; burada sadece yönlendirme */}
-      {!articles.length && !showGenerator && (
+      {/* Empty State — etkin siteye göre. Hiç makale yoksa genel; makale var ama bu siteye ait yoksa site-özel mesaj. */}
+      {!visibleArticles.length && !showGenerator && (
         <div className="text-center py-16">
           <FileText className="w-12 h-12 text-gray-200 mx-auto mb-4" />
-          <h3 className="text-base font-semibold text-gray-700 mb-1">{t('empty')}</h3>
-          <p className="text-sm text-gray-500">{t('emptyDescription')}</p>
+          {articles.length > 0 ? (
+            <>
+              <h3 className="text-base font-semibold text-gray-700 mb-1">{t('emptyForSite')}</h3>
+              <p className="text-sm text-gray-500">{t('emptyForSiteDescription')}</p>
+            </>
+          ) : (
+            <>
+              <h3 className="text-base font-semibold text-gray-700 mb-1">{t('empty')}</h3>
+              <p className="text-sm text-gray-500">{t('emptyDescription')}</p>
+            </>
+          )}
         </div>
       )}
 
-      {/* Article list */}
-      {articles.length > 0 && (
+      {/* Article list — etkin siteye göre filtrelenmiş */}
+      {visibleArticles.length > 0 && (
         <div className="bg-white border border-gray-200 rounded-xl overflow-hidden">
           <table className="w-full text-sm">
             <thead>
@@ -560,7 +606,7 @@ export default function SeoArticlesTab() {
               </tr>
             </thead>
             <tbody>
-              {articles.map((article) => (
+              {visibleArticles.map((article) => (
                 <tr key={article.id} className="border-b border-gray-100 hover:bg-gray-50 transition-colors">
                   <td className="px-4 py-3">
                     <div className="flex items-center gap-3">

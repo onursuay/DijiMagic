@@ -1167,7 +1167,8 @@ export default function SEOPage() {
           {activeTab === 'tools' && <SeoToolsTab />}
 
           {/* ════════════ ARTICLES TAB ════════════ */}
-          {activeTab === 'articles' && <SeoArticlesTab />}
+          {/* İçerikler alanı, analiz tabında analiz edilen aktif URL'i takip eder (kullanıcı URL'i değiştirip yeniden analiz edince ayak uydurur) */}
+          {activeTab === 'articles' && <SeoArticlesTab activeSiteUrl={result?.url ?? null} />}
 
         </div>
       </div>

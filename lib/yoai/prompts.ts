@@ -32,7 +32,8 @@ Gereksiz açıklama yapma, doğrudan içeriği üret.`
 
 - Anahtar kelime: ${params.keyword}
 - Hedef kelime sayısı: ${params.wordCount} kelime (EN FAZLA 600 kelime)
-- Ton: ${params.tone}
+- Ton: ${params.tone}${params.siteUrl ? `
+- Web sitesi / marka bağlamı: ${params.siteUrl} (içeriği bu sitenin sektörüne, ürün/hizmetlerine ve hedef kitlesine uygun şekilde, o markanın sesiyle üret)` : ''}
 
 ## KURALLAR:
 - H1, H2, H3 başlık hiyerarşisini uygula
