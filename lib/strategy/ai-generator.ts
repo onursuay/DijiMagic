@@ -1,6 +1,7 @@
 import type { InputPayload, Blueprint, Persona, CreativeTheme, Experiment, Risk, TaskSeed } from './types'
 import { generateBlueprint as generateTemplateBased } from './blueprint-generator'
-import { strategyClaudeText, extractJsonText, isAnthropicReady } from './claude'
+import { strategyClaudeText, isAnthropicReady } from './claude'
+import { extractJsonObject } from '@/lib/anthropic/text'
 
 // ════════════════════════════════════════════════════════════
 // AI-Powered Blueprint Generator (Claude — projenin standart motoru)
@@ -121,35 +122,46 @@ function integrationLabel(status?: string): string {
 export async function generateBlueprintWithAI(
   input: InputPayload,
   businessContextPromptBlock?: string | null,
-): Promise<{ blueprint: Blueprint; aiGenerated: boolean }> {
+): Promise<{ blueprint: Blueprint; aiGenerated: boolean; fallbackReason?: string }> {
   if (!isAnthropicReady()) {
     console.log('[Strategy AI] ANTHROPIC_API_KEY yok, template fallback kullanılıyor')
-    return { blueprint: generateTemplateBased(input), aiGenerated: false }
+    return { blueprint: generateTemplateBased(input), aiGenerated: false, fallbackReason: 'no_api_key' }
   }
 
+  let stage: 'call' | 'parse' = 'call'
   try {
     const content = await strategyClaudeText({
       system: SYSTEM_PROMPT,
-      user: businessContextPromptBlock ? `${businessContextPromptBlock}\n\n${buildUserPrompt(input)}` : buildUserPrompt(input),
-      maxTokens: 4000,
+      user: (businessContextPromptBlock ? `${businessContextPromptBlock}\n\n${buildUserPrompt(input)}` : buildUserPrompt(input))
+        + '\n\nSADECE geçerli bir JSON objesi döndür. Açıklama, başlık veya kod bloğu ekleme.',
+      // Tam blueprint JSON'u 4000 token'a sığmıyor → kesiliyor → parse hatası →
+      // her seferinde şablona düşüyordu. 8000'e çıkarıldı.
+      maxTokens: 8000,
       temperature: 0.4,
-      // 30s çoğu zaman stratejik JSON üretimine yetmiyordu → şablona düşüyordu.
-      // maxDuration=60 ile fonksiyon bütçesi içinde 55s'ye çıkarıldı.
       timeoutMs: 55000,
     })
 
-    // Parse JSON (markdown code block varsa temizle)
-    const raw = JSON.parse(extractJsonText(content))
+    stage = 'parse'
+    // Robust ayıklama (önek metin / kod bloğu toleranslı) — naif parse JSON'u kaçırıyordu
+    const raw = JSON.parse(extractJsonObject(content))
 
-    // Validate & normalize
     const blueprint = validateBlueprint(raw, input)
 
     console.log('[Strategy AI] Blueprint başarıyla üretildi (Claude)')
     return { blueprint, aiGenerated: true }
 
-  } catch (err) {
-    console.error('[Strategy AI] Hata, template fallback kullanılıyor:', err)
-    return { blueprint: generateTemplateBased(input), aiGenerated: false }
+  } catch (err: unknown) {
+    // Teşhis nedeni — UI'da gösterilir, gerçek kök sebebi görmek için
+    const e = err as { status?: number; message?: string; error?: { error?: { type?: string } } }
+    const apiStatus = e?.status
+    const apiType = e?.error?.error?.type
+    const reason = stage === 'parse'
+      ? 'parse_error — model JSON yerine metin döndü ya da çıktı kesildi (max_tokens)'
+      : apiStatus
+        ? `api_${apiStatus}${apiType ? ` ${apiType}` : ''}`
+        : (e?.message ? e.message.slice(0, 140) : 'unknown_error')
+    console.error('[Strategy AI] Template fallback — neden:', reason, err)
+    return { blueprint: generateTemplateBased(input), aiGenerated: false, fallbackReason: reason }
   }
 }
 

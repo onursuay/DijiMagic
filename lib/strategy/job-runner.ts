@@ -221,11 +221,11 @@ async function runGeneratePlanJob(job: SyncJob): Promise<void> {
     businessContextPromptBlock = await loadStrategyBusinessContext(job.strategy_instance_id)
   }
 
-  const { blueprint, aiGenerated } = await generateBlueprintWithAI(cleanPayload as InputPayload, businessContextPromptBlock)
+  const { blueprint, aiGenerated, fallbackReason } = await generateBlueprintWithAI(cleanPayload as InputPayload, businessContextPromptBlock)
 
   await supabase.from('sync_jobs').update({
     progress: 80,
-    result: { ai_generated: aiGenerated },
+    result: { ai_generated: aiGenerated, ai_fallback_reason: fallbackReason ?? null },
   }).eq('id', job.id)
 
   // Mevcut versiyon al

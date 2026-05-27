@@ -44,6 +44,7 @@ export default function StratejiDetailPage() {
   const [retrying, setRetrying] = useState(false)
   const [refreshingMetrics, setRefreshingMetrics] = useState(false)
   const [aiGenerated, setAiGenerated] = useState(false)
+  const [aiFallbackReason, setAiFallbackReason] = useState<string | null>(null)
   const [toasts, setToasts] = useState<Toast[]>([])
 
   const pollRef = useRef<ReturnType<typeof setInterval> | null>(null)
@@ -71,6 +72,7 @@ export default function StratejiDetailPage() {
       setJobs(json.jobs ?? [])
       setMetrics(json.metrics ?? [])
       setAiGenerated(!!json.aiGenerated)
+      setAiFallbackReason(json.aiFallbackReason ?? null)
 
       // Auto-tab based on phase
       const status = json.instance?.status
@@ -393,6 +395,7 @@ export default function StratejiDetailPage() {
                   regenerating={regenerating}
                   approving={approving}
                   aiGenerated={aiGenerated}
+                  aiFallbackReason={aiFallbackReason}
                 />
               ) : (
                 <div className="text-center py-12 text-sm text-gray-400">

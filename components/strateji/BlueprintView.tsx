@@ -11,11 +11,12 @@ interface BlueprintViewProps {
   regenerating: boolean
   approving: boolean
   aiGenerated?: boolean
+  aiFallbackReason?: string | null
 }
 
 type CardId = 'kpi' | 'funnel' | 'channel' | 'personas' | 'creatives' | 'experiments' | 'risks' | 'tasks'
 
-export default function BlueprintView({ blueprint, onRegenerate, onApprove, regenerating, approving, aiGenerated }: BlueprintViewProps) {
+export default function BlueprintView({ blueprint, onRegenerate, onApprove, regenerating, approving, aiGenerated, aiFallbackReason }: BlueprintViewProps) {
   const [openCard, setOpenCard] = useState<CardId | null>(null)
 
   const toggle = (id: CardId) => setOpenCard(prev => prev === id ? null : id)
@@ -90,6 +91,9 @@ export default function BlueprintView({ blueprint, onRegenerate, onApprove, rege
         {!aiGenerated && aiGenerated !== undefined && (
           <p className="text-[10px] text-gray-600 mt-2 bg-gray-100 rounded-lg px-2 py-1">
             AI motoru şu an kullanılamadı — şablon tabanlı strateji üretildi. Birazdan tekrar deneyebilirsiniz.
+            {aiFallbackReason && (
+              <span className="block mt-1 font-mono text-gray-500">Teşhis: {aiFallbackReason}</span>
+            )}
           </p>
         )}
       </div>

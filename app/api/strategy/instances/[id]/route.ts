@@ -67,7 +67,10 @@ export async function GET(_request: Request, { params }: { params: Promise<{ id:
 
   // AI mi template mi kullanıldığını belirle (generate_plan job result'tan)
   const generateJob = (jobsRes.data ?? []).find((j: Record<string, unknown>) => j.job_type === 'generate_plan' && j.status === 'success')
-  const aiGenerated = !!(generateJob?.result as Record<string, unknown> | null)?.ai_generated
+  const genResult = (generateJob?.result as Record<string, unknown> | null) ?? null
+  const aiGenerated = !!genResult?.ai_generated
+  // Şablona düşüldüyse nedeni (teşhis) — UI'da gösterilir
+  const aiFallbackReason = (genResult?.ai_fallback_reason as string | null) ?? null
 
   return NextResponse.json({
     ok: true,
@@ -78,6 +81,7 @@ export async function GET(_request: Request, { params }: { params: Promise<{ id:
     jobs: jobsRes.data ?? [],
     metrics: metricsRes.data ?? [],
     aiGenerated,
+    aiFallbackReason,
   })
 }
 
