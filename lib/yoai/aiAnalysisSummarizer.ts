@@ -2,10 +2,11 @@
    AI Analysis Summarizer
    Takes deterministic analysis results, sends to AI for
    Turkish summaries, prioritization, and actionable recs.
-   Primary: OpenAI, Fallback: Claude API.
+   Tek AI sağlayıcısı: Claude. Hata/anahtar yoksa deterministik fallback.
    ────────────────────────────────────────────────────────── */
 
 import type { DeepCampaignInsight, AISummary, DeepAction, DeepActionDraft } from './analysisTypes'
+import { claudeText } from '@/lib/anthropic/text'
 
 /* ── Compact campaign data for AI ── */
 function buildCampaignContext(campaigns: DeepCampaignInsight[]): string {
@@ -86,73 +87,15 @@ SADECE aşağıdaki JSON formatında yanıt ver:
   ]
 }`
 
-/* ── Call AI (OpenAI primary, Claude fallback) ── */
+/* ── Call AI (Claude — tek sağlayıcı) ── */
 async function callAI(userMessage: string): Promise<string | null> {
-  // 1. Try OpenAI
-  const openaiKey = process.env.OPENAI_API_KEY
-  if (openaiKey) {
-    try {
-      const baseUrl = process.env.OPENAI_BASE_URL || 'https://api.openai.com/v1'
-      const model = process.env.OPENAI_MODEL || 'gpt-4o-mini'
-
-      const res = await fetch(`${baseUrl}/chat/completions`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${openaiKey}` },
-        body: JSON.stringify({
-          model,
-          messages: [
-            { role: 'system', content: SYSTEM_PROMPT },
-            { role: 'user', content: userMessage },
-          ],
-          temperature: 0.3,
-          max_tokens: 4000,
-          response_format: { type: 'json_object' },
-        }),
-        signal: AbortSignal.timeout(30000),
-      })
-
-      if (res.ok) {
-        const data = await res.json()
-        return data.choices?.[0]?.message?.content ?? null
-      }
-      console.error('[AISummarizer] OpenAI error:', res.status)
-    } catch (e) {
-      console.error('[AISummarizer] OpenAI failed:', e)
-    }
-  }
-
-  // 2. Fallback to Claude
-  const claudeKey = process.env.ANTHROPIC_API_KEY
-  if (claudeKey) {
-    try {
-      const res = await fetch('https://api.anthropic.com/v1/messages', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          'x-api-key': claudeKey,
-          'anthropic-version': '2023-06-01',
-        },
-        body: JSON.stringify({
-          model: 'claude-sonnet-4-20250514',
-          max_tokens: 4000,
-          system: SYSTEM_PROMPT,
-          messages: [{ role: 'user', content: userMessage }],
-        }),
-        signal: AbortSignal.timeout(30000),
-      })
-
-      if (res.ok) {
-        const data = await res.json()
-        const text = data.content?.[0]?.text
-        return text ?? null
-      }
-      console.error('[AISummarizer] Claude error:', res.status)
-    } catch (e) {
-      console.error('[AISummarizer] Claude failed:', e)
-    }
-  }
-
-  return null
+  return claudeText({
+    system: SYSTEM_PROMPT,
+    user: `${userMessage}\n\nSADECE yukarıda tanımlanan JSON formatında yanıt ver.`,
+    maxTokens: 4000,
+    temperature: 0.3,
+    timeoutMs: 30000,
+  })
 }
 
 /* ── Deterministic Fallback ── */
@@ -273,7 +216,15 @@ export async function summarizeWithAI(campaigns: DeepCampaignInsight[]): Promise
   }
 
   try {
-    const parsed = JSON.parse(aiContent)
+    // Claude bazen JSON'u kod bloğu/önek metinle döndürebilir — toleranslı ayıkla.
+    const fence = aiContent.match(/```(?:json)?\s*([\s\S]*?)```/i)
+    const candidate = fence ? fence[1] : aiContent
+    const jStart = candidate.indexOf('{')
+    const jEnd = candidate.lastIndexOf('}')
+    const jsonText = jStart !== -1 && jEnd !== -1 && jEnd > jStart
+      ? candidate.slice(jStart, jEnd + 1)
+      : candidate
+    const parsed = JSON.parse(jsonText)
 
     const summaries: AISummary[] = Array.isArray(parsed.summaries)
       ? parsed.summaries.map((s: AISummary) => ({

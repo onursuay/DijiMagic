@@ -1,6 +1,7 @@
 import 'server-only'
 import { supabase } from '@/lib/supabase/client'
 import { getProfileByUserId, getIntelligenceByUserId } from '@/lib/yoai/businessProfileStore'
+import { claudeText } from '@/lib/anthropic/text'
 
 /**
  * Otomatik makale akışı için günlük SEO konusu/anahtar kelime seçimi.
@@ -67,11 +68,6 @@ async function aiSelectKeyword(
   recentTitles: string[],
   language: 'tr' | 'en'
 ): Promise<string | null> {
-  const apiKey = process.env.OPENAI_API_KEY
-  if (!apiKey) return null
-  const baseUrl = process.env.OPENAI_BASE_URL || 'https://api.openai.com/v1'
-  const model = process.env.OPENAI_MODEL || 'gpt-4o-mini'
-
   const langName = language === 'en' ? 'English' : 'Türkçe'
   const recent = recentTitles.length
     ? `\n\nZaten yayınlanmış başlıklar (bunlardan FARKLI, çakışmayan bir konu seç):\n${recentTitles.map((t) => `- ${t}`).join('\n')}`
@@ -83,24 +79,9 @@ ${businessContext || '(bağlam yok — sektörel genel bir konu seç)'}${recent}
 
 SADECE anahtar kelime/konu ifadesini döndür (3-6 kelime), başka hiçbir şey yazma.`
 
-  try {
-    const res = await fetch(`${baseUrl}/chat/completions`, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${apiKey}` },
-      body: JSON.stringify({
-        model,
-        messages: [{ role: 'user', content: prompt }],
-        temperature: 0.8,
-        max_tokens: 40,
-      }),
-    })
-    if (!res.ok) return null
-    const data = (await res.json()) as { choices?: { message?: { content?: string } }[] }
-    const kw = data.choices?.[0]?.message?.content?.trim().replace(/^["'•\-\s]+|["'\s]+$/g, '')
-    return kw || null
-  } catch {
-    return null
-  }
+  const text = await claudeText({ user: prompt, maxTokens: 60, temperature: 0.8 })
+  const kw = text?.trim().replace(/^["'•\-\s]+|["'\s]+$/g, '')
+  return kw || null
 }
 
 export async function selectDailyTopic(

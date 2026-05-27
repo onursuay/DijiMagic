@@ -14,6 +14,7 @@
    ────────────────────────────────────────────────────────── */
 
 import type { CampaignIntentProfile } from './campaignIntentEngine'
+import { claudeJson, isClaudeReady } from '@/lib/anthropic/text'
 
 // ── Types ──────────────────────────────────────────────────────────────────────
 
@@ -333,8 +334,7 @@ async function enhanceWithLLM(
   plan: CompetitorQueryPlan,
   input: QueryExpanderInput,
 ): Promise<CompetitorQueryPlan> {
-  const openaiKey = process.env.OPENAI_API_KEY
-  if (!openaiKey) return plan
+  if (!isClaudeReady()) return plan
 
   const { intentProfile, campaignName, platform } = input
   const platformLabel =
@@ -367,29 +367,15 @@ Ek bağlamsal sorgular öner:
 }`
 
   try {
-    const baseUrl = process.env.OPENAI_BASE_URL || 'https://api.openai.com/v1'
-    const model = process.env.OPENAI_MODEL || 'gpt-4o-mini'
-
-    const res = await fetch(`${baseUrl}/chat/completions`, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${openaiKey}` },
-      body: JSON.stringify({
-        model,
-        messages: [{ role: 'system', content: system }, { role: 'user', content: user }],
-        temperature: 0.4,
-        max_tokens: 500,
-        response_format: { type: 'json_object' },
-      }),
-      signal: AbortSignal.timeout(20_000),
+    const parsed = await claudeJson<Record<string, unknown>>({
+      system,
+      user: `${user}\n\nSADECE geçerli bir JSON objesi döndür.`,
+      temperature: 0.4,
+      maxTokens: 500,
+      timeoutMs: 20_000,
     })
 
-    if (!res.ok) return plan
-
-    const data = await res.json()
-    const raw = data.choices?.[0]?.message?.content
-    if (!raw) return plan
-
-    const parsed: Record<string, unknown> = JSON.parse(raw)
+    if (!parsed) return plan
 
     const addPrimary = Array.isArray(parsed.additional_primary)
       ? (parsed.additional_primary as unknown[])
@@ -435,7 +421,7 @@ export function buildDeterministicQueryPlan(input: QueryExpanderInput): Competit
 /**
  * Bağlamsal rakip arama query planı üretir.
  * Önce deterministic heuristic çalışır.
- * Confidence < 50 ise OpenAI ile genişletilir (OPENAI_API_KEY gerekli).
+ * Confidence < 50 ise Claude ile genişletilir (ANTHROPIC_API_KEY gerekli).
  * LLM başarısız olsa bile sistem çalışır — deterministic fallback döner.
  */
 export async function expandCompetitorQueries(input: QueryExpanderInput): Promise<CompetitorQueryPlan> {

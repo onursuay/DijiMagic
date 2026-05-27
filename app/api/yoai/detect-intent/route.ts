@@ -1,5 +1,6 @@
 import { INTENT_DETECTION_PROMPT } from '@/lib/yoai/prompts'
 import type { ContentCategory } from '@/lib/yoai/types'
+import { claudeText, isClaudeReady } from '@/lib/anthropic/text'
 
 export const runtime = 'edge'
 
@@ -22,38 +23,23 @@ export async function POST(req: Request) {
       return Response.json({ error: 'Mesaj gerekli' }, { status: 400 })
     }
 
-    const apiKey = process.env.OPENAI_API_KEY
-    if (!apiKey) {
+    if (!isClaudeReady()) {
       return Response.json({ error: 'AI servisi yapılandırılmamış' }, { status: 500 })
     }
 
-    const baseUrl = process.env.OPENAI_BASE_URL || 'https://api.openai.com/v1'
-    const model = process.env.OPENAI_MODEL || 'gpt-4o-mini'
-
-    const response = await fetch(`${baseUrl}/chat/completions`, {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-        Authorization: `Bearer ${apiKey}`,
-      },
-      body: JSON.stringify({
-        model,
-        messages: [
-          { role: 'system', content: INTENT_DETECTION_PROMPT },
-          { role: 'user', content: message },
-        ],
-        temperature: 0,
-        max_tokens: 30,
-      }),
+    const text = await claudeText({
+      system: INTENT_DETECTION_PROMPT,
+      user: message,
+      maxTokens: 30,
+      temperature: 0,
     })
 
-    if (!response.ok) {
-      console.error('[YoAi Intent] OpenAI error:', response.status)
+    if (text == null) {
+      console.error('[YoAi Intent] Claude error')
       return Response.json({ error: 'AI yanıt veremedi' }, { status: 502 })
     }
 
-    const data = await response.json()
-    const raw = (data.choices?.[0]?.message?.content || '').trim().toLowerCase()
+    const raw = text.trim().toLowerCase()
 
     // Extract valid intent from response
     const intent: ContentCategory = VALID_INTENTS.find((i) => raw.includes(i)) || 'off_topic'

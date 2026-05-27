@@ -1,5 +1,6 @@
 import 'server-only'
 import { buildStructuredSeoArticlePrompt, type StructuredSeoInput } from '@/lib/yoai/prompts'
+import { claudeText, isClaudeReady } from '@/lib/anthropic/text'
 
 /**
  * Yapılı (non-streaming) SEO makale üretimi.
@@ -52,35 +53,22 @@ function extractJson(text: string): Record<string, unknown> | null {
 }
 
 export async function generateArticle(input: StructuredSeoInput): Promise<GeneratedArticle> {
-  const apiKey = process.env.OPENAI_API_KEY
-  if (!apiKey) throw new Error('OPENAI_API_KEY not configured')
-  const baseUrl = process.env.OPENAI_BASE_URL || 'https://api.openai.com/v1'
-  const model = process.env.OPENAI_MODEL || 'gpt-4o-mini'
+  if (!isClaudeReady()) throw new Error('ANTHROPIC_API_KEY not configured')
 
   const systemPrompt = buildStructuredSeoArticlePrompt(input)
 
-  const res = await fetch(`${baseUrl}/chat/completions`, {
-    method: 'POST',
-    headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${apiKey}` },
-    body: JSON.stringify({
-      model,
-      messages: [
-        { role: 'system', content: systemPrompt },
-        { role: 'user', content: 'Makaleyi üret ve SADECE JSON döndür.' },
-      ],
-      temperature: 0.6,
-      max_tokens: 4000,
-      response_format: { type: 'json_object' },
-    }),
+  const content = await claudeText({
+    system: systemPrompt,
+    user: 'Makaleyi üret ve SADECE geçerli bir JSON objesi döndür (kod bloğu/açıklama ekleme).',
+    maxTokens: 8000,
+    temperature: 0.6,
+    timeoutMs: 90000,
   })
 
-  if (!res.ok) {
-    const errText = await res.text().catch(() => '')
-    throw new Error(`article_generation_failed_${res.status}_${errText.slice(0, 120)}`)
+  if (content == null) {
+    throw new Error('article_generation_failed_claude')
   }
 
-  const data = (await res.json()) as { choices?: { message?: { content?: string } }[] }
-  const content = data.choices?.[0]?.message?.content || ''
   const parsed = extractJson(content)
   if (!parsed) throw new Error('article_generation_invalid_json')
 

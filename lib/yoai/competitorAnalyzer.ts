@@ -11,6 +11,7 @@
    ────────────────────────────────────────────────────────── */
 
 import type { DeepCampaignInsight, AdsetInsight, AdInsight, Platform } from './analysisTypes'
+import { claudeJson, isClaudeReady } from '@/lib/anthropic/text'
 
 /* ── Types ── */
 export interface UserAdProfile {
@@ -425,8 +426,7 @@ async function enhanceThemesWithLLM(
   userBodies: string[],
   competitorBodies: string[],
 ): Promise<{ userThemes: string[]; competitorThemes: string[] } | null> {
-  const openaiKey = process.env.OPENAI_API_KEY
-  if (!openaiKey) return null
+  if (!isClaudeReady()) return null
   if (userBodies.length === 0 && competitorBodies.length === 0) return null
 
   const trim = (s: string) => (s || '').slice(0, 200)
@@ -453,28 +453,14 @@ JSON döndür:
 {"user_themes": ["etiket1", ...], "competitor_themes": ["etiket1", ...]}`
 
   try {
-    const baseUrl = process.env.OPENAI_BASE_URL || 'https://api.openai.com/v1'
-    const model = process.env.OPENAI_MODEL || 'gpt-4o-mini'
-    const res = await fetch(`${baseUrl}/chat/completions`, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${openaiKey}` },
-      body: JSON.stringify({
-        model,
-        messages: [
-          { role: 'system', content: system },
-          { role: 'user', content: JSON.stringify(user) },
-        ],
-        temperature: 0.2,
-        max_tokens: 400,
-        response_format: { type: 'json_object' },
-      }),
-      signal: AbortSignal.timeout(30000),
+    const parsed = await claudeJson<Record<string, any>>({
+      system,
+      user: `${JSON.stringify(user)}\n\nSADECE geçerli bir JSON objesi döndür.`,
+      temperature: 0.2,
+      maxTokens: 400,
+      timeoutMs: 30000,
     })
-    if (!res.ok) return null
-    const data = await res.json()
-    const content = data.choices?.[0]?.message?.content
-    if (!content) return null
-    const parsed = JSON.parse(content)
+    if (!parsed) return null
     return {
       userThemes: Array.isArray(parsed.user_themes) ? parsed.user_themes : [],
       competitorThemes: Array.isArray(parsed.competitor_themes) ? parsed.competitor_themes : [],

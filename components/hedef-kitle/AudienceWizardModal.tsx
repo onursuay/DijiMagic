@@ -66,6 +66,27 @@ type WizardPhase = 'select-type' | 'custom' | 'lookalike' | 'saved' | 'confirm'
 interface BizSeedHints {
   declaredTargetAudience: string | null
   sectorLabel: string | null
+  audiencePains: string[]
+  audienceMotivations: string[]
+  keywordThemes: string[]
+}
+
+/**
+ * İşletme profili sinyallerinden kişiselleştirilmiş bir hedef kitle açıklaması
+ * üretir. Kullanıcı "hedef kitle" alanını doldurmuşsa onu kullanır; doldurmamışsa
+ * sektör + kitle acıları + motivasyonlardan anlamlı bir başlangıç metni kurar.
+ */
+function buildSeedDescription(h: BizSeedHints | null): string {
+  if (!h) return ''
+  const declared = h.declaredTargetAudience?.trim()
+  if (declared) return declared
+
+  const parts: string[] = []
+  if (h.sectorLabel) parts.push(h.sectorLabel)
+  if (h.audiencePains.length) parts.push(h.audiencePains.slice(0, 3).join(', '))
+  if (h.audienceMotivations.length) parts.push(h.audienceMotivations.slice(0, 3).join(', '))
+  if (!parts.length && h.keywordThemes.length) parts.push(h.keywordThemes.slice(0, 4).join(', '))
+  return parts.join(' — ')
 }
 
 const TYPE_OPTIONS: { type: AudienceType; phase: WizardPhase; label: string; description: string; icon: React.ComponentType<{ className?: string }> }[] = [
@@ -145,6 +166,9 @@ export default function AudienceWizardModal({ isOpen, onClose, onSuccess, onToas
           seedHintsRef.current = {
             declaredTargetAudience: h?.declaredTargetAudience ?? null,
             sectorLabel: json.data.sectorLabel ?? null,
+            audiencePains: Array.isArray(h?.audiencePains) ? h.audiencePains : [],
+            audienceMotivations: Array.isArray(h?.audienceMotivations) ? h.audienceMotivations : [],
+            keywordThemes: Array.isArray(h?.keywordThemes) ? h.keywordThemes : [],
           }
         }
       })
@@ -201,7 +225,7 @@ export default function AudienceWizardModal({ isOpen, onClose, onSuccess, onToas
         setPhase(p)
         setPrevPhase(p)
         setHasInitialType(!!initialType)
-        const desc = seedHintsRef.current?.declaredTargetAudience?.trim() ?? ''
+        const desc = buildSeedDescription(seedHintsRef.current)
         setCustomState({ ...initialCustomAudienceState, description: desc })
         setLookalikeState({ ...initialLookalikeState, description: desc })
         setSavedState({ ...initialSavedAudienceState, description: desc })
@@ -218,7 +242,7 @@ export default function AudienceWizardModal({ isOpen, onClose, onSuccess, onToas
     setHasInitialType(editAudience ? true : !!initialType)
     const desc = editAudience
       ? (editAudience.description ?? '')
-      : (seedHintsRef.current?.declaredTargetAudience?.trim() ?? '')
+      : buildSeedDescription(seedHintsRef.current)
     setCustomState({ ...initialCustomAudienceState, description: desc })
     setLookalikeState({ ...initialLookalikeState, description: desc })
     setSavedState({ ...initialSavedAudienceState, description: desc })

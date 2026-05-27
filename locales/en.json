@@ -2420,7 +2420,9 @@
     },
     "hedefKitle": {
       "title": "Target Audience",
-      "description": "Manage your target audiences"
+      "description": "Manage your target audiences",
+      "aiEmptyTitle": "AI-Based Target Audience",
+      "aiEmptyDesc": "Once you create and approve a plan in the Strategy module, audiences are generated here automatically via AI persona analysis based on your business profile's sector, target audience and competitor data."
     },
     "tasarim": {
       "title": "Design",
@@ -2971,6 +2973,13 @@
     "confirmPassword": "Confirm New Password",
     "confirmPasswordPlaceholder": "Re-enter your new password.",
     "savePassword": "Save",
+    "loading": "Loading…",
+    "saveError": "Could not save, please try again.",
+    "passwordMismatch": "New passwords do not match.",
+    "passwordWeak": "Password must be at least 6 characters.",
+    "passwordWrong": "Current password is incorrect.",
+    "passwordChanged": "Your password has been updated.",
+    "passwordError": "Could not update password, please try again.",
     "referral": {
       "title": "Invite a friend and earn up to 2000 TL discount!",
       "info": "Referral Information",

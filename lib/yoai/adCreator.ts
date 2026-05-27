@@ -10,6 +10,7 @@
    6. Aynı kampanya amacına karşılık gelen daha güçlü AI kampanya yapısı öner
    ────────────────────────────────────────────────────────── */
 
+import { claudeText, isClaudeReady } from '@/lib/anthropic/text'
 import type { DeepCampaignInsight, Platform, StructuralIssue } from './analysisTypes'
 import type { UserAdProfile, CompetitorComparison, CompetitorAd } from './competitorAnalyzer'
 import { getDoctrineMap } from './platformDoctrineStore'
@@ -533,37 +534,24 @@ ${fitAnalyses.length} öneri bekleniyor.`
   return { system, user }
 }
 
-/* ── Call AI ── */
+/* ── Call AI (Claude — tek sağlayıcı) ── */
 async function callAI(system: string, user: string): Promise<{ content: string | null; error?: string }> {
-  const openaiKey = process.env.OPENAI_API_KEY
-  if (!openaiKey) {
-    return { content: null, error: 'OPENAI_API_KEY not set' }
+  if (!isClaudeReady()) {
+    return { content: null, error: 'ANTHROPIC_API_KEY not set' }
   }
 
-  try {
-    const baseUrl = process.env.OPENAI_BASE_URL || 'https://api.openai.com/v1'
-    const model = process.env.OPENAI_MODEL || 'gpt-4o-mini'
-    const res = await fetch(`${baseUrl}/chat/completions`, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${openaiKey}` },
-      body: JSON.stringify({ model, messages: [{ role: 'system', content: system }, { role: 'user', content: user }], temperature: 0.6, max_tokens: 16000, response_format: { type: 'json_object' } }),
-      signal: AbortSignal.timeout(90000),
-    })
-    if (res.ok) {
-      const data = await res.json()
-      const content = data.choices?.[0]?.message?.content ?? null
-      const finishReason = data.choices?.[0]?.finish_reason
-      if (!content) {
-        return { content: null, error: `OpenAI 200 OK but content=null, finish_reason=${finishReason}, usage=${JSON.stringify(data.usage)}` }
-      }
-      return { content }
-    }
-    const errBody = await res.text().catch(() => '')
-    return { content: null, error: `OpenAI ${res.status}: ${errBody.slice(0, 300)}` }
-  } catch (e) {
-    const msg = e instanceof Error ? e.message : String(e)
-    return { content: null, error: `OpenAI exception: ${msg}` }
+  const content = await claudeText({
+    system,
+    user: `${user}\n\nSADECE geçerli bir JSON objesi döndür (kod bloğu/açıklama ekleme).`,
+    maxTokens: 16000,
+    temperature: 0.6,
+    timeoutMs: 90000,
+  })
+
+  if (!content) {
+    return { content: null, error: 'Claude content=null veya hata (log: [claude])' }
   }
+  return { content }
 }
 
 /* ── Main Entry ── */
@@ -677,7 +665,16 @@ export async function generateFullAutoProposals(
 
     if (aiResult.content) {
       try {
-        const parsed = JSON.parse(aiResult.content)
+        // Claude bazen JSON'u kod bloğu/önek metinle döndürebilir — toleranslı ayıkla.
+        const raw = aiResult.content
+        const fence = raw.match(/```(?:json)?\s*([\s\S]*?)```/i)
+        const candidate = fence ? fence[1] : raw
+        const jStart = candidate.indexOf('{')
+        const jEnd = candidate.lastIndexOf('}')
+        const jsonText = jStart !== -1 && jEnd !== -1 && jEnd > jStart
+          ? candidate.slice(jStart, jEnd + 1)
+          : candidate
+        const parsed = JSON.parse(jsonText)
         const rawProposals = Array.isArray(parsed.proposals) ? parsed.proposals : []
         const batchProposals = rawProposals
           .filter((p: any) => p != null && typeof p === 'object')

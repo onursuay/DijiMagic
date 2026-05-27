@@ -89,7 +89,7 @@ export default function BlueprintView({ blueprint, onRegenerate, onApprove, rege
         </div>
         {!aiGenerated && aiGenerated !== undefined && (
           <p className="text-[10px] text-gray-600 mt-2 bg-gray-100 rounded-lg px-2 py-1">
-            OpenAI API key tanımlı değil — şablon kullanıldı. AI ile daha detaylı strateji için .env dosyasına OPENAI_API_KEY ekleyin.
+            AI motoru şu an kullanılamadı — şablon tabanlı strateji üretildi. Birazdan tekrar deneyebilirsiniz.
           </p>
         )}
       </div>

@@ -4,15 +4,27 @@ import { useState, useEffect } from 'react'
 import { useTranslations } from 'next-intl'
 import Topbar from '@/components/Topbar'
 import { Eye, EyeOff, Copy, Check, Users, BadgePercent } from 'lucide-react'
-import { getStoredProfile, setStoredProfile } from '@/lib/subscription/storage'
-import type { UserProfile } from '@/lib/subscription/types'
+
+interface ProfileData {
+  firstName: string
+  lastName: string
+  email: string
+  referralCode: string
+}
+
+const HELP_KEY = 'yoai-help-access'
 
 export default function HesabimPage() {
   const t = useTranslations('account')
 
-  // Profile state
-  const [profile, setProfile] = useState<UserProfile | null>(null)
+  // Profile state — sunucudan (signups) gelir, localStorage değil
+  const [profile, setProfile] = useState<ProfileData | null>(null)
+  const [firstName, setFirstName] = useState('')
+  const [lastName, setLastName] = useState('')
+  const [helpAccessEnabled, setHelpAccessEnabled] = useState(false)
   const [profileSaved, setProfileSaved] = useState(false)
+  const [profileSaving, setProfileSaving] = useState(false)
+  const [profileError, setProfileError] = useState('')
 
   // Password state
   const [currentPassword, setCurrentPassword] = useState('')
@@ -21,24 +33,100 @@ export default function HesabimPage() {
   const [showCurrentPw, setShowCurrentPw] = useState(false)
   const [showNewPw, setShowNewPw] = useState(false)
   const [showConfirmPw, setShowConfirmPw] = useState(false)
+  const [pwSaving, setPwSaving] = useState(false)
+  const [pwMessage, setPwMessage] = useState<{ type: 'success' | 'error'; text: string } | null>(null)
 
   // Referral state
   const [codeCopied, setCodeCopied] = useState(false)
   const [linkCopied, setLinkCopied] = useState(false)
 
   useEffect(() => {
-    setProfile(getStoredProfile())
+    fetch('/api/account/profile', { cache: 'no-store' })
+      .then((r) => (r.ok ? r.json() : null))
+      .then((data) => {
+        if (!data || data.error) return
+        setProfile(data as ProfileData)
+        setFirstName(data.firstName || '')
+        setLastName(data.lastName || '')
+      })
+      .catch(() => { /* sessizce yok say */ })
+    try {
+      setHelpAccessEnabled(localStorage.getItem(HELP_KEY) === '1')
+    } catch { /* ignore */ }
   }, [])
 
-  if (!profile) return null
+  if (!profile) {
+    return (
+      <>
+        <Topbar title={t('title')} description={t('description')} />
+        <div className="flex-1 flex items-center justify-center bg-gray-50">
+          <p className="text-sm text-gray-400">{t('loading')}</p>
+        </div>
+      </>
+    )
+  }
 
-  const initials = `${profile.firstName.charAt(0)}${profile.lastName.charAt(0)}`.toUpperCase()
+  const initials = `${firstName.charAt(0)}${lastName.charAt(0)}`.toUpperCase() || '?'
+  const fullName = `${firstName} ${lastName}`.trim()
   const referralLink = `https://yoai.yodijital.com/?referralCode=${profile.referralCode}`
 
-  const handleSaveProfile = () => {
-    setStoredProfile(profile)
-    setProfileSaved(true)
-    setTimeout(() => setProfileSaved(false), 2000)
+  const handleSaveProfile = async () => {
+    setProfileSaving(true)
+    setProfileError('')
+    try {
+      const res = await fetch('/api/account/profile', {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ firstName, lastName }),
+      })
+      if (!res.ok) throw new Error('save_failed')
+      try {
+        localStorage.setItem(HELP_KEY, helpAccessEnabled ? '1' : '0')
+      } catch { /* ignore */ }
+      setProfileSaved(true)
+      setTimeout(() => setProfileSaved(false), 2000)
+    } catch {
+      setProfileError(t('saveError'))
+    } finally {
+      setProfileSaving(false)
+    }
+  }
+
+  const handleChangePassword = async () => {
+    setPwMessage(null)
+    if (newPassword !== confirmPassword) {
+      setPwMessage({ type: 'error', text: t('passwordMismatch') })
+      return
+    }
+    if (newPassword.length < 6) {
+      setPwMessage({ type: 'error', text: t('passwordWeak') })
+      return
+    }
+    setPwSaving(true)
+    try {
+      const res = await fetch('/api/account/password', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ currentPassword, newPassword }),
+      })
+      const data = await res.json().catch(() => ({}))
+      if (res.ok) {
+        setPwMessage({ type: 'success', text: t('passwordChanged') })
+        setCurrentPassword('')
+        setNewPassword('')
+        setConfirmPassword('')
+      } else if (data?.error === 'wrong_password') {
+        setPwMessage({ type: 'error', text: t('passwordWrong') })
+      } else if (data?.error === 'weak_password') {
+        setPwMessage({ type: 'error', text: t('passwordWeak') })
+      } else {
+        setPwMessage({ type: 'error', text: t('passwordError') })
+      }
+    } catch {
+      setPwMessage({ type: 'error', text: t('passwordError') })
+    } finally {
+      setPwSaving(false)
+    }
   }
 
   const handleCopy = (text: string, type: 'code' | 'link') => {
@@ -65,18 +153,15 @@ export default function HesabimPage() {
             <div className="bg-white rounded-2xl border border-gray-200 p-6">
               <h3 className="text-base font-bold text-gray-900 mb-5">{t('profileInfo')}</h3>
 
-              {/* Avatar */}
+              {/* Avatar + identity (real, from account) */}
               <div className="flex items-center gap-4 mb-6">
                 <div className="w-14 h-14 bg-primary/10 rounded-full flex items-center justify-center text-primary font-bold text-lg">
                   {initials}
                 </div>
-                <div>
-                  <p className="text-sm font-medium text-gray-900">{t('profilePhoto')}</p>
-                  <p className="text-sm text-gray-400">{t('maxFileSize')}</p>
+                <div className="min-w-0">
+                  <p className="text-sm font-medium text-gray-900 truncate">{fullName || profile.email}</p>
+                  <p className="text-sm text-gray-400 truncate">{profile.email}</p>
                 </div>
-                <button className="ml-auto px-3 py-1.5 text-sm font-medium text-gray-600 border border-gray-200 rounded-lg hover:bg-gray-50">
-                  {t('uploadPhoto')}
-                </button>
               </div>
 
               {/* Name fields */}
@@ -85,8 +170,8 @@ export default function HesabimPage() {
                   <label className="block text-sm font-medium text-gray-600 mb-1.5">{t('firstName')}</label>
                   <input
                     type="text"
-                    value={profile.firstName}
-                    onChange={e => setProfile({ ...profile, firstName: e.target.value })}
+                    value={firstName}
+                    onChange={e => setFirstName(e.target.value)}
                     className="w-full px-3 py-2.5 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary"
                   />
                 </div>
@@ -94,45 +179,50 @@ export default function HesabimPage() {
                   <label className="block text-sm font-medium text-gray-600 mb-1.5">{t('lastName')}</label>
                   <input
                     type="text"
-                    value={profile.lastName}
-                    onChange={e => setProfile({ ...profile, lastName: e.target.value })}
+                    value={lastName}
+                    onChange={e => setLastName(e.target.value)}
                     className="w-full px-3 py-2.5 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary"
                   />
                 </div>
               </div>
 
-              {/* Email */}
+              {/* Email — login anahtarı, salt-okunur */}
               <div className="mb-4">
                 <label className="block text-sm font-medium text-gray-600 mb-1.5">{t('email')}</label>
                 <input
                   type="email"
                   value={profile.email}
-                  onChange={e => setProfile({ ...profile, email: e.target.value })}
-                  className="w-full px-3 py-2.5 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary"
+                  readOnly
+                  className="w-full px-3 py-2.5 border border-gray-200 bg-gray-50 text-gray-500 rounded-lg text-sm cursor-not-allowed"
                 />
               </div>
 
-              {/* Help access toggle */}
+              {/* Help access toggle (yerel tercih) */}
               <div className="flex items-center justify-between mb-6">
                 <label className="text-sm text-gray-700">{t('helpAccess')}</label>
                 <button
-                  onClick={() => setProfile({ ...profile, helpAccessEnabled: !profile.helpAccessEnabled })}
+                  onClick={() => setHelpAccessEnabled(!helpAccessEnabled)}
                   className={`relative w-10 h-5 rounded-full transition-colors ${
-                    profile.helpAccessEnabled ? 'bg-primary' : 'bg-gray-300'
+                    helpAccessEnabled ? 'bg-primary' : 'bg-gray-300'
                   }`}
                 >
                   <span
                     className={`absolute top-0.5 left-0.5 w-4 h-4 bg-white rounded-full transition-transform ${
-                      profile.helpAccessEnabled ? 'translate-x-5' : ''
+                      helpAccessEnabled ? 'translate-x-5' : ''
                     }`}
                   />
                 </button>
               </div>
 
+              {profileError && (
+                <p className="text-sm text-red-600 mb-3">{profileError}</p>
+              )}
+
               {/* Save button */}
               <button
                 onClick={handleSaveProfile}
-                className="w-full py-2.5 bg-primary text-white font-medium rounded-lg hover:bg-primary/90 transition-colors text-sm"
+                disabled={profileSaving}
+                className="w-full py-2.5 bg-primary text-white font-medium rounded-lg hover:bg-primary/90 transition-colors text-sm disabled:opacity-60"
               >
                 {profileSaved ? t('saved') : t('save')}
               </button>
@@ -201,7 +291,17 @@ export default function HesabimPage() {
                   </div>
                 </div>
 
-                <button className="w-full py-2.5 bg-primary text-white font-medium rounded-lg hover:bg-primary/90 transition-colors text-sm">
+                {pwMessage && (
+                  <p className={`text-sm ${pwMessage.type === 'success' ? 'text-emerald-600' : 'text-red-600'}`}>
+                    {pwMessage.text}
+                  </p>
+                )}
+
+                <button
+                  onClick={handleChangePassword}
+                  disabled={pwSaving || !currentPassword || !newPassword || !confirmPassword}
+                  className="w-full py-2.5 bg-primary text-white font-medium rounded-lg hover:bg-primary/90 transition-colors text-sm disabled:opacity-60"
+                >
                   {t('savePassword')}
                 </button>
               </div>

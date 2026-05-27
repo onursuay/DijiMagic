@@ -3,12 +3,13 @@
 import { useState, useEffect } from 'react'
 import { useTranslations } from 'next-intl'
 import Topbar from '@/components/Topbar'
-import { getStoredInvoiceInfo, setStoredInvoiceInfo, getStoredInvoiceHistory } from '@/lib/subscription/storage'
-import type { InvoiceInfo, InvoiceType, InvoiceRecord } from '@/lib/subscription/types'
+import { getStoredInvoiceInfo, setStoredInvoiceInfo } from '@/lib/subscription/storage'
+import type { InvoiceInfo, InvoiceType } from '@/lib/subscription/types'
 
 const DEFAULT_INVOICE_INFO: InvoiceInfo = {
   type: 'individual',
   fullName: '',
+  lastName: '',
   phone: '',
   country: 'Türkiye',
   city: '',
@@ -17,17 +18,40 @@ const DEFAULT_INVOICE_INFO: InvoiceInfo = {
   address: '',
 }
 
+/** Gerçek ödeme kaydı (payment_transactions) — /api/billing/invoices'tan gelir. */
+interface InvoiceItem {
+  id: string
+  date: string
+  amount: number
+  currency: string
+  description: string
+  status: 'paid' | 'pending'
+}
+
+function currencySymbol(code: string): string {
+  switch ((code || 'TRY').toUpperCase()) {
+    case 'TRY': return '₺'
+    case 'USD': return '$'
+    case 'EUR': return '€'
+    default: return code + ' '
+  }
+}
+
 export default function FaturalarimPage() {
   const t = useTranslations('invoices')
 
   const [info, setInfo] = useState<InvoiceInfo>(DEFAULT_INVOICE_INFO)
-  const [history, setHistory] = useState<InvoiceRecord[]>([])
+  const [history, setHistory] = useState<InvoiceItem[]>([])
   const [saved, setSaved] = useState(false)
 
   useEffect(() => {
     const stored = getStoredInvoiceInfo()
     if (stored) setInfo(stored)
-    setHistory(getStoredInvoiceHistory())
+    // Fatura geçmişi gerçek payment_transactions'tan (sunucu) gelir
+    fetch('/api/billing/invoices', { cache: 'no-store' })
+      .then((r) => (r.ok ? r.json() : null))
+      .then((data) => { if (data?.invoices) setHistory(data.invoices as InvoiceItem[]) })
+      .catch(() => { /* sessizce yok say */ })
   }, [])
 
   const handleTypeChange = (type: InvoiceType) => {
@@ -92,8 +116,8 @@ export default function FaturalarimPage() {
                     <label className="block text-sm font-medium text-gray-600 mb-1.5">{t('lastName')}</label>
                     <input
                       type="text"
-                      value={info.phone}
-                      onChange={e => setInfo({ ...info, phone: e.target.value })}
+                      value={info.lastName || ''}
+                      onChange={e => setInfo({ ...info, lastName: e.target.value })}
                       placeholder=""
                       className="w-full px-3 py-2.5 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary"
                     />
@@ -228,12 +252,12 @@ export default function FaturalarimPage() {
                             {new Date(inv.date).toLocaleDateString('tr-TR')}
                           </td>
                           <td className="py-3 px-2 text-gray-700">{inv.description}</td>
-                          <td className="py-3 px-2 text-right text-gray-700">₺{inv.amount.toFixed(2)}</td>
+                          <td className="py-3 px-2 text-right text-gray-700">{currencySymbol(inv.currency)}{inv.amount.toFixed(2)}</td>
                           <td className="py-3 px-2 text-right">
                             <span className={`px-2 py-0.5 text-xs font-medium rounded-full ${
                               inv.status === 'paid'
-                                ? 'bg-green-100 text-green-700'
-                                : 'bg-amber-100 text-amber-700'
+                                ? 'bg-emerald-100 text-emerald-700'
+                                : 'bg-gray-100 text-gray-600'
                             }`}>
                               {inv.status === 'paid' ? t('paid') : t('pending')}
                             </span>

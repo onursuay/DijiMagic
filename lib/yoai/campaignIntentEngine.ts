@@ -12,6 +12,7 @@
 import type { DeepCampaignInsight, Platform } from './analysisTypes'
 import { analyzeLandingPage } from './landingPageAnalyzer'
 import { supabase } from '@/lib/supabase/client'
+import { claudeJson, isClaudeReady } from '@/lib/anthropic/text'
 
 // ── Types ─────────────────────────────────────────────────────────────────────
 
@@ -285,8 +286,7 @@ async function enhanceWithLLM(
   campaign: DeepCampaignInsight,
   heuristicProfile: Omit<CampaignIntentProfile, 'generated_at'>,
 ): Promise<Partial<CampaignIntentProfile> | null> {
-  const openaiKey = process.env.OPENAI_API_KEY
-  if (!openaiKey) return null
+  if (!isClaudeReady()) return null
 
   const system = `Sen bir kampanya analiz uzmanısın. Reklam kampanyası verilerinden iş bağlamını çıkar.
 JSON çıktısı üret. Türkçe yaz. Teknik enum kullanma. Gerçekçi ve spesifik ol.
@@ -320,29 +320,15 @@ Aşağıdaki JSON'u doldur:
 }`
 
   try {
-    const baseUrl = process.env.OPENAI_BASE_URL || 'https://api.openai.com/v1'
-    const model = process.env.OPENAI_MODEL || 'gpt-4o-mini'
-
-    const res = await fetch(`${baseUrl}/chat/completions`, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${openaiKey}` },
-      body: JSON.stringify({
-        model,
-        messages: [{ role: 'system', content: system }, { role: 'user', content: user }],
-        temperature: 0.3,
-        max_tokens: 800,
-        response_format: { type: 'json_object' },
-      }),
-      signal: AbortSignal.timeout(30_000),
+    const parsed = await claudeJson<Record<string, any>>({
+      system,
+      user: `${user}\n\nSADECE geçerli bir JSON objesi döndür.`,
+      temperature: 0.3,
+      maxTokens: 800,
+      timeoutMs: 30_000,
     })
 
-    if (!res.ok) return null
-
-    const data = await res.json()
-    const raw = data.choices?.[0]?.message?.content
-    if (!raw) return null
-
-    const parsed = JSON.parse(raw)
+    if (!parsed) return null
 
     // Validate required fields
     if (typeof parsed.business_domain !== 'string') return null

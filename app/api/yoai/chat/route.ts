@@ -1,5 +1,6 @@
 import { buildGenerationPrompt } from '@/lib/yoai/prompts'
 import type { ContentCategory } from '@/lib/yoai/types'
+import { claudeStream, isClaudeReady } from '@/lib/anthropic/text'
 
 export const runtime = 'edge'
 
@@ -14,92 +15,18 @@ export async function POST(req: Request) {
       return Response.json({ error: 'Kategori ve parametreler gerekli' }, { status: 400 })
     }
 
-    const apiKey = process.env.OPENAI_API_KEY
-    if (!apiKey) {
+    if (!isClaudeReady()) {
       return Response.json({ error: 'AI servisi yapılandırılmamış' }, { status: 500 })
     }
 
-    const baseUrl = process.env.OPENAI_BASE_URL || 'https://api.openai.com/v1'
-    const model = process.env.OPENAI_MODEL || 'gpt-4o-mini'
-
     const systemPrompt = buildGenerationPrompt(category, params)
 
-    const response = await fetch(`${baseUrl}/chat/completions`, {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-        Authorization: `Bearer ${apiKey}`,
-      },
-      body: JSON.stringify({
-        model,
-        messages: [
-          { role: 'system', content: systemPrompt },
-          { role: 'user', content: 'İçeriği oluştur.' },
-        ],
-        temperature: 0.6,
-        max_tokens: 4000,
-        stream: true,
-      }),
-    })
-
-    if (!response.ok) {
-      const errorText = await response.text()
-      console.error('[YoAi Chat] OpenAI error:', response.status, errorText)
-      return Response.json({ error: 'AI yanıt veremedi' }, { status: 502 })
-    }
-
-    // Forward SSE stream
-    const encoder = new TextEncoder()
-    const decoder = new TextDecoder()
-
-    const stream = new ReadableStream({
-      async start(controller) {
-        const reader = response.body?.getReader()
-        if (!reader) {
-          controller.close()
-          return
-        }
-
-        let buffer = ''
-
-        try {
-          while (true) {
-            const { done, value } = await reader.read()
-            if (done) break
-
-            buffer += decoder.decode(value, { stream: true })
-            const lines = buffer.split('\n')
-            buffer = lines.pop() || ''
-
-            for (const line of lines) {
-              const trimmed = line.trim()
-              if (!trimmed || !trimmed.startsWith('data: ')) continue
-
-              const data = trimmed.slice(6)
-              if (data === '[DONE]') {
-                controller.enqueue(encoder.encode('data: [DONE]\n\n'))
-                continue
-              }
-
-              try {
-                const parsed = JSON.parse(data)
-                const content = parsed.choices?.[0]?.delta?.content
-                if (content) {
-                  controller.enqueue(
-                    encoder.encode(`data: ${JSON.stringify({ content })}\n\n`)
-                  )
-                }
-              } catch {
-                // skip malformed chunks
-              }
-            }
-          }
-        } catch (err) {
-          console.error('[YoAi Chat] Stream error:', err)
-        } finally {
-          controller.close()
-        }
-      },
+    // Claude akışı — istemci kontratı: data: {content} ... data: [DONE]
+    const stream = claudeStream({
+      system: systemPrompt,
+      user: 'İçeriği oluştur.',
+      maxTokens: 4000,
+      temperature: 0.6,
     })
 
     return new Response(stream, {

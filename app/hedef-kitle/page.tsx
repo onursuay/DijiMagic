@@ -79,10 +79,11 @@ function mapMetaToUnified(meta: MetaAudience): UnifiedAudience {
 
 export default function HedefKitlePage() {
   const t = useTranslations('dashboard.hedefKitle')
-  const { hasSubscription } = useSubscription()
+  const { hasSubscription, isOwner, loading: subLoading } = useSubscription()
+  // AI Tabanlı sekmesi erişimi: aktif abonelik VEYA owner bypass
+  const hasAiAccess = hasSubscription || isOwner
   const [platform, setPlatform] = useState<Platform>('meta')
   const [activeTab, setActiveTab] = useState('SAVED')
-  const [showAudienceAiGate, setShowAudienceAiGate] = useState(false)
   // Aktif Meta hesabı — Topbar'da birleşik hesap seçici göstermek için
   const [adAccountName, setAdAccountName] = useState<string | null>(null)
   // Aktif Google hesabı adı — Google sekmesinde seçici butonunda göstermek için
@@ -112,14 +113,11 @@ export default function HedefKitlePage() {
 
   const audienceTabs = platform === 'google' ? GOOGLE_AUDIENCE_TABS : META_AUDIENCE_TABS
 
-  // AI Tabanlı Hedef Kitle sekmesi subscription tier — sekmeye geçiş guard'lı
+  // Sekme değişimi: AI sekmesi seçilebilir; erişim kontrolü içerik render'ında
+  // DEKLARATİF olarak yapılır (abonelik yoksa içerik render edilmez, modal çıkar).
   const handleTabChange = useCallback((tabId: string) => {
-    if (tabId === 'AI' && !hasSubscription) {
-      setShowAudienceAiGate(true)
-      return
-    }
     setActiveTab(tabId)
-  }, [hasSubscription])
+  }, [])
 
   // Platform değişince Google'da olmayan sekmelerden (AI / Benzer Kitle) güvenli sekmeye düş
   const handlePlatformChange = useCallback((next: Platform) => {
@@ -280,8 +278,8 @@ export default function HedefKitlePage() {
             <GoogleAudienceView activeTab={activeTab as 'SAVED' | 'CUSTOM'} />
           )}
 
-          {/* AI Tab — Strategy-created audiences (yalnızca Meta) */}
-          {platform === 'meta' && activeTab === 'AI' && (() => {
+          {/* AI Tab — Strategy-created audiences (yalnızca Meta, erişim varsa) */}
+          {platform === 'meta' && activeTab === 'AI' && hasAiAccess && (() => {
             const aiAudiences = audiences.filter((a) => a.source === 'STRATEGY')
             return aiAudiences.length > 0 ? (
               <AudienceList
@@ -295,12 +293,12 @@ export default function HedefKitlePage() {
               />
             ) : (
               <div className="bg-white rounded-2xl border border-gray-200 p-12 text-center">
-                <div className="w-16 h-16 rounded-2xl bg-purple-50 flex items-center justify-center mx-auto mb-4">
-                  <Sparkles className="w-8 h-8 text-purple-400" />
+                <div className="w-16 h-16 rounded-2xl bg-emerald-50 flex items-center justify-center mx-auto mb-4">
+                  <Sparkles className="w-8 h-8 text-emerald-500" />
                 </div>
-                <h3 className="text-lg font-semibold text-gray-700">AI Tabanlı Hedef Kitle</h3>
+                <h3 className="text-lg font-semibold text-gray-700">{t('aiEmptyTitle')}</h3>
                 <p className="text-sm text-gray-500 mt-2 max-w-md mx-auto">
-                  Strateji modülünden bir plan oluşturup onayladığınızda, AI persona analizine göre hedef kitleler otomatik olarak burada oluşturulur.
+                  {t('aiEmptyDesc')}
                 </p>
               </div>
             )
@@ -335,8 +333,10 @@ export default function HedefKitlePage() {
       {/* Toasts */}
       <ToastContainer toasts={toasts} onClose={removeToast} />
 
-      {/* AI Tabanlı Hedef Kitle subscription gate */}
-      {showAudienceAiGate && (
+      {/* AI Tabanlı Hedef Kitle subscription gate — deklaratif: AI sekmesi
+          seçili VE erişim yoksa (abonelik/owner) içerik yerine modal çıkar.
+          subLoading sırasında bekler (modal flaş etmez). */}
+      {platform === 'meta' && activeTab === 'AI' && !subLoading && !hasAiAccess && (
         <AccessRequiredModal
           type="subscription"
           featureKey="audience_ai"

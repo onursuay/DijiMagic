@@ -2420,7 +2420,9 @@
     },
     "hedefKitle": {
       "title": "Hedef Kitle",
-      "description": "Hedef kitlelerinizi yönetin"
+      "description": "Hedef kitlelerinizi yönetin",
+      "aiEmptyTitle": "AI Tabanlı Hedef Kitle",
+      "aiEmptyDesc": "Strateji modülünden bir plan oluşturup onayladığınızda, işletme profilinizdeki sektör, hedef kitle ve rakip verilerine göre AI persona analiziyle hedef kitleler otomatik olarak burada oluşturulur."
     },
     "tasarim": {
       "title": "Tasarım",
@@ -2971,6 +2973,13 @@
     "confirmPassword": "Yeni Şifre Onay",
     "confirmPasswordPlaceholder": "Yeni şifrenizi tekrar girin.",
     "savePassword": "Kaydet",
+    "loading": "Yükleniyor…",
+    "saveError": "Kaydedilemedi, lütfen tekrar deneyin.",
+    "passwordMismatch": "Yeni şifreler eşleşmiyor.",
+    "passwordWeak": "Şifre en az 6 karakter olmalı.",
+    "passwordWrong": "Mevcut şifre hatalı.",
+    "passwordChanged": "Şifreniz güncellendi.",
+    "passwordError": "Şifre güncellenemedi, lütfen tekrar deneyin.",
     "referral": {
       "title": "Arkadaşını davet et, 2000 TL'ye kadar indirim kazan!",
       "info": "Referans Bilgileri",

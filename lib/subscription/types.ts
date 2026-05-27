@@ -101,6 +101,7 @@ export type InvoiceType = 'individual' | 'corporate'
 export interface InvoiceInfo {
   type: InvoiceType
   fullName: string
+  lastName?: string
   phone: string
   country: string
   city: string
