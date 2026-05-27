@@ -133,7 +133,9 @@ export async function generateBlueprintWithAI(
       user: businessContextPromptBlock ? `${businessContextPromptBlock}\n\n${buildUserPrompt(input)}` : buildUserPrompt(input),
       maxTokens: 4000,
       temperature: 0.4,
-      timeoutMs: 30000,
+      // 30s çoğu zaman stratejik JSON üretimine yetmiyordu → şablona düşüyordu.
+      // maxDuration=60 ile fonksiyon bütçesi içinde 55s'ye çıkarıldı.
+      timeoutMs: 55000,
     })
 
     // Parse JSON (markdown code block varsa temizle)

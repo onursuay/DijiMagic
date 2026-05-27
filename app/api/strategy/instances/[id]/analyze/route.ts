@@ -5,6 +5,9 @@ import { createJob } from '@/lib/strategy/job-runner'
 import { runQueuedJobs } from '@/lib/strategy/job-runner'
 
 export const dynamic = 'force-dynamic'
+// Analiz + zincirlenen plan üretimi senkron çalışır; platformun fonksiyonu
+// erken kesmemesi için süre bütçesi tanı (yoksa AI yerine şablona düşer).
+export const maxDuration = 60
 
 // POST /api/strategy/instances/:id/analyze — Analiz job'u başlat
 export async function POST(_request: Request, { params }: { params: Promise<{ id: string }> }) {

@@ -6,6 +6,9 @@ import { createJob, runQueuedJobs } from '@/lib/strategy/job-runner'
 import { getBusinessContextForUser, buildBusinessContextPromptBlock } from '@/lib/yoai/businessContextStore'
 
 export const dynamic = 'force-dynamic'
+// AI blueprint üretimi senkron çalışır (Claude + Meta fetch); platformun
+// fonksiyonu erken kesmemesi için süre bütçesi tanı (yoksa şablona düşer).
+export const maxDuration = 60
 
 // POST /api/strategy/instances/:id/generate-plan — Plan üretim job'u başlat
 export async function POST(_request: Request, { params }: { params: Promise<{ id: string }> }) {
