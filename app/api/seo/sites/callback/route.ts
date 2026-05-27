@@ -14,6 +14,9 @@ import { WordPressConnector } from '@/lib/seo/connectors/wordpress'
  * Adımlar: state doğrula → credential test → şifreli kaydet → SEO'ya dön.
  */
 export const dynamic = 'force-dynamic'
+// Credential testi dış siteye istek atar; site yavaş/engelliyse fonksiyonun erken
+// ölmemesi için süre tanı (testConnection zaten 10sn'de timeout olur).
+export const maxDuration = 30
 
 export async function GET(request: Request) {
   const url = new URL(request.url)
@@ -66,7 +69,9 @@ export async function GET(request: Request) {
   })
   const test = await connector.testConnection()
   if (!test.ok) {
-    return fail(test.errorCode === 'auth' ? 'auth_failed' : 'test_failed')
+    // auth → uygulama şifresi/kullanıcı hatalı; network/timeout → site sunucu isteğini
+    // engelliyor olabilir (net "ulaşılamadı" mesajı, sonsuz bekleme yerine).
+    return fail(test.errorCode === 'auth' ? 'auth_failed' : test.errorCode === 'network' ? 'unreachable' : 'test_failed')
   }
 
   // İlk bağlantıysa varsayılan yap

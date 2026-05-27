@@ -47,8 +47,11 @@ export class WordPressConnector implements SiteConnector {
 
   async testConnection(): Promise<ConnectionTestResult> {
     try {
+      // Zaman aşımı zorunlu: site (ör. güvenlik eklentisi) sunucu isteğini yanıtsız bırakırsa
+      // fetch sonsuza dek asılı kalır ve çağıran route (callback) timeout'a düşer. 10sn yeterli.
       const res = await fetch(`${this.base}/wp-json/wp/v2/users/me?context=edit`, {
         headers: { Authorization: this.auth },
+        signal: AbortSignal.timeout(10_000),
       })
       if (res.ok) {
         return { ok: true, detail: 'Bağlantı doğrulandı.' }
@@ -61,7 +64,8 @@ export class WordPressConnector implements SiteConnector {
       }
       return { ok: false, errorCode: mapStatus(res.status), detail: `Bağlantı hatası (${res.status}).` }
     } catch {
-      return { ok: false, errorCode: 'network', detail: 'Siteye ulaşılamadı.' }
+      // AbortError (timeout) dahil tüm ulaşılamama durumları
+      return { ok: false, errorCode: 'network', detail: 'Siteye ulaşılamadı (zaman aşımı veya sunucu isteği engelleniyor).' }
     }
   }
 
