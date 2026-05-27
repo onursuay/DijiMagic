@@ -7,6 +7,7 @@ import {
   RefreshCw, ExternalLink, ArrowRight,
 } from 'lucide-react'
 import SeoWebhookConnect from './SeoWebhookConnect'
+import SeoWordPressConnect from './SeoWordPressConnect'
 
 /* ═══════ Types ═══════ */
 
@@ -256,6 +257,10 @@ export default function SeoSitesPanel({ banner, profileUrl }: Props) {
               </a>
             </div>
           )}
+
+          {/* WordPress'e Uygulama Parolası ile manuel bağlanma — tek-tık yetkilendirme ağır/yavaş
+              sitelerde beyaz ekrana/zaman aşımına düşerse kesin yol (authorize-application.php atlanır). */}
+          <SeoWordPressConnect defaultUrl={profileUrl} onConnected={fetchConnections} />
 
           {/* WordPress dışı / özel yazılım için webhook ile bağla — site uyumsuzsa asıl yol budur, otomatik açılır */}
           <SeoWebhookConnect onConnected={fetchConnections} defaultOpen={connections.length === 0 && wpIncompatible} />
