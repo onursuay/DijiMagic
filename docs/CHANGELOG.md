@@ -2,6 +2,11 @@
 
 ---
 
+## 2026-05-28 — İşletme Profili: güncellemede boş form + profil çoğalması düzeltildi
+- **Sorun:** İşletme Profilini "Düzenle" ile güncellemeye çalışınca wizard boş (sıfırdan kurulum gibi) açılıyordu. Kök neden: `getProfileByUserId` `.maybeSingle()` kullanıyordu; kullanıcının `user_business_profiles` tablosunda birden fazla satırı varsa `.maybeSingle()` hata verip `null` döndürüyor → form prefill edilemiyor. Ayrıca `upsertProfile`'ın finder'ı da `.maybeSingle()` kullandığından çoklu satırda eşleşmeyi bulamayıp **yeni satır INSERT ediyor** — yani her kayıt profili çoğaltıp sorunu kalıcılaştıran bir kısır döngü yaratıyordu.
+- **Çözüm:** Her iki sorgu `.maybeSingle()` yerine `.order('updated_at', desc).limit(1)` ile en güncel satırı alacak şekilde değiştirildi. `getProfileByUserId` artık çoklu satırda da deterministik olarak en güncel profili döndürür (form prefill çalışır); `upsertProfile` mükerrer INSERT yerine her zaman mevcut (en güncel) satırı UPDATE eder → çoğalma durur. DB'ye dokunulmadı (migration/silme yok); tek satırlı kullanıcılarda davranış aynı; owner bypass ve scope mantığı korundu; tsc 0 hata.
+- **Dosyalar:** `lib/yoai/businessProfileStore.ts`
+
 ## 2026-05-27 — SEO: WordPress'e "Uygulama Parolası" ile manuel bağlanma yolu eklendi
 - **Sorun:** Tek-tık WordPress yetkilendirmesi (`wp-admin/authorize-application.php`) ağır/yavaş WordPress kurulumlarında beyaz ekrana / zaman aşımına düşüyor (örnek sitede PHP 7.4 + çok eklenti; `/wp-json/` kökü ve `posts` ucu 20sn+ timeout, fakat hafif `users/me` ucu 0.5sn'de yanıt veriyor). Kullanıcı bu ağır sayfada takılıp bağlantıyı tamamlayamıyordu.
 - **Çözüm:** Ağır yetkilendirme sayfasını tamamen atlayan alternatif yol: kullanıcı WP profilinden ürettiği uygulama parolasını YoAi'ye yapıştırır. Yeni `POST /api/seo/sites/wordpress` route'u, bağlantıyı hafif/hızlı `users/me` ucundan doğrular (testConnection, 10sn timeout), başarılıysa şifreli kaydeder; `auth_failed`/`unreachable`/`not_wordpress`/`test_failed` ayrımıyla net hata döner. UI: yeni `SeoWordPressConnect` bileşeni (site adresi etkin analiz URL'inden öntanımlı + kullanıcı adı + uygulama parolası göster/gizle + "nasıl alınır" adımları + profil sayfasına kısayol), `SeoSitesPanel`'de webhook'un üstüne eklendi. Mevcut tek-tık ve webhook yolları korundu. Migration yok; i18n TR+EN; Meta/Google entegrasyonu değişmedi; tsc 0 hata.

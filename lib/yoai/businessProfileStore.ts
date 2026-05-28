@@ -154,17 +154,21 @@ export interface BusinessIntelligenceRow {
 export async function getProfileByUserId(userId: string): Promise<BusinessProfileRow | null> {
   if (!supabase || !userId) return null
   try {
+    // .maybeSingle() KULLANMA: kullanıcının (geçmiş bir hata yüzünden) birden fazla
+    // profil satırı olabilir; maybeSingle çoklu satırda hata verip null döner → form
+    // boş gelir. En güncel satırı al (deterministik), yeni satır oluşturma.
     const { data, error } = await supabase
       .from('user_business_profiles')
       .select('*')
       .eq('user_id', userId)
-      .maybeSingle()
+      .order('updated_at', { ascending: false })
+      .limit(1)
     if (error) {
       if (error.code === '42P01' || error.message?.includes('does not exist')) return null
       console.warn('[businessProfileStore] getProfileByUserId error:', error)
       return null
     }
-    return (data as BusinessProfileRow) || null
+    return ((data as BusinessProfileRow[])?.[0]) ?? null
   } catch (e) {
     console.warn('[businessProfileStore] getProfileByUserId exception:', e)
     return null
@@ -248,7 +252,11 @@ export async function upsertProfile(profile: BusinessProfileRow): Promise<Busine
     finder = profile.business_key
       ? finder.eq('business_key', profile.business_key)
       : finder.is('business_key', null)
-    const { data: existing } = await finder.maybeSingle()
+    // .maybeSingle() KULLANMA: eşleşen birden fazla satır varsa hata verir ve aşağıda
+    // yanlışlıkla yeni satır INSERT edilir (profil çoğalması → "her kayıtta sıfırdan").
+    // En güncel eşleşeni al → her zaman UPDATE, asla mükerrer INSERT.
+    const { data: existingRows } = await finder.order('updated_at', { ascending: false }).limit(1)
+    const existing = (existingRows as { id: string }[] | null)?.[0]
 
     if (existing?.id) {
       const { data, error } = await supabase
