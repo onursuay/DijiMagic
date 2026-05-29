@@ -2,6 +2,16 @@
 
 ---
 
+## 2026-05-29 — Site Tarama: gerçek DOM tıklanabilir öğe çıkarma + Claude AI event tespiti (WhatsApp/telefon/IG DM/Messenger/e-posta)
+- **Sorun:** Tarama yalnız e-ticaret/form event'lerini yakalıyordu; **iletişim kanalları (özellikle WhatsApp) eksikti.** Ayrıca bu kanallar çoğu sitede chat/click-to-chat **eklentileriyle** sonradan eklendiği için sitenin ana kodunda görünmeyebiliyordu — sabit "popüler plugin" tahmini yanlış olur.
+- **Çözüm:** Tarama artık sitenin **gerçek DOM yapısını** çıkarıp event tespit ediyor (kullanıcının F12 `document.querySelectorAll('a, button, [onclick], [data-href]')` script'inin sunucu eşdeğeri):
+  - `siteScanner.extractClickables()` — Firecrawl'ın render ettiği HTML'den **cheerio** ile tüm tıklanabilir öğeleri (a/button/[onclick]/[data-href] → tag, metin, hedef) çıkarır. Eklenti-enjekte butonlar dahil.
+  - **Deterministik kurallar** genişletildi: WhatsApp (`wa.me`/`api.whatsapp.com`/`whatsapp://`), Messenger (`m.me`), Instagram DM (`ig.me`), telefon (`tel:`), e-posta (`mailto:`) — tıklanabilir öğelerin hedef+metni de haystack'e katılır, böylece eklenti linkleri yakalanır. (Telefon/e-posta footer'da yaygın → daha düşük güven.)
+  - **Claude AI katmanı** (`classifyClickablesWithClaude`): çıkarılan tıklanabilir öğeler Claude'a verilip event'lere sınıflandırılır — deterministik kuralların kaçırdığı/belirsiz butonları (ör. `onclick` ile WhatsApp açan "Bize Ulaşın") yakalar. `ANTHROPIC_API_KEY` yoksa atlanır (deterministik fallback). Non-fatal.
+  - `STANDARD_EVENTS`'e 5 iletişim event'i eklendi (`contact_whatsapp/phone/instagram/messenger/email`) → Meta `Contact` standart event'i + GA4 kanal-özel event + dönüşüm; otomatik olarak GA4 key event / Meta custom conversion / GTM tag / Google Ads dönüşüm akışına girer. 5 etiket TR+EN.
+  - tsc 0 hata; tr/en parity 2995=2995. Firecrawl gerçek tarama akışı korundu; sahte veri yok.
+- **Dosyalar:** `lib/marketing-setup/{siteScanner.ts,constants.ts}`, `locales/{tr,en}.json`
+
 ## 2026-05-29 — Marketing Kurulumu: test kaldırıldı + reklam bağlantıları (kitle/lookalike/GA4→Ads) GERÇEKTEN kuruluyor
 - **İstek:** "Test istemiyorum, her şey fiilen çalışsın; gerekirse Meta/Google reklam tarafının içinden geçip bağlantıları gerçekten kur — ama mevcut reklam altyapımı bozma." + Abonelik penceresi TR/EN uyumlu olsun.
 - **Çözüm:**

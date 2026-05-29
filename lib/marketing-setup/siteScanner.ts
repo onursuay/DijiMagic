@@ -1,6 +1,8 @@
 import 'server-only'
+import * as cheerio from 'cheerio'
 import type { DetectedAction, RecommendedEvent, SiteScanResult } from './types'
-import type { StandardEventKey } from './constants'
+import { STANDARD_EVENTS, type StandardEventKey } from './constants'
+import { claudeJson, isClaudeReady } from '@/lib/anthropic/text'
 
 /**
  * Scans a website with Firecrawl v2 (https://api.firecrawl.dev) to detect
@@ -154,6 +156,46 @@ const RULES: Rule[] = [
     test: (h) =>
       /(?:<video[\s>]|youtube\.com\/embed|player\.vimeo\.com|wistia|<iframe[^>]+(?:youtube|vimeo))/.test(h),
   },
+  // ── İletişim kanalları ──────────────────────────────────────────────────────
+  // Bu hedefler sitenin kendi kodunda VEYA chat/click-to-chat eklentilerinin
+  // enjekte ettiği link/butonlarda bulunur. Tıklanabilir öğelerin hedef+metni de
+  // haystack'e katıldığı için eklenti butonları da yakalanır.
+  // WhatsApp — wa.me / api.whatsapp.com / whatsapp:// (kesin sinyal, yüksek güven).
+  {
+    event: 'contact_whatsapp',
+    via: 'chat',
+    confidence: 0.9,
+    test: (h) =>
+      /(?:wa\.me\/|wa\.link\/|api\.whatsapp\.com\/send|web\.whatsapp\.com\/send|whatsapp:\/\/send)/.test(h),
+  },
+  // Messenger — m.me / messenger.com/t / fb-messenger://
+  {
+    event: 'contact_messenger',
+    via: 'chat',
+    confidence: 0.85,
+    test: (h) => /(?:m\.me\/|messenger\.com\/t\/|fb-messenger:\/\/)/.test(h),
+  },
+  // Instagram DM — ig.me / instagram.com/direct
+  {
+    event: 'contact_instagram',
+    via: 'chat',
+    confidence: 0.8,
+    test: (h) => /(?:ig\.me\/m\/|ig\.me\/|instagram\.com\/direct)/.test(h),
+  },
+  // Telefon — tel: / callto: (footer'da yaygın → daha düşük güven).
+  {
+    event: 'contact_phone',
+    via: 'call',
+    confidence: 0.65,
+    test: (h) => /(?:href=["']tel:|["'`]tel:\+?\d|callto:\+?\d)/.test(h),
+  },
+  // E-posta — mailto: (footer'da yaygın → daha düşük güven).
+  {
+    event: 'contact_email',
+    via: 'email',
+    confidence: 0.6,
+    test: (h) => /mailto:[^"'\s]+@/.test(h),
+  },
 ]
 
 function detectOnPage(rawHtml: string, source: string): DetectedAction[] {
@@ -169,6 +211,85 @@ function detectOnPage(rawHtml: string, source: string): DetectedAction[] {
     }
   }
   return actions
+}
+
+// ─── Tıklanabilir öğe çıkarma (gerçek DOM) ───────────────────────────────────
+// Render edilmiş HTML'den TÜM tıklanabilir öğeleri (a, button, [onclick],
+// [data-href]) çıkarır — sitenin KENDİ kodu + chat/click-to-chat EKLENTİLERİNİN
+// enjekte ettiği butonlar dahil. Kullanıcının F12 console script'inin sunucu eşdeğeri:
+//   document.querySelectorAll('a, button, [onclick], [data-href]')
+export interface ClickableElement {
+  tag: string
+  text: string
+  target: string
+}
+
+function extractClickables(rawHtml: string): ClickableElement[] {
+  let $: ReturnType<typeof cheerio.load>
+  try {
+    $ = cheerio.load(rawHtml)
+  } catch {
+    return []
+  }
+  const out: ClickableElement[] = []
+  $('a, button, [onclick], [data-href]').each((_i, el) => {
+    const $el = $(el)
+    const node = el as { tagName?: string; name?: string }
+    const tag = String(node.tagName ?? node.name ?? '').toLowerCase()
+    const text = $el.text().replace(/\s+/g, ' ').trim().slice(0, 80)
+    const target = ($el.attr('href') || $el.attr('onclick') || $el.attr('data-href') || '').slice(0, 300)
+    if (text || target) out.push({ tag, text, target })
+  })
+  return out
+}
+
+// ─── AI sınıflandırma (Claude) ───────────────────────────────────────────────
+// Çıkarılan tıklanabilir öğeleri Claude'a verip hangi standart event'lerin
+// gerçekten mevcut olduğunu belirler — deterministik kuralların kaçırdığı veya
+// belirsiz butonları (ör. onclick ile WhatsApp açan "Bize Ulaşın") yakalar.
+// ANTHROPIC_API_KEY yoksa boş set döner → deterministik sonuç korunur (fallback).
+async function classifyClickablesWithClaude(
+  clickables: ClickableElement[],
+): Promise<Set<StandardEventKey>> {
+  const found = new Set<StandardEventKey>()
+  if (!isClaudeReady() || clickables.length === 0) return found
+
+  // Token sınırı için dedup + ilk 250 benzersiz öğe.
+  const seen = new Set<string>()
+  const sample: ClickableElement[] = []
+  for (const c of clickables) {
+    const k = `${c.text}|${c.target}`.toLowerCase()
+    if (seen.has(k)) continue
+    seen.add(k)
+    sample.push(c)
+    if (sample.length >= 250) break
+  }
+
+  const validKeys = STANDARD_EVENTS.map((e) => e.key)
+  const list = sample.map((c, i) => `${i + 1}. <${c.tag}> "${c.text}" -> ${c.target}`).join('\n')
+
+  const result = await claudeJson<{ events: string[] }>({
+    system:
+      "Sen bir web analitik uzmanısın. Bir web sayfasındaki tıklanabilir öğeleri " +
+      "(link/buton) inceleyip hangi standart dönüşüm/etkileşim event'lerinin gerçekten " +
+      'mevcut olduğunu tespit edersin. WhatsApp / telefon / Instagram DM / Messenger / e-posta ' +
+      'gibi iletişim butonlarını (chat veya click-to-chat eklentileri dahil) ve satın alma, ' +
+      'sepete ekleme, arama, form/lead, kayıt gibi aksiyonları değerlendir. SADECE sana verilen ' +
+      'anahtar listesinden seç; emin olmadığın bir anahtarı ekleme.',
+    user:
+      `Geçerli event anahtarları: ${validKeys.join(', ')}\n\n` +
+      `Tıklanabilir öğeler:\n${list}\n\n` +
+      'Bu öğelerden hangi event anahtarları bu sitede mevcut? Yalnızca şu biçimde JSON döndür: ' +
+      '{"events":["anahtar1","anahtar2"]}',
+    maxTokens: 800,
+    temperature: 0,
+    timeoutMs: 30000,
+  })
+
+  for (const k of result?.events ?? []) {
+    if ((validKeys as string[]).includes(k)) found.add(k as StandardEventKey)
+  }
+  return found
 }
 
 /** Build deduped recommendedEvents from the full detectedActions list. */
@@ -297,14 +418,37 @@ export async function scanSite(siteUrl: string): Promise<SiteScanResult> {
   if (pages.length > MAX_PAGES) truncated = true
 
   // ── 3. Detect actions on each page ────────────────────────────────────────
+  // Her sayfa için: (a) gerçek DOM'dan tıklanabilir öğeleri çıkar (site kodu +
+  // eklenti butonları), (b) markup + linkler + tıklanabilir hedef/metinler üzerinde
+  // deterministik kuralları çalıştır.
   const detectedActions: DetectedAction[] = []
+  const allClickables: ClickableElement[] = []
   for (const page of cappedPages) {
     const html = page.rawHtml || page.html || ''
+    const clickables = extractClickables(html)
+    allClickables.push(...clickables)
     const linkBlob = Array.isArray(page.links) ? page.links.join(' ') : ''
-    // Combine markup + discovered links so href-only checkout routes still hit.
-    const haystack = `${html} ${linkBlob}`
+    // Tıklanabilir öğelerin hedef+metni de haystack'e katılır → eklenti-enjekte
+    // WhatsApp/telefon/DM butonları (wa.me, tel:, m.me, ig.me, mailto:) yakalanır.
+    const clickBlob = clickables.map((c) => `${c.target} ${c.text}`).join(' ')
+    const haystack = `${html} ${linkBlob} ${clickBlob}`
     if (!haystack.trim()) continue
     detectedActions.push(...detectOnPage(haystack, pageUrl(page, url)))
+  }
+
+  // ── AI katmanı (Claude) ────────────────────────────────────────────────────
+  // Çıkarılan tüm tıklanabilir öğeleri Claude'a verip deterministik kuralların
+  // kaçırdığı/belirsiz event'leri yakala (ör. onclick ile WhatsApp açan buton).
+  // Non-fatal: hata/anahtar yoksa deterministik sonuç korunur.
+  try {
+    const aiKeys = await classifyClickablesWithClaude(allClickables)
+    for (const key of aiKeys) {
+      if (!detectedActions.some((a) => a.event === key)) {
+        detectedActions.push({ event: key, source: url, via: 'ai', confidence: 0.7 })
+      }
+    }
+  } catch {
+    /* AI sınıflandırma hatası non-fatal — deterministik sonuç geçerli kalır */
   }
 
   if (truncated) {

@@ -38,6 +38,14 @@ export type StandardEventKey =
   | 'lead'
   | 'sign_up'
   | 'video_play'
+  // İletişim aksiyonları — site kodunda VEYA chat/click-to-chat eklentilerinde
+  // bulunabilir. Hepsi Meta 'Contact' standart event'ine, GA4'te kanal-özel
+  // event'e map'lenir ve dönüşüm (key event + custom conversion) sayılır.
+  | 'contact_whatsapp'
+  | 'contact_phone'
+  | 'contact_instagram'
+  | 'contact_messenger'
+  | 'contact_email'
 
 export interface StandardEventDef {
   key: StandardEventKey
@@ -64,6 +72,12 @@ export const STANDARD_EVENTS: StandardEventDef[] = [
   { key: 'lead', ga4Event: 'generate_lead', metaEvent: 'Lead', metaStandard: true, isConversion: true, hasValue: false, i18nKey: 'lead' },
   { key: 'sign_up', ga4Event: 'sign_up', metaEvent: 'CompleteRegistration', metaStandard: true, isConversion: true, hasValue: false, i18nKey: 'signUp' },
   { key: 'video_play', ga4Event: 'video_start', metaEvent: 'VideoPlay', metaStandard: false, isConversion: false, hasValue: false, i18nKey: 'videoPlay' },
+  // İletişim kanalları (Meta 'Contact' standart event'i; GA4 kanal-özel custom event).
+  { key: 'contact_whatsapp', ga4Event: 'contact_whatsapp', metaEvent: 'Contact', metaStandard: true, isConversion: true, hasValue: false, i18nKey: 'whatsapp' },
+  { key: 'contact_phone', ga4Event: 'contact_phone', metaEvent: 'Contact', metaStandard: true, isConversion: true, hasValue: false, i18nKey: 'phoneCall' },
+  { key: 'contact_instagram', ga4Event: 'contact_instagram', metaEvent: 'Contact', metaStandard: true, isConversion: true, hasValue: false, i18nKey: 'instagramDm' },
+  { key: 'contact_messenger', ga4Event: 'contact_messenger', metaEvent: 'Contact', metaStandard: true, isConversion: true, hasValue: false, i18nKey: 'messenger' },
+  { key: 'contact_email', ga4Event: 'contact_email', metaEvent: 'Contact', metaStandard: true, isConversion: true, hasValue: false, i18nKey: 'email' },
 ]
 
 export function getEventDef(key: string): StandardEventDef | undefined {

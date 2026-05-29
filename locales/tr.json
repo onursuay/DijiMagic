@@ -3066,7 +3066,12 @@
       "viewSearchResults": "Arama Yapma",
       "lead": "İletişim / Form",
       "signUp": "Kayıt Olma",
-      "videoPlay": "Video Oynatma"
+      "videoPlay": "Video Oynatma",
+      "whatsapp": "WhatsApp Mesajı",
+      "phoneCall": "Telefon Araması",
+      "instagramDm": "Instagram DM",
+      "messenger": "Messenger Mesajı",
+      "email": "E-posta"
     },
     "scan": {
       "title": "Web Sitenizi Tarayalım",
