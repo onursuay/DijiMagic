@@ -3072,7 +3072,7 @@
     },
     "preview": {
       "title": "What Will Be Created?",
-      "description": "The following configuration will be created. You can remove anything you don't want.",
+      "description": "The configuration that will be created, based on your connections and selected events. Go back a step to change the event selection.",
       "gtm": "Google Tag Manager",
       "ga4": "Google Analytics 4",
       "meta": "Meta Pixel & CAPI",
@@ -3093,8 +3093,6 @@
       "googleAdsRemarketing": "Remarketing lists",
       "googleAdsGa4Import": "GA4 import link",
       "gscVerify": "Property verification",
-      "eventsTitle": "Tracked Events",
-      "eventsHint": "Uncheck what you want to remove; click again to add.",
       "willCreate": "Will be created",
       "confirm": "Confirm and Start Setup"
     },

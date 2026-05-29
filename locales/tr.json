@@ -3072,7 +3072,7 @@
     },
     "preview": {
       "title": "Neler Kurulacak?",
-      "description": "Aşağıdaki yapılandırma oluşturulacak. İstemediklerinizi kaldırabilirsiniz.",
+      "description": "Bağlantılarına ve seçtiğin event'lere göre oluşturulacak yapılandırma. Event seçimini değiştirmek için önceki adıma dönebilirsin.",
       "gtm": "Google Tag Manager",
       "ga4": "Google Analytics 4",
       "meta": "Meta Pixel & CAPI",
@@ -3093,8 +3093,6 @@
       "googleAdsRemarketing": "Yeniden pazarlama listeleri",
       "googleAdsGa4Import": "GA4 içe aktarma bağlantısı",
       "gscVerify": "Property doğrulama",
-      "eventsTitle": "İzlenecek Event'ler",
-      "eventsHint": "Kaldırmak istediğinin işaretini kaldır; eklemek için tekrar tıkla.",
       "willCreate": "Oluşturulacak",
       "confirm": "Onayla ve Kuruluma Başla"
     },

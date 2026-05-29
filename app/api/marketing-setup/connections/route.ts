@@ -2,6 +2,7 @@ import { NextResponse } from 'next/server'
 import { getCurrentUser } from '@/lib/billing/user'
 import { resolveMetaContext } from '@/lib/meta/context'
 import { getConnectionStatus as getGoogleAdsConnectionStatus } from '@/lib/googleAdsConnectionStore'
+import { getGoogleAdsContext, searchGAds } from '@/lib/googleAdsAuth'
 import { getGAConnectionStatus } from '@/lib/google-analytics/connectionStore'
 import { getGSCConnectionStatus } from '@/lib/google-search-console/connectionStore'
 import { getGoogleSetupToken } from '@/lib/marketing-setup/setupStore'
@@ -25,19 +26,28 @@ export async function GET() {
   }
 
   const status: ConnectionStatus = {
-    meta: { connected: false, adAccountId: null, pixelId: null },
-    googleAds: { connected: false, customerId: null },
+    meta: { connected: false, adAccountId: null, adAccountName: null, pixelId: null },
+    googleAds: { connected: false, customerId: null, customerName: null },
     ga4: { connected: false, propertyId: null },
     gsc: { connected: false, siteUrl: null },
     setupConsent: { connected: false, scopes: [] },
   }
 
-  // ── Meta: ad account from resolved context + best-effort pixel lookup ──────
+  // ── Meta: ad account (name + id) from resolved context + best-effort pixel ──
   try {
     const ctx = await resolveMetaContext()
     if (ctx) {
       status.meta.connected = true
       status.meta.adAccountId = ctx.accountId
+      // Ad account display name.
+      try {
+        const nameRes = await ctx.client.get<{ name?: string }>(`/${ctx.accountId}`, {
+          fields: 'name',
+        })
+        if (nameRes.ok && nameRes.data?.name) status.meta.adAccountName = nameRes.data.name
+      } catch {
+        // Name unavailable — UI falls back to the id.
+      }
       // Best-effort pixel: read the first pixel on the ad account.
       try {
         const pixelRes = await ctx.client.get<{ data?: { id: string }[] }>(
@@ -55,11 +65,24 @@ export async function GET() {
     // Meta context failed — leave meta disconnected.
   }
 
-  // ── Google Ads: existing connection store (no extra API calls) ─────────────
+  // ── Google Ads: connection store + best-effort descriptive name ────────────
   try {
     const gads = await getGoogleAdsConnectionStatus(user.id)
     status.googleAds.connected = gads.hasToken
     status.googleAds.customerId = gads.customerId
+    if (gads.hasToken) {
+      try {
+        const ctx = await getGoogleAdsContext()
+        const rows = await searchGAds<{ customer?: { descriptiveName?: string } }>(
+          ctx,
+          'SELECT customer.descriptive_name FROM customer LIMIT 1',
+        )
+        const name = rows?.[0]?.customer?.descriptiveName
+        if (name) status.googleAds.customerName = name
+      } catch {
+        // Name unavailable — UI falls back to the customer id.
+      }
+    }
   } catch {
     // leave googleAds disconnected
   }

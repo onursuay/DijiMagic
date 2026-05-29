@@ -20,7 +20,9 @@ export default function PlatformConnect({ state, update, goNext, goBack }: StepP
   // Ad account identifiers are fed from the existing Entegrasyon connections —
   // never typed manually. resolveMetaContext / Google Ads connection provide them.
   const metaAcct = conn?.meta.adAccountId ?? ''
+  const metaName = conn?.meta.adAccountName ?? ''
   const adsCust = conn?.googleAds.customerId ?? ''
+  const adsName = conn?.googleAds.customerName ?? ''
 
   async function persist(patch: Record<string, unknown>) {
     try {
@@ -189,7 +191,14 @@ export default function PlatformConnect({ state, update, goNext, goBack }: StepP
           </label>
           {metaAcct ? (
             <div className="flex items-center justify-between gap-2 px-3.5 py-2.5 rounded-xl border border-emerald-200 bg-emerald-50">
-              <span className="font-mono text-sm text-emerald-800 truncate">{metaAcct}</span>
+              <span className="min-w-0">
+                <span className="block text-sm font-medium text-emerald-800 truncate">
+                  {metaName || metaAcct}
+                </span>
+                {metaName && (
+                  <span className="block font-mono text-[11px] text-emerald-600/70 truncate">{metaAcct}</span>
+                )}
+              </span>
               <span className="inline-flex items-center gap-1 text-xs font-medium text-emerald-700 flex-shrink-0">
                 <CheckCircle2 className="w-3.5 h-3.5" />
                 {t('connect.autoFromIntegration')}
@@ -217,7 +226,14 @@ export default function PlatformConnect({ state, update, goNext, goBack }: StepP
           </label>
           {adsCust ? (
             <div className="flex items-center justify-between gap-2 px-3.5 py-2.5 rounded-xl border border-emerald-200 bg-emerald-50">
-              <span className="font-mono text-sm text-emerald-800 truncate">{adsCust}</span>
+              <span className="min-w-0">
+                <span className="block text-sm font-medium text-emerald-800 truncate">
+                  {adsName || adsCust}
+                </span>
+                {adsName && (
+                  <span className="block font-mono text-[11px] text-emerald-600/70 truncate">{adsCust}</span>
+                )}
+              </span>
               <span className="inline-flex items-center gap-1 text-xs font-medium text-emerald-700 flex-shrink-0">
                 <CheckCircle2 className="w-3.5 h-3.5" />
                 {t('connect.autoFromIntegration')}

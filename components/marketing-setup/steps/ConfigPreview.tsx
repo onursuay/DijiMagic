@@ -3,14 +3,13 @@
 import { useTranslations } from 'next-intl'
 import {
   Check,
-  Plus,
   Tags,
   BarChart3,
   Building2,
   Search,
   Globe,
 } from 'lucide-react'
-import { STANDARD_EVENTS, type StandardEventKey } from '@/lib/marketing-setup/constants'
+import { STANDARD_EVENTS } from '@/lib/marketing-setup/constants'
 import type { StepProps } from '@/components/marketing-setup/wizardTypes'
 
 interface PlatformItem {
@@ -18,7 +17,7 @@ interface PlatformItem {
   detail?: string
 }
 
-export default function ConfigPreview({ state, update, goNext, goBack }: StepProps) {
+export default function ConfigPreview({ state, goNext, goBack }: StepProps) {
   const t = useTranslations('marketingSetup')
 
   const conn = state.connections
@@ -33,26 +32,6 @@ export default function ConfigPreview({ state, update, goNext, goBack }: StepPro
   const setupReady = !!conn?.setupConsent.connected
   const metaReady = !!conn?.meta.connected
   const adsReady = !!conn?.googleAds.connected
-
-  async function persistSelection(events: StandardEventKey[]) {
-    try {
-      await fetch('/api/marketing-setup/setup', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ patch: { selected_events: events } }),
-      })
-    } catch {
-      /* best-effort; selection stays in wizard state */
-    }
-  }
-
-  function toggleEvent(key: StandardEventKey) {
-    const next = state.selectedEvents.includes(key)
-      ? state.selectedEvents.filter((e) => e !== key)
-      : [...state.selectedEvents, key]
-    update({ selectedEvents: next })
-    void persistSelection(next)
-  }
 
   const cards: {
     key: string
@@ -127,37 +106,6 @@ export default function ConfigPreview({ state, update, goNext, goBack }: StepPro
       <div className="text-center mb-6">
         <h2 className="text-xl font-semibold text-gray-900">{t('preview.title')}</h2>
         <p className="mt-1.5 text-sm text-gray-500">{t('preview.description')}</p>
-      </div>
-
-      {/* Tracked events — toggle to add/remove */}
-      <div className="mb-5 rounded-2xl border border-gray-200 bg-gradient-to-br from-emerald-50/60 to-white p-5 shadow-sm">
-        <div className="flex items-center justify-between mb-1">
-          <h3 className="text-sm font-semibold text-gray-900">{t('preview.eventsTitle')}</h3>
-          <span className="rounded-full bg-emerald-100 px-2.5 py-0.5 text-xs font-semibold text-emerald-700">
-            {t('scan.selectedCount', { count: state.selectedEvents.length })}
-          </span>
-        </div>
-        <p className="text-xs text-gray-500 mb-3">{t('preview.eventsHint')}</p>
-        <div className="flex flex-wrap gap-2">
-          {STANDARD_EVENTS.map((def) => {
-            const on = state.selectedEvents.includes(def.key)
-            return (
-              <button
-                key={def.key}
-                type="button"
-                onClick={() => toggleEvent(def.key)}
-                className={`inline-flex items-center gap-1.5 rounded-full px-3.5 py-1.5 text-xs font-medium transition-all ${
-                  on
-                    ? 'bg-emerald-500 text-white shadow-sm hover:bg-emerald-600'
-                    : 'border border-gray-200 bg-white text-gray-500 hover:border-emerald-300 hover:text-emerald-700'
-                }`}
-              >
-                {on ? <Check className="w-3.5 h-3.5" /> : <Plus className="w-3.5 h-3.5" />}
-                {t(`events.${def.i18nKey}`)}
-              </button>
-            )
-          })}
-        </div>
       </div>
 
       {/* Platform cards */}

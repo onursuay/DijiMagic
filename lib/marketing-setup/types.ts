@@ -70,8 +70,8 @@ export interface DeployStepResult {
 
 // ─── Connection status (Step 2) ──────────────────────────────────────────────
 export interface ConnectionStatus {
-  meta: { connected: boolean; adAccountId: string | null; pixelId: string | null }
-  googleAds: { connected: boolean; customerId: string | null }
+  meta: { connected: boolean; adAccountId: string | null; adAccountName: string | null; pixelId: string | null }
+  googleAds: { connected: boolean; customerId: string | null; customerName: string | null }
   ga4: { connected: boolean; propertyId: string | null }
   gsc: { connected: boolean; siteUrl: string | null }
   setupConsent: { connected: boolean; scopes: string[] }

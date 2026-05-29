@@ -2,6 +2,11 @@
 
 ---
 
+## 2026-05-29 — Marketing Kurulumu: hesap ADI gösterimi + mükerrer event seçimi kaldırıldı
+- **Sorun:** (1) Platform Bağlantıları'nda reklam hesabı ID numarası (`act_…`, `142…`) gösteriliyordu; kullanıcı **hesap adı** istedi. (2) Adım 1'de (site tarama) event seçimi varken Adım 3'te (önizleme) tekrar event toggle'ı vardı — mükerrer.
+- **Çözüm:** (1) `ConnectionStatus`'a `meta.adAccountName` + `googleAds.customerName` eklendi; `connections` route'u Meta adını Graph (`/{act}?fields=name`), Google Ads adını GAQL (`customer.descriptive_name`) ile çeker (salt-okunur, hata olursa ID'ye düşer). UI artık **adı** birincil, ID'yi küçük alt satırda gösterir. (2) ConfigPreview'den event toggle kartı kaldırıldı — önizleme artık sadece "ne oluşturulacak" özeti; event seçimi yalnız Adım 1'de. `preview.description` güncellendi, kullanılmayan `eventsTitle/eventsHint` anahtarları silindi. parity tam (2936/2936); tsc 0 hata; next build temiz. Mevcut Meta/Google entegrasyonuna dokunulmadı (yalnız okuma helper'ları import edildi).
+- **Dosyalar:** `lib/marketing-setup/types.ts`, `app/api/marketing-setup/connections/route.ts`, `components/marketing-setup/steps/PlatformConnect.tsx`, `components/marketing-setup/steps/ConfigPreview.tsx`, `locales/tr.json`, `locales/en.json`
+
 ## 2026-05-29 — Marketing Kurulumu: mevcut GTM container'ları otomatik algılanır
 - **İstenen:** Reklam hesabı kimlikleri gibi, kullanıcının Google hesabında zaten kurulu GTM container'ı varsa o da otomatik algılanmalı (manuel `GTM-XXXXXXX` yazma yerine).
 - **Çözüm:** Yeni `GET /api/marketing-setup/gtm-containers` ucu, setup-consent token'ı (tagmanager scope) ile kullanıcının tüm GTM hesaplarındaki **web container'larını** listeler (`gtmClient.listContainers`, salt-okunur). PlatformConnect "Mevcut container'ı kullan" seçildiğinde manuel input yerine **algılanan container'lardan seçim** (WizardSelect: `İsim (GTM-XXXX)`) sunar + "{n} mevcut container bulundu" rozeti gösterir. Container bulunduğunda mod otomatik "existing"e geçip ilki önseçilir; hiç yoksa manuel giriş fallback'i korunur. 2 yeni i18n anahtarı TR+EN; parity tam (2938/2938); tsc 0 hata; next build temiz. Meta/Google entegrasyonuna dokunulmadı.
