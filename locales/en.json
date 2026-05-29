@@ -3088,6 +3088,9 @@
       "googleAdsRemarketing": "Remarketing lists",
       "googleAdsGa4Import": "GA4 import link",
       "gscVerify": "Property verification",
+      "eventsTitle": "Tracked Events",
+      "eventsHint": "Uncheck what you want to remove; click again to add.",
+      "willCreate": "Will be created",
       "confirm": "Confirm and Start Setup"
     },
     "deploy": {

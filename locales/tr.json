@@ -3088,6 +3088,9 @@
       "googleAdsRemarketing": "Yeniden pazarlama listeleri",
       "googleAdsGa4Import": "GA4 içe aktarma bağlantısı",
       "gscVerify": "Property doğrulama",
+      "eventsTitle": "İzlenecek Event'ler",
+      "eventsHint": "Kaldırmak istediğinin işaretini kaldır; eklemek için tekrar tıkla.",
+      "willCreate": "Oluşturulacak",
       "confirm": "Onayla ve Kuruluma Başla"
     },
     "deploy": {

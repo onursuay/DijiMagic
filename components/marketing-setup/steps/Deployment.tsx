@@ -1,6 +1,6 @@
 'use client'
 
-import { useState, useCallback } from 'react'
+import { useState, useCallback, useRef, useEffect } from 'react'
 import { useTranslations } from 'next-intl'
 import {
   CheckCircle2,
@@ -48,11 +48,23 @@ export default function Deployment({ state, update, goNext, goBack }: StepProps)
 
   const deploySteps = state.deploySteps
 
+  // Accumulate results in a ref to avoid a stale-closure bug: merging into a
+  // value captured from render (state.deploySteps) made each step overwrite the
+  // previous one, leaving only the last step. The ref always holds the latest.
+  const resultsRef = useRef<Partial<Record<SetupStepName, DeployStepResult>>>(state.deploySteps || {})
+
+  const pushResult = useCallback(
+    (step: SetupStepName, value: DeployStepResult) => {
+      resultsRef.current = { ...resultsRef.current, [step]: value }
+      update({ deploySteps: { ...resultsRef.current } })
+    },
+    [update],
+  )
+
   const runStep = useCallback(
     async (route: string, step: SetupStepName): Promise<DeployStepResult> => {
       setActiveStep(step)
-      // Mark running immediately for UI feedback.
-      update({ deploySteps: { ...state.deploySteps, [step]: { step, status: 'running' } } })
+      pushResult(step, { step, status: 'running' }) // immediate UI feedback
       try {
         const res = await fetch(`/api/marketing-setup/${route}`, {
           method: 'POST',
@@ -66,23 +78,18 @@ export default function Deployment({ state, update, goNext, goBack }: StepProps)
           result: data?.result,
           error: data?.error ?? null,
         }
-        update({ deploySteps: { ...state.deploySteps, [step]: normalized } })
+        pushResult(step, normalized)
         return normalized
       } catch {
-        const errored: DeployStepResult = {
-          step,
-          status: 'error',
-          error: t('errors.deployFailed'),
-        }
-        update({ deploySteps: { ...state.deploySteps, [step]: errored } })
+        const errored: DeployStepResult = { step, status: 'error', error: 'deployFailed' }
+        pushResult(step, errored)
         return errored
       }
     },
-    // state.deploySteps intentionally read fresh inside; update is stable.
-    [state.deploySteps, update, t],
+    [pushResult],
   )
 
-  async function runAll() {
+  const runAll = useCallback(async () => {
     if (running) return
     setRunning(true)
     setStarted(true)
@@ -95,7 +102,18 @@ export default function Deployment({ state, update, goNext, goBack }: StepProps)
     setActiveStep(null)
     setRunning(false)
     setFinished(true)
-  }
+  }, [running, runStep])
+
+  // Auto-run once on entering the "Automatic Setup" step (the preview's confirm
+  // button is the gate). Skip if a deploy already ran (e.g. user navigated back).
+  const autoStarted = useRef(false)
+  useEffect(() => {
+    if (autoStarted.current) return
+    autoStarted.current = true
+    const already = Object.values(state.deploySteps || {}).some((s) => s && s.status !== 'pending')
+    if (!already) void runAll()
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [])
 
   async function retryStep(route: string, step: SetupStepName) {
     if (running) return

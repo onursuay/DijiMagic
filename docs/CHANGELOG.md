@@ -2,6 +2,11 @@
 
 ---
 
+## 2026-05-29 — Marketing Kurulumu: deploy birikim bug'ı + önizleme kart tasarımı + event toggle
+- **Sorun:** (1) Sonuç ekranında tüm platformlar "Bekliyor" görünüyordu — Deployment'taki `runStep`, `state.deploySteps`'i stale closure'dan okuyup üzerine yazıyor, her adım bir öncekini siliyor, yalnız son adım (search_console) kalıyordu. (2) "Otomatik Kurulum" adımı otomatik başlamıyordu (kullanıcı "Başlat"ı bulmak zorundaydı). (3) "Neler Kurulacak" alanı alt alta düz liste idi, "kaldırabilirsiniz" diyordu ama kaldırma yoktu; GTM/GA4/GSC'nin yanlışlıkla Google okuma bağlantısına bağlı görünmesi.
+- **Çözüm:** (1) Deploy sonuçları artık `useRef` ile birikiyor (stale closure yok) — tüm adımların durumu doğru kalır. (2) Adıma girince (önizlemedeki "Onayla" onayından sonra) deploy otomatik başlar; tekil adım "Tekrar Dene" korunur. (3) ConfigPreview modern 2 sütun kart grid'e çevrildi: üstte event'leri ekle/çıkar toggle'ı (gerçek "kaldırma"), eşit yükseklikte platform kartları, ikon rozetleri, "Oluşturulacak/Bağlı değil" durumu. "Enabled" mantığı düzeltildi: GTM/GA4/GSC artık doğru şekilde **Kurulum İzinleri** (setup consent), Meta→Meta bağlantısı, Google Ads→Ads bağlantısına bağlı. tr/en parity tam (2933/2933); tsc 0 hata; next build temiz.
+- **Dosyalar:** `components/marketing-setup/steps/Deployment.tsx`, `components/marketing-setup/steps/ConfigPreview.tsx`, `locales/tr.json`, `locales/en.json`
+
 ## 2026-05-29 — Marketing Kurulumu: deploy hata mesajları EN/TR'ye taşındı
 - **Sorun:** Otomatik kurulum (Adım 4) ve sonuç ekranı, API route'larından gelen ham hata kodlarını (`not_authenticated`, `no_pixel`, `setup consent required`, ham Google API hataları…) doğrudan kullanıcıya basıyordu — EN/TR ve "ham teknik terim yok" kurallarını çiğniyordu.
 - **Çözüm:** Yeni `stepError.ts` eşleyici, route hata kodlarını/mesajlarını `marketingSetup.errors.*` anahtarlarına çevirir (bilinmeyen → genel çevrilmiş mesaj; ham detay yalnız sunucu log'unda kalır). `Deployment.tsx` ve `ResultDashboard.tsx` artık `t(stepErrorKey(error))` gösteriyor. 4 yeni anahtar (notAuthenticated/noSetup/noPixel/missingSiteUrl) TR+EN eklendi; parity tam (2930/2930); tsc 0 hata.
