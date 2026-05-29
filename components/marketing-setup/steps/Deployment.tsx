@@ -15,6 +15,7 @@ import {
 import type { SetupStepName } from '@/lib/marketing-setup/constants'
 import type { DeployStepResult } from '@/lib/marketing-setup/types'
 import type { StepProps } from '@/components/marketing-setup/wizardTypes'
+import { stepErrorKey } from '@/components/marketing-setup/stepError'
 
 // Sequence of deploy steps: API route (hyphenated) → SetupStepName (underscored).
 // Order matters: GA4 provisions ga4_measurement_id and Meta sets meta_pixel_id
@@ -184,8 +185,8 @@ export default function Deployment({ state, update, goNext, goBack }: StepProps)
                         : 'text-gray-400'
                   }`}
                 >
-                  {result?.status === 'error' && result.error
-                    ? result.error
+                  {result?.status === 'error'
+                    ? t(stepErrorKey(result.error))
                     : statusLabel(result?.status)}
                 </p>
               </div>

@@ -3152,8 +3152,12 @@
       "notConnectedGoogle": "Connect to Google first.",
       "notConnectedMeta": "Connect to Meta first.",
       "notConnectedSetup": "Grant setup permissions first.",
+      "notAuthenticated": "Session not found. Please sign in again.",
+      "noSetup": "Setup record not found. Restart the wizard.",
+      "noPixel": "No Meta Pixel found. Connect Meta first.",
+      "missingSiteUrl": "Site URL is missing. Complete the site scan step first.",
       "scanFailed": "Site scan failed.",
-      "deployFailed": "Setup failed.",
+      "deployFailed": "This step couldn't be completed. Please try again.",
       "notAvailable": "This feature isn't available to you yet."
     }
   },

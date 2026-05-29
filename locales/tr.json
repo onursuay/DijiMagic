@@ -3152,8 +3152,12 @@
       "notConnectedGoogle": "Önce Google'a bağlanın.",
       "notConnectedMeta": "Önce Meta'ya bağlanın.",
       "notConnectedSetup": "Önce kurulum izinlerini verin.",
+      "notAuthenticated": "Oturum bulunamadı. Lütfen tekrar giriş yapın.",
+      "noSetup": "Kurulum kaydı bulunamadı. Sihirbazı baştan başlatın.",
+      "noPixel": "Meta Pixel bulunamadı. Önce Meta'ya bağlanın.",
+      "missingSiteUrl": "Site adresi eksik. Önce site tarama adımını tamamlayın.",
       "scanFailed": "Site taraması başarısız oldu.",
-      "deployFailed": "Kurulum başarısız oldu.",
+      "deployFailed": "Bu adım tamamlanamadı. Lütfen tekrar deneyin.",
       "notAvailable": "Bu özellik henüz kullanımınıza açık değil."
     }
   },
