@@ -2,6 +2,20 @@
 
 ---
 
+## 2026-05-29 — SEO otomatik makale: Inngest'siz çalışma + WhatsApp tespiti + zamanlama telafisi + anahtar kelime kalıcılığı; Marketing adı + Site İçi Arama kaldırma + font ayarı
+- **Sorunlar:** (SEO) Zamanlanan makale hiç üretilmiyor/yayınlanmıyor, "Makalelerim" boş, anahtar kelime yenilemede kayboluyor. (Tarama) WhatsApp eklenti butonu tespit edilmiyor. (UI) Sidebar hâlâ "Marketing Kurulumu", "Site İçi Arama" event'i karışıklığı, yazılar fazla büyük.
+- **Çözüm:**
+  - **EN KRİTİK — Inngest'siz çalışma:** İş mantığı `lib/seo/runScheduleArticle.ts`'e (step'siz) çıkarıldı; Inngest function buna delege ediyor. Cron route artık Inngest yapılandırılmamışsa 503 vermek yerine **INLINE** üret→görsel→kaydet→yayınla çalıştırıyor (Vercel 60s zaman bütçesiyle, sıralı). Böylece otomatik akış Inngest kurulumuna **bağımlı olmadan** çalışır. + cron loglama eklendi.
+  - **Zamanlama telafisi:** `isScheduleDue` tek-saat eşleşmesinden "yayın anı bugün geldi/geçti + bugün çalışmadı" mantığına geçti (dakika dahil) → kullanıcı saati pencereden sonra ayarlasa bile aynı gün bir sonraki cron'da telafi edilir, ertesi güne sarkmaz.
+  - **Anahtar kelime kalıcılığı:** SeoAutomationPanel'de kelime ekle/çıkar artık **otomatik kaydediyor** ("Kaydet" beklemeden); kaydetme başarısızsa sessiz kalmıyor, hata göstergesi çıkıyor (saveError, TR+EN).
+  - **WhatsApp tespiti (#1):** Firecrawl crawl + scrape'e `waitFor: 3500` eklendi — chat/click-to-chat eklenti butonları (wa.me/tel/ig.me…) client-side render edildiği için bekleme olmadan HTML'de görünmüyordu. (Gerçek site testinde `wa.me/...` linki Firecrawl çıktısında doğrulandı.)
+  - **Site İçi Arama kaldırıldı (#2):** `view_search_results` event'i katalog + tarama kuralı + GA4 audience + i18n'den tamamen çıkarıldı (telefon aramasıyla karışıyordu).
+  - **Sidebar "Marketing" (#4):** Etiket `lib/nav.ts` label'ından değil i18n `sidebar.marketingkurulumu`'dan geliyordu; o ve feature etiketi "Marketing" yapıldı (TR+EN).
+  - **Font ayarı (#5):** 5 adımda başlık `text-2xl`→`text-xl`, gövde `text-base`→`text-sm` (çok büyükten bir tık küçüğe).
+  - tsc 0 hata; tr/en parity 2995=2995.
+- **Not (prod):** Üretimin canlıda çalışması için Vercel'de `ANTHROPIC_API_KEY` (zorunlu), `SITE_CREDENTIALS_KEY` (WordPress parola), `CRON_SECRET` + omddq'da `article_schedules` / `site_connections` / `yoai_articles` SEO kolonları gerekir.
+- **Dosyalar:** `lib/seo/{runScheduleArticle.ts (yeni),timezone.ts}`, `inngest/functions/seoArticleRun.ts`, `app/api/cron/seo-article-run/route.ts`, `components/seo/SeoAutomationPanel.tsx`, `lib/marketing-setup/{siteScanner.ts,constants.ts,ga4AdminClient.ts}`, `lib/nav.ts`, `components/marketing-setup/steps/*.tsx`, `locales/{tr,en}.json`
+
 ## 2026-05-29 — Marketing Kurulumu UX: "Marketing" adı, arama etiketi netleştirme, URL bug'ı, büyük font + 4 platform kartı
 - **Sorun (5 madde):** (1) "Arama Yapma" (site içi arama) ile "Telefon Araması" karıştırılıyordu. (2) Modül adı "Marketing" olacaktı, değişmemişti. (3) Adres kutusu boşken "14 sayfa tarandı" görünüyordu. (4) Yazılar çok küçük, alanlar dar/cılız. (5) Platform Bağlantıları'nda Google tek kart + Meta tek kart yerine 4 ayrı kart istendi.
 - **Çözüm:**

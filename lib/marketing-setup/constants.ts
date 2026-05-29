@@ -34,7 +34,6 @@ export type StandardEventKey =
   | 'add_to_cart'
   | 'begin_checkout'
   | 'add_payment_info'
-  | 'view_search_results'
   | 'lead'
   | 'sign_up'
   | 'video_play'
@@ -68,7 +67,6 @@ export const STANDARD_EVENTS: StandardEventDef[] = [
   { key: 'add_to_cart', ga4Event: 'add_to_cart', metaEvent: 'AddToCart', metaStandard: true, isConversion: false, hasValue: true, i18nKey: 'addToCart' },
   { key: 'begin_checkout', ga4Event: 'begin_checkout', metaEvent: 'InitiateCheckout', metaStandard: true, isConversion: true, hasValue: true, i18nKey: 'beginCheckout' },
   { key: 'add_payment_info', ga4Event: 'add_payment_info', metaEvent: 'AddPaymentInfo', metaStandard: true, isConversion: true, hasValue: true, i18nKey: 'addPaymentInfo' },
-  { key: 'view_search_results', ga4Event: 'view_search_results', metaEvent: 'Search', metaStandard: true, isConversion: false, hasValue: false, i18nKey: 'viewSearchResults' },
   { key: 'lead', ga4Event: 'generate_lead', metaEvent: 'Lead', metaStandard: true, isConversion: true, hasValue: false, i18nKey: 'lead' },
   { key: 'sign_up', ga4Event: 'sign_up', metaEvent: 'CompleteRegistration', metaStandard: true, isConversion: true, hasValue: false, i18nKey: 'signUp' },
   { key: 'video_play', ga4Event: 'video_start', metaEvent: 'VideoPlay', metaStandard: false, isConversion: false, hasValue: false, i18nKey: 'videoPlay' },

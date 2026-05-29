@@ -119,16 +119,6 @@ const RULES: Rule[] = [
       /(?:add\s+to\s+(?:cart|bag|basket)|add-to-cart|addtocart|data-add-to-cart)/.test(h) ||
       /(?:sepete\s+ekle|sepete\s+at|sepete-ekle)/.test(h),
   },
-  // Search — forms and result pages.
-  {
-    event: 'view_search_results',
-    via: 'search',
-    confidence: 0.65,
-    test: (h) =>
-      /(?:type=["']search["']|role=["']search["']|name=["'](?:q|s|query|search|arama|ara)["'])/.test(h) ||
-      /(?:search\s+results|aranan\s+sonu[cç]lar|arama\s+sonu[cç]lar)/.test(h) ||
-      /(?:placeholder=["'][^"']*(?:search|ara|arama)[^"']*["'])/.test(h),
-  },
   // Lead — contact / quote / demo forms.
   {
     event: 'lead',
@@ -343,6 +333,10 @@ export async function scanSite(siteUrl: string): Promise<SiteScanResult> {
         // links lets us account for checkout/cart routes referenced via href.
         formats: ['rawHtml', 'links'],
         onlyMainContent: false,
+        // Chat / click-to-chat (WhatsApp, telefon, Instagram DM) eklenti butonları
+        // client-side JS ile enjekte edilir; render bitmeden HTML alınırsa wa.me/tel
+        // linkleri rawHtml+links'te HİÇ görünmez. Render için bekle (eklenti tespiti şart).
+        waitFor: 3500,
       },
     }),
   })
@@ -401,7 +395,7 @@ export async function scanSite(siteUrl: string): Promise<SiteScanResult> {
     const scrapeRes = await fetch(`${FIRECRAWL_BASE}/v2/scrape`, {
       method: 'POST',
       headers: authHeaders(apiKey),
-      body: JSON.stringify({ url, formats: ['rawHtml', 'links'], onlyMainContent: false }),
+      body: JSON.stringify({ url, formats: ['rawHtml', 'links'], onlyMainContent: false, waitFor: 3500 }),
     })
     if (scrapeRes.ok) {
       const scrapeJson = (await scrapeRes.json()) as { success?: boolean; data?: FirecrawlPage }

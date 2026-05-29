@@ -38,6 +38,7 @@ export default function SeoAutomationPanel() {
   const [loading, setLoading] = useState(true)
   const [saving, setSaving] = useState(false)
   const [saved, setSaved] = useState(false)
+  const [saveError, setSaveError] = useState(false)
   const [sites, setSites] = useState<SiteOption[]>([])
   const [scheduleId, setScheduleId] = useState<string | undefined>()
 
@@ -95,15 +96,11 @@ export default function SeoAutomationPanel() {
 
   useEffect(() => { load() }, [load])
 
-  const addKeyword = () => {
-    const v = kwInput.trim()
-    if (v && !keywords.includes(v)) setKeywords((p) => [...p, v])
-    setKwInput('')
-  }
-
-  const handleSave = async () => {
+  // function declaration → hoisted; addKeyword/removeKeyword aşağıdan çağırabilir.
+  async function handleSave(kwOverride?: string[]) {
     setSaving(true)
     setSaved(false)
+    setSaveError(false)
     try {
       const payload = {
         id: scheduleId,
@@ -117,7 +114,7 @@ export default function SeoAutomationPanel() {
         wordCount,
         autoPublish,
         generateImage: true, // her makaleye görsel otomatik üretilir — kullanıcıya seçenek sunulmaz
-        keywordPool: keywords,
+        keywordPool: kwOverride ?? keywords,
       }
       const res = await fetch(scheduleId ? `/api/seo/schedules/${scheduleId}` : '/api/seo/schedules', {
         method: scheduleId ? 'PATCH' : 'POST',
@@ -130,9 +127,32 @@ export default function SeoAutomationPanel() {
         setLastStatus(data.schedule.last_status)
         setSaved(true)
         setTimeout(() => setSaved(false), 3000)
+      } else {
+        setSaveError(true)
       }
-    } catch { /* ignore */ }
-    finally { setSaving(false) }
+    } catch {
+      setSaveError(true)
+    } finally {
+      setSaving(false)
+    }
+  }
+
+  // Anahtar kelime ekle/çıkar → OTOMATİK kaydet ("Kaydet" beklemeden persist;
+  // sayfa yenilenince kelimeler korunur).
+  const addKeyword = () => {
+    const v = kwInput.trim()
+    if (v && !keywords.includes(v)) {
+      const next = [...keywords, v]
+      setKeywords(next)
+      void handleSave(next)
+    }
+    setKwInput('')
+  }
+
+  const removeKeyword = (kw: string) => {
+    const next = keywords.filter((k) => k !== kw)
+    setKeywords(next)
+    void handleSave(next)
   }
 
   const lastStatusText = (): string | null => {
@@ -273,7 +293,7 @@ export default function SeoAutomationPanel() {
           {keywords.map((kw) => (
             <span key={kw} className="inline-flex items-center gap-1 px-2 py-1 text-xs rounded-full bg-emerald-50 text-emerald-700">
               {kw}
-              <button onClick={() => setKeywords((p) => p.filter((k) => k !== kw))} className="hover:text-emerald-900">
+              <button onClick={() => removeKeyword(kw)} className="hover:text-emerald-900">
                 <X className="w-3 h-3" />
               </button>
             </span>
@@ -306,8 +326,13 @@ export default function SeoAutomationPanel() {
               <CheckCircle2 className="w-3.5 h-3.5" /> {t('saved')}
             </span>
           )}
+          {saveError && (
+            <span className="text-xs text-red-600 flex items-center gap-1">
+              <X className="w-3.5 h-3.5" /> {t('saveError')}
+            </span>
+          )}
           <button
-            onClick={handleSave}
+            onClick={() => handleSave()}
             disabled={saving}
             className="inline-flex items-center gap-1.5 px-4 py-2 text-sm text-white bg-purple-600 rounded-lg hover:bg-purple-700 disabled:opacity-50"
           >

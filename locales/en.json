@@ -23,7 +23,7 @@
         "seo": "SEO",
         "audience_ai": "AI-Based Audience",
         "ad_account_slot": "Ad Account",
-        "marketing_setup": "Marketing Setup",
+        "marketing_setup": "Marketing",
         "optimization_ai_scan_pro": "AI Scan Pro",
         "design_generation": "Design Generation",
         "strategy_overage": "Extra Strategy",
@@ -2942,6 +2942,7 @@
           "keywordPoolPlaceholder": "Add a keyword and press Enter",
           "save": "Save Automation",
           "saved": "Automation saved",
+          "saveError": "Could not save, try again",
           "nextRun": "Next run",
           "noSiteWarning": "To publish automatically, connect a publish target first. Without a connected site you can still generate articles manually and use them.",
           "lastStatusSuccess": "Last run: success",
@@ -3028,7 +3029,7 @@
     "yardimMerkezi": "Help Center",
     "cikisYap": "Log Out",
     "dil": "English",
-    "marketingkurulumu": "Marketing Setup"
+    "marketingkurulumu": "Marketing"
   },
   "marketingSetup": {
     "title": "Marketing",
@@ -3063,7 +3064,6 @@
       "addToCart": "Add to Cart",
       "beginCheckout": "Begin Checkout",
       "addPaymentInfo": "Add Payment Info",
-      "viewSearchResults": "Site Search",
       "lead": "Contact / Form",
       "signUp": "Sign Up",
       "videoPlay": "Video Play",

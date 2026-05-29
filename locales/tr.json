@@ -23,7 +23,7 @@
         "seo": "SEO",
         "audience_ai": "AI Tabanlı Hedef Kitle",
         "ad_account_slot": "Reklam Hesabı",
-        "marketing_setup": "Marketing Kurulumu",
+        "marketing_setup": "Marketing",
         "optimization_ai_scan_pro": "AI ile Tara Pro",
         "design_generation": "Tasarım Üretimi",
         "strategy_overage": "Ek Strateji",
@@ -2942,6 +2942,7 @@
           "keywordPoolPlaceholder": "Kelime ekleyip Enter'a basın",
           "save": "Otomasyonu Kaydet",
           "saved": "Otomasyon kaydedildi",
+          "saveError": "Kaydedilemedi, tekrar deneyin",
           "nextRun": "Sonraki yayın",
           "noSiteWarning": "Otomatik yayın için önce bir yayın hedefi bağlamanız gerekir. Bağlı site yokken makaleleri yine de elle üretip kullanabilirsiniz.",
           "lastStatusSuccess": "Son çalışma: başarılı",
@@ -3028,7 +3029,7 @@
     "yardimMerkezi": "Yardım Merkezi",
     "cikisYap": "Çıkış Yap",
     "dil": "Türkçe",
-    "marketingkurulumu": "Marketing Kurulumu"
+    "marketingkurulumu": "Marketing"
   },
   "marketingSetup": {
     "title": "Marketing",
@@ -3063,7 +3064,6 @@
       "addToCart": "Sepete Ekleme",
       "beginCheckout": "Ödeme Başlatma",
       "addPaymentInfo": "Ödeme Bilgisi Ekleme",
-      "viewSearchResults": "Site İçi Arama",
       "lead": "İletişim / Form",
       "signUp": "Kayıt Olma",
       "videoPlay": "Video Oynatma",

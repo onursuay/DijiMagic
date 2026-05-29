@@ -84,8 +84,8 @@ export default function PlatformConnect({ state, update, goNext, goBack }: StepP
   return (
     <div className="max-w-4xl mx-auto">
       <div className="text-center mb-8">
-        <h2 className="text-2xl font-semibold text-gray-900">{t('connect.title')}</h2>
-        <p className="mt-2 text-base text-gray-500">{t('connect.description')}</p>
+        <h2 className="text-xl font-semibold text-gray-900">{t('connect.title')}</h2>
+        <p className="mt-2 text-sm text-gray-500">{t('connect.description')}</p>
       </div>
 
       {/* Platform kartları — Google Ads / Google Analytics / Search Console / Meta */}
@@ -106,7 +106,7 @@ export default function PlatformConnect({ state, update, goNext, goBack }: StepP
               >
                 <Icon className="w-6 h-6" />
               </span>
-              <h3 className="text-base font-semibold text-gray-900">{p.title}</h3>
+              <h3 className="text-sm font-semibold text-gray-900">{p.title}</h3>
               <div className="mt-4 w-full">
                 {p.connected ? (
                   <span className="inline-flex items-center gap-1.5 text-sm font-medium text-emerald-700">
@@ -132,11 +132,11 @@ export default function PlatformConnect({ state, update, goNext, goBack }: StepP
         <div className="flex items-start gap-3">
           <ShieldCheck className="w-6 h-6 text-primary flex-shrink-0 mt-0.5" />
           <div className="flex-1 min-w-0">
-            <h3 className="text-base font-semibold text-gray-900">{t('connect.setupConsentTitle')}</h3>
+            <h3 className="text-sm font-semibold text-gray-900">{t('connect.setupConsentTitle')}</h3>
             <p className="mt-1.5 text-sm text-gray-500">{t('connect.setupConsentDescription')}</p>
             <div className="mt-4 flex flex-wrap items-center gap-4">
               {setupConnected ? (
-                <span className="inline-flex items-center gap-1.5 text-base font-medium text-emerald-700">
+                <span className="inline-flex items-center gap-1.5 text-sm font-medium text-emerald-700">
                   <CheckCircle2 className="w-5 h-5" />
                   {t('connect.setupConsentConnected')}
                 </span>
@@ -166,13 +166,13 @@ export default function PlatformConnect({ state, update, goNext, goBack }: StepP
       <div className="mt-5 bg-white border border-gray-200 rounded-2xl p-6 shadow-sm space-y-5">
         {/* Meta ad account id — auto-fed from the Meta integration */}
         <div>
-          <label className="block text-base font-medium text-gray-700 mb-2">
+          <label className="block text-sm font-medium text-gray-700 mb-2">
             {t('connect.metaAdAccountId')}
           </label>
           {metaAcct ? (
             <div className="flex items-center justify-between gap-2 px-4 py-3 rounded-xl border border-emerald-200 bg-emerald-50">
               <span className="min-w-0">
-                <span className="block text-base font-medium text-emerald-800 truncate">
+                <span className="block text-sm font-medium text-emerald-800 truncate">
                   {metaName || metaAcct}
                 </span>
                 {metaName && (
@@ -186,7 +186,7 @@ export default function PlatformConnect({ state, update, goNext, goBack }: StepP
             </div>
           ) : (
             <div className="flex items-center justify-between gap-2 px-4 py-3 rounded-xl border border-gray-200 bg-gray-50">
-              <span className="text-base text-gray-500 truncate">{t('connect.connectFromIntegration')}</span>
+              <span className="text-sm text-gray-500 truncate">{t('connect.connectFromIntegration')}</span>
               <a
                 href="/entegrasyon"
                 className="inline-flex items-center gap-1 text-sm font-medium text-primary hover:underline flex-shrink-0"
@@ -200,14 +200,14 @@ export default function PlatformConnect({ state, update, goNext, goBack }: StepP
 
         {/* Google Ads customer id — auto-fed from the Google Ads integration */}
         <div>
-          <label className="block text-base font-medium text-gray-700 mb-2">
+          <label className="block text-sm font-medium text-gray-700 mb-2">
             {t('connect.googleAdsCustomerId')}
             <span className="ml-2 text-sm font-normal text-gray-400">{t('common.optional')}</span>
           </label>
           {adsCust ? (
             <div className="flex items-center justify-between gap-2 px-4 py-3 rounded-xl border border-emerald-200 bg-emerald-50">
               <span className="min-w-0">
-                <span className="block text-base font-medium text-emerald-800 truncate">
+                <span className="block text-sm font-medium text-emerald-800 truncate">
                   {adsName || adsCust}
                 </span>
                 {adsName && (
@@ -221,7 +221,7 @@ export default function PlatformConnect({ state, update, goNext, goBack }: StepP
             </div>
           ) : (
             <div className="flex items-center justify-between gap-2 px-4 py-3 rounded-xl border border-gray-200 bg-gray-50">
-              <span className="text-base text-gray-500 truncate">{t('connect.connectFromIntegration')}</span>
+              <span className="text-sm text-gray-500 truncate">{t('connect.connectFromIntegration')}</span>
               <a
                 href="/entegrasyon"
                 className="inline-flex items-center gap-1 text-sm font-medium text-primary hover:underline flex-shrink-0"
@@ -235,7 +235,7 @@ export default function PlatformConnect({ state, update, goNext, goBack }: StepP
 
         {/* GTM mode + container id */}
         <div>
-          <label className="block text-base font-medium text-gray-700 mb-2">
+          <label className="block text-sm font-medium text-gray-700 mb-2">
             {t('connect.gtmChoiceLabel')}
           </label>
           <WizardSelect
@@ -280,7 +280,7 @@ export default function PlatformConnect({ state, update, goNext, goBack }: StepP
                 onChange={(e) => update({ gtmContainerId: e.target.value })}
                 onBlur={(e) => persist({ gtm_container_id: e.target.value.trim() })}
                 placeholder={t('connect.gtmContainerIdPlaceholder')}
-                className="mt-3 w-full px-4 py-3 border border-gray-200 rounded-xl text-base shadow-[0_1px_3px_rgba(0,0,0,0.06),inset_0_1px_2px_rgba(0,0,0,0.04)] focus:border-primary focus:ring-2 focus:ring-primary/20 outline-none transition-all"
+                className="mt-3 w-full px-4 py-3 border border-gray-200 rounded-xl text-sm shadow-[0_1px_3px_rgba(0,0,0,0.06),inset_0_1px_2px_rgba(0,0,0,0.04)] focus:border-primary focus:ring-2 focus:ring-primary/20 outline-none transition-all"
               />
             ))}
         </div>
@@ -291,14 +291,14 @@ export default function PlatformConnect({ state, update, goNext, goBack }: StepP
         <button
           type="button"
           onClick={goBack}
-          className="inline-flex items-center gap-2 px-6 py-3 rounded-xl border border-gray-200 text-base font-medium text-gray-600 hover:border-gray-300 transition-colors"
+          className="inline-flex items-center gap-2 px-6 py-3 rounded-xl border border-gray-200 text-sm font-medium text-gray-600 hover:border-gray-300 transition-colors"
         >
           {t('common.back')}
         </button>
         <button
           type="button"
           onClick={goNext}
-          className="inline-flex items-center gap-2 px-7 py-3 rounded-xl bg-primary text-white text-base font-medium shadow-sm hover:bg-primary/90 transition-colors"
+          className="inline-flex items-center gap-2 px-7 py-3 rounded-xl bg-primary text-white text-sm font-medium shadow-sm hover:bg-primary/90 transition-colors"
         >
           {t('common.next')}
         </button>

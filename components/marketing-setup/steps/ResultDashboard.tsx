@@ -109,8 +109,8 @@ export default function ResultDashboard({ state, goBack }: StepProps) {
   return (
     <div className="max-w-4xl mx-auto">
       <div className="text-center mb-8">
-        <h2 className="text-2xl font-semibold text-gray-900">{t('result.title')}</h2>
-        <p className="mt-2 text-base text-gray-500">{t('result.description')}</p>
+        <h2 className="text-xl font-semibold text-gray-900">{t('result.title')}</h2>
+        <p className="mt-2 text-sm text-gray-500">{t('result.description')}</p>
       </div>
 
       {/* Platform status cards */}

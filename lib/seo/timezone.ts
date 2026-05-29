@@ -46,7 +46,14 @@ export function getLocalParts(tz: string, at: Date = new Date()): LocalParts {
   }
 }
 
-/** Schedule bu anda (saat bazında) tetiklenmeli mi? */
+/**
+ * Schedule bu anda tetiklenmeli mi?
+ *
+ * Saatlik cron (0 * * * *) ile çalışır. Tek-saat tam eşleşme yerine "yayın anı
+ * bugün geldi/geçti + bugün henüz çalışmadı" mantığı kullanır → kullanıcı yayın
+ * saatini o günkü pencereden SONRA ayarlasa bile (ör. 23:14'ü 23:30'da kaydetse)
+ * bir sonraki saatlik cron'da AYNI GÜN telafi edilir; ertesi güne sarkmaz.
+ */
 export function isScheduleDue(
   publishTime: string,
   timezone: string,
@@ -56,17 +63,19 @@ export function isScheduleDue(
   at: Date = new Date()
 ): boolean {
   const local = getLocalParts(timezone, at)
-  const targetHour = parseInt(publishTime.split(':')[0] ?? '9', 10)
+  const [hStr, mStr] = publishTime.split(':')
+  const targetHour = parseInt(hStr ?? '9', 10)
+  const targetMinute = parseInt(mStr ?? '0', 10)
 
-  // Saat eşleşmesi (cron 0. dakikada çalışır → saat bazlı)
-  if (local.hour !== targetHour) return false
-
-  // Aynı yerel günde tekrar tetikleme engeli
+  // Aynı yerel günde zaten çalıştıysa tekrar tetikleme (idempotency).
   if (lastRunDate === local.date) return false
 
-  // Frekans kontrolü
+  // Frekans kontrolü — bugün uygun bir gün mü?
   if (frequency === 'weekdays' && (local.weekday === 0 || local.weekday === 6)) return false
   if (frequency === 'weekly' && weekday != null && local.weekday !== weekday) return false
 
-  return true
+  // Yayın anı bugün geldi/geçti mi? (dakika dahil)
+  const nowMinutes = local.hour * 60 + local.minute
+  const targetMinutes = targetHour * 60 + targetMinute
+  return nowMinutes >= targetMinutes
 }

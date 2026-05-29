@@ -424,24 +424,6 @@ function buildAudienceDefs(events: StandardEventKey[]): AudienceDef[] {
     })
   }
 
-  // 4) Searchers — 30 days.
-  if (has('view_search_results')) {
-    defs.push({
-      displayName: 'Searchers (30d)',
-      description: 'Users who searched the site in the last 30 days',
-      membershipDurationDays: 30,
-      filterClauses: [
-        {
-          clauseType: 'INCLUDE',
-          simpleFilter: {
-            scope: 'AUDIENCE_FILTER_SCOPE_ACROSS_ALL_SESSIONS',
-            filterExpression: { eventFilter: { eventName: 'view_search_results' } },
-          },
-        },
-      ],
-    })
-  }
-
   return defs
 }
 

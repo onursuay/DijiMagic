@@ -82,13 +82,13 @@ export default function SiteScanner({ state, update, goNext }: StepProps) {
   return (
     <div className="max-w-4xl mx-auto">
       <div className="text-center mb-8">
-        <h2 className="text-2xl font-semibold text-gray-900">{t('scan.title')}</h2>
-        <p className="mt-2 text-base text-gray-500">{t('scan.description')}</p>
+        <h2 className="text-xl font-semibold text-gray-900">{t('scan.title')}</h2>
+        <p className="mt-2 text-sm text-gray-500">{t('scan.description')}</p>
       </div>
 
       {/* URL input + scan */}
       <div className="bg-white border border-gray-200 rounded-2xl p-6 shadow-sm">
-        <label className="block text-base font-medium text-gray-700 mb-2">
+        <label className="block text-sm font-medium text-gray-700 mb-2">
           {t('scan.urlLabel')}
         </label>
         <div className="flex flex-col sm:flex-row gap-3">
@@ -104,14 +104,14 @@ export default function SiteScanner({ state, update, goNext }: StepProps) {
               }}
               placeholder={t('scan.urlPlaceholder')}
               disabled={scanning}
-              className="w-full pl-11 pr-3.5 py-3 border border-gray-200 rounded-xl text-base shadow-[0_1px_3px_rgba(0,0,0,0.06),inset_0_1px_2px_rgba(0,0,0,0.04)] focus:border-primary focus:ring-2 focus:ring-primary/20 outline-none transition-all disabled:bg-gray-50 disabled:opacity-60"
+              className="w-full pl-11 pr-3.5 py-3 border border-gray-200 rounded-xl text-sm shadow-[0_1px_3px_rgba(0,0,0,0.06),inset_0_1px_2px_rgba(0,0,0,0.04)] focus:border-primary focus:ring-2 focus:ring-primary/20 outline-none transition-all disabled:bg-gray-50 disabled:opacity-60"
             />
           </div>
           <button
             type="button"
             onClick={runScan}
             disabled={scanning || !siteUrl.trim()}
-            className="inline-flex items-center justify-center gap-2 px-6 py-3 rounded-xl bg-primary text-white text-base font-medium shadow-sm hover:bg-primary/90 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+            className="inline-flex items-center justify-center gap-2 px-6 py-3 rounded-xl bg-primary text-white text-sm font-medium shadow-sm hover:bg-primary/90 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
           >
             {scanning ? (
               <Loader2 className="w-5 h-5 animate-spin" />
@@ -123,13 +123,13 @@ export default function SiteScanner({ state, update, goNext }: StepProps) {
         </div>
 
         {error && (
-          <div className="mt-4 rounded-xl border border-red-200 bg-red-50 px-4 py-3 text-base text-red-700">
+          <div className="mt-4 rounded-xl border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700">
             {error}
           </div>
         )}
 
         {scan && !error && (
-          <div className="mt-4 flex flex-wrap items-center gap-2 text-base text-emerald-700">
+          <div className="mt-4 flex flex-wrap items-center gap-2 text-sm text-emerald-700">
             <CheckCircle2 className="w-5 h-5" />
             <span className="font-medium">{t('scan.scanned')}</span>
             {scan.siteUrl && (
@@ -151,14 +151,14 @@ export default function SiteScanner({ state, update, goNext }: StepProps) {
         <div className="mt-6 space-y-6">
           {/* Kısmi tarama uyarısı — site büyükse yalnız ilk N sayfa tarandı (sahte sanılmasın) */}
           {scan.truncated && (
-            <div className="rounded-xl border border-gray-200 bg-gray-50 px-4 py-3.5 text-base text-gray-700">
+            <div className="rounded-xl border border-gray-200 bg-gray-50 px-4 py-3.5 text-sm text-gray-700">
               {t('scan.truncatedNotice', { count: scan.pagesScanned })}
             </div>
           )}
           {/* Detected actions — event bazında tekilleştirilmiş, sayfa frekansıyla */}
           {actionsByEvent.size > 0 && (
             <div className="bg-white border border-gray-200 rounded-2xl p-6 shadow-sm">
-              <h3 className="text-base font-semibold text-gray-900 mb-4">
+              <h3 className="text-sm font-semibold text-gray-900 mb-4">
                 {t('scan.detectedActions')}
               </h3>
               <div className="flex flex-wrap gap-2.5">
@@ -183,7 +183,7 @@ export default function SiteScanner({ state, update, goNext }: StepProps) {
           {/* Recommended events checklist (all STANDARD_EVENTS) */}
           <div className="bg-white border border-gray-200 rounded-2xl p-6 shadow-sm">
             <div className="flex items-center justify-between mb-1.5">
-              <h3 className="text-base font-semibold text-gray-900">
+              <h3 className="text-sm font-semibold text-gray-900">
                 {t('scan.recommendedEvents')}
               </h3>
               <span className="text-sm text-gray-400">
@@ -219,7 +219,7 @@ export default function SiteScanner({ state, update, goNext }: StepProps) {
                     />
                     <span className="flex-1 min-w-0">
                       <span className="flex items-center gap-2 flex-wrap">
-                        <span className="text-base font-medium text-gray-800">
+                        <span className="text-sm font-medium text-gray-800">
                           {t(`events.${def.i18nKey}`)}
                         </span>
                         {isRecommended && (
@@ -248,7 +248,7 @@ export default function SiteScanner({ state, update, goNext }: StepProps) {
           type="button"
           onClick={goNext}
           disabled={!scan}
-          className="inline-flex items-center gap-2 px-7 py-3 rounded-xl bg-primary text-white text-base font-medium shadow-sm hover:bg-primary/90 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+          className="inline-flex items-center gap-2 px-7 py-3 rounded-xl bg-primary text-white text-sm font-medium shadow-sm hover:bg-primary/90 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
         >
           {t('common.next')}
         </button>
