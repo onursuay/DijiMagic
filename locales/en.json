@@ -3063,7 +3063,10 @@
       "setupConsentConnected": "Setup permissions granted",
       "cloudSetupGuide": "Google Cloud setup guide",
       "metaPixelId": "Meta Pixel",
-      "metaPixelIdPlaceholder": "Pixel auto-detected"
+      "metaPixelIdPlaceholder": "Pixel auto-detected",
+      "autoFromIntegration": "Auto-detected from your integration",
+      "connectFromIntegration": "Connect this account from the Integrations area",
+      "goToIntegrations": "Go to Integrations"
     },
     "preview": {
       "title": "What Will Be Created?",

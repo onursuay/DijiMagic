@@ -3063,7 +3063,10 @@
       "setupConsentConnected": "Kurulum izinleri verildi",
       "cloudSetupGuide": "Google Cloud kurulum rehberi",
       "metaPixelId": "Meta Pixel",
-      "metaPixelIdPlaceholder": "Pixel otomatik algılanır"
+      "metaPixelIdPlaceholder": "Pixel otomatik algılanır",
+      "autoFromIntegration": "Entegrasyon'dan otomatik alındı",
+      "connectFromIntegration": "Bu hesabı Entegrasyon alanından bağlayın",
+      "goToIntegrations": "Entegrasyon'a git"
     },
     "preview": {
       "title": "Neler Kurulacak?",
