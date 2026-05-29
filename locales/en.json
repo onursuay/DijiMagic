@@ -3057,6 +3057,8 @@
       "gtmCreate": "Create a new container",
       "gtmExisting": "Use an existing container",
       "gtmContainerIdPlaceholder": "GTM-XXXXXXX",
+      "gtmDetected": "{count} existing container(s) found",
+      "gtmSelectPlaceholder": "Select a container",
       "setupConsentTitle": "Setup Permissions",
       "setupConsentDescription": "Writing to Tag Manager, Analytics admin and Search Console requires an additional Google consent. Your existing connections are not affected.",
       "setupConsentConnect": "Grant Setup Permissions",

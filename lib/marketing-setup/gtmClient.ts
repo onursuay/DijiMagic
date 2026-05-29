@@ -353,6 +353,45 @@ async function resolveWorkspace(
   )
 }
 
+export interface GtmContainerSummary {
+  accountId: string
+  containerId: string
+  publicId: string
+  name: string
+}
+
+/**
+ * List the user's existing WEB GTM containers across all their accounts.
+ * Read-only — used to auto-detect containers so the user picks one instead of
+ * typing a GTM-XXXXXXX id. Returns [] if the user has no GTM account/containers.
+ */
+export async function listContainers(accessToken: string): Promise<GtmContainerSummary[]> {
+  const accountsRes = await gtmFetch<{ account?: GtmAccount[] }>(accessToken, '/accounts')
+  const accounts = accountsRes.account ?? []
+  const out: GtmContainerSummary[] = []
+  for (const acc of accounts) {
+    try {
+      const res = await gtmFetch<{ container?: GtmContainer[] }>(
+        accessToken,
+        `/accounts/${acc.accountId}/containers`,
+      )
+      for (const c of res.container ?? []) {
+        if ((c.usageContext ?? []).includes('web')) {
+          out.push({
+            accountId: c.accountId,
+            containerId: c.containerId,
+            publicId: c.publicId,
+            name: c.name ?? c.publicId,
+          })
+        }
+      }
+    } catch {
+      // Skip an account that fails to list; others still surface.
+    }
+  }
+  return out
+}
+
 // ─── public entrypoint ───────────────────────────────────────────────────────
 export async function deployGtm(
   accessToken: string,

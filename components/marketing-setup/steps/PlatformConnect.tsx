@@ -10,6 +10,7 @@ import type { StepProps } from '@/components/marketing-setup/wizardTypes'
 export default function PlatformConnect({ state, update, goNext, goBack }: StepProps) {
   const t = useTranslations('marketingSetup')
   const [cloudOpen, setCloudOpen] = useState(false)
+  const [containers, setContainers] = useState<{ publicId: string; name: string }[]>([])
 
   const conn = state.connections
   const googleConnected = !!(conn?.googleAds.connected || conn?.ga4.connected || conn?.gsc.connected)
@@ -47,6 +48,30 @@ export default function PlatformConnect({ state, update, goNext, goBack }: StepP
     if (Object.keys(patch).length) void persist(patch)
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [metaAcct, adsCust])
+
+  // Auto-detect existing GTM containers via the setup-consent token so the user
+  // picks one instead of typing a GTM-XXXXXXX id. If exactly the account has
+  // containers and none is chosen yet, preselect the first (mode → existing).
+  useEffect(() => {
+    if (!setupConnected) return
+    let cancelled = false
+    fetch('/api/marketing-setup/gtm-containers', { cache: 'no-store' })
+      .then((r) => (r.ok ? r.json() : null))
+      .then((d) => {
+        if (cancelled || !d?.ok) return
+        const list = (d.containers ?? []) as { publicId: string; name: string }[]
+        setContainers(list)
+        if (list.length && !state.gtmContainerId) {
+          update({ gtmMode: 'existing', gtmContainerId: list[0].publicId })
+          void persist({ gtm_container_id: list[0].publicId })
+        }
+      })
+      .catch(() => { /* leave manual entry available */ })
+    return () => {
+      cancelled = true
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [setupConnected])
 
   return (
     <div className="max-w-3xl mx-auto">
@@ -225,16 +250,36 @@ export default function PlatformConnect({ state, update, goNext, goBack }: StepP
               { value: 'existing', label: t('connect.gtmExisting') },
             ]}
           />
-          {state.gtmMode === 'existing' && (
-            <input
-              type="text"
-              value={state.gtmContainerId}
-              onChange={(e) => update({ gtmContainerId: e.target.value })}
-              onBlur={(e) => persist({ gtm_container_id: e.target.value.trim() })}
-              placeholder={t('connect.gtmContainerIdPlaceholder')}
-              className="mt-2.5 w-full px-3.5 py-2.5 border border-gray-200 rounded-xl text-sm shadow-[0_1px_3px_rgba(0,0,0,0.06),inset_0_1px_2px_rgba(0,0,0,0.04)] focus:border-primary focus:ring-2 focus:ring-primary/20 outline-none transition-all"
-            />
-          )}
+          {state.gtmMode === 'existing' &&
+            (containers.length > 0 ? (
+              <div className="mt-2.5">
+                <p className="mb-1.5 inline-flex items-center gap-1.5 text-xs font-medium text-emerald-700">
+                  <CheckCircle2 className="w-3.5 h-3.5" />
+                  {t('connect.gtmDetected', { count: containers.length })}
+                </p>
+                <WizardSelect
+                  value={state.gtmContainerId}
+                  onChange={(v) => {
+                    update({ gtmContainerId: v })
+                    void persist({ gtm_container_id: v })
+                  }}
+                  placeholder={t('connect.gtmSelectPlaceholder')}
+                  options={containers.map((c) => ({
+                    value: c.publicId,
+                    label: `${c.name} (${c.publicId})`,
+                  }))}
+                />
+              </div>
+            ) : (
+              <input
+                type="text"
+                value={state.gtmContainerId}
+                onChange={(e) => update({ gtmContainerId: e.target.value })}
+                onBlur={(e) => persist({ gtm_container_id: e.target.value.trim() })}
+                placeholder={t('connect.gtmContainerIdPlaceholder')}
+                className="mt-2.5 w-full px-3.5 py-2.5 border border-gray-200 rounded-xl text-sm shadow-[0_1px_3px_rgba(0,0,0,0.06),inset_0_1px_2px_rgba(0,0,0,0.04)] focus:border-primary focus:ring-2 focus:ring-primary/20 outline-none transition-all"
+              />
+            ))}
         </div>
       </div>
 

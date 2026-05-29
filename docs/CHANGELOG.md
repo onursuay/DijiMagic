@@ -2,6 +2,11 @@
 
 ---
 
+## 2026-05-29 — Marketing Kurulumu: mevcut GTM container'ları otomatik algılanır
+- **İstenen:** Reklam hesabı kimlikleri gibi, kullanıcının Google hesabında zaten kurulu GTM container'ı varsa o da otomatik algılanmalı (manuel `GTM-XXXXXXX` yazma yerine).
+- **Çözüm:** Yeni `GET /api/marketing-setup/gtm-containers` ucu, setup-consent token'ı (tagmanager scope) ile kullanıcının tüm GTM hesaplarındaki **web container'larını** listeler (`gtmClient.listContainers`, salt-okunur). PlatformConnect "Mevcut container'ı kullan" seçildiğinde manuel input yerine **algılanan container'lardan seçim** (WizardSelect: `İsim (GTM-XXXX)`) sunar + "{n} mevcut container bulundu" rozeti gösterir. Container bulunduğunda mod otomatik "existing"e geçip ilki önseçilir; hiç yoksa manuel giriş fallback'i korunur. 2 yeni i18n anahtarı TR+EN; parity tam (2938/2938); tsc 0 hata; next build temiz. Meta/Google entegrasyonuna dokunulmadı.
+- **Dosyalar:** `app/api/marketing-setup/gtm-containers/route.ts` (yeni), `lib/marketing-setup/gtmClient.ts` (listContainers), `components/marketing-setup/steps/PlatformConnect.tsx`, `locales/tr.json`, `locales/en.json`
+
 ## 2026-05-29 — Marketing Kurulumu: reklam hesabı kimlikleri Entegrasyon'dan otomatik beslenir
 - **Sorun:** Platform Bağlantıları adımında "Meta Reklam Hesabı Kimliği" ve "Google Ads Müşteri Kimliği" manuel `<input>` alanlarıydı; kullanıcı Entegrasyon'da hesapları zaten bağladığı hâlde tekrar elle girmesi isteniyordu. (Deploy adımları bu kimlikleri zaten `resolveMetaContext`/`getGoogleAdsContext`'ten alıyordu — manuel alanlar gereksiz ve yanıltıcıydı.)
 - **Çözüm:** Bu iki alan artık `connections` endpoint'inden (`meta.adAccountId`, `googleAds.customerId`) **otomatik beslenip salt-okunur** gösteriliyor: bağlıysa yeşil "Entegrasyon'dan otomatik alındı" rozeti + kimlik; bağlı değilse "Entegrasyon'a git" yönlendirmesi. Değerler wizard state'ine + setup kaydına otomatik yansıtılır. Manuel giriş kaldırıldı; GTM container seçimi (gerçek kullanıcı tercihi) manuel kaldı. 3 yeni i18n anahtarı TR+EN; parity tam (2936/2936); tsc 0 hata; next build temiz.

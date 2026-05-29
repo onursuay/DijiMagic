@@ -3057,6 +3057,8 @@
       "gtmCreate": "Yeni container oluştur",
       "gtmExisting": "Mevcut container'ı kullan",
       "gtmContainerIdPlaceholder": "GTM-XXXXXXX",
+      "gtmDetected": "{count} mevcut container bulundu",
+      "gtmSelectPlaceholder": "Container seç",
       "setupConsentTitle": "Kurulum İzinleri",
       "setupConsentDescription": "Tag Manager, Analytics yönetimi ve Search Console'a yazma izni için ek bir Google onayı gerekir. Mevcut bağlantılarınız etkilenmez.",
       "setupConsentConnect": "Kurulum İzni Ver",
