@@ -1,6 +1,6 @@
 import 'server-only'
 import * as cheerio from 'cheerio'
-import type { DetectedAction, RecommendedEvent, SiteScanResult } from './types'
+import type { BusinessAnalysis, DetectedAction, RecommendedEvent, SiteScanResult } from './types'
 import { STANDARD_EVENTS, type StandardEventKey } from './constants'
 import { claudeJson, isClaudeReady } from '@/lib/anthropic/text'
 
@@ -233,53 +233,143 @@ function extractClickables(rawHtml: string): ClickableElement[] {
   return out
 }
 
-// ─── AI sınıflandırma (Claude) ───────────────────────────────────────────────
-// Çıkarılan tıklanabilir öğeleri Claude'a verip hangi standart event'lerin
-// gerçekten mevcut olduğunu belirler — deterministik kuralların kaçırdığı veya
-// belirsiz butonları (ör. onclick ile WhatsApp açan "Bize Ulaşın") yakalar.
-// ANTHROPIC_API_KEY yoksa boş set döner → deterministik sonuç korunur (fallback).
-async function classifyClickablesWithClaude(
-  clickables: ClickableElement[],
-): Promise<Set<StandardEventKey>> {
-  const found = new Set<StandardEventKey>()
-  if (!isClaudeReady() || clickables.length === 0) return found
+// ─── Page summary (Claude için sayfa özeti) ──────────────────────────────────
+interface PageSummary {
+  url: string
+  title: string
+  description: string
+  textExcerpt: string
+}
 
-  // Token sınırı için dedup + ilk 250 benzersiz öğe.
+function summarizePage(page: FirecrawlPage, fallbackUrl: string): PageSummary {
+  const html = page.rawHtml || page.html || ''
+  const url = pageUrl(page, fallbackUrl)
+  let title = ''
+  let description = ''
+  let textExcerpt = ''
+  try {
+    const $ = cheerio.load(html)
+    title =
+      $('title').first().text().trim().slice(0, 200) ||
+      $('h1').first().text().trim().slice(0, 200)
+    description =
+      $('meta[name="description"]').attr('content')?.trim().slice(0, 250) ||
+      $('meta[property="og:description"]').attr('content')?.trim().slice(0, 250) ||
+      ''
+    const bodyText = $('body').text().replace(/\s+/g, ' ').trim()
+    textExcerpt = bodyText.slice(0, 600)
+  } catch {
+    /* best-effort */
+  }
+  if (page.markdown && page.markdown.length > textExcerpt.length) {
+    textExcerpt = page.markdown.replace(/\s+/g, ' ').trim().slice(0, 600)
+  }
+  return { url, title, description, textExcerpt }
+}
+
+// ─── AI analizi (Claude birincil) ────────────────────────────────────────────
+// Claude'a sitenin sayfa içerikleri + tıklanabilir öğeler + deterministik
+// algılanan event'ler verilir. Claude işletme türünü belirler ve KANIT-TEMELLİ
+// öneriler üretir (reason zorunlu). Kanıtsız event önermez (örn. site search
+// yoksa view_search_results önerme). ANTHROPIC_API_KEY yoksa null → çağıran
+// deterministik fallback'e düşer.
+async function claudeAnalyzeSite(args: {
+  siteUrl: string
+  pageSummaries: PageSummary[]
+  clickables: ClickableElement[]
+  detectedEvents: StandardEventKey[]
+}): Promise<{ businessAnalysis: BusinessAnalysis; recommended: RecommendedEvent[] } | null> {
+  if (!isClaudeReady()) return null
+
+  // Tıklanabilir öğeleri dedup + ilk 60.
   const seen = new Set<string>()
   const sample: ClickableElement[] = []
-  for (const c of clickables) {
+  for (const c of args.clickables) {
     const k = `${c.text}|${c.target}`.toLowerCase()
     if (seen.has(k)) continue
     seen.add(k)
     sample.push(c)
-    if (sample.length >= 250) break
+    if (sample.length >= 60) break
   }
 
   const validKeys = STANDARD_EVENTS.map((e) => e.key)
-  const list = sample.map((c, i) => `${i + 1}. <${c.tag}> "${c.text}" -> ${c.target}`).join('\n')
+  const eventsMenu = STANDARD_EVENTS.map(
+    (e) => `- ${e.key}: GA4=${e.ga4Event} / Meta=${e.metaEvent}`,
+  ).join('\n')
 
-  const result = await claudeJson<{ events: string[] }>({
+  const pagesText = args.pageSummaries
+    .slice(0, 5)
+    .map(
+      (p) =>
+        `URL: ${p.url}\nBaşlık: ${p.title}\nMeta: ${p.description}\nİçerik: ${p.textExcerpt}`,
+    )
+    .join('\n---\n')
+
+  const clickList = sample
+    .map((c, i) => `${i + 1}. <${c.tag}> "${c.text}" -> ${c.target}`)
+    .join('\n')
+
+  const result = await claudeJson<{
+    businessType: string
+    businessSummary: string
+    recommended: { event: string; confidence: number; reason: string }[]
+  }>({
     system:
-      "Sen bir web analitik uzmanısın. Bir web sayfasındaki tıklanabilir öğeleri " +
-      "(link/buton) inceleyip hangi standart dönüşüm/etkileşim event'lerinin gerçekten " +
-      'mevcut olduğunu tespit edersin. WhatsApp / telefon / Instagram DM / Messenger / e-posta ' +
-      'gibi iletişim butonlarını (chat veya click-to-chat eklentileri dahil) ve satın alma, ' +
-      'sepete ekleme, arama, form/lead, kayıt gibi aksiyonları değerlendir. SADECE sana verilen ' +
-      'anahtar listesinden seç; emin olmadığın bir anahtarı ekleme.',
+      "Sen profesyonel bir dijital pazarlama analistisin. Sana bir web sitesinin sayfa " +
+      "içerikleri, tıklanabilir öğeleri ve algılanan aksiyonları verilecek. Hedef: GA4/Meta " +
+      "ölçümleme için izlenmesi GERÇEKTEN anlamlı event'leri seç ve her seçimi kanıta " +
+      'dayandır.\n\n' +
+      'KESİN KURALLAR:\n' +
+      '1) Yalnız sana verilen event anahtar listesinden seç (geçersiz anahtar üretme).\n' +
+      "2) businessType: TR olarak somut bir ifade (örn. 'İnşaat firması', 'Hizmet sitesi', " +
+      "'E-ticaret', 'Restoran', 'B2B SaaS', 'Yerel hizmet sağlayıcı'). Tek satır.\n" +
+      '3) businessSummary: 1-2 cümle TR özet — site ne yapıyor, kimlere hitap ediyor.\n' +
+      "4) KANITSIZ event ÖNERME. Site arama (input[type=search]) yoksa view_search_results " +
+      'önerme. Sepet/checkout yoksa add_to_cart/begin_checkout/add_payment_info önerme. ' +
+      'wa.me/m.me/ig.me/tel: yoksa ilgili iletişim event\'ini önerme.\n' +
+      "5) Her öneriye reason: gerçek kanıt TR cümle (örn. 'Footer'da wa.me linki var', " +
+      "'Hizmetler sayfasında \"Teklif Al\" formu mevcut', 'Ürün kartlarında Sepete Ekle " +
+      "butonu var').\n" +
+      '6) Maksimum 6 öneri; confidence 0-1 arası gerçekçi.',
     user:
-      `Geçerli event anahtarları: ${validKeys.join(', ')}\n\n` +
-      `Tıklanabilir öğeler:\n${list}\n\n` +
-      'Bu öğelerden hangi event anahtarları bu sitede mevcut? Yalnızca şu biçimde JSON döndür: ' +
-      '{"events":["anahtar1","anahtar2"]}',
-    maxTokens: 800,
+      `Site: ${args.siteUrl}\n` +
+      `Taranan sayfa sayısı: ${args.pageSummaries.length}\n\n` +
+      `Sayfa içerikleri:\n${pagesText}\n\n` +
+      `Tıklanabilir öğeler (örnek):\n${clickList}\n\n` +
+      `Deterministik kuralların algıladığı event'ler: ${args.detectedEvents.join(', ') || '(yok)'}\n\n` +
+      `Geçerli event listesi:\n${eventsMenu}\n\n` +
+      'JSON döndür: {"businessType":"...","businessSummary":"...","recommended":' +
+      '[{"event":"lead","confidence":0.85,"reason":"..."}]}',
+    maxTokens: 1500,
     temperature: 0,
-    timeoutMs: 30000,
+    timeoutMs: 45000,
   })
 
-  for (const k of result?.events ?? []) {
-    if ((validKeys as string[]).includes(k)) found.add(k as StandardEventKey)
+  if (!result || !result.businessType || !Array.isArray(result.recommended)) return null
+
+  const recommended: RecommendedEvent[] = []
+  const seenEvents = new Set<string>()
+  for (const r of result.recommended) {
+    if (typeof r?.event !== 'string') continue
+    if (!(validKeys as string[]).includes(r.event)) continue
+    if (seenEvents.has(r.event)) continue
+    seenEvents.add(r.event)
+    const confidence = Math.max(0, Math.min(1, Number(r.confidence) || 0.7))
+    recommended.push({
+      event: r.event as StandardEventKey,
+      hits: 1,
+      confidence: Number(confidence.toFixed(2)),
+      reason: (r.reason || '').toString().trim().slice(0, 300) || undefined,
+    })
   }
-  return found
+
+  return {
+    businessAnalysis: {
+      type: result.businessType.trim().slice(0, 100),
+      summary: (result.businessSummary || '').toString().trim().slice(0, 400),
+    },
+    recommended,
+  }
 }
 
 /** Build deduped recommendedEvents from the full detectedActions list. */
@@ -430,19 +520,30 @@ export async function scanSite(siteUrl: string): Promise<SiteScanResult> {
     detectedActions.push(...detectOnPage(haystack, pageUrl(page, url)))
   }
 
-  // ── AI katmanı (Claude) ────────────────────────────────────────────────────
-  // Çıkarılan tüm tıklanabilir öğeleri Claude'a verip deterministik kuralların
-  // kaçırdığı/belirsiz event'leri yakala (ör. onclick ile WhatsApp açan buton).
-  // Non-fatal: hata/anahtar yoksa deterministik sonuç korunur.
+  // ── 4. Claude: işletme analizi + kanıt-temelli ÖNERİLER (birincil) ─────────
+  // Deterministik tespit "kanıt havuzu" olarak kalır; Claude işletme türünü
+  // belirleyip nihai recommendedEvents'i reason'larla üretir. Claude erişilemezse
+  // (ANTHROPIC_API_KEY yok / API hatası) deterministik buildRecommended fallback.
+  const pageSummaries = cappedPages.map((p) => summarizePage(p, url))
+  const detectedSet = new Set(detectedActions.map((a) => a.event))
+
+  let recommendedEvents: RecommendedEvent[]
+  let businessAnalysis: BusinessAnalysis | undefined
   try {
-    const aiKeys = await classifyClickablesWithClaude(allClickables)
-    for (const key of aiKeys) {
-      if (!detectedActions.some((a) => a.event === key)) {
-        detectedActions.push({ event: key, source: url, via: 'ai', confidence: 0.7 })
-      }
+    const ai = await claudeAnalyzeSite({
+      siteUrl: url,
+      pageSummaries,
+      clickables: allClickables,
+      detectedEvents: Array.from(detectedSet),
+    })
+    if (ai && ai.recommended.length > 0) {
+      recommendedEvents = ai.recommended
+      businessAnalysis = ai.businessAnalysis
+    } else {
+      recommendedEvents = buildRecommended(detectedActions)
     }
   } catch {
-    /* AI sınıflandırma hatası non-fatal — deterministik sonuç geçerli kalır */
+    recommendedEvents = buildRecommended(detectedActions)
   }
 
   if (truncated) {
@@ -453,13 +554,12 @@ export async function scanSite(siteUrl: string): Promise<SiteScanResult> {
     })
   }
 
-  const recommendedEvents = buildRecommended(detectedActions)
-
   return {
     siteUrl: url,
     pagesScanned: cappedPages.length,
     detectedActions,
     recommendedEvents,
+    businessAnalysis,
     scannedAt: new Date().toISOString(),
     truncated,
   }

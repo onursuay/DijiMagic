@@ -2,6 +2,11 @@
 
 ---
 
+## 2026-05-30 — Marketing: Claude analizi birincil + kanıt-temelli öneri + reason + URL ön-besleme
+- **Sorun:** (1) Site tarama önerileri tutarsızdı — bir inşaat sitesi için "Arama Yapma" gibi kanıtsız event'ler öneriliyordu; Claude AI yeterince işin içinde değildi. (2) URL kutusu boş geliyordu; İşletme Profili'ndeki website_url'in kullanılması istendi.
+- **Çözüm:** (1) `siteScanner.ts` yeniden yapılandırıldı — Claude artık BİRİNCİL analizci: sayfa içerikleri (başlık + meta + ilk metin) + tıklanabilir öğeler + deterministik kanıt havuzu Claude'a verilir; Claude işletme türünü belirler ve KANIT-TEMELLİ öneri üretir (`reason` zorunlu; kanıtsız event önermez kuralı sistem promptunda). `SiteScanResult`'a `businessAnalysis` + `RecommendedEvent.reason` eklendi. Claude erişilemezse deterministik fallback. UI'da yeni "Site Analizi (AI)" kartı + her önerinin altında kanıt cümlesi. (2) SiteScanner mount'ta `/api/yoai/business-profile`'dan `website_url`'yi çekip URL kutusunu ön-besler (kullanıcı yine değiştirip silebilir). 3 yeni i18n anahtarı TR+EN; parity tam (2998/2998); tsc 0 hata; next build temiz.
+- **Dosyalar:** `lib/marketing-setup/types.ts`, `lib/marketing-setup/siteScanner.ts`, `components/marketing-setup/steps/SiteScanner.tsx`, `locales/tr.json`, `locales/en.json`
+
 ## 2026-05-29 — SEO otomatik makale: Inngest'siz çalışma + WhatsApp tespiti + zamanlama telafisi + anahtar kelime kalıcılığı; Marketing adı + Site İçi Arama kaldırma + font ayarı
 - **Sorunlar:** (SEO) Zamanlanan makale hiç üretilmiyor/yayınlanmıyor, "Makalelerim" boş, anahtar kelime yenilemede kayboluyor. (Tarama) WhatsApp eklenti butonu tespit edilmiyor. (UI) Sidebar hâlâ "Marketing Kurulumu", "Site İçi Arama" event'i karışıklığı, yazılar fazla büyük.
 - **Çözüm:**

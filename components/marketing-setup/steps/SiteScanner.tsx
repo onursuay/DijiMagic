@@ -2,7 +2,7 @@
 
 import { useState, useEffect } from 'react'
 import { useTranslations } from 'next-intl'
-import { Search, Loader2, CheckCircle2, Globe } from 'lucide-react'
+import { Search, Loader2, CheckCircle2, Globe, Sparkles } from 'lucide-react'
 import { STANDARD_EVENTS, type StandardEventKey } from '@/lib/marketing-setup/constants'
 import type { SiteScanResult, DetectedAction } from '@/lib/marketing-setup/types'
 import type { StepProps } from '@/components/marketing-setup/wizardTypes'
@@ -21,6 +21,27 @@ export default function SiteScanner({ state, update, goNext }: StepProps) {
   useEffect(() => {
     if (state.siteUrl) setSiteUrl(state.siteUrl)
   }, [state.siteUrl])
+
+  // URL boşsa İşletme Profili'nin website_url'inden önbesleme (kullanıcı yine
+  // değiştirip silebilir — input düzenlenebilir kalır).
+  useEffect(() => {
+    if (state.siteUrl || siteUrl) return
+    let cancelled = false
+    fetch('/api/yoai/business-profile', { cache: 'no-store' })
+      .then((r) => (r.ok ? r.json() : null))
+      .then((d) => {
+        if (cancelled) return
+        const wu =
+          d?.profile?.website_url ||
+          d?.website_url ||
+          d?.profile?.businessProfile?.website_url ||
+          ''
+        if (typeof wu === 'string' && wu.trim()) setSiteUrl(wu.trim())
+      })
+      .catch(() => { /* yoksa boş kal */ })
+    return () => { cancelled = true }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [])
 
   async function runScan() {
     const url = siteUrl.trim()
@@ -77,7 +98,6 @@ export default function SiteScanner({ state, update, goNext }: StepProps) {
     list.push(a)
     actionsByEvent.set(a.event, list)
   }
-  const recommendedSet = new Set((scan?.recommendedEvents ?? []).map((r) => r.event))
 
   return (
     <div className="max-w-4xl mx-auto">
@@ -149,6 +169,27 @@ export default function SiteScanner({ state, update, goNext }: StepProps) {
       {/* Scan results */}
       {scan && (
         <div className="mt-6 space-y-6">
+          {/* Site Analizi (Claude) — işletme türü + özet */}
+          {scan.businessAnalysis && (
+            <div className="bg-white border border-gray-200 rounded-2xl p-6 shadow-sm">
+              <div className="flex items-center gap-2 mb-3">
+                <Sparkles className="w-4 h-4 text-primary" />
+                <h3 className="text-sm font-semibold text-gray-900">
+                  {t('scan.businessAnalysisTitle')}
+                </h3>
+              </div>
+              <div className="grid grid-cols-1 sm:grid-cols-[140px_1fr] gap-2 text-sm">
+                <span className="text-gray-500">{t('scan.businessTypeLabel')}</span>
+                <span className="text-gray-800 font-medium">{scan.businessAnalysis.type}</span>
+                {scan.businessAnalysis.summary && (
+                  <>
+                    <span className="text-gray-500">{t('scan.businessSummaryLabel')}</span>
+                    <span className="text-gray-700">{scan.businessAnalysis.summary}</span>
+                  </>
+                )}
+              </div>
+            </div>
+          )}
           {/* Kısmi tarama uyarısı — site büyükse yalnız ilk N sayfa tarandı (sahte sanılmasın) */}
           {scan.truncated && (
             <div className="rounded-xl border border-gray-200 bg-gray-50 px-4 py-3.5 text-sm text-gray-700">
@@ -199,9 +240,10 @@ export default function SiteScanner({ state, update, goNext }: StepProps) {
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
               {STANDARD_EVENTS.map((def) => {
                 const checked = selected.includes(def.key)
-                const isRecommended = recommendedSet.has(def.key)
+                const rec = scan.recommendedEvents.find((r) => r.event === def.key)
+                const isRecommended = !!rec
                 const detected = actionsByEvent.get(def.key)
-                const conf = detected?.[0]?.confidence
+                const conf = rec?.confidence ?? detected?.[0]?.confidence
                 return (
                   <label
                     key={def.key}
@@ -228,8 +270,13 @@ export default function SiteScanner({ state, update, goNext }: StepProps) {
                           </span>
                         )}
                       </span>
+                      {rec?.reason && (
+                        <span className="mt-1 block text-xs text-gray-600 italic leading-relaxed">
+                          {rec.reason}
+                        </span>
+                      )}
                       {typeof conf === 'number' && (
-                        <span className="mt-1 block text-sm text-gray-400">
+                        <span className="mt-1 block text-xs text-gray-400">
                           {t('scan.confidence')}: {Math.round(conf * 100)}%
                         </span>
                       )}

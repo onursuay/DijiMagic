@@ -22,6 +22,16 @@ export interface RecommendedEvent {
   /** Number of pages/signals that suggested this event. */
   hits: number
   confidence: number
+  /** Claude'un bu event'i neden önerdiği — TR, tek cümle, kanıt-temelli. */
+  reason?: string
+}
+
+/** Claude'un site içeriğinden çıkardığı işletme analizi. */
+export interface BusinessAnalysis {
+  /** TR olarak işletme türü (örn. "İnşaat firması", "Restoran", "B2B SaaS"). */
+  type: string
+  /** İşletmenin ne yaptığına dair 1-2 cümlelik TR özet. */
+  summary: string
 }
 
 export interface SiteScanResult {
@@ -29,6 +39,8 @@ export interface SiteScanResult {
   pagesScanned: number
   detectedActions: DetectedAction[]
   recommendedEvents: RecommendedEvent[]
+  /** Claude'un siteden çıkardığı işletme bağlamı; AI erişilemezse undefined. */
+  businessAnalysis?: BusinessAnalysis
   scannedAt: string
   /** Site sayfa sınırına takıldıysa (yalnız ilk N sayfa tarandı) true. */
   truncated?: boolean
