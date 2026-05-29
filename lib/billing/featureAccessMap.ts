@@ -80,6 +80,13 @@ export const FEATURE_ACCESS: Record<string, FeatureAccessRule> = {
     description:
       'Planınızın reklam hesabı limitine ulaştınız. Daha fazla reklam hesabı eklemek için planınızı yükseltin.',
   },
+  marketing_setup: {
+    key: 'marketing_setup',
+    label: 'Marketing Kurulumu',
+    tier: 'subscription_required',
+    description:
+      'Pazarlama altyapısı kurulum sihirbazını kullanmak için aktif bir abonelik planına sahip olmanız gerekir.',
+  },
 
   // ─── Kredi gerektiren AI aksiyonları ─────────────────────────────
   optimization_ai_scan_pro: {

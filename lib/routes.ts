@@ -8,6 +8,7 @@ export const ROUTES = {
   MY_ACCOUNT: '/hesabim',
   SUBSCRIPTION: '/abonelik',
   INVOICES: '/faturalarim',
+  MARKETING_SETUP: '/marketing-kurulumu',
 } as const
 
 /** TR slug → EN slug mapping (all translatable paths) */
@@ -18,6 +19,7 @@ export const SLUG_TR_TO_EN: Record<string, string> = {
   'tasarim': 'design',
   'raporlar': 'reports',
   'entegrasyon': 'integration',
+  'marketing-kurulumu': 'marketing-setup',
   'gizlilik-politikasi': 'privacy-policy',
   'cerez-politikasi': 'cookie-policy',
   'kullanim-kosullari': 'terms-of-service',
@@ -32,6 +34,7 @@ export const SLUG_EN_TO_TR: Record<string, string> = {
   'design': 'tasarim',
   'reports': 'raporlar',
   'integration': 'entegrasyon',
+  'marketing-setup': 'marketing-kurulumu',
   'terms-of-service': 'kullanim-kosullari',
   'privacy-policy': 'gizlilik-politikasi',
   'cookie-policy': 'cerez-politikasi',

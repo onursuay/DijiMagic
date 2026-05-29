@@ -1,0 +1,242 @@
+'use client'
+
+import { useState } from 'react'
+import { useTranslations } from 'next-intl'
+import { Search, Loader2, CheckCircle2, Globe } from 'lucide-react'
+import { STANDARD_EVENTS, type StandardEventKey } from '@/lib/marketing-setup/constants'
+import type { SiteScanResult, DetectedAction } from '@/lib/marketing-setup/types'
+import type { StepProps } from '@/components/marketing-setup/wizardTypes'
+
+export default function SiteScanner({ state, update, goNext }: StepProps) {
+  const t = useTranslations('marketingSetup')
+  const [siteUrl, setSiteUrl] = useState(state.siteUrl || '')
+  const [scanning, setScanning] = useState(false)
+  const [error, setError] = useState<string | null>(null)
+
+  const scan = state.scan
+  const selected = state.selectedEvents
+
+  async function runScan() {
+    const url = siteUrl.trim()
+    if (!url || scanning) return
+    setScanning(true)
+    setError(null)
+    try {
+      const res = await fetch('/api/marketing-setup/scan', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ siteUrl: url }),
+      })
+      const data = (await res.json()) as
+        | { ok: true; scan: SiteScanResult }
+        | { ok: false; error: string }
+      if (!data.ok) {
+        setError(t('scan.errorScan'))
+        return
+      }
+      // Pre-check recommended events.
+      const recommended = data.scan.recommendedEvents.map((r) => r.event)
+      update({ siteUrl: url, scan: data.scan, selectedEvents: recommended })
+      void persistSelection(recommended)
+    } catch {
+      setError(t('scan.errorScan'))
+    } finally {
+      setScanning(false)
+    }
+  }
+
+  async function persistSelection(events: StandardEventKey[]) {
+    try {
+      await fetch('/api/marketing-setup/setup', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ patch: { selected_events: events } }),
+      })
+    } catch {
+      /* best-effort persistence; selection stays in wizard state */
+    }
+  }
+
+  function toggleEvent(key: StandardEventKey) {
+    const next = selected.includes(key)
+      ? selected.filter((e) => e !== key)
+      : [...selected, key]
+    update({ selectedEvents: next })
+    void persistSelection(next)
+  }
+
+  // Group detected actions by event for display.
+  const actionsByEvent = new Map<StandardEventKey, DetectedAction[]>()
+  for (const a of scan?.detectedActions ?? []) {
+    const list = actionsByEvent.get(a.event) ?? []
+    list.push(a)
+    actionsByEvent.set(a.event, list)
+  }
+  const recommendedSet = new Set((scan?.recommendedEvents ?? []).map((r) => r.event))
+
+  return (
+    <div className="max-w-3xl mx-auto">
+      <div className="text-center mb-6">
+        <h2 className="text-xl font-semibold text-gray-900">{t('scan.title')}</h2>
+        <p className="mt-1.5 text-sm text-gray-500">{t('scan.description')}</p>
+      </div>
+
+      {/* URL input + scan */}
+      <div className="bg-white border border-gray-200 rounded-2xl p-5 shadow-sm">
+        <label className="block text-sm font-medium text-gray-700 mb-1.5">
+          {t('scan.urlLabel')}
+        </label>
+        <div className="flex flex-col sm:flex-row gap-2.5">
+          <div className="relative flex-1">
+            <Globe className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" />
+            <input
+              type="url"
+              inputMode="url"
+              value={siteUrl}
+              onChange={(e) => setSiteUrl(e.target.value)}
+              onKeyDown={(e) => {
+                if (e.key === 'Enter') runScan()
+              }}
+              placeholder={t('scan.urlPlaceholder')}
+              disabled={scanning}
+              className="w-full pl-9 pr-3 py-2.5 border border-gray-200 rounded-xl text-sm shadow-[0_1px_3px_rgba(0,0,0,0.06),inset_0_1px_2px_rgba(0,0,0,0.04)] focus:border-primary focus:ring-2 focus:ring-primary/20 outline-none transition-all disabled:bg-gray-50 disabled:opacity-60"
+            />
+          </div>
+          <button
+            type="button"
+            onClick={runScan}
+            disabled={scanning || !siteUrl.trim()}
+            className="inline-flex items-center justify-center gap-2 px-5 py-2.5 rounded-xl bg-primary text-white text-sm font-medium shadow-sm hover:bg-primary/90 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+          >
+            {scanning ? (
+              <Loader2 className="w-4 h-4 animate-spin" />
+            ) : (
+              <Search className="w-4 h-4" />
+            )}
+            {scanning ? t('scan.scanning') : t('scan.scanButton')}
+          </button>
+        </div>
+
+        {error && (
+          <div className="mt-3 rounded-xl border border-red-200 bg-red-50 px-3.5 py-2.5 text-sm text-red-700">
+            {error}
+          </div>
+        )}
+
+        {scan && !error && (
+          <div className="mt-3 flex items-center gap-2 text-sm text-emerald-700">
+            <CheckCircle2 className="w-4 h-4" />
+            <span className="font-medium">{t('scan.scanned')}</span>
+            <span className="text-gray-400">·</span>
+            <span className="text-gray-500">
+              {t('scan.pagesScanned', { count: scan.pagesScanned })}
+            </span>
+          </div>
+        )}
+      </div>
+
+      {/* Scan results */}
+      {scan && (
+        <div className="mt-5 space-y-5">
+          {/* Detected actions */}
+          {scan.detectedActions.length > 0 && (
+            <div className="bg-white border border-gray-200 rounded-2xl p-5 shadow-sm">
+              <h3 className="text-sm font-semibold text-gray-900 mb-3">
+                {t('scan.detectedActions')}
+              </h3>
+              <div className="flex flex-wrap gap-2">
+                {scan.detectedActions.map((a, i) => {
+                  const def = STANDARD_EVENTS.find((e) => e.key === a.event)
+                  return (
+                    <span
+                      key={`${a.event}-${i}`}
+                      className="inline-flex items-center gap-1.5 rounded-full bg-emerald-50 text-emerald-700 px-3 py-1 text-xs font-medium"
+                      title={a.source}
+                    >
+                      {def ? t(`events.${def.i18nKey}`) : a.event}
+                      <span className="text-emerald-500/70">
+                        {Math.round(a.confidence * 100)}%
+                      </span>
+                    </span>
+                  )
+                })}
+              </div>
+            </div>
+          )}
+
+          {/* Recommended events checklist (all STANDARD_EVENTS) */}
+          <div className="bg-white border border-gray-200 rounded-2xl p-5 shadow-sm">
+            <div className="flex items-center justify-between mb-1">
+              <h3 className="text-sm font-semibold text-gray-900">
+                {t('scan.recommendedEvents')}
+              </h3>
+              <span className="text-xs text-gray-400">
+                {t('scan.selectedCount', { count: selected.length })}
+              </span>
+            </div>
+            <p className="text-xs text-gray-500 mb-3">{t('scan.selectEventsHint')}</p>
+
+            {scan.detectedActions.length === 0 && scan.recommendedEvents.length === 0 && (
+              <p className="mb-3 text-xs text-gray-500">{t('scan.noEventsFound')}</p>
+            )}
+
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-2.5">
+              {STANDARD_EVENTS.map((def) => {
+                const checked = selected.includes(def.key)
+                const isRecommended = recommendedSet.has(def.key)
+                const detected = actionsByEvent.get(def.key)
+                const conf = detected?.[0]?.confidence
+                return (
+                  <label
+                    key={def.key}
+                    className={`flex items-start gap-3 rounded-xl border px-3.5 py-3 cursor-pointer transition-all ${
+                      checked
+                        ? 'border-primary/40 bg-primary/5'
+                        : 'border-gray-200 hover:border-gray-300 bg-white'
+                    }`}
+                  >
+                    <input
+                      type="checkbox"
+                      checked={checked}
+                      onChange={() => toggleEvent(def.key)}
+                      className="mt-0.5 h-4 w-4 rounded border-gray-300 text-primary focus:ring-primary/30 accent-[var(--primary,#16a34a)]"
+                    />
+                    <span className="flex-1 min-w-0">
+                      <span className="flex items-center gap-2 flex-wrap">
+                        <span className="text-sm font-medium text-gray-800">
+                          {t(`events.${def.i18nKey}`)}
+                        </span>
+                        {isRecommended && (
+                          <span className="inline-flex items-center rounded-full bg-emerald-50 text-emerald-700 px-2 py-0.5 text-[10px] font-semibold uppercase tracking-wide">
+                            {t('common.recommended')}
+                          </span>
+                        )}
+                      </span>
+                      {typeof conf === 'number' && (
+                        <span className="mt-0.5 block text-xs text-gray-400">
+                          {t('scan.confidence')}: {Math.round(conf * 100)}%
+                        </span>
+                      )}
+                    </span>
+                  </label>
+                )
+              })}
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Footer nav */}
+      <div className="mt-6 flex justify-end">
+        <button
+          type="button"
+          onClick={goNext}
+          disabled={!scan}
+          className="inline-flex items-center gap-2 px-6 py-2.5 rounded-xl bg-primary text-white text-sm font-medium shadow-sm hover:bg-primary/90 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+        >
+          {t('common.next')}
+        </button>
+      </div>
+    </div>
+  )
+}

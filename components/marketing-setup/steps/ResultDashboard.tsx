@@ -1,0 +1,276 @@
+'use client'
+
+import { useState } from 'react'
+import { useTranslations } from 'next-intl'
+import {
+  CheckCircle2,
+  XCircle,
+  Loader2,
+  Tags,
+  BarChart3,
+  Building2,
+  Globe,
+  Search,
+  ExternalLink,
+  Megaphone,
+} from 'lucide-react'
+import { STANDARD_EVENTS } from '@/lib/marketing-setup/constants'
+import type { SetupStepName } from '@/lib/marketing-setup/constants'
+import type { DeployStepResult } from '@/lib/marketing-setup/types'
+import type { StepProps } from '@/components/marketing-setup/wizardTypes'
+
+function num(v: unknown): number | null {
+  return typeof v === 'number' && Number.isFinite(v) ? v : null
+}
+
+export default function ResultDashboard({ state, goBack }: StepProps) {
+  const t = useTranslations('marketingSetup')
+  const steps = state.deploySteps
+
+  const [metaTest, setMetaTest] = useState<{
+    loading: boolean
+    matchQuality?: string | number | null
+    error?: boolean
+  }>({ loading: false })
+
+  const conversionCount = STANDARD_EVENTS.filter(
+    (e) => e.isConversion && state.selectedEvents.includes(e.key),
+  ).length
+
+  function statusIcon(status?: DeployStepResult['status']) {
+    if (status === 'done') return <CheckCircle2 className="w-4 h-4 text-emerald-500" />
+    if (status === 'error') return <XCircle className="w-4 h-4 text-red-500" />
+    if (status === 'running') return <Loader2 className="w-4 h-4 text-primary animate-spin" />
+    return null
+  }
+
+  const Card = ({
+    icon,
+    title,
+    step,
+    statusLabel,
+    children,
+  }: {
+    icon: React.ReactNode
+    title: string
+    step: SetupStepName
+    statusLabel: string
+    children?: React.ReactNode
+  }) => {
+    const r = steps[step]
+    const ok = r?.status === 'done'
+    return (
+      <div
+        className={`flex flex-col bg-white border rounded-2xl p-5 shadow-sm ${
+          r?.status === 'error' ? 'border-red-200' : 'border-gray-200'
+        }`}
+      >
+        <div className="flex items-center gap-2.5 mb-2">
+          <span className="text-primary">{icon}</span>
+          <h3 className="text-sm font-semibold text-gray-900 flex-1">{title}</h3>
+          {statusIcon(r?.status)}
+        </div>
+        <p
+          className={`text-xs font-medium ${
+            ok ? 'text-emerald-700' : r?.status === 'error' ? 'text-red-600' : 'text-gray-400'
+          }`}
+        >
+          {r?.status === 'error' && r.error ? r.error : ok ? statusLabel : t('deploy.pending')}
+        </p>
+        {ok && <div className="mt-3 flex-1">{children}</div>}
+      </div>
+    )
+  }
+
+  // Meta test via CAPI.
+  async function testMeta() {
+    setMetaTest({ loading: true })
+    try {
+      const res = await fetch('/api/capi/event', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          eventName: 'PageView',
+          eventSourceUrl: state.siteUrl || undefined,
+          testEventCode: 'TEST', // server resolves/validates; UI surfaces matchQuality
+        }),
+      })
+      const data = (await res.json()) as {
+        ok?: boolean
+        matchQuality?: string | number | null
+      }
+      if (!res.ok || !data.ok) {
+        setMetaTest({ loading: false, error: true })
+        return
+      }
+      setMetaTest({ loading: false, matchQuality: data.matchQuality ?? null })
+    } catch {
+      setMetaTest({ loading: false, error: true })
+    }
+  }
+
+  // GTM preview URL from gtm result, if provided.
+  const gtmResult = steps.gtm?.result
+  const gtmPreviewUrl =
+    (gtmResult?.previewUrl as string | undefined) ??
+    (gtmResult?.gtm_preview_url as string | undefined) ??
+    null
+
+  // Remarketing summary counts (best-effort from step results).
+  const metaResult = steps.meta?.result
+  const ga4Result = steps.ga4?.result
+  const adsResult = steps.google_ads?.result
+
+  const audiencesCount =
+    num(metaResult?.audiencesCreated) ??
+    num(ga4Result?.audiencesCreated) ??
+    num(metaResult?.customAudiences) ??
+    0
+  const lookalikesCount = num(metaResult?.lookalikesCreated) ?? num(metaResult?.lookalikes) ?? 0
+  const adsConversionsCount =
+    num(adsResult?.conversionActionsCreated) ?? num(adsResult?.conversions) ?? conversionCount
+
+  const matchScore =
+    num(metaResult?.matchQuality) ?? (typeof metaResult?.matchQuality === 'string' ? metaResult.matchQuality : null)
+
+  return (
+    <div className="max-w-3xl mx-auto">
+      <div className="text-center mb-6">
+        <h2 className="text-xl font-semibold text-gray-900">{t('result.title')}</h2>
+        <p className="mt-1.5 text-sm text-gray-500">{t('result.description')}</p>
+      </div>
+
+      {/* Platform status cards */}
+      <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+        <Card icon={<Tags className="w-5 h-5" />} title={t('preview.gtm')} step="gtm" statusLabel={t('result.statusPublished')}>
+          {gtmPreviewUrl ? (
+            <a
+              href={gtmPreviewUrl}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="inline-flex items-center gap-1.5 text-xs font-medium text-primary hover:underline"
+            >
+              <ExternalLink className="w-3.5 h-3.5" />
+              {t('result.testGtmPreview')}
+            </a>
+          ) : null}
+        </Card>
+
+        <Card icon={<BarChart3 className="w-5 h-5" />} title={t('preview.ga4')} step="ga4" statusLabel={t('result.statusConnected')}>
+          {conversionCount > 0 && (
+            <p className="text-xs text-gray-500">{t('result.conversionsMarked', { count: conversionCount })}</p>
+          )}
+        </Card>
+
+        <Card icon={<Building2 className="w-5 h-5" />} title={t('preview.meta')} step="meta" statusLabel={t('result.statusInstalled')}>
+          <p className="inline-flex items-center gap-1.5 text-xs text-emerald-700">
+            <CheckCircle2 className="w-3.5 h-3.5" />
+            {t('result.capiActive')}
+          </p>
+          {(metaTest.matchQuality != null || matchScore != null) && (
+            <p className="mt-1 text-xs text-gray-500">
+              {t('result.matchScore', { score: String(metaTest.matchQuality ?? matchScore) })}
+            </p>
+          )}
+        </Card>
+
+        <Card icon={<Globe className="w-5 h-5" />} title={t('preview.googleAds')} step="google_ads" statusLabel={t('result.statusConnected')}>
+          {adsConversionsCount > 0 && (
+            <p className="text-xs text-gray-500">{t('result.summaryConversions', { count: adsConversionsCount })}</p>
+          )}
+        </Card>
+
+        <Card icon={<Search className="w-5 h-5" />} title={t('preview.gsc')} step="search_console" statusLabel={t('result.statusConnected')} />
+      </div>
+
+      {/* Test tools */}
+      <div className="mt-5 bg-white border border-gray-200 rounded-2xl p-5 shadow-sm">
+        <div className="flex flex-wrap gap-2.5">
+          <a
+            href="https://analytics.google.com/"
+            target="_blank"
+            rel="noopener noreferrer"
+            className="inline-flex items-center gap-1.5 px-4 py-2 rounded-xl border border-gray-200 text-xs font-medium text-gray-700 hover:border-primary hover:text-primary transition-colors"
+          >
+            <ExternalLink className="w-3.5 h-3.5" />
+            {t('result.testGa4')}
+          </a>
+          <button
+            type="button"
+            onClick={testMeta}
+            disabled={metaTest.loading || steps.meta?.status !== 'done'}
+            className="inline-flex items-center gap-1.5 px-4 py-2 rounded-xl border border-gray-200 text-xs font-medium text-gray-700 hover:border-primary hover:text-primary transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+          >
+            {metaTest.loading ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <Building2 className="w-3.5 h-3.5" />}
+            {t('result.testMeta')}
+          </button>
+          {gtmPreviewUrl && (
+            <a
+              href={gtmPreviewUrl}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="inline-flex items-center gap-1.5 px-4 py-2 rounded-xl border border-gray-200 text-xs font-medium text-gray-700 hover:border-primary hover:text-primary transition-colors"
+            >
+              <ExternalLink className="w-3.5 h-3.5" />
+              {t('result.testGtmPreview')}
+            </a>
+          )}
+        </div>
+        {metaTest.error && (
+          <p className="mt-2.5 text-xs text-red-600">{t('errors.generic')}</p>
+        )}
+        {metaTest.matchQuality != null && !metaTest.error && (
+          <p className="mt-2.5 text-xs text-emerald-700">
+            {t('result.matchScore', { score: String(metaTest.matchQuality) })}
+          </p>
+        )}
+      </div>
+
+      {/* Remarketing summary */}
+      <div className="mt-5 bg-white border border-gray-200 rounded-2xl p-5 shadow-sm">
+        <h3 className="text-sm font-semibold text-gray-900 mb-3">{t('result.remarketingTitle')}</h3>
+        <div className="grid grid-cols-3 gap-3">
+          <div className="rounded-xl bg-emerald-50 px-3 py-3 text-center">
+            <p className="text-lg font-semibold text-emerald-700">{audiencesCount}</p>
+            <p className="text-xs text-emerald-700/80">{t('result.summaryAudiences', { count: audiencesCount })}</p>
+          </div>
+          <div className="rounded-xl bg-emerald-50 px-3 py-3 text-center">
+            <p className="text-lg font-semibold text-emerald-700">{adsConversionsCount}</p>
+            <p className="text-xs text-emerald-700/80">{t('result.summaryConversions', { count: adsConversionsCount })}</p>
+          </div>
+          <div className="rounded-xl bg-emerald-50 px-3 py-3 text-center">
+            <p className="text-lg font-semibold text-emerald-700">{lookalikesCount}</p>
+            <p className="text-xs text-emerald-700/80">{t('result.summaryLookalikes', { count: lookalikesCount })}</p>
+          </div>
+        </div>
+        <div className="mt-4 flex flex-wrap gap-2.5">
+          <a
+            href="/google-ads"
+            className="inline-flex items-center gap-1.5 px-4 py-2 rounded-xl bg-primary text-white text-xs font-medium shadow-sm hover:bg-primary/90 transition-colors"
+          >
+            <Megaphone className="w-3.5 h-3.5" />
+            {t('result.createGoogleAd')}
+          </a>
+          <a
+            href="/meta-ads"
+            className="inline-flex items-center gap-1.5 px-4 py-2 rounded-xl bg-primary text-white text-xs font-medium shadow-sm hover:bg-primary/90 transition-colors"
+          >
+            <Megaphone className="w-3.5 h-3.5" />
+            {t('result.createMetaAd')}
+          </a>
+        </div>
+      </div>
+
+      {/* Footer nav */}
+      <div className="mt-6 flex items-center justify-between">
+        <button
+          type="button"
+          onClick={goBack}
+          className="inline-flex items-center gap-2 px-5 py-2.5 rounded-xl border border-gray-200 text-sm font-medium text-gray-600 hover:border-gray-300 transition-colors"
+        >
+          {t('common.back')}
+        </button>
+      </div>
+    </div>
+  )
+}

@@ -11,6 +11,7 @@ import {
   Building2,
   ShieldCheck,
   Briefcase,
+  Rocket,
 } from 'lucide-react'
 import { ROUTES } from '@/lib/routes'
 
@@ -115,5 +116,17 @@ export const gozetimMerkeziNavItem: NavItem = {
   label: 'Gözetim Merkezi',
   href: '/gozetim-merkezi',
   icon: ShieldCheck,
+}
+
+/**
+ * Marketing Kurulumu — rollout sırasında gizli. `navItems` içine konmaz;
+ * yalnız owner veya `MARKETING_SETUP_ENABLED` açıkken client tarafında dinamik
+ * enjekte edilir (Gözetim Merkezi ile aynı desen). UI etiketi sidebar.marketingkurulumu.
+ */
+export const marketingSetupNavItem: NavItem = {
+  id: 'marketing-kurulumu',
+  label: 'Marketing Kurulumu',
+  href: ROUTES.MARKETING_SETUP,
+  icon: Rocket,
 }
 

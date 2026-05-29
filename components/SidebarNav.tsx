@@ -3,7 +3,7 @@
 import Link from 'next/link'
 import { usePathname } from 'next/navigation'
 import { useTranslations } from 'next-intl'
-import { navItems } from '@/lib/nav'
+import { navItems, marketingSetupNavItem } from '@/lib/nav'
 import { localePath } from '@/lib/routes'
 import { ChevronDown, PanelLeftClose, PanelLeftOpen } from 'lucide-react'
 import UserProfileDropdown from '@/components/UserProfileDropdown'
@@ -18,6 +18,7 @@ export default function SidebarNav() {
   const [collapsed, setCollapsed] = useState<boolean>(false)
   const [animate, setAnimate] = useState(false)
   const [hasGozetimAccess, setHasGozetimAccess] = useState<boolean>(false)
+  const [hasMarketingSetup, setHasMarketingSetup] = useState<boolean>(false)
 
   // Gözetim Merkezi yetki kontrolü — yalnızca yetkili oturum için menü çıkar.
   // Normal kullanıcı için cevap her zaman 200 olur, sızıntı yok.
@@ -28,6 +29,19 @@ export default function SidebarNav() {
       .then((data) => {
         if (cancelled) return
         if (data && data.hasAccess === true) setHasGozetimAccess(true)
+      })
+      .catch(() => { /* sessizce yok say */ })
+    return () => { cancelled = true }
+  }, [])
+
+  // Marketing Kurulumu görünürlüğü — owner veya MARKETING_SETUP_ENABLED açıkken.
+  useEffect(() => {
+    let cancelled = false
+    fetch('/api/marketing-setup/visibility', { cache: 'no-store' })
+      .then((r) => (r.ok ? r.json() : null))
+      .then((data) => {
+        if (cancelled) return
+        if (data && data.visible === true) setHasMarketingSetup(true)
       })
       .catch(() => { /* sessizce yok say */ })
     return () => { cancelled = true }
@@ -96,7 +110,9 @@ export default function SidebarNav() {
       return id.replace(/-/g, '')
     }
 
-    return navItems.map(item => ({
+    const source = hasMarketingSetup ? [...navItems, marketingSetupNavItem] : navItems
+
+    return source.map(item => ({
       ...item,
       label: t(getTranslationKey(item.id)),
       href: item.href ? localePath(item.href, locale) : item.href,
@@ -106,7 +122,7 @@ export default function SidebarNav() {
         href: child.href ? localePath(child.href, locale) : child.href,
       }))
     }))
-  }, [t, locale])
+  }, [t, locale, hasMarketingSetup])
 
   return (
     <div

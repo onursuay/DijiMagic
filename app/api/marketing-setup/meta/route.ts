@@ -1,0 +1,149 @@
+import { NextResponse } from 'next/server'
+import { getCurrentUser } from '@/lib/billing/user'
+import { resolveMetaContext } from '@/lib/meta/context'
+import { META_GRAPH_VERSION } from '@/lib/metaConfig'
+import { getSetup, updateSetup, logStep } from '@/lib/marketing-setup/setupStore'
+import { sendCapiEvent, createCustomConversions, generateEventId } from '@/lib/marketing-setup/metaCapiClient'
+import type { DeployStepResult } from '@/lib/marketing-setup/types'
+import type { StandardEventKey } from '@/lib/marketing-setup/constants'
+
+export const runtime = 'nodejs'
+export const dynamic = 'force-dynamic'
+
+const STEP = 'meta' as const
+
+/**
+ * POST /api/marketing-setup/meta — deploy step "meta".
+ *
+ * 1. Resolve the caller's Meta context (token + ad account) — never trusts body.
+ * 2. Resolve the pixel id (setup.meta_pixel_id, else first {adAccount}/adspixels).
+ * 3. Verify CAPI by sending one test event (action_source 'website') and read
+ *    events_received as the match-quality signal.
+ * 4. Create Meta custom conversions for the selected conversion events.
+ * 5. Persist meta_pixel_id + logStep('meta','done', result) and return a
+ *    DeployStepResult. Always HTTP 200 so the UI renders per-step state; a real
+ *    failure is reported as status:'error' (no fabricated success).
+ */
+export async function POST() {
+  const user = await getCurrentUser()
+  if (!user) {
+    return NextResponse.json<DeployStepResult>({ step: STEP, status: 'error', error: 'not_authenticated' }, { status: 200 })
+  }
+
+  const setup = await getSetup(user.id)
+  if (!setup) {
+    return NextResponse.json<DeployStepResult>({ step: STEP, status: 'error', error: 'no_setup' }, { status: 200 })
+  }
+
+  const ctx = await resolveMetaContext()
+  if (!ctx) {
+    await logStep(setup.id, STEP, 'error', null, 'meta_not_connected')
+    return NextResponse.json<DeployStepResult>({ step: STEP, status: 'error', error: 'meta_not_connected' }, { status: 200 })
+  }
+
+  const token = ctx.userAccessToken
+  const adAccountId = ctx.accountId
+  const graphVersion = META_GRAPH_VERSION
+
+  try {
+    // ── Resolve pixel id ──
+    let pixelId = setup.meta_pixel_id ?? null
+    if (!pixelId) {
+      const pixelRes = await ctx.client.get<{ data?: { id: string; name: string }[] }>(
+        `/${adAccountId}/adspixels`,
+        { fields: 'id,name', limit: '1' },
+      )
+      pixelId = pixelRes.ok ? pixelRes.data?.data?.[0]?.id ?? null : null
+    }
+
+    if (!pixelId) {
+      await logStep(setup.id, STEP, 'error', null, 'no_pixel')
+      return NextResponse.json<DeployStepResult>({ step: STEP, status: 'error', error: 'no_pixel' }, { status: 200 })
+    }
+
+    // ── Verify CAPI with a single test event ──
+    let capiVerified = false
+    let matchQuality: number | null = null
+    let capiError: string | null = null
+    const testEventCode = process.env.META_CAPI_TEST_EVENT_CODE || undefined
+    try {
+      const verifyEventId = generateEventId('PageView')
+      const capi = await sendCapiEvent({
+        accessToken: token,
+        pixelId,
+        graphVersion,
+        eventName: 'PageView',
+        eventId: verifyEventId,
+        eventSourceUrl: setup.site_url || undefined,
+        actionSource: 'website',
+        testEventCode,
+      })
+      capiVerified = capi.eventsReceived > 0
+      // events_received doubles as the integration-level match-quality signal here.
+      matchQuality = capi.eventsReceived
+    } catch (e) {
+      capiError = e instanceof Error ? e.message : 'capi_verify_failed'
+    }
+
+    // ── Create custom conversions for selected conversion events ──
+    const selectedEvents = (setup.selected_events ?? []) as StandardEventKey[]
+    const siteName = deriveSiteName(setup.site_url)
+    let customConversions = 0
+    let conversionsError: string | null = null
+    try {
+      const cc = await createCustomConversions({
+        accessToken: token,
+        adAccountId,
+        graphVersion,
+        pixelId,
+        siteName,
+        events: selectedEvents,
+      })
+      customConversions = cc.created
+    } catch (e) {
+      conversionsError = e instanceof Error ? e.message : 'custom_conversions_failed'
+    }
+
+    // ── Persist pixel id ──
+    await updateSetup(user.id, { meta_pixel_id: pixelId })
+
+    // If CAPI verification failed AND no conversions were created, treat as a
+    // genuine step error so the UI does not show false success.
+    if (!capiVerified && customConversions === 0) {
+      const error = capiError || conversionsError || 'meta_step_failed'
+      await logStep(setup.id, STEP, 'error', { pixelId }, error)
+      return NextResponse.json<DeployStepResult>({ step: STEP, status: 'error', error, result: { pixelId } }, { status: 200 })
+    }
+
+    const result: Record<string, unknown> = {
+      pixelId,
+      adAccountId,
+      capiVerified,
+      customConversions,
+      matchQuality,
+      // Audiences/lookalikes are created via the existing
+      // /api/meta/audiences/create route (see integration notes); not duplicated here.
+      audiences: null,
+    }
+    if (capiError) result.capiWarning = capiError
+    if (conversionsError) result.conversionsWarning = conversionsError
+
+    await logStep(setup.id, STEP, 'done', result)
+    return NextResponse.json<DeployStepResult>({ step: STEP, status: 'done', result }, { status: 200 })
+  } catch (e) {
+    const error = e instanceof Error ? e.message : 'meta_step_failed'
+    await logStep(setup.id, STEP, 'error', null, error)
+    return NextResponse.json<DeployStepResult>({ step: STEP, status: 'error', error }, { status: 200 })
+  }
+}
+
+/** Derive a human site name from the configured site url (hostname, no www). */
+function deriveSiteName(siteUrl: string | null): string {
+  if (!siteUrl) return 'YoAi'
+  try {
+    const host = new URL(siteUrl.startsWith('http') ? siteUrl : `https://${siteUrl}`).hostname
+    return host.replace(/^www\./, '') || 'YoAi'
+  } catch {
+    return 'YoAi'
+  }
+}

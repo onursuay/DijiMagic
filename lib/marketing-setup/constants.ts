@@ -1,0 +1,80 @@
+// Shared constants for the Marketing Setup wizard. Pure data — safe to import
+// from both server and client. No tokens or secrets here.
+
+// ─── Separate "setup" Google consent (write scopes only) ─────────────────────
+// These are NOT added to the existing read-only Google Ads/Analytics/Search
+// Console OAuth flows. A dedicated consent keeps working integrations untouched.
+export const SETUP_GOOGLE_SCOPES = [
+  'https://www.googleapis.com/auth/tagmanager.edit.containers',
+  'https://www.googleapis.com/auth/tagmanager.publish',
+  'https://www.googleapis.com/auth/analytics.edit',
+  'https://www.googleapis.com/auth/analytics.provision',
+  'https://www.googleapis.com/auth/webmasters',
+  'https://www.googleapis.com/auth/siteverification',
+  'openid',
+  'email',
+]
+
+// ─── API base URLs ───────────────────────────────────────────────────────────
+export const GTM_API_BASE = 'https://www.googleapis.com/tagmanager/v2'
+export const GA4_ADMIN_API_BASE = 'https://analyticsadmin.googleapis.com/v1beta'
+export const GA4_ADMIN_ALPHA_BASE = 'https://analyticsadmin.googleapis.com/v1alpha' // audiences live in v1alpha
+export const GSC_API_BASE = 'https://www.googleapis.com/webmasters/v3'
+export const SITE_VERIFICATION_API_BASE = 'https://www.googleapis.com/siteVerification/v1'
+export const META_GRAPH_DEFAULT_VERSION = 'v24.0' // mirrors lib/metaConfig.ts default
+
+// GTM Management API quota: ~5 requests/second. Throttle writes to stay under it.
+export const GTM_MAX_RPS = 5
+
+// ─── Standard event catalog ──────────────────────────────────────────────────
+// Maps detected site actions to GA4 + Meta event names. UI labels come from
+// i18n (marketingSetup.events.<i18nKey>) — never render these raw codes.
+export type StandardEventKey =
+  | 'purchase'
+  | 'add_to_cart'
+  | 'begin_checkout'
+  | 'add_payment_info'
+  | 'view_search_results'
+  | 'lead'
+  | 'sign_up'
+  | 'video_play'
+
+export interface StandardEventDef {
+  key: StandardEventKey
+  /** GA4 recommended event name. */
+  ga4Event: string
+  /** Meta event name (standard, or custom when not in Meta's standard set). */
+  metaEvent: string
+  /** Whether Meta treats metaEvent as a standard event. */
+  metaStandard: boolean
+  /** Mark as a GA4 key event (conversion) and create a Meta custom conversion. */
+  isConversion: boolean
+  /** Carries value + currency params (e-commerce). */
+  hasValue: boolean
+  /** i18n suffix under marketingSetup.events.* */
+  i18nKey: string
+}
+
+export const STANDARD_EVENTS: StandardEventDef[] = [
+  { key: 'purchase', ga4Event: 'purchase', metaEvent: 'Purchase', metaStandard: true, isConversion: true, hasValue: true, i18nKey: 'purchase' },
+  { key: 'add_to_cart', ga4Event: 'add_to_cart', metaEvent: 'AddToCart', metaStandard: true, isConversion: false, hasValue: true, i18nKey: 'addToCart' },
+  { key: 'begin_checkout', ga4Event: 'begin_checkout', metaEvent: 'InitiateCheckout', metaStandard: true, isConversion: true, hasValue: true, i18nKey: 'beginCheckout' },
+  { key: 'add_payment_info', ga4Event: 'add_payment_info', metaEvent: 'AddPaymentInfo', metaStandard: true, isConversion: true, hasValue: true, i18nKey: 'addPaymentInfo' },
+  { key: 'view_search_results', ga4Event: 'view_search_results', metaEvent: 'Search', metaStandard: true, isConversion: false, hasValue: false, i18nKey: 'viewSearchResults' },
+  { key: 'lead', ga4Event: 'generate_lead', metaEvent: 'Lead', metaStandard: true, isConversion: true, hasValue: false, i18nKey: 'lead' },
+  { key: 'sign_up', ga4Event: 'sign_up', metaEvent: 'CompleteRegistration', metaStandard: true, isConversion: true, hasValue: false, i18nKey: 'signUp' },
+  { key: 'video_play', ga4Event: 'video_start', metaEvent: 'VideoPlay', metaStandard: false, isConversion: false, hasValue: false, i18nKey: 'videoPlay' },
+]
+
+export function getEventDef(key: string): StandardEventDef | undefined {
+  return STANDARD_EVENTS.find((e) => e.key === key)
+}
+
+// Deployment step identifiers — shared by API routes, store, and UI.
+export const SETUP_STEPS = ['gtm', 'ga4', 'meta', 'google_ads', 'search_console'] as const
+export type SetupStepName = (typeof SETUP_STEPS)[number]
+
+/** Feature flag — wizard hidden unless enabled OR the viewer is an owner. */
+export function isMarketingSetupFlagEnabled(): boolean {
+  return process.env.MARKETING_SETUP_ENABLED === 'true' || process.env.MARKETING_SETUP_ENABLED === '1'
+}
