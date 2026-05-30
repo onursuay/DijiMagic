@@ -2,6 +2,18 @@
 
 ---
 
+## 2026-05-30 — Multi-slot fetch wrapper (Faz 3A): YoAlgoritma/analytics modülleri için multi-slot deep-fetch helper'ları
+- **İhtiyaç:** Mevcut `fetchMetaDeep` / `fetchGoogleDeep` tek hesap çalışır (override pattern); YoAlgoritma, Strateji, Optimizasyon vb. modüller multi-slot aware olabilmek için tüm seçili slot'ların verisini iterate edip birleştirmeli.
+- **Çözüm:** Yeni `lib/yoai/multiSlotFetcher.ts` — `fetchMetaDeepAllSlots(userId)` ve `fetchGoogleDeepAllSlots(userId)`:
+  - `getSelectedAdAccountsForPlatform(userId, platform)` ile kullanıcının tüm seçili slot'larını çeker
+  - Her slot için mevcut fetcher'ı override ile çağırır (entegrasyon kodu **hiç değişmez**)
+  - Kampanyaları birleştirir; her birine `__slotIndex` + `__slotAccountId` + `__slotAccountName` ekler → downstream ayırt edebilir
+  - Slot tablosu boşsa (yeni sistemden hiç slot kaydı yoksa) **eski tek-hesap akışına geri düşer** — sıfır regresyon, opt-in
+- **Dönüş:** `{ campaigns, errors, connected, slotsUsed, slotsTried }` — slotsUsed = veri üreten slot sayısı, slotsTried = denenen toplam
+- **Kullanım:** Yeni analytics endpoint'leri / Inngest fonksiyonları `fetchMetaDeep` yerine `fetchMetaDeepAllSlots` çağırarak çoklu hesabı destekleyebilir. Mevcut çağrılar dokunulmadı.
+- **Dosyalar:** `lib/yoai/multiSlotFetcher.ts` (yeni). tsc 0 hata; next build temiz.
+- **Sonraki adım**: Bu helper'ları gerçek çağrılarda (yoalgoritmaScan, perCampaignImprovements vb.) opt-in olarak kullanmak. Module-by-module ilerleyeceğiz.
+
 ## 2026-05-30 — Multi-account slot UI (Faz 2C): MetaConnectWizard slot sistemine bağlandı
 - **Sorun:** Meta onboarding wizard'ı (Hoş Geldiniz → Bağlan → Hesap Seç → Tamamlandı) `useRegisteredAccounts` eski sistemini kullanıyordu; owner için limit `null` (sınırsız) idi, kullanıcı 5+ hesap seçebiliyordu. Yeni multi-account slot sisteminden (Faz 1+2A) habersizdi.
 - **Çözüm:** MetaConnectWizard'a `/api/billing/ad-account-slots` çağrısı eklendi (mount'ta maxSlots + Google'da kullanılan slot sayısı çekilir). Meta için kalan slot = `maxSlots - googleSlots` formülüyle hesaplanır:
