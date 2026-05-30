@@ -1,9 +1,10 @@
 import { NextResponse } from 'next/server'
 import { cookies } from 'next/headers'
 import { COOKIE } from '@/lib/google-ads/constants'
-import { getConnection, getConnectionStatus } from '@/lib/googleAdsConnectionStore'
+import { getConnection, getConnectionStatus, upsertConnection } from '@/lib/googleAdsConnectionStore'
 import { getGoogleAdsUserId } from '@/lib/googleAdsUserId'
 import { getGoogleAdsAccessToken } from '@/lib/googleAdsAuth'
+import { supabase } from '@/lib/supabase/client'
 
 export const dynamic = 'force-dynamic'
 
@@ -25,6 +26,17 @@ async function fetchGoogleUserName(refreshToken: string): Promise<string | null>
   }
 }
 
+/** DB'ye daha önce kaydedilmiş email'i oku (token expired olduğunda fallback). */
+async function getStoredConnectedEmail(userId: string): Promise<string | null> {
+  if (!supabase) return null
+  const { data } = await supabase
+    .from('google_ads_connections')
+    .select('connected_email')
+    .eq('user_id', userId)
+    .maybeSingle()
+  return (data as { connected_email?: string | null } | null)?.connected_email ?? null
+}
+
 /**
  * Google Ads connection status.
  * DB-first (google_ads_connections), cookie fallback — mirrors getGoogleAdsContext()
@@ -43,14 +55,24 @@ export async function GET() {
   if (userId) {
     const status = await getConnectionStatus(userId)
     if (status.exists && status.hasToken) {
-      // DB connection'dan refresh token al → userinfo'dan bağlı kullanıcı adını çek
+      // DB connection'dan refresh token al → userinfo'dan bağlı kullanıcı adını çek.
+      // Başarılıysa DB'ye backfill et (sonraki çağrılar token expired olsa bile fallback).
+      // Başarısızsa DB'de saklı email'i kullan.
       let connectedUserName: string | null = null
       try {
         const conn = await getConnection(userId)
         if (conn?.refreshToken) {
           connectedUserName = await fetchGoogleUserName(conn.refreshToken)
+          if (connectedUserName) {
+            // Backfill — sessizce başarısız olsa da status bozulmaz
+            void upsertConnection(userId, { connectedEmail: connectedUserName }).catch(() => {})
+          }
         }
       } catch { /* connectedUserName null kalır */ }
+      // Fallback: userinfo fail/expired ise DB'deki son bilinen email'i göster
+      if (!connectedUserName) {
+        connectedUserName = await getStoredConnectedEmail(userId)
+      }
       return NextResponse.json(
         {
           connected: true,
