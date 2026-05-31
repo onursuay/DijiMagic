@@ -2,6 +2,11 @@
 
 ---
 
+## 2026-05-31 — SEO: Amber/sarı renk ihlalleri kaldırıldı + i18n puan etiketleri
+- **Sorun:** SEO sayfasında proje renk kuralını ihlal eden amber/sarı tonlar kullanılıyordu (`bg-amber-50`, `text-amber-700`, `text-amber-500`, `text-amber-600`, `#F59E0B`). Ayrıca `getScoreLabel` hardcoded Türkçe string döndürüyordu (i18n ihlali).
+- **Çözüm:** Tüm amber renkleri onaylı palete taşındı: orta puan → `bg-primary/5` + `text-primary` + `#059669`; uyarı ikonları → `text-gray-500`; redirect zinciri → `bg-gray-100 text-gray-700`; redirect uyarısı → `text-primary`. `getScoreLabel` fonksiyonu `getScoreLabelKey` + `t('scoreLabels.*')` kullanacak şekilde refactor edildi; `scoreLabels` anahtarları (excellent/good/medium/weak/critical) her iki locales dosyasına eklendi.
+- **Dosyalar:** [app/seo/page.tsx](app/seo/page.tsx), [locales/tr.json](locales/tr.json), [locales/en.json](locales/en.json)
+
 ## 2026-05-30 — CRM: Lead PULL akışı (webhook'a alternatif) + pages_manage_metadata
 - **Sorun:** Test lead'i CRM'e düşmedi. Doğrudan Meta API teşhisi: `subscribed_apps` çağrısı `(#200) Requires pages_manage_metadata` döndü — bu izin OAuth scope'undan kaldırılmıştı, dolayısıyla "Sayfa Bağla" sayfayı leadgen webhook'una hiç abone edememiş. Webhook teslimatı bu izne bağlı.
 - **Çözüm:** İki yönlü — (1) webhook iznini geri ekle, (2) izne hiç bağlı olmayan PULL yedeği kur:
