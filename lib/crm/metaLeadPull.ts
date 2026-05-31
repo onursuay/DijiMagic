@@ -67,7 +67,9 @@ export async function pullLeadsForUser(
       fields: 'id,name,leads_count',
       limit: '100',
     })
-    const forms = (formsRes.ok ? formsRes.data?.data ?? [] : []).filter((f) => Number(f.leads_count) > 0)
+    // Tüm formları tara (leads_count'a güvenme — stale olabilir). Boş formlar
+    // hızlıca boş döner; eksik lead riskini ortadan kaldırır.
+    const forms = formsRes.ok ? formsRes.data?.data ?? [] : []
 
     for (const form of forms) {
       if (Date.now() - startedAt > budgetMs) break
@@ -77,7 +79,7 @@ export async function pullLeadsForUser(
         if (Date.now() - startedAt > budgetMs) break
         const params: Record<string, string> = {
           fields: 'id,created_time,field_data,ad_id,campaign_name',
-          limit: '100',
+          limit: '200',
         }
         if (after) params.after = after
 
