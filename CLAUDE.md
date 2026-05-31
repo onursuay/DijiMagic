@@ -1,5 +1,74 @@
 # YoAi Project — Claude Code Instructions
 
+## Proje Geneli UI/UX Tasarım Standardı (ZORUNLU — Her Yeni Alan ve Değişiklikte)
+
+Bu standart **2026-05 itibarıyla tüm projeye uygulanmıştır.** Bundan sonra yapılacak **her yeni modül, sayfa, bileşen veya mevcut alana yapılan değişiklik** bu standarda uymak zorundadır. Kısmi uygulama kabul edilmez.
+
+### 1. İçerik Genişliği (Layout)
+- Tüm sayfa içerik konteynerleri: **`max-w-7xl mx-auto`**
+- Tailwind `p-6` ile birlikte: `<div className="flex-1 overflow-y-auto app-content-surface p-6"><div className="max-w-7xl mx-auto ...">...</div></div>`
+- **İstisnalar (değiştirme):**
+  - `app/tasarim/` — sidebar+canvas özel düzen, max-w uygulanmaz
+  - `app/yoai/` — komuta merkezi `max-w-[1440px]`, sohbet alanı `max-w-4xl` (kasıtlı, dar kalır)
+  - Form wizard'ları / stepper adımları: adım bileşeni kendi içinde max-w-7xl kullanır (sayfa konteyneri + adım = çift kısıt olmaz)
+  - Modal, drawer, tooltip — kendi max-w tanımlarını korur
+
+### 2. Bölüm Başlıkları (Tipografi)
+- Kart/bölüm başlıkları (`h2`, `h3`): **`text-base font-semibold text-gray-900`** (14px → 16px)
+- Liste bölüm başlıkları: **`text-base font-medium text-gray-700`**
+- Modül ana başlıkları (Topbar altı büyük başlık): **`text-xl font-bold`** veya **`text-2xl font-bold`**
+- `text-sm font-semibold text-gray-900` → dokunulduğunda **`text-base`**'e yükselt (boy scout kuralı)
+- `text-caption` (12px) sadece meta veri / zaman damgası / yardımcı etiket için; içerik açıklamalarında **yasak** → `text-sm leading-relaxed` kullan
+
+### 3. Kart Giriş Animasyonu (animate-card-enter)
+- Sayfa yüklenince kullanıcıya gösterilen tüm bilgi kartları, liste öğeleri ve bölüm sarmalayıcıları: **`animate-card-enter`** sınıfı alır.
+- Birden fazla kart sıralı geliyorsa `--card-index` CSS değişkeni ile 80ms staggered:
+  ```tsx
+  <div
+    className="... animate-card-enter"
+    style={{ ['--card-index' as string]: index }}
+  >
+  ```
+- Uzun listelerde index'i `Math.min(index, 10)` ile kısıtla — 10'dan fazlasında gecikme hissedilmez.
+- **Print/PDF modu** — `animate-card-enter` class'ı sayfa başlangıcında `opacity:0` koyar; print media query'de override et:
+  ```css
+  @media print { .animate-card-enter { opacity: 1 !important; animation: none !important; } }
+  ```
+- **`prefers-reduced-motion`** — `globals.css`'de `.animate-card-enter` için global guard mevcut; ekstra kod gerekmez.
+- **İstisnalar:** Modal/drawer iç içerikleri kendi açılış animasyonunu kullanır; `animate-card-enter` ekleme.
+
+### 4. Hover Etkileşimleri
+- Tıklanabilir / expand-collapse kart: **`hover:shadow-md transition-all duration-300`**
+- Liste satırı (tıklanabilir): **`hover:bg-gray-50/60 transition-colors`**
+- Birincil aksiyon butonu (CTA): **`active:scale-[0.97] transition-all`** (dokunsal his)
+- Bağlantı/entegrasyon platform kartları: **`hover:shadow-md`**
+- Kaldırılan içerik ile hover-lift gereken kartlar: **`hover:-translate-y-0.5 hover:shadow-md transition-all duration-300`**
+
+### 5. Renk Kuralı Özeti (ayrıntı → "UI Renk Kuralı" bölümüne bak)
+- **Amber/sarı/hardal/bej YASAK** — `bg-amber-*`, `text-amber-*`, `border-amber-*`, `bg-yellow-*` vb. hiçbir koşulda kullanılmaz.
+- Orta puan / uyarı rengi: `text-primary` + `bg-primary/5` + `#059669` (SVG)
+- Uyarı ikonu (AlertTriangle): `text-gray-500`
+- Redirect/geçiş badge: `bg-gray-100 text-gray-700`
+
+### 6. Uygulama Kontrol Listesi (Yeni Sayfa / Bileşen Eklerken)
+Her yeni `app/*/page.tsx` veya büyük bileşen yazılırken şu soruları yanıtla:
+- [ ] `max-w-7xl mx-auto` kullandım mı? (istisna değilsem)
+- [ ] Bölüm başlıkları `text-base font-semibold` mi?
+- [ ] Ana kartlar/liste öğeleri `animate-card-enter` aldı mı?
+- [ ] Tıklanabilir kartlara `hover:shadow-md transition-all` eklendi mi?
+- [ ] Amber/sarı renk yok mu?
+- [ ] Hardcoded string yok mu? (`tr.json` + `en.json` güncellendi mi?)
+
+### 7. İstisna Alanlar (Bu Standart Uygulanmaz)
+| Alan | Neden |
+|------|-------|
+| `app/meta-ads/`, `components/meta/` | Meta Ads API entegrasyon koruması |
+| `app/google-ads/`, `components/google/` | Google Ads API entegrasyon koruması |
+| `app/tasarim/` sidebar+canvas | Özel split-pane düzen |
+| Modal / drawer / tooltip | Kendi animasyon/layout sistemi |
+
+---
+
 ## Meta & Google Ads API / Altyapı Koruması (KRİTİK — Proje Geneli)
 Bu projede yapılan **HİÇBİR değişiklik** (UI, layout, stil, sütun, refactor dahil) Meta Ads ve Google Ads **API entegrasyonunu veya altyapısını bozmamalı / sorun yaşatmamalı.** Reklam Yöneticisi, kampanya çekme / oluşturma / yayınlama akışları her zaman çalışır kalır.
 - Bir tablo/stil/sütun/arka plan değişikliği yaparken bile veri çeken API çağrıları, fetcher'lar (`lib/meta/*`, `lib/google/*`) ve publish akışları **KORUNUR** — yalnız sunum (presentation) katmanı değişir.
