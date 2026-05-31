@@ -3038,6 +3038,9 @@
     "title": "CRM",
     "description": "Reklamlarınızdan gelen lead'leri tek panelde toplayın, olumlu/olumsuz olarak işaretleyin.",
     "connectedSummary": "{count} sayfa bağlı",
+    "sync": {
+      "button": "Lead'leri Çek"
+    },
     "connect": {
       "title": "Sayfa Bağla",
       "description": "Lead'lerin CRM'e otomatik düşmesi için reklam verdiğiniz Facebook sayfasını bağlayın.",
@@ -3090,6 +3093,8 @@
       "statusUpdated": "Lead güncellendi.",
       "synced": "Lead güncellendi ve Meta'ya senkronlandı.",
       "syncFailed": "Lead güncellendi; Meta senkronu yapılamadı.",
+      "syncPulled": "{count} yeni lead çekildi.",
+      "syncNone": "Yeni lead bulunamadı.",
       "connectError": "Sayfa bağlanamadı.",
       "error": "Bir hata oluştu."
     }

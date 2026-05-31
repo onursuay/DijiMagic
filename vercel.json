@@ -23,6 +23,10 @@
     {
       "path": "/api/cron/seo-article-run",
       "schedule": "0 * * * *"
+    },
+    {
+      "path": "/api/cron/crm-lead-pull",
+      "schedule": "0 * * * *"
     }
   ]
 }

@@ -12,8 +12,13 @@ export const META_OAUTH_BASE_URL = `https://www.facebook.com/${META_GRAPH_VERSIO
  *  Only request scopes that have a real, demonstrable feature in the app.
  *  Each scope must have Advanced Access approval via Meta App Review.
  *
+ *  pages_manage_metadata: CRM Lead Ads webhook aboneliği (POST
+ *  /{page_id}/subscribed_apps?subscribed_fields=leadgen) BU izni zorunlu kılar.
+ *  Olmadan "Sayfa Bağla" sayfayı leadgen webhook'una abone edemez (#200). App
+ *  admin (owner) review beklemeden alır; diğer kullanıcılar App Review sonrası.
+ *  Pull akışı (leads_retrieval) bu izinden bağımsız çalışır (fallback).
+ *
  *  Removed (no active feature / review risk):
- *  - pages_manage_metadata   → leadgen_tos check is non-critical; code handles missing scope gracefully
  *  - instagram_manage_messages → IG Direct ads use ads_management; no DM read/reply feature exists
  */
 export const META_SCOPES = [
@@ -23,6 +28,7 @@ export const META_SCOPES = [
   "pages_read_engagement",
   "pages_manage_ads",
   "pages_manage_posts",
+  "pages_manage_metadata",
   "leads_retrieval",
   "business_management",
   "instagram_basic",

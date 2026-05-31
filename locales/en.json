@@ -3038,6 +3038,9 @@
     "title": "CRM",
     "description": "Collect leads from your ads in one panel and mark them as positive or negative.",
     "connectedSummary": "{count} pages connected",
+    "sync": {
+      "button": "Pull Leads"
+    },
     "connect": {
       "title": "Connect a Page",
       "description": "Connect the Facebook page you advertise with so leads flow into the CRM automatically.",
@@ -3090,6 +3093,8 @@
       "statusUpdated": "Lead updated.",
       "synced": "Lead updated and synced to Meta.",
       "syncFailed": "Lead updated; Meta sync failed.",
+      "syncPulled": "{count} new leads pulled.",
+      "syncNone": "No new leads found.",
       "connectError": "Could not connect the page.",
       "error": "Something went wrong."
     }

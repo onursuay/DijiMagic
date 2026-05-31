@@ -16,6 +16,7 @@ import {
   Mail,
   Phone,
   CheckCircle2,
+  RefreshCw,
 } from 'lucide-react'
 import WizardSelect from '@/components/meta/wizard/WizardSelect'
 import CrmLeadDetailModal from './CrmLeadDetailModal'
@@ -60,6 +61,7 @@ export default function CrmDashboard() {
   const [filter, setFilter] = useState<FilterKey>('all')
   const [updatingId, setUpdatingId] = useState<string | null>(null)
   const [detailId, setDetailId] = useState<string | null>(null)
+  const [syncing, setSyncing] = useState(false)
 
   const [toast, setToast] = useState<{ kind: 'ok' | 'err'; msg: string } | null>(null)
   const flash = useCallback((kind: 'ok' | 'err', msg: string) => {
@@ -152,6 +154,25 @@ export default function CrmDashboard() {
       flash('err', t('toast.error'))
     }
   }, [flash, t, loadPages])
+
+  const handleSync = useCallback(async () => {
+    setSyncing(true)
+    try {
+      const res = await fetch('/api/crm/sync', { method: 'POST' })
+      const data = await res.json()
+      if (data.ok) {
+        if (data.inserted > 0) flash('ok', t('toast.syncPulled', { count: data.inserted }))
+        else flash('ok', t('toast.syncNone'))
+        await loadLeads(filter)
+      } else {
+        flash('err', t('toast.error'))
+      }
+    } catch {
+      flash('err', t('toast.error'))
+    } finally {
+      setSyncing(false)
+    }
+  }, [filter, flash, t, loadLeads])
 
   const handleStatus = useCallback(async (id: string, status: LeadStatus) => {
     setUpdatingId(id)
@@ -302,12 +323,21 @@ export default function CrmDashboard() {
             <Contact className="w-4 h-4 text-primary" />
             <span>{t('connectedSummary', { count: connected.length })}</span>
           </div>
-          <button
-            onClick={() => setShowConnectPanel(true)}
-            className="inline-flex items-center gap-1.5 px-3.5 py-2 rounded-xl border border-gray-200 text-sm text-gray-700 hover:bg-gray-50 transition"
-          >
-            <Plus className="w-4 h-4" /> {t('connect.managePages')}
-          </button>
+          <div className="flex items-center gap-2">
+            <button
+              onClick={handleSync}
+              disabled={syncing}
+              className="inline-flex items-center gap-1.5 px-3.5 py-2 rounded-xl bg-primary text-white text-sm font-medium hover:bg-primary/90 disabled:opacity-50 disabled:cursor-not-allowed transition"
+            >
+              <RefreshCw className={`w-4 h-4 ${syncing ? 'animate-spin' : ''}`} /> {t('sync.button')}
+            </button>
+            <button
+              onClick={() => setShowConnectPanel(true)}
+              className="inline-flex items-center gap-1.5 px-3.5 py-2 rounded-xl border border-gray-200 text-sm text-gray-700 hover:bg-gray-50 transition"
+            >
+              <Plus className="w-4 h-4" /> {t('connect.managePages')}
+            </button>
+          </div>
         </div>
       )}
 

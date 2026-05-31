@@ -2,6 +2,19 @@
 
 ---
 
+## 2026-05-30 — CRM: Lead PULL akışı (webhook'a alternatif) + pages_manage_metadata
+- **Sorun:** Test lead'i CRM'e düşmedi. Doğrudan Meta API teşhisi: `subscribed_apps` çağrısı `(#200) Requires pages_manage_metadata` döndü — bu izin OAuth scope'undan kaldırılmıştı, dolayısıyla "Sayfa Bağla" sayfayı leadgen webhook'una hiç abone edememiş. Webhook teslimatı bu izne bağlı.
+- **Çözüm:** İki yönlü — (1) webhook iznini geri ekle, (2) izne hiç bağlı olmayan PULL yedeği kur:
+  - **`pages_manage_metadata`** [lib/metaConfig.ts](lib/metaConfig.ts) META_SCOPES'a geri eklendi (app admin/owner reconnect'te review beklemeden alır → webhook gerçek-zamanlı çalışır; diğer kullanıcılar App Review sonrası).
+  - **PULL akışı (`leads_retrieval`, mevcut izin):** [lib/crm/metaLeadPull.ts](lib/crm/metaLeadPull.ts) `pullLeadsForUser` — bağlı sayfaların `leadgen_forms`'undan `GET /{form_id}/leads` ile lead'leri çekip idempotent upsert. Webhook/pages_manage_metadata GEREKTİRMEZ.
+  - **Türkçe alan ayrıştırıcı:** [lib/crm/leadFields.ts](lib/crm/leadFields.ts) `parseLeadFields` — `adiniz/soyadiniz/telefon_numarasi/email-adresi/E-MAİL ADRESİ` gibi TR alanları normalize edip ad/e-posta/telefon çıkarır. Webhook ingest de bu ayrıştırıcıya geçirildi.
+  - **Manuel + otomatik:** `POST /api/crm/sync` ("Lead'leri Çek" butonu, [CrmDashboard](components/crm/CrmDashboard.tsx)) + saatlik cron [app/api/cron/crm-lead-pull](app/api/cron/crm-lead-pull/route.ts) (CRON_SECRET, tüm bağlı kullanıcılar; vercel.json).
+  - Owner'ın mevcut 171 gerçek lead'i (Ada Trust Life: 38+118+15) bir kez içeri alındı.
+- **Meta entegrasyonu:** Yalnız mevcut `MetaGraphClient` + `pageToken` + `leads_retrieval` reuse; additive, idempotent, kampanya/kitle altyapısına dokunulmadı.
+- **Dosyalar:** `lib/metaConfig.ts`, `lib/crm/{leadFields,metaLeadPull,metaLeadIngest,pageSubscriptionStore}.ts`, `app/api/crm/sync/route.ts`, `app/api/cron/crm-lead-pull/route.ts`, `components/crm/CrmDashboard.tsx`, `vercel.json`, `locales/{tr,en}.json`. tsc 0 hata, tr/en parity.
+
+---
+
 ## 2026-05-30 — CRM Faz 2: Meta senkron (olumlu/olumsuz lead → CUSTOMER_LIST + CAPI)
 - **Sorun:** Olumlu/olumsuz işaretlenen lead'ler Meta ile senkron çalışmalı (Mailchimp ↔ Meta modeli) — reklam optimizasyonunu beslemeli ve hedeflemeyi şekillendirmeli.
 - **Çözüm:** Lead durumu değişince gerçek Meta senkronu (additive, idempotent — mevcut Meta altyapısına dokunulmaz):

@@ -4,6 +4,7 @@ import { getMetaConnection } from '@/lib/metaConnectionStore'
 import { getPageAccessToken } from '@/lib/meta/pageToken'
 import { getSubscriptionByPageId } from './pageSubscriptionStore'
 import { upsertLead, type CrmLeadFieldEntry } from './leadStore'
+import { parseLeadFields } from './leadFields'
 
 /**
  * Meta leadgen webhook → CRM ingestion.
@@ -25,25 +26,6 @@ interface LeadgenDetail {
   campaign_id?: string
   campaign_name?: string
   form_id?: string
-}
-
-/** field_data → tek değer (ilk values). */
-function pick(fieldData: CrmLeadFieldEntry[], names: string[]): string | null {
-  for (const n of names) {
-    const f = fieldData.find((x) => (x.name ?? '').toLowerCase() === n)
-    const v = f?.values?.[0]
-    if (v && v.trim()) return v.trim()
-  }
-  return null
-}
-
-function deriveFullName(fieldData: CrmLeadFieldEntry[]): string | null {
-  const full = pick(fieldData, ['full_name', 'name'])
-  if (full) return full
-  const first = pick(fieldData, ['first_name'])
-  const last = pick(fieldData, ['last_name'])
-  const joined = [first, last].filter(Boolean).join(' ').trim()
-  return joined || null
 }
 
 export interface IngestResult {
@@ -91,6 +73,7 @@ export async function ingestLeadgen(
   }
 
   const fieldData = Array.isArray(detail.data.field_data) ? detail.data.field_data : []
+  const parsed = parseLeadFields(fieldData)
 
   // 5) idempotent upsert
   const row = await upsertLead({
@@ -101,9 +84,9 @@ export async function ingestLeadgen(
     formName: detail.data.ad_name ?? null,
     adId: detail.data.ad_id ?? null,
     campaignName: detail.data.campaign_name ?? null,
-    fullName: deriveFullName(fieldData),
-    email: pick(fieldData, ['email']),
-    phone: pick(fieldData, ['phone_number', 'phone']),
+    fullName: parsed.fullName,
+    email: parsed.email,
+    phone: parsed.phone,
     rawFieldData: fieldData,
     leadCreatedTime: detail.data.created_time ?? null,
   })

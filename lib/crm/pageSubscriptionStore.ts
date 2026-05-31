@@ -29,6 +29,19 @@ export async function getSubscriptionByPageId(pageId: string): Promise<CrmPageSu
   return data as CrmPageSubscriptionRow
 }
 
+/** Cron için: CRM'e sayfa bağlamış tüm kullanıcıların benzersiz id'leri. */
+export async function listAllSubscribedUserIds(): Promise<string[]> {
+  if (!supabase) return []
+  const { data, error } = await supabase
+    .from('crm_page_subscriptions')
+    .select('user_id')
+  if (error) {
+    console.error('[CrmPageSubs] LIST_USERS_FAIL', error.message)
+    return []
+  }
+  return Array.from(new Set((data ?? []).map((r) => (r as { user_id: string }).user_id)))
+}
+
 export async function listSubscriptions(userId: string): Promise<CrmPageSubscriptionRow[]> {
   if (!supabase) return []
   const { data, error } = await supabase
