@@ -3041,6 +3041,12 @@
     "sync": {
       "button": "Lead'leri Çek"
     },
+    "tos": {
+      "title": "Meta senkronu için bir adım kaldı",
+      "desc": "Olumlu/olumsuz lead'leri Meta'ya senkronlamak için reklam hesabınızın Özel Hedef Kitle koşullarını bir kez kabul etmesi gerekiyor.",
+      "cta": "Koşulları Kabul Et",
+      "dismiss": "Kapat"
+    },
     "connect": {
       "title": "Sayfa Bağla",
       "description": "Lead'lerin CRM'e otomatik düşmesi için reklam verdiğiniz Facebook sayfasını bağlayın.",

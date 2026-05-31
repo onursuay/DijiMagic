@@ -183,9 +183,11 @@ async function sendQualifiedLead(
 
 export interface SyncResult {
   ok: boolean
-  reason?: 'meta_not_connected' | 'no_pii' | 'sync_failed'
+  reason?: 'meta_not_connected' | 'no_pii' | 'sync_failed' | 'tos_required'
   capiSent?: boolean
   error?: string
+  /** reason='tos_required' iken: Özel Hedef Kitle koşullarını kabul URL'i. */
+  tosUrl?: string
 }
 
 /**
@@ -252,6 +254,16 @@ export async function syncLeadToMeta(
   } catch (err) {
     const msg = err instanceof Error ? err.message : String(err)
     await markMetaSync(lead.id, userId, { error: msg })
+    // Özel Hedef Kitle koşulları kabul edilmemiş → kullanıcıya kabul URL'i göster.
+    if (/customaudiences\/tos|özel hedef kitle|custom audience terms/i.test(msg)) {
+      const numeric = account.replace('act_', '')
+      return {
+        ok: false,
+        reason: 'tos_required',
+        error: msg,
+        tosUrl: `https://business.facebook.com/ads/manage/customaudiences/tos/?act=${numeric}`,
+      }
+    }
     return { ok: false, reason: 'sync_failed', error: msg }
   }
 }

@@ -3041,6 +3041,12 @@
     "sync": {
       "button": "Pull Leads"
     },
+    "tos": {
+      "title": "One step left for Meta sync",
+      "desc": "To sync positive/negative leads to Meta, your ad account must accept the Custom Audience terms once.",
+      "cta": "Accept Terms",
+      "dismiss": "Dismiss"
+    },
     "connect": {
       "title": "Connect a Page",
       "description": "Connect the Facebook page you advertise with so leads flow into the CRM automatically.",

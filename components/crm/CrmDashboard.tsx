@@ -17,6 +17,9 @@ import {
   Phone,
   CheckCircle2,
   RefreshCw,
+  ShieldCheck,
+  ExternalLink,
+  X,
 } from 'lucide-react'
 import WizardSelect from '@/components/meta/wizard/WizardSelect'
 import CrmLeadDetailModal from './CrmLeadDetailModal'
@@ -59,9 +62,9 @@ export default function CrmDashboard() {
   const [counts, setCounts] = useState<Counts>({ all: 0, new: 0, positive: 0, negative: 0 })
   const [leadsLoading, setLeadsLoading] = useState(true)
   const [filter, setFilter] = useState<FilterKey>('all')
-  const [updatingId, setUpdatingId] = useState<string | null>(null)
   const [detailId, setDetailId] = useState<string | null>(null)
   const [syncing, setSyncing] = useState(false)
+  const [tosUrl, setTosUrl] = useState<string | null>(null)
 
   const [toast, setToast] = useState<{ kind: 'ok' | 'err'; msg: string } | null>(null)
   const flash = useCallback((kind: 'ok' | 'err', msg: string, ms = 3000) => {
@@ -175,7 +178,12 @@ export default function CrmDashboard() {
   }, [filter, flash, t, loadLeads])
 
   const handleStatus = useCallback(async (id: string, status: LeadStatus) => {
-    setUpdatingId(id)
+    // Optimistik: durumu hemen yansıt → her buton bağımsız tepki verir
+    // (tıklanan buton anında kaybolur, diğeri etkilenmez).
+    setLeads((prev) => {
+      if (filter !== 'all' && filter !== status) return prev.filter((l) => l.id !== id)
+      return prev.map((l) => (l.id === id ? { ...l, status } : l))
+    })
     try {
       const res = await fetch(`/api/crm/leads/${id}`, {
         method: 'PATCH',
@@ -184,29 +192,26 @@ export default function CrmDashboard() {
       })
       const data = await res.json()
       if (data.ok) {
-        // Durum kaydedildi; Meta senkron sonucuna göre mesaj seç.
-        const sync = data.metaSync as { ok?: boolean; reason?: string; error?: string } | undefined
-        if (sync?.ok && status !== 'new') {
+        const sync = data.metaSync as
+          | { ok?: boolean; reason?: string; error?: string; tosUrl?: string }
+          | undefined
+        if (sync && !sync.ok && sync.reason === 'tos_required') {
+          setTosUrl(sync.tosUrl || null)
+          flash('err', sync.error || t('toast.syncFailed'), 9000)
+        } else if (sync?.ok && status !== 'new') {
           flash('ok', t('toast.synced'))
         } else if (sync && !sync.ok && sync.reason === 'sync_failed') {
-          // Meta'nın gerçek (yerel) açıklamasını göster — daha uzun süre, anlaşılır.
           flash('err', sync.error || t('toast.syncFailed'), 9000)
         } else {
           flash('ok', t('toast.statusUpdated'))
         }
-        // Lokal güncelle + sayaçları yenile (metaSyncedAt server'dan gelir)
-        setLeads((prev) => {
-          if (filter !== 'all' && filter !== status) return prev.filter((l) => l.id !== id)
-          return prev.map((l) => (l.id === id ? { ...l, status } : l))
-        })
-        loadLeads(filter)
       } else {
         flash('err', t('toast.error'))
       }
     } catch {
       flash('err', t('toast.error'))
     } finally {
-      setUpdatingId(null)
+      loadLeads(filter) // sayaç + metaSyncedAt tazele (hata olsa da gerçeği geri yükler)
     }
   }, [filter, flash, t, loadLeads])
 
@@ -243,6 +248,34 @@ export default function CrmDashboard() {
       {toast && (
         <div className={`fixed top-20 right-6 z-50 px-4 py-3 rounded-xl shadow-lg text-sm font-medium max-w-sm ${toast.kind === 'ok' ? 'bg-emerald-600 text-white' : 'bg-red-600 text-white'}`}>
           {toast.msg}
+        </div>
+      )}
+
+      {/* Özel Hedef Kitle koşulu kabul edilmedi → kabul URL'i ile uyarı */}
+      {tosUrl && (
+        <div className="mb-5 rounded-2xl border border-primary/20 bg-primary/5 p-4 flex items-start gap-3">
+          <div className="w-9 h-9 rounded-lg bg-primary/10 flex items-center justify-center shrink-0">
+            <ShieldCheck className="w-5 h-5 text-primary" />
+          </div>
+          <div className="flex-1 min-w-0">
+            <p className="text-sm font-semibold text-gray-900">{t('tos.title')}</p>
+            <p className="text-sm text-gray-600 mt-0.5">{t('tos.desc')}</p>
+            <a
+              href={tosUrl}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="mt-2.5 inline-flex items-center gap-1.5 px-3.5 py-2 rounded-xl bg-primary text-white text-sm font-medium hover:bg-primary/90 transition"
+            >
+              {t('tos.cta')} <ExternalLink className="w-3.5 h-3.5" />
+            </a>
+          </div>
+          <button
+            onClick={() => setTosUrl(null)}
+            className="p-1 text-gray-400 hover:text-gray-600 transition shrink-0"
+            aria-label={t('tos.dismiss')}
+          >
+            <X className="w-4 h-4" />
+          </button>
         </div>
       )}
 
@@ -409,9 +442,8 @@ export default function CrmDashboard() {
                       {lead.status !== 'positive' && (
                         <button
                           onClick={() => handleStatus(lead.id, 'positive')}
-                          disabled={updatingId === lead.id}
                           title={t('list.markPositive')}
-                          className="p-2 rounded-lg text-emerald-600 hover:bg-emerald-50 disabled:opacity-40 transition"
+                          className="p-2 rounded-lg text-emerald-600 hover:bg-emerald-50 transition"
                         >
                           <ThumbsUp className="w-4 h-4" />
                         </button>
@@ -419,9 +451,8 @@ export default function CrmDashboard() {
                       {lead.status !== 'negative' && (
                         <button
                           onClick={() => handleStatus(lead.id, 'negative')}
-                          disabled={updatingId === lead.id}
                           title={t('list.markNegative')}
-                          className="p-2 rounded-lg text-red-600 hover:bg-red-50 disabled:opacity-40 transition"
+                          className="p-2 rounded-lg text-red-600 hover:bg-red-50 transition"
                         >
                           <ThumbsDown className="w-4 h-4" />
                         </button>
@@ -429,9 +460,8 @@ export default function CrmDashboard() {
                       {lead.status !== 'new' && (
                         <button
                           onClick={() => handleStatus(lead.id, 'new')}
-                          disabled={updatingId === lead.id}
                           title={t('list.markNew')}
-                          className="p-2 rounded-lg text-gray-400 hover:text-gray-700 hover:bg-gray-50 disabled:opacity-40 transition"
+                          className="p-2 rounded-lg text-gray-400 hover:text-gray-700 hover:bg-gray-50 transition"
                         >
                           <RotateCcw className="w-4 h-4" />
                         </button>
