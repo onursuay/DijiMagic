@@ -3072,6 +3072,43 @@
         "manual": "Manuel"
       }
     },
+    "campaigns": {
+      "new": "Yeni Kampanya",
+      "count": "kampanya",
+      "untitled": "Adsız kampanya",
+      "empty": "Henüz kampanya yok",
+      "emptyHint": "Yeni bir kampanya oluşturup kişilerinize e-posta gönderin.",
+      "name": "Kampanya adı",
+      "subject": "Konu",
+      "segment": "Segment (kime gidecek)",
+      "content": "İçerik",
+      "contentPlaceholder": "Merhaba,\n\nMesajınız buraya...",
+      "contentHint": "Basit HTML kullanabilirsiniz. Abonelikten-çık linki otomatik eklenir.",
+      "recipientCount": "{count} alıcı",
+      "counting": "Alıcılar hesaplanıyor…",
+      "saveDraft": "Taslak Kaydet",
+      "send": "Gönder",
+      "back": "Geri",
+      "saved": "Taslak kaydedildi.",
+      "sent": "{count} e-posta gönderildi.",
+      "sentStat": "{sent}/{total} gönderildi",
+      "needContent": "Konu ve içerik zorunlu.",
+      "noRecipients": "Bu segmentte alıcı yok.",
+      "noResend": "E-posta gönderimi yapılandırılmamış.",
+      "status": {
+        "draft": "Taslak",
+        "scheduled": "Zamanlandı",
+        "sending": "Gönderiliyor",
+        "sent": "Gönderildi",
+        "failed": "Başarısız"
+      },
+      "seg": {
+        "all": "Tüm kişiler",
+        "sourceCrm": "Kaynak: CRM",
+        "sourceCsv": "Kaynak: CSV/Excel",
+        "stagePrefix": "CRM Aşaması"
+      }
+    },
     "setup": {
       "title": "Gönderim domainini doğrula",
       "desc": "E-postaların spam'e düşmemesi için kendi gönderim domainini (SPF/DKIM) doğrulaman gerekir. Bu adımı kurarken yönlendireceğiz."

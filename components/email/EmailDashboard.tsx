@@ -4,6 +4,7 @@ import { useCallback, useEffect, useRef, useState } from 'react'
 import { useTranslations } from 'next-intl'
 import { Users, Send, Workflow, ShieldCheck, Download, Upload, Loader2, Mail, Phone, Trash2 } from 'lucide-react'
 import { parseContactsFile } from './parseContactsFile'
+import CampaignsTab from './CampaignsTab'
 
 type Tab = 'contacts' | 'campaigns' | 'automation'
 
@@ -115,7 +116,7 @@ export default function EmailDashboard() {
 
   const tabs: { key: Tab; icon: typeof Users; soon: boolean }[] = [
     { key: 'contacts', icon: Users, soon: false },
-    { key: 'campaigns', icon: Send, soon: true },
+    { key: 'campaigns', icon: Send, soon: false },
     { key: 'automation', icon: Workflow, soon: true },
   ]
 
@@ -236,10 +237,12 @@ export default function EmailDashboard() {
         </>
       )}
 
-      {tab !== 'contacts' && (
+      {tab === 'campaigns' && <CampaignsTab flash={flash} />}
+
+      {tab === 'automation' && (
         <div className="bg-white rounded-2xl border border-gray-200 shadow-sm py-16 px-6 text-center">
-          <p className="text-gray-700 font-medium">{t(`sections.${tab}.title`)}</p>
-          <p className="text-sm text-gray-500 mt-1">{t(`sections.${tab}.desc`)}</p>
+          <p className="text-gray-700 font-medium">{t('sections.automation.title')}</p>
+          <p className="text-sm text-gray-500 mt-1">{t('sections.automation.desc')}</p>
           <span className="inline-flex items-center mt-3 px-2.5 py-1 rounded-full text-xs font-medium bg-gray-100 text-gray-500">{t('soon')}</span>
         </div>
       )}

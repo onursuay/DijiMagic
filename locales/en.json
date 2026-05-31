@@ -3072,6 +3072,43 @@
         "manual": "Manual"
       }
     },
+    "campaigns": {
+      "new": "New Campaign",
+      "count": "campaigns",
+      "untitled": "Untitled campaign",
+      "empty": "No campaigns yet",
+      "emptyHint": "Create a campaign and email your contacts.",
+      "name": "Campaign name",
+      "subject": "Subject",
+      "segment": "Segment (who receives it)",
+      "content": "Content",
+      "contentPlaceholder": "Hello,\n\nYour message here...",
+      "contentHint": "You can use basic HTML. An unsubscribe link is added automatically.",
+      "recipientCount": "{count} recipients",
+      "counting": "Counting recipients…",
+      "saveDraft": "Save Draft",
+      "send": "Send",
+      "back": "Back",
+      "saved": "Draft saved.",
+      "sent": "{count} emails sent.",
+      "sentStat": "{sent}/{total} sent",
+      "needContent": "Subject and content are required.",
+      "noRecipients": "No recipients in this segment.",
+      "noResend": "Email sending is not configured.",
+      "status": {
+        "draft": "Draft",
+        "scheduled": "Scheduled",
+        "sending": "Sending",
+        "sent": "Sent",
+        "failed": "Failed"
+      },
+      "seg": {
+        "all": "All contacts",
+        "sourceCrm": "Source: CRM",
+        "sourceCsv": "Source: CSV/Excel",
+        "stagePrefix": "CRM Stage"
+      }
+    },
     "setup": {
       "title": "Verify your sending domain",
       "desc": "To keep your emails out of spam, you must verify your own sending domain (SPF/DKIM). We'll guide you through this during setup."
