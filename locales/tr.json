@@ -3095,6 +3095,11 @@
       "needContent": "Konu ve içerik zorunlu.",
       "noRecipients": "Bu segmentte alıcı yok.",
       "noResend": "E-posta gönderimi yapılandırılmamış.",
+      "preview": "Önizleme",
+      "previewFrom": "Gönderen: işletme e-postanız",
+      "noSubject": "(konu yok)",
+      "previewEmpty": "İçerik önizlemesi burada görünür…",
+      "unsubPreview": "Bu e-postaları almak istemiyorsanız abonelikten çıkabilirsiniz.",
       "status": {
         "draft": "Taslak",
         "scheduled": "Zamanlandı",

@@ -128,42 +128,65 @@ export default function CampaignsTab({ flash }: { flash: (k: 'ok' | 'err', m: st
     return <span className={`text-xs font-medium rounded-full px-2 py-0.5 ${map[s] || 'bg-gray-100 text-gray-600'}`}>{t(`campaigns.status.${s}`)}</span>
   }
 
-  // ── Composer ──
+  // ── Composer (sol form + sağ canlı önizleme) ──
   if (composing) {
     return (
-      <div className="max-w-2xl">
+      <div>
         <button onClick={() => setComposing(false)} className="inline-flex items-center gap-1.5 text-sm text-gray-500 hover:text-gray-700 mb-4">
           <ArrowLeft className="w-4 h-4" /> {t('campaigns.back')}
         </button>
-        <div className="bg-white rounded-2xl border border-gray-200 shadow-sm p-6 space-y-4">
-          <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1.5">{t('campaigns.name')}</label>
-            <input value={name} onChange={(e) => setName(e.target.value)} placeholder={t('campaigns.untitled')} className="w-full rounded-xl border border-gray-200 px-3 py-2 text-sm focus:border-primary focus:ring-2 focus:ring-primary/20 outline-none" />
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+          {/* Form */}
+          <div className="bg-white rounded-2xl border border-gray-200 shadow-sm p-6 space-y-4">
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-1.5">{t('campaigns.name')}</label>
+              <input value={name} onChange={(e) => setName(e.target.value)} placeholder={t('campaigns.untitled')} className="w-full rounded-xl border border-gray-200 px-3 py-2 text-sm focus:border-primary focus:ring-2 focus:ring-primary/20 outline-none" />
+            </div>
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-1.5">{t('campaigns.subject')}</label>
+              <input value={subject} onChange={(e) => setSubject(e.target.value)} className="w-full rounded-xl border border-gray-200 px-3 py-2 text-sm focus:border-primary focus:ring-2 focus:ring-primary/20 outline-none" />
+            </div>
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-1.5">{t('campaigns.segment')}</label>
+              <WizardSelect value={seg} onChange={setSeg} options={segOptions} />
+              <p className="text-xs text-gray-500 mt-1.5 inline-flex items-center gap-1">
+                <Users className="w-3.5 h-3.5" />
+                {recipientCount === null ? t('campaigns.counting') : t('campaigns.recipientCount', { count: recipientCount })}
+              </p>
+            </div>
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-1.5">{t('campaigns.content')}</label>
+              <textarea value={html} onChange={(e) => setHtml(e.target.value)} rows={12} placeholder={t('campaigns.contentPlaceholder')} className="w-full rounded-xl border border-gray-200 px-3 py-2 text-sm font-mono focus:border-primary focus:ring-2 focus:ring-primary/20 outline-none" />
+              <p className="text-xs text-gray-400 mt-1">{t('campaigns.contentHint')}</p>
+            </div>
+            <div className="flex items-center justify-end gap-2 pt-2 border-t border-gray-100">
+              <button onClick={handleSave} disabled={saving} className="px-4 py-2 rounded-xl border border-gray-200 text-sm text-gray-700 hover:bg-gray-50 disabled:opacity-50">
+                {saving ? <Loader2 className="w-4 h-4 animate-spin" /> : t('campaigns.saveDraft')}
+              </button>
+              <button onClick={handleSend} disabled={sending} className="inline-flex items-center gap-1.5 px-5 py-2 rounded-xl bg-primary text-white text-sm font-medium hover:bg-primary/90 disabled:opacity-50">
+                {sending ? <Loader2 className="w-4 h-4 animate-spin" /> : <Send className="w-4 h-4" />} {t('campaigns.send')}
+              </button>
+            </div>
           </div>
-          <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1.5">{t('campaigns.subject')}</label>
-            <input value={subject} onChange={(e) => setSubject(e.target.value)} className="w-full rounded-xl border border-gray-200 px-3 py-2 text-sm focus:border-primary focus:ring-2 focus:ring-primary/20 outline-none" />
-          </div>
-          <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1.5">{t('campaigns.segment')}</label>
-            <WizardSelect value={seg} onChange={setSeg} options={segOptions} />
-            <p className="text-xs text-gray-500 mt-1.5 inline-flex items-center gap-1">
-              <Users className="w-3.5 h-3.5" />
-              {recipientCount === null ? t('campaigns.counting') : t('campaigns.recipientCount', { count: recipientCount })}
-            </p>
-          </div>
-          <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1.5">{t('campaigns.content')}</label>
-            <textarea value={html} onChange={(e) => setHtml(e.target.value)} rows={10} placeholder={t('campaigns.contentPlaceholder')} className="w-full rounded-xl border border-gray-200 px-3 py-2 text-sm font-mono focus:border-primary focus:ring-2 focus:ring-primary/20 outline-none" />
-            <p className="text-xs text-gray-400 mt-1">{t('campaigns.contentHint')}</p>
-          </div>
-          <div className="flex items-center justify-end gap-2 pt-2 border-t border-gray-100">
-            <button onClick={handleSave} disabled={saving} className="px-4 py-2 rounded-xl border border-gray-200 text-sm text-gray-700 hover:bg-gray-50 disabled:opacity-50">
-              {saving ? <Loader2 className="w-4 h-4 animate-spin" /> : t('campaigns.saveDraft')}
-            </button>
-            <button onClick={handleSend} disabled={sending} className="inline-flex items-center gap-1.5 px-5 py-2 rounded-xl bg-primary text-white text-sm font-medium hover:bg-primary/90 disabled:opacity-50">
-              {sending ? <Loader2 className="w-4 h-4 animate-spin" /> : <Send className="w-4 h-4" />} {t('campaigns.send')}
-            </button>
+
+          {/* Canlı önizleme */}
+          <div className="lg:sticky lg:top-4 self-start">
+            <p className="text-xs font-medium text-gray-500 uppercase tracking-wide mb-2">{t('campaigns.preview')}</p>
+            <div className="rounded-2xl border border-gray-200 bg-white shadow-sm overflow-hidden animate-card-enter">
+              <div className="px-5 py-3 border-b border-gray-100 bg-gray-50">
+                <p className="text-[11px] text-gray-400">{t('campaigns.previewFrom')}</p>
+                <p className="text-sm font-semibold text-gray-900 mt-0.5">{subject || t('campaigns.noSubject')}</p>
+              </div>
+              {/* Sandbox'lı iframe — kullanıcı içeriği izole render; script çalışmaz (XSS kapalı). */}
+              <iframe
+                title="email-preview"
+                sandbox=""
+                className="w-full min-h-[320px] border-0 block bg-white"
+                srcDoc={`<!doctype html><html><head><meta charset="utf-8"><base target="_blank"></head><body style="margin:0;padding:20px;font-family:Arial,Helvetica,sans-serif;color:#1f2937;line-height:1.6;font-size:14px">${
+                  html.trim() || `<p style="color:#d1d5db">${t('campaigns.previewEmpty')}</p>`
+                }<hr style="margin-top:28px;border:none;border-top:1px solid #e5e7eb"/><p style="font-size:11px;color:#9ca3af;margin-top:12px">${t('campaigns.unsubPreview')}</p></body></html>`}
+              />
+            </div>
           </div>
         </div>
       </div>

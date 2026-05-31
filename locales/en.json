@@ -3095,6 +3095,11 @@
       "needContent": "Subject and content are required.",
       "noRecipients": "No recipients in this segment.",
       "noResend": "Email sending is not configured.",
+      "preview": "Preview",
+      "previewFrom": "From: your business email",
+      "noSubject": "(no subject)",
+      "previewEmpty": "Content preview appears here…",
+      "unsubPreview": "If you no longer wish to receive these emails, you can unsubscribe.",
       "status": {
         "draft": "Draft",
         "scheduled": "Scheduled",
