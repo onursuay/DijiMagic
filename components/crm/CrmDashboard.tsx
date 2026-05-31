@@ -64,9 +64,9 @@ export default function CrmDashboard() {
   const [syncing, setSyncing] = useState(false)
 
   const [toast, setToast] = useState<{ kind: 'ok' | 'err'; msg: string } | null>(null)
-  const flash = useCallback((kind: 'ok' | 'err', msg: string) => {
+  const flash = useCallback((kind: 'ok' | 'err', msg: string, ms = 3000) => {
     setToast({ kind, msg })
-    setTimeout(() => setToast(null), 3000)
+    setTimeout(() => setToast(null), ms)
   }, [])
 
   const loadPages = useCallback(async () => {
@@ -185,11 +185,12 @@ export default function CrmDashboard() {
       const data = await res.json()
       if (data.ok) {
         // Durum kaydedildi; Meta senkron sonucuna göre mesaj seç.
-        const sync = data.metaSync as { ok?: boolean; reason?: string } | undefined
+        const sync = data.metaSync as { ok?: boolean; reason?: string; error?: string } | undefined
         if (sync?.ok && status !== 'new') {
           flash('ok', t('toast.synced'))
         } else if (sync && !sync.ok && sync.reason === 'sync_failed') {
-          flash('err', t('toast.syncFailed'))
+          // Meta'nın gerçek (yerel) açıklamasını göster — daha uzun süre, anlaşılır.
+          flash('err', sync.error || t('toast.syncFailed'), 9000)
         } else {
           flash('ok', t('toast.statusUpdated'))
         }
@@ -240,7 +241,7 @@ export default function CrmDashboard() {
     <div className="max-w-5xl mx-auto px-6 py-8">
       {/* Toast */}
       {toast && (
-        <div className={`fixed top-20 right-6 z-50 px-4 py-3 rounded-xl shadow-lg text-sm font-medium ${toast.kind === 'ok' ? 'bg-emerald-600 text-white' : 'bg-red-600 text-white'}`}>
+        <div className={`fixed top-20 right-6 z-50 px-4 py-3 rounded-xl shadow-lg text-sm font-medium max-w-sm ${toast.kind === 'ok' ? 'bg-emerald-600 text-white' : 'bg-red-600 text-white'}`}>
           {toast.msg}
         </div>
       )}
