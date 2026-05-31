@@ -3046,6 +3046,7 @@
     "description": "Collect leads from your ads in one panel and mark them as positive or negative.",
     "connectedSummary": "{count} pages connected",
     "conversionRate": "Conversion rate",
+    "stageFilter": "Stages",
     "view": {
       "board": "Board",
       "list": "List"

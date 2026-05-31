@@ -1,6 +1,6 @@
 'use client'
 
-import { useCallback, useEffect, useMemo, useState } from 'react'
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import { useTranslations } from 'next-intl'
 import {
   Contact,
@@ -20,6 +20,8 @@ import {
   LayoutGrid,
   List as ListIcon,
   TrendingUp,
+  Filter,
+  Check,
 } from 'lucide-react'
 import WizardSelect from '@/components/meta/wizard/WizardSelect'
 import CrmLeadDetailModal from './CrmLeadDetailModal'
@@ -70,6 +72,11 @@ export default function CrmDashboard() {
   const [detailId, setDetailId] = useState<string | null>(null)
   const [syncing, setSyncing] = useState(false)
   const [tosUrl, setTosUrl] = useState<string | null>(null)
+  // Aşama (sütun) filtresi + sürükle-bırak
+  const [hiddenStages, setHiddenStages] = useState<Set<Stage>>(new Set())
+  const [filterOpen, setFilterOpen] = useState(false)
+  const filterRef = useRef<HTMLDivElement>(null)
+  const [dragOverStage, setDragOverStage] = useState<Stage | null>(null)
 
   const [toast, setToast] = useState<{ kind: 'ok' | 'err'; msg: string } | null>(null)
   const flash = useCallback((kind: 'ok' | 'err', msg: string, ms = 3000) => {
@@ -112,6 +119,24 @@ export default function CrmDashboard() {
 
   useEffect(() => { loadPages() }, [loadPages])
   useEffect(() => { loadLeads() }, [loadLeads])
+
+  useEffect(() => {
+    if (!filterOpen) return
+    const onDown = (e: MouseEvent) => {
+      if (filterRef.current && !filterRef.current.contains(e.target as Node)) setFilterOpen(false)
+    }
+    document.addEventListener('mousedown', onDown)
+    return () => document.removeEventListener('mousedown', onDown)
+  }, [filterOpen])
+
+  const toggleStage = useCallback((s: Stage) => {
+    setHiddenStages((prev) => {
+      const next = new Set(prev)
+      if (next.has(s)) next.delete(s)
+      else next.add(s)
+      return next
+    })
+  }, [])
 
   const connectablePages = useMemo(() => {
     const ids = new Set(connected.map((c) => c.pageId))
@@ -347,6 +372,38 @@ export default function CrmDashboard() {
             </span>
           </div>
           <div className="flex items-center gap-2">
+            {/* Aşama (sütun) filtresi — Pano/Liste toggle'ının solunda */}
+            <div ref={filterRef} className="relative">
+              <button
+                onClick={() => setFilterOpen((v) => !v)}
+                className="inline-flex items-center gap-1.5 px-3.5 py-2 rounded-xl border border-gray-200 text-sm text-gray-700 hover:bg-gray-50 transition"
+              >
+                <Filter className="w-4 h-4" /> {t('stageFilter')}
+                {hiddenStages.size > 0 && (
+                  <span className="text-xs text-primary font-medium">{STAGES.length - hiddenStages.size}/{STAGES.length}</span>
+                )}
+              </button>
+              {filterOpen && (
+                <div className="absolute left-0 top-full mt-1 z-30 w-52 bg-white rounded-xl border border-gray-200 shadow-lg py-1">
+                  {STAGES.map((s) => {
+                    const visible = !hiddenStages.has(s)
+                    return (
+                      <button
+                        key={s}
+                        onClick={() => toggleStage(s)}
+                        className="w-full flex items-center gap-2 px-3 py-1.5 text-sm text-left hover:bg-gray-50"
+                      >
+                        <span className={`w-4 h-4 rounded border flex items-center justify-center shrink-0 ${visible ? 'bg-primary border-primary' : 'border-gray-300'}`}>
+                          {visible && <Check className="w-3 h-3 text-white" />}
+                        </span>
+                        <span className={`w-2 h-2 rounded-full ${STAGE_STYLE[s].dot}`} />
+                        <span className="flex-1 text-gray-700">{stageLabel(s)}</span>
+                      </button>
+                    )
+                  })}
+                </div>
+              )}
+            </div>
             {/* Görünüm geçişi */}
             <div className="inline-flex rounded-xl border border-gray-200 p-0.5 bg-white">
               <button
@@ -395,10 +452,22 @@ export default function CrmDashboard() {
         ) : view === 'board' ? (
           /* ── Kanban (Pano) ── */
           <div className="flex gap-4 overflow-x-auto pb-4">
-            {STAGES.map((stage) => {
+            {STAGES.filter((s) => !hiddenStages.has(s)).map((stage) => {
               const items = leads.filter((l) => l.status === stage)
               return (
-                <div key={stage} className="flex-1 min-w-[240px] bg-gray-50 rounded-2xl border border-gray-200">
+                <div
+                  key={stage}
+                  onDragOver={(e) => { e.preventDefault(); if (dragOverStage !== stage) setDragOverStage(stage) }}
+                  onDragLeave={(e) => { if (!e.currentTarget.contains(e.relatedTarget as Node)) setDragOverStage((cur) => (cur === stage ? null : cur)) }}
+                  onDrop={(e) => {
+                    e.preventDefault()
+                    setDragOverStage(null)
+                    const id = e.dataTransfer.getData('text/plain')
+                    const lead = leads.find((l) => l.id === id)
+                    if (lead && lead.status !== stage) handleStage(id, stage)
+                  }}
+                  className={`flex-1 min-w-[240px] rounded-2xl border transition ${dragOverStage === stage ? 'bg-primary/5 border-primary/40 ring-2 ring-primary/20' : 'bg-gray-50 border-gray-200'}`}
+                >
                   <div className="px-4 pt-3.5 pb-2.5 border-b border-gray-200">
                     <div className={`h-1 w-10 rounded-full mb-2 ${STAGE_STYLE[stage].bar}`} />
                     <div className="flex items-center justify-between">
@@ -410,7 +479,12 @@ export default function CrmDashboard() {
                     {items.length === 0 ? (
                       <p className="text-xs text-gray-400 text-center py-6">{t('board.emptyColumn')}</p>
                     ) : items.map((lead) => (
-                      <div key={lead.id} className="bg-white rounded-xl border border-gray-200 p-3 shadow-sm">
+                      <div
+                        key={lead.id}
+                        draggable
+                        onDragStart={(e) => { e.dataTransfer.setData('text/plain', lead.id); e.dataTransfer.effectAllowed = 'move' }}
+                        className="bg-white rounded-xl border border-gray-200 p-3 shadow-sm cursor-grab active:cursor-grabbing hover:border-gray-300 transition"
+                      >
                         <div className="flex items-start justify-between gap-2">
                           <h3 className="text-sm font-semibold text-gray-900 truncate">{lead.fullName || t('list.noName')}</h3>
                           <button onClick={() => setDetailId(lead.id)} title={t('list.viewDetail')} className="p-1 -mr-1 text-gray-400 hover:text-gray-700 shrink-0">

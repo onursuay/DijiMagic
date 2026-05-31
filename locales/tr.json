@@ -3046,6 +3046,7 @@
     "description": "Reklamlarınızdan gelen lead'leri tek panelde toplayın, olumlu/olumsuz olarak işaretleyin.",
     "connectedSummary": "{count} sayfa bağlı",
     "conversionRate": "Dönüşüm oranı",
+    "stageFilter": "Aşamalar",
     "view": {
       "board": "Pano",
       "list": "Liste"

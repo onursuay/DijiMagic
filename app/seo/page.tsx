@@ -233,7 +233,7 @@ function LighthouseScoreCard({ label, score, icon: Icon }: { label: string; scor
 function CoreWebVitalCard({ label, value }: { label: string; value: string }) {
   return (
     <div className="bg-gray-50 rounded-lg p-3 text-center">
-      <div className="text-sm font-semibold text-gray-900">{value}</div>
+      <div className="text-base font-semibold text-gray-900">{value}</div>
       <div className="text-caption text-gray-500 mt-1">{label}</div>
     </div>
   )
@@ -250,8 +250,8 @@ function CheckItem({ check }: { check: Check }) {
     <div className="flex gap-3 py-2">
       {statusIcon[check.status]}
       <div className="flex-1 min-w-0">
-        <div className="text-sm font-medium text-gray-900">{check.title}</div>
-        <div className="text-caption text-gray-500 mt-0.5">{check.description}</div>
+        <div className="text-sm font-semibold text-gray-900">{check.title}</div>
+        <div className="text-sm text-gray-500 mt-0.5 leading-relaxed">{check.description}</div>
         {check.value && (
           <div className="text-caption text-gray-400 mt-1 truncate font-mono bg-gray-50 px-2 py-1 rounded">
             {check.value}
@@ -283,7 +283,7 @@ function CategoryCard({ categoryKey, category }: { categoryKey: string; category
             <Icon className={`w-5 h-5 ${getScoreText(category.score)}`} />
           </div>
           <div className="text-left">
-            <div className="text-sm font-semibold text-gray-900">{config.label}</div>
+            <div className="text-base font-semibold text-gray-900">{config.label}</div>
             <div className="flex items-center gap-3 mt-0.5">
               {passCount > 0 && (
                 <span className="flex items-center gap-1 text-caption text-green-600">
@@ -734,7 +734,7 @@ export default function SEOPage() {
                   {/* Competitor Comparison Header */}
                   {competitorResult && (
                     <div className="bg-white rounded-2xl border border-gray-200 p-6">
-                      <h3 className="text-sm font-semibold text-gray-900 mb-4 flex items-center gap-2">
+                      <h3 className="text-base font-semibold text-gray-900 mb-4 flex items-center gap-2">
                         <BarChart3 className="w-4 h-4" />
                         {t('competitor.title')}
                       </h3>
@@ -798,7 +798,7 @@ export default function SEOPage() {
                     <>
                       {/* Mobile/Desktop Toggle */}
                       <div className="flex items-center justify-between print:hidden">
-                        <h3 className="text-sm font-semibold text-gray-700">Lighthouse</h3>
+                        <h3 className="text-base font-semibold text-gray-700">Lighthouse</h3>
                         <div className="flex items-center bg-white border border-gray-200 rounded-lg p-0.5">
                           <button
                             onClick={() => setLighthouseMode('mobile')}
@@ -832,7 +832,7 @@ export default function SEOPage() {
 
                           {/* Core Web Vitals */}
                           <div className="bg-white rounded-2xl border border-gray-200 p-6">
-                            <h3 className="text-sm font-semibold text-gray-900 mb-4">{t('lighthouse.coreWebVitals')}</h3>
+                            <h3 className="text-base font-semibold text-gray-900 mb-4">{t('lighthouse.coreWebVitals')}</h3>
                             <div className="grid grid-cols-2 sm:grid-cols-5 gap-3">
                               <CoreWebVitalCard label="FCP" value={currentLighthouse.coreWebVitals.fcp} />
                               <CoreWebVitalCard label="LCP" value={currentLighthouse.coreWebVitals.lcp} />
@@ -853,7 +853,7 @@ export default function SEOPage() {
                   {/* Top Keywords */}
                   {result.topKeywords && result.topKeywords.length > 0 && (
                     <div className="bg-white rounded-2xl border border-gray-200 p-6">
-                      <h3 className="text-sm font-semibold text-gray-900 mb-4 flex items-center gap-2">
+                      <h3 className="text-base font-semibold text-gray-900 mb-4 flex items-center gap-2">
                         <Search className="w-4 h-4" />
                         {t('keywords.title')}
                       </h3>
@@ -902,7 +902,7 @@ export default function SEOPage() {
                   {/* Redirect Chain */}
                   {result.redirectChain && result.redirectChain.length > 1 && (
                     <div className="bg-white rounded-2xl border border-gray-200 p-6">
-                      <h3 className="text-sm font-semibold text-gray-900 mb-4 flex items-center gap-2">
+                      <h3 className="text-base font-semibold text-gray-900 mb-4 flex items-center gap-2">
                         <ArrowRight className="w-4 h-4" />
                         {t('redirects.title')}
                       </h3>
@@ -933,7 +933,7 @@ export default function SEOPage() {
                   {/* Broken Links */}
                   {result.brokenLinks && result.brokenLinks.length > 0 && (
                     <div className="bg-white rounded-2xl border border-gray-200 p-6">
-                      <h3 className="text-sm font-semibold text-gray-900 mb-4 flex items-center gap-2">
+                      <h3 className="text-base font-semibold text-gray-900 mb-4 flex items-center gap-2">
                         <Link2 className="w-4 h-4 text-red-500" />
                         {t('brokenLinks.title')}
                         <span className="text-caption bg-red-50 text-red-600 px-2 py-0.5 rounded-full">{result.brokenLinks.length}</span>
@@ -958,7 +958,7 @@ export default function SEOPage() {
                   {/* AI Recommendations */}
                   {result.recommendations && result.recommendations.length > 0 && (
                     <div className="bg-gradient-to-br from-primary/5 to-primary/10 rounded-2xl border border-primary/20 p-6">
-                      <h3 className="text-sm font-semibold text-gray-900 mb-4 flex items-center gap-2">
+                      <h3 className="text-base font-semibold text-gray-900 mb-4 flex items-center gap-2">
                         <Lightbulb className="w-4 h-4 text-primary" />
                         {t('recommendations.title')}
                       </h3>
@@ -973,7 +973,7 @@ export default function SEOPage() {
                   {/* Lighthouse Audits */}
                   {currentLighthouse && currentLighthouse.audits.length > 0 && (
                     <div className="bg-white rounded-2xl border border-gray-200 p-6">
-                      <h3 className="text-sm font-semibold text-gray-900 mb-4">{t('lighthouse.auditsTitle')}</h3>
+                      <h3 className="text-base font-semibold text-gray-900 mb-4">{t('lighthouse.auditsTitle')}</h3>
                       <div className="divide-y divide-gray-100">
                         {currentLighthouse.audits
                           .sort((a, b) => (a.score ?? 1) - (b.score ?? 1))
@@ -1001,7 +1001,7 @@ export default function SEOPage() {
           {activeTab === 'history' && (
             <div className="bg-white rounded-2xl border border-gray-200 p-6">
               <div className="flex items-center justify-between mb-4">
-                <h3 className="text-sm font-semibold text-gray-900 flex items-center gap-2">
+                <h3 className="text-base font-semibold text-gray-900 flex items-center gap-2">
                   <Clock className="w-4 h-4" />
                   {t('history.title')}
                 </h3>
@@ -1052,7 +1052,7 @@ export default function SEOPage() {
           {activeTab === 'bulk' && (
             <>
               <div className="bg-white rounded-2xl border border-gray-200 p-6">
-                <h3 className="text-sm font-semibold text-gray-900 mb-3 flex items-center gap-2">
+                <h3 className="text-base font-semibold text-gray-900 mb-3 flex items-center gap-2">
                   <List className="w-4 h-4" />
                   {t('bulk.title')}
                 </h3>
@@ -1104,7 +1104,7 @@ export default function SEOPage() {
               {/* Bulk Results */}
               {bulkResults.length > 0 && (
                 <div className="bg-white rounded-2xl border border-gray-200 p-6">
-                  <h3 className="text-sm font-semibold text-gray-900 mb-4">{t('bulk.results')}</h3>
+                  <h3 className="text-base font-semibold text-gray-900 mb-4">{t('bulk.results')}</h3>
                   <div className="space-y-2">
                     {bulkResults.map((r, i) => {
                       const isError = 'error' in r
