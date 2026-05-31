@@ -1,11 +1,11 @@
 import { NextResponse } from 'next/server'
 import { checkCrmAccess } from '@/lib/crm/guard'
-import { listLeads, type CrmLeadStatus } from '@/lib/crm/leadStore'
+import { listLeads, CRM_STAGES, type CrmLeadStatus } from '@/lib/crm/leadStore'
 import { maskEmail, maskPhone } from '@/lib/crm/mask'
 
 export const dynamic = 'force-dynamic'
 
-const VALID_STATUS: ReadonlyArray<CrmLeadStatus | 'all'> = ['all', 'new', 'positive', 'negative']
+const VALID_STATUS: ReadonlyArray<CrmLeadStatus | 'all'> = ['all', ...CRM_STAGES]
 
 /**
  * GET /api/crm/leads?status=all|new|positive|negative&limit=&offset=

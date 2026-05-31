@@ -3038,6 +3038,21 @@
     "title": "CRM",
     "description": "Reklamlarınızdan gelen lead'leri tek panelde toplayın, olumlu/olumsuz olarak işaretleyin.",
     "connectedSummary": "{count} sayfa bağlı",
+    "conversionRate": "Dönüşüm oranı",
+    "view": {
+      "board": "Pano",
+      "list": "Liste"
+    },
+    "stages": {
+      "giris": "Giriş",
+      "uygun": "Uygun",
+      "donusum": "Dönüşüm",
+      "kayip": "Kayıp",
+      "uygun_degil": "Uygun değil"
+    },
+    "board": {
+      "emptyColumn": "Bu aşamada lead yok"
+    },
     "sync": {
       "button": "Lead'leri Çek"
     },

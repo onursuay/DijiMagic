@@ -3038,6 +3038,21 @@
     "title": "CRM",
     "description": "Collect leads from your ads in one panel and mark them as positive or negative.",
     "connectedSummary": "{count} pages connected",
+    "conversionRate": "Conversion rate",
+    "view": {
+      "board": "Board",
+      "list": "List"
+    },
+    "stages": {
+      "giris": "New",
+      "uygun": "Qualified",
+      "donusum": "Converted",
+      "kayip": "Lost",
+      "uygun_degil": "Unqualified"
+    },
+    "board": {
+      "emptyColumn": "No leads in this stage"
+    },
     "sync": {
       "button": "Pull Leads"
     },

@@ -9,7 +9,12 @@ import { supabase } from '@/lib/supabase/client'
  * field_data DB'de saklanır (CRM detayında lazım); UI'a maskelenmiş gider.
  */
 
-export type CrmLeadStatus = 'new' | 'positive' | 'negative'
+/** Pipeline aşamaları (Meta Lead Center modeli). DB kolonu hâlâ `status`. */
+export type CrmLeadStatus = 'giris' | 'uygun' | 'donusum' | 'kayip' | 'uygun_degil'
+
+export const CRM_STAGES: CrmLeadStatus[] = ['giris', 'uygun', 'donusum', 'kayip', 'uygun_degil']
+
+export type CrmStageCounts = { all: number } & Record<CrmLeadStatus, number>
 
 export interface CrmLeadFieldEntry {
   name?: string
@@ -97,20 +102,26 @@ export interface ListLeadsOptions {
 export interface ListLeadsResult {
   leads: CrmLeadRow[]
   total: number
-  counts: { all: number; new: number; positive: number; negative: number }
+  counts: CrmStageCounts
+}
+
+function emptyCounts(): CrmStageCounts {
+  return { all: 0, giris: 0, uygun: 0, donusum: 0, kayip: 0, uygun_degil: 0 }
 }
 
 export async function listLeads(userId: string, opts: ListLeadsOptions = {}): Promise<ListLeadsResult> {
-  const empty: ListLeadsResult = { leads: [], total: 0, counts: { all: 0, new: 0, positive: 0, negative: 0 } }
+  const empty: ListLeadsResult = { leads: [], total: 0, counts: emptyCounts() }
   if (!supabase) return empty
 
-  const limit = Math.min(Math.max(opts.limit ?? 50, 1), 200)
+  const limit = Math.min(Math.max(opts.limit ?? 50, 1), 500)
   const offset = Math.max(opts.offset ?? 0, 0)
 
   let q = supabase
     .from('crm_leads')
     .select('*', { count: 'exact' })
     .eq('user_id', userId)
+    // Gerçek lead tarihine göre (en yeni üstte); tarihi olmayan en sona.
+    .order('lead_created_time', { ascending: false, nullsFirst: false })
     .order('created_at', { ascending: false })
     .range(offset, offset + limit - 1)
 
@@ -123,7 +134,7 @@ export async function listLeads(userId: string, opts: ListLeadsOptions = {}): Pr
   }
 
   // Durum sayaçları (rozet/filtre için) — ayrı hafif sorgu.
-  const counts = { all: 0, new: 0, positive: 0, negative: 0 }
+  const counts = emptyCounts()
   const { data: statusRows } = await supabase
     .from('crm_leads')
     .select('status')

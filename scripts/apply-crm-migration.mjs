@@ -55,6 +55,7 @@ if (!DATABASE_URL) {
 const FILES = [
   'supabase/migrations/20260530000000_create_crm_tables.sql',
   'supabase/migrations/20260530001000_crm_meta_sync.sql',
+  'supabase/migrations/20260531000000_crm_pipeline_stages.sql',
 ]
 
 async function main() {

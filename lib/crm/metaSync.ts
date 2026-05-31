@@ -25,8 +25,24 @@ import { markMetaSync, type CrmLeadRow, type CrmLeadStatus } from './leadStore'
  * güncellenmiştir, senkron best-effort'tur.
  */
 
-const POSITIVE_AUDIENCE = "YoAi CRM — Olumlu Lead'ler"
-const NEGATIVE_AUDIENCE = "YoAi CRM — Olumsuz Lead'ler"
+/**
+ * Pipeline aşaması → Meta CUSTOMER_LIST audience adı. "giris" (yeni gelen)
+ * herhangi bir kitleye girmez. Her aşama tek bir kitleye karşılık gelir;
+ * aşama değişince lead diğer kitlelerden çıkarılır.
+ */
+const STAGE_AUDIENCE: Partial<Record<CrmLeadStatus, string>> = {
+  uygun: 'YoAi CRM — Uygun',
+  donusum: 'YoAi CRM — Dönüşüm',
+  kayip: 'YoAi CRM — Kayıp',
+  uygun_degil: 'YoAi CRM — Uygun Değil',
+}
+const ALL_STAGE_AUDIENCES = Object.values(STAGE_AUDIENCE) as string[]
+
+/** Aşamaya özel CAPI olay adı (best-effort, pixel gerekir). null = olay yok. */
+const STAGE_EVENT: Partial<Record<CrmLeadStatus, string>> = {
+  uygun: 'QualifiedLead',
+  donusum: 'Converted',
+}
 
 /** SHA-256 (trim + lowercase) — Meta eşleştirme spesifikasyonu. */
 function sha256(value: string): string {
@@ -143,14 +159,15 @@ async function removeUserFromAudience(
   await client.request('DELETE', `/${audienceId}/users`, form)
 }
 
-/** Olumlu lead için CAPI "QualifiedLead" custom olayı (best-effort, pixel gerekir). */
-async function sendQualifiedLead(
+/** Aşamaya özel CAPI custom olayı (best-effort, pixel gerekir). */
+async function sendStageEvent(
   client: MetaGraphClient,
   account: string,
   accessToken: string,
   lead: CrmLeadRow,
   email: string | null,
   phoneDigits: string | null,
+  eventName: string,
 ): Promise<boolean> {
   const pixelRes = await client.get<{ data?: { id: string }[] }>(`/${account}/adspixels`, {
     fields: 'id',
@@ -167,8 +184,8 @@ async function sendQualifiedLead(
     accessToken,
     pixelId,
     graphVersion: META_GRAPH_VERSION,
-    eventName: 'QualifiedLead',
-    eventId: generateEventId('QualifiedLead'),
+    eventName,
+    eventId: generateEventId(eventName),
     actionSource: 'system_generated',
     userData: {
       em: email ?? undefined,
@@ -176,7 +193,7 @@ async function sendQualifiedLead(
       fn,
       ln,
     },
-    customData: { lead_event_source: 'yoai_crm', source: lead.source },
+    customData: { lead_event_source: 'yoai_crm', source: lead.source, stage: lead.status },
   })
   return true
 }
@@ -220,29 +237,28 @@ export async function syncLeadToMeta(
   const client = new MetaGraphClient({ accessToken: conn.accessToken, maxRetries: 1, timeout: 8000 })
 
   try {
-    const audiences = await findAudiencesByName(client, account, [POSITIVE_AUDIENCE, NEGATIVE_AUDIENCE])
+    const audiences = await findAudiencesByName(client, account, ALL_STAGE_AUDIENCES)
     let capiSent = false
 
-    if (status === 'positive') {
-      const posId = await ensureCustomerListAudience(client, account, POSITIVE_AUDIENCE, audiences)
-      if (posId) await addUserToAudience(client, posId, email, phoneDigits)
-      const negId = audiences.get(NEGATIVE_AUDIENCE)
-      if (negId) await removeUserFromAudience(client, negId, email, phoneDigits).catch(() => {})
-      // CAPI yalnız bir kez gönderilir.
-      if (!lead.meta_capi_sent) {
-        capiSent = await sendQualifiedLead(client, account, conn.accessToken, lead, email, phoneDigits).catch(() => false)
-      }
-    } else if (status === 'negative') {
-      const negId = await ensureCustomerListAudience(client, account, NEGATIVE_AUDIENCE, audiences)
-      if (negId) await addUserToAudience(client, negId, email, phoneDigits)
-      const posId = audiences.get(POSITIVE_AUDIENCE)
-      if (posId) await removeUserFromAudience(client, posId, email, phoneDigits).catch(() => {})
-    } else {
-      // new → her iki listeden çıkar
-      const posId = audiences.get(POSITIVE_AUDIENCE)
-      if (posId) await removeUserFromAudience(client, posId, email, phoneDigits).catch(() => {})
-      const negId = audiences.get(NEGATIVE_AUDIENCE)
-      if (negId) await removeUserFromAudience(client, negId, email, phoneDigits).catch(() => {})
+    const targetName = STAGE_AUDIENCE[status] // giris → undefined (hiçbir kitle)
+
+    // 1) Hedef aşamanın kitlesine ekle (giriş hariç).
+    if (targetName) {
+      const targetId = await ensureCustomerListAudience(client, account, targetName, audiences)
+      if (targetId) await addUserToAudience(client, targetId, email, phoneDigits)
+    }
+
+    // 2) Diğer tüm aşama kitlelerinden çıkar (lead tek aşamada kalır).
+    for (const name of ALL_STAGE_AUDIENCES) {
+      if (name === targetName) continue
+      const id = audiences.get(name)
+      if (id) await removeUserFromAudience(client, id, email, phoneDigits).catch(() => {})
+    }
+
+    // 3) Aşamaya özel CAPI olayı (Uygun→QualifiedLead, Dönüşüm→Converted) — bir kez.
+    const eventName = STAGE_EVENT[status]
+    if (eventName && !lead.meta_capi_sent) {
+      capiSent = await sendStageEvent(client, account, conn.accessToken, lead, email, phoneDigits, eventName).catch(() => false)
     }
 
     await markMetaSync(lead.id, userId, {

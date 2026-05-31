@@ -1,11 +1,11 @@
 import { NextResponse } from 'next/server'
 import { checkCrmAccess } from '@/lib/crm/guard'
-import { getLead, updateLeadStatus, type CrmLeadStatus } from '@/lib/crm/leadStore'
+import { getLead, updateLeadStatus, CRM_STAGES, type CrmLeadStatus } from '@/lib/crm/leadStore'
 import { syncLeadToMeta } from '@/lib/crm/metaSync'
 
 export const dynamic = 'force-dynamic'
 
-const VALID: ReadonlyArray<CrmLeadStatus> = ['new', 'positive', 'negative']
+const VALID: ReadonlyArray<CrmLeadStatus> = CRM_STAGES
 
 /**
  * GET /api/crm/leads/[id] — tek lead'in tam detayı (kullanıcının KENDİ lead'i;
