@@ -22,6 +22,7 @@ import {
   TrendingUp,
   Filter,
   Check,
+  ChevronDown,
 } from 'lucide-react'
 import WizardSelect from '@/components/meta/wizard/WizardSelect'
 import CrmLeadDetailModal from './CrmLeadDetailModal'
@@ -42,6 +43,7 @@ interface LeadRow {
   createdAt: string
   leadCreatedTime: string | null
   metaSyncedAt: string | null
+  pageId: string | null
 }
 
 interface PageOption { id: string; name: string }
@@ -65,10 +67,13 @@ export default function CrmDashboard() {
 
   // ── Lead'ler ──
   const [leads, setLeads] = useState<LeadRow[]>([])
-  const [counts, setCounts] = useState<Counts>(EMPTY_COUNTS)
   const [leadsLoading, setLeadsLoading] = useState(true)
   const [view, setView] = useState<'board' | 'list'>('board')
   const [filter, setFilter] = useState<FilterKey>('all')
+  // Aktif sayfa (tek sayfa görünür — karışmasın)
+  const [activePageId, setActivePageId] = useState<string | null>(null)
+  const [pageMenuOpen, setPageMenuOpen] = useState(false)
+  const pageMenuRef = useRef<HTMLDivElement>(null)
   const [detailId, setDetailId] = useState<string | null>(null)
   const [syncing, setSyncing] = useState(false)
   const [tosUrl, setTosUrl] = useState<string | null>(null)
@@ -108,7 +113,6 @@ export default function CrmDashboard() {
       const data = await res.json()
       if (data.ok) {
         setLeads(data.leads ?? [])
-        setCounts(data.counts ?? EMPTY_COUNTS)
       }
     } catch {
       /* sessiz */
@@ -128,6 +132,22 @@ export default function CrmDashboard() {
     document.addEventListener('mousedown', onDown)
     return () => document.removeEventListener('mousedown', onDown)
   }, [filterOpen])
+
+  // Bağlı sayfalar geldiğinde aktif sayfayı belirle (ilk sayfa; mevcut geçerliyse korunur).
+  useEffect(() => {
+    if (connected.length === 0) { setActivePageId(null); return }
+    setActivePageId((cur) => (cur && connected.some((c) => c.pageId === cur) ? cur : connected[0].pageId))
+  }, [connected])
+
+  // Sayfa seçici dış-tıklama kapatır.
+  useEffect(() => {
+    if (!pageMenuOpen) return
+    const onDown = (e: MouseEvent) => {
+      if (pageMenuRef.current && !pageMenuRef.current.contains(e.target as Node)) setPageMenuOpen(false)
+    }
+    document.addEventListener('mousedown', onDown)
+    return () => document.removeEventListener('mousedown', onDown)
+  }, [pageMenuOpen])
 
   const toggleStage = useCallback((s: Stage) => {
     setHiddenStages((prev) => {
@@ -252,11 +272,26 @@ export default function CrmDashboard() {
   }
 
   const noConnections = !pagesLoading && connected.length === 0
+  // Yalnız aktif sayfanın lead'leri (karışmasın).
+  const pageLeads = useMemo(
+    () => (activePageId ? leads.filter((l) => l.pageId === activePageId) : leads),
+    [leads, activePageId],
+  )
+  // Sayaçlar aktif sayfaya göre istemci tarafında hesaplanır.
+  const counts = useMemo(() => {
+    const c: Counts = { ...EMPTY_COUNTS }
+    for (const l of pageLeads) {
+      c.all++
+      if (l.status in c) (c as Record<string, number>)[l.status]++
+    }
+    return c
+  }, [pageLeads])
   const conversionRate = counts.all > 0 ? Math.round((counts.donusum / counts.all) * 100) : 0
   const listLeads = useMemo(
-    () => (filter === 'all' ? leads : leads.filter((l) => l.status === filter)),
-    [leads, filter],
+    () => (filter === 'all' ? pageLeads : pageLeads.filter((l) => l.status === filter)),
+    [pageLeads, filter],
   )
+  const activePageName = connected.find((c) => c.pageId === activePageId)?.pageName || connected[0]?.pageName || ''
 
   return (
     <div className="w-full px-6 lg:px-8 py-8">
@@ -362,10 +397,38 @@ export default function CrmDashboard() {
         /* Üst bar: özet + dönüşüm oranı + görünüm + aksiyonlar */
         <div className="flex flex-wrap items-center justify-between gap-3 mb-5">
           <div className="flex items-center gap-4 text-sm">
-            <span className="inline-flex items-center gap-1.5 text-gray-600">
-              <Contact className="w-4 h-4 text-primary" />
-              {t('connectedSummary', { count: connected.length })}
-            </span>
+            {connected.length > 1 ? (
+              <div ref={pageMenuRef} className="relative">
+                <button
+                  onClick={() => setPageMenuOpen((v) => !v)}
+                  className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl border border-gray-200 text-sm text-gray-800 hover:bg-gray-50 transition"
+                >
+                  <Contact className="w-4 h-4 text-primary" />
+                  <span className="font-medium max-w-[180px] truncate">{activePageName}</span>
+                  <ChevronDown className={`w-3.5 h-3.5 text-gray-400 transition-transform ${pageMenuOpen ? 'rotate-180' : ''}`} />
+                </button>
+                {pageMenuOpen && (
+                  <div className="absolute left-0 top-full mt-1 z-30 w-60 bg-white rounded-xl border border-gray-200 shadow-lg py-1">
+                    {connected.map((c) => (
+                      <button
+                        key={c.pageId}
+                        onClick={() => { setActivePageId(c.pageId); setPageMenuOpen(false) }}
+                        className={`w-full flex items-center gap-2 px-3 py-1.5 text-sm text-left hover:bg-gray-50 ${c.pageId === activePageId ? 'text-primary font-medium' : 'text-gray-700'}`}
+                      >
+                        <Contact className="w-3.5 h-3.5 shrink-0" />
+                        <span className="flex-1 truncate">{c.pageName || c.pageId}</span>
+                        {c.pageId === activePageId && <Check className="w-3.5 h-3.5 text-primary" />}
+                      </button>
+                    ))}
+                  </div>
+                )}
+              </div>
+            ) : (
+              <span className="inline-flex items-center gap-1.5 text-gray-800">
+                <Contact className="w-4 h-4 text-primary" />
+                <span className="font-medium max-w-[180px] truncate">{activePageName}</span>
+              </span>
+            )}
             <span className="inline-flex items-center gap-1.5 text-gray-700">
               <TrendingUp className="w-4 h-4 text-primary" />
               {t('conversionRate')}: <span className="font-semibold text-gray-900">%{conversionRate}</span>
@@ -453,7 +516,7 @@ export default function CrmDashboard() {
           /* ── Kanban (Pano) ── */
           <div className="flex gap-4 overflow-x-auto pb-4">
             {STAGES.filter((s) => !hiddenStages.has(s)).map((stage) => {
-              const items = leads.filter((l) => l.status === stage)
+              const items = pageLeads.filter((l) => l.status === stage)
               return (
                 <div
                   key={stage}
