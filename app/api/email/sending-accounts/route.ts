@@ -2,6 +2,7 @@ import { NextResponse } from 'next/server'
 import { checkEmailAccess } from '@/lib/email/guard'
 import { listAccounts, createSmtpAccount, type SendingAccountRow } from '@/lib/email/sendingAccountStore'
 import { verifySmtp } from '@/lib/email/smtpSender'
+import { assertSafeSmtpHost } from '@/lib/email/ssrf'
 
 export const dynamic = 'force-dynamic'
 export const maxDuration = 30
@@ -43,10 +44,21 @@ export async function POST(request: Request) {
     return NextResponse.json({ ok: false, error: 'missing_fields' }, { status: 400 })
   }
 
-  // Önce test
+  // SSRF koruması: dahili/özel host'lara bağlanmayı engelle + port allowlist.
+  const safe = await assertSafeSmtpHost(host, port)
+  if (!safe.ok) {
+    console.warn('[SendingAccount] unsafe SMTP host blocked', { host, port, reason: safe.reason })
+    return NextResponse.json({ ok: false, error: 'smtp_failed', message: 'Geçersiz SMTP sunucu veya port.' }, { status: 422 })
+  }
+
+  // Bağlantı testi — ham hata istemciye SIZDIRILMAZ (yalnız sunucu logu).
   const test = await verifySmtp({ host, port, secure, user, passEnc: '' }, pass)
   if (!test.ok) {
-    return NextResponse.json({ ok: false, error: 'smtp_failed', message: test.error }, { status: 422 })
+    console.warn('[SendingAccount] SMTP verify failed', { host, port, detail: test.error })
+    return NextResponse.json(
+      { ok: false, error: 'smtp_failed', message: 'SMTP bağlantısı veya kimlik doğrulaması başarısız. Bilgileri kontrol edin.' },
+      { status: 422 },
+    )
   }
 
   const row = await createSmtpAccount(access.user.id, {
