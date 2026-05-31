@@ -3114,6 +3114,39 @@
         "stagePrefix": "CRM Aşaması"
       }
     },
+    "sending": {
+      "bannerTitle": "Gönderim hesabı",
+      "bannerDesc": "Kendi e-postandan göndermek için bir gönderim hesabı bağla (yoksa paylaşımlı domainden gider).",
+      "manage": "Gönderim Hesabı",
+      "title": "Gönderim Hesabı",
+      "chooseHint": "Nasıl göndermek istersin? Bir yöntem seç:",
+      "default": "Varsayılan",
+      "makeDefault": "Varsayılan yap",
+      "back": "Geri",
+      "missing": "Lütfen zorunlu alanları doldur.",
+      "connected": "Gönderim hesabı bağlandı.",
+      "testFailed": "Bağlantı testi başarısız",
+      "error": "Bir hata oluştu.",
+      "cards": {
+        "smtp": { "title": "E-posta hesabını bağla", "desc": "Gmail / Outlook / kurumsal mailini uygulama şifresiyle bağla, kendi adresinden gönder." },
+        "domain": { "title": "Kendi domainini doğrula", "desc": "DNS kayıtlarıyla markalı adresinden gönder; en yüksek hacim ve teslim." },
+        "oauth": { "title": "Tek tık Gmail / Outlook", "desc": "OAuth ile tek tıkla bağlan; şifre girmeden." }
+      },
+      "smtp": {
+        "title": "E-posta hesabını bağla (SMTP)",
+        "provider": "Sağlayıcı",
+        "custom": "Diğer (kurumsal/özel)",
+        "appPwHint": "Gmail/Outlook için normal şifre değil, 'uygulama şifresi' (app password) kullanmalısın.",
+        "fromEmail": "Gönderen e-posta",
+        "fromName": "Gönderen adı",
+        "user": "Kullanıcı adı",
+        "pass": "Şifre",
+        "passPlaceholder": "Uygulama şifresi",
+        "host": "SMTP sunucu",
+        "port": "Port",
+        "testSave": "Test Et ve Kaydet"
+      }
+    },
     "setup": {
       "title": "Gönderim domainini doğrula",
       "desc": "E-postaların spam'e düşmemesi için kendi gönderim domainini (SPF/DKIM) doğrulaman gerekir. Bu adımı kurarken yönlendireceğiz."

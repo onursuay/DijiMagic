@@ -57,6 +57,7 @@ const FILES = [
   'supabase/migrations/20260530001000_crm_meta_sync.sql',
   'supabase/migrations/20260531000000_crm_pipeline_stages.sql',
   'supabase/migrations/20260531010000_create_email_marketing.sql',
+  'supabase/migrations/20260531020000_create_email_sending_accounts.sql',
 ]
 
 async function main() {

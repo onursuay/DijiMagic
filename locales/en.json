@@ -3114,6 +3114,39 @@
         "stagePrefix": "CRM Stage"
       }
     },
+    "sending": {
+      "bannerTitle": "Sending account",
+      "bannerDesc": "Connect a sending account to send from your own email (otherwise a shared domain is used).",
+      "manage": "Sending Account",
+      "title": "Sending Account",
+      "chooseHint": "How do you want to send? Pick a method:",
+      "default": "Default",
+      "makeDefault": "Make default",
+      "back": "Back",
+      "missing": "Please fill in the required fields.",
+      "connected": "Sending account connected.",
+      "testFailed": "Connection test failed",
+      "error": "Something went wrong.",
+      "cards": {
+        "smtp": { "title": "Connect your email", "desc": "Connect Gmail / Outlook / corporate email with an app password and send from your own address." },
+        "domain": { "title": "Verify your domain", "desc": "Send from your branded address via DNS records; highest volume and deliverability." },
+        "oauth": { "title": "One-click Gmail / Outlook", "desc": "Connect with one click via OAuth, no password needed." }
+      },
+      "smtp": {
+        "title": "Connect your email (SMTP)",
+        "provider": "Provider",
+        "custom": "Other (corporate/custom)",
+        "appPwHint": "For Gmail/Outlook use an 'app password', not your normal password.",
+        "fromEmail": "From email",
+        "fromName": "From name",
+        "user": "Username",
+        "pass": "Password",
+        "passPlaceholder": "App password",
+        "host": "SMTP host",
+        "port": "Port",
+        "testSave": "Test & Save"
+      }
+    },
     "setup": {
       "title": "Verify your sending domain",
       "desc": "To keep your emails out of spam, you must verify your own sending domain (SPF/DKIM). We'll guide you through this during setup."

@@ -4,6 +4,8 @@ import { supabase } from '@/lib/supabase/client'
 import { getCampaign, markCampaign } from './campaignStore'
 import { resolveRecipients, type Segment } from './segments'
 import { unsubscribeUrl } from './unsubscribe'
+import { getDefaultAccount, decryptSmtpPass, type SmtpConfig } from './sendingAccountStore'
+import { smtpTransport } from './smtpSender'
 
 const FROM_EMAIL = process.env.FROM_EMAIL || 'YO Dijital Medya Anonim Şirketi <info@yodijital.com>'
 const APP_URL = process.env.NEXT_PUBLIC_APP_URL || 'https://yoai.yodijital.com'
@@ -23,15 +25,48 @@ export interface SendResult {
   reason?: 'not_found' | 'resend_not_configured' | 'already' | 'no_recipients'
   sent: number
   total: number
+  via?: 'smtp' | 'domain' | 'shared'
 }
 
-/** Bir kampanyayı segmentindeki tüm alıcılara gönderir (Resend batch). */
+type Dispatch = (to: string, subject: string, html: string) => Promise<string | null>
+
+/**
+ * Bir kampanyayı segmentindeki alıcılara gönderir. Gönderim hesabı varsa onu
+ * kullanır (SMTP = kullanıcının kendi maili; domain = Resend kullanıcı domaini),
+ * yoksa paylaşımlı Resend (FROM_EMAIL). Her maile zorunlu unsubscribe footer'ı.
+ */
 export async function sendCampaign(userId: string, campaignId: string): Promise<SendResult> {
   const campaign = await getCampaign(campaignId, userId)
   if (!campaign) return { ok: false, reason: 'not_found', sent: 0, total: 0 }
-  if (!resend) return { ok: false, reason: 'resend_not_configured', sent: 0, total: 0 }
   if (campaign.status === 'sent' || campaign.status === 'sending') {
     return { ok: false, reason: 'already', sent: 0, total: 0 }
+  }
+
+  // Gönderim yolu seç
+  const account = await getDefaultAccount(userId)
+  let dispatch: Dispatch
+  let via: 'smtp' | 'domain' | 'shared'
+
+  if (account && account.type === 'smtp') {
+    const transport = smtpTransport(account.config as unknown as SmtpConfig, decryptSmtpPass(account))
+    const from = account.from_name ? `${account.from_name} <${account.from_email}>` : account.from_email
+    via = 'smtp'
+    dispatch = async (to, subject, html) => {
+      try { const info = await transport.sendMail({ from, to, subject, html }); return info.messageId ?? 'smtp' } catch { return null }
+    }
+  } else if (account && account.type === 'domain') {
+    if (!resend) return { ok: false, reason: 'resend_not_configured', sent: 0, total: 0 }
+    const from = account.from_name ? `${account.from_name} <${account.from_email}>` : account.from_email
+    via = 'domain'
+    dispatch = async (to, subject, html) => {
+      try { const r = await resend.emails.send({ from, to, subject, html }); return r.data?.id ?? null } catch { return null }
+    }
+  } else {
+    if (!resend) return { ok: false, reason: 'resend_not_configured', sent: 0, total: 0 }
+    via = 'shared'
+    dispatch = async (to, subject, html) => {
+      try { const r = await resend.emails.send({ from: FROM_EMAIL, to, subject, html }); return r.data?.id ?? null } catch { return null }
+    }
   }
 
   await markCampaign(campaignId, { status: 'sending' })
@@ -42,40 +77,18 @@ export async function sendCampaign(userId: string, campaignId: string): Promise<
     return { ok: false, reason: 'no_recipients', sent: 0, total: 0 }
   }
 
-  const from =
-    campaign.from_email && campaign.from_name
-      ? `${campaign.from_name} <${campaign.from_email}>`
-      : campaign.from_email || FROM_EMAIL
   const subject = campaign.subject || '(konusuz)'
-
   let sent = 0
   const sendRows: Record<string, unknown>[] = []
 
-  for (let i = 0; i < recipients.length; i += 100) {
-    const chunk = recipients.slice(i, i + 100)
-    const batch = chunk.map((r) => ({
-      from,
-      to: r.email,
-      subject,
-      html: buildHtml(campaign.html, unsubscribeUrl(APP_URL, campaignId, r.email)),
-    }))
-    try {
-      const res = await resend.batch.send(batch)
-      // SDK: res.data?.data = [{ id }] (alıcı sırasıyla)
-      const ids = (((res as { data?: { data?: Array<{ id?: string }> } }).data?.data) ?? []) as Array<{ id?: string }>
-      chunk.forEach((r, idx) => {
-        const rid = ids[idx]?.id ?? null
-        sendRows.push({
-          campaign_id: campaignId, user_id: userId, contact_id: r.contactId, email: r.email,
-          resend_id: rid, status: rid ? 'sent' : 'failed', sent_at: new Date().toISOString(),
-        })
-        if (rid) sent++
-      })
-    } catch {
-      chunk.forEach((r) => sendRows.push({
-        campaign_id: campaignId, user_id: userId, contact_id: r.contactId, email: r.email, status: 'failed',
-      }))
-    }
+  for (const r of recipients) {
+    const html = buildHtml(campaign.html, unsubscribeUrl(APP_URL, campaignId, r.email))
+    const id = await dispatch(r.email, subject, html)
+    sendRows.push({
+      campaign_id: campaignId, user_id: userId, contact_id: r.contactId, email: r.email,
+      resend_id: id, status: id ? 'sent' : 'failed', sent_at: new Date().toISOString(),
+    })
+    if (id) sent++
   }
 
   if (supabase && sendRows.length) {
@@ -85,9 +98,8 @@ export async function sendCampaign(userId: string, campaignId: string): Promise<
   }
 
   await markCampaign(campaignId, {
-    status: 'sent',
-    sentAt: new Date().toISOString(),
+    status: 'sent', sentAt: new Date().toISOString(),
     stats: { recipients: recipients.length, sent },
   })
-  return { ok: true, sent, total: recipients.length }
+  return { ok: true, sent, total: recipients.length, via }
 }
