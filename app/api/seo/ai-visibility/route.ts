@@ -17,13 +17,19 @@ const NOT_KNOWN_PHRASES = [
   "bilinmiyor", "bilgi yok", "bulunamadı",
 ]
 
-async function checkViaTavily(apiKey: string, domain: string): Promise<{ visible: boolean; excerpt: string | null }> {
+function buildQuery(domain: string, locale: string): string {
+  return locale === 'tr'
+    ? `${domain} nedir? Bu web sitesi veya işletmeyi kısaca açıkla.`
+    : `What is ${domain}? Describe this website or business.`
+}
+
+async function checkViaTavily(apiKey: string, domain: string, locale: string): Promise<{ visible: boolean; excerpt: string | null }> {
   const response = await fetch('https://api.tavily.com/search', {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify({
       api_key: apiKey,
-      query: `What is ${domain}? Describe this website or business.`,
+      query: buildQuery(domain, locale),
       search_depth: 'basic',
       max_results: 3,
       include_answer: true,
@@ -47,13 +53,13 @@ async function checkViaTavily(apiKey: string, domain: string): Promise<{ visible
   return { visible, excerpt }
 }
 
-async function checkViaPerplexity(apiKey: string, domain: string): Promise<{ visible: boolean; excerpt: string | null }> {
+async function checkViaPerplexity(apiKey: string, domain: string, locale: string): Promise<{ visible: boolean; excerpt: string | null }> {
   const response = await fetch('https://api.perplexity.ai/chat/completions', {
     method: 'POST',
     headers: { 'Authorization': `Bearer ${apiKey}`, 'Content-Type': 'application/json' },
     body: JSON.stringify({
       model: 'llama-3.1-sonar-small-128k-online',
-      messages: [{ role: 'user', content: `What is ${domain}? Briefly describe this website or business in 2-3 sentences.` }],
+      messages: [{ role: 'user', content: buildQuery(domain, locale) }],
       max_tokens: 200,
       temperature: 0.1,
     }),
@@ -72,7 +78,7 @@ async function checkViaPerplexity(apiKey: string, domain: string): Promise<{ vis
 
 export async function POST(req: NextRequest) {
   try {
-    const { url } = await req.json()
+    const { url, locale = 'tr' } = await req.json()
     if (!url) return NextResponse.json({ error: 'URL required' }, { status: 400 })
 
     const domain = extractDomain(url)
@@ -85,11 +91,11 @@ export async function POST(req: NextRequest) {
 
     // Tavily önce, Perplexity fallback
     if (tavilyKey) {
-      const result = await checkViaTavily(tavilyKey, domain)
+      const result = await checkViaTavily(tavilyKey, domain, locale)
       return NextResponse.json({ ...result, domain })
     }
 
-    const result = await checkViaPerplexity(perplexityKey!, domain)
+    const result = await checkViaPerplexity(perplexityKey!, domain, locale)
     return NextResponse.json({ ...result, domain })
   } catch (err) {
     const message = err instanceof Error ? err.message : 'Unknown error'

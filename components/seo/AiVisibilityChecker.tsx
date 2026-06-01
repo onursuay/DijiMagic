@@ -2,7 +2,7 @@
 
 import { useState } from 'react'
 import { Loader2, CheckCircle2, XCircle, AlertCircle, Bot } from 'lucide-react'
-import { useTranslations } from 'next-intl'
+import { useTranslations, useLocale } from 'next-intl'
 
 interface VisibilityResult {
   visible: boolean
@@ -17,6 +17,7 @@ interface Props {
 
 export default function AiVisibilityChecker({ siteUrl }: Props) {
   const t = useTranslations('dashboard.seo.geoAeo.aiVisibility')
+  const locale = useLocale()
   const [loading, setLoading] = useState(false)
   const [result, setResult] = useState<VisibilityResult | null>(null)
 
@@ -28,7 +29,7 @@ export default function AiVisibilityChecker({ siteUrl }: Props) {
       const res = await fetch('/api/seo/ai-visibility', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ url: siteUrl }),
+        body: JSON.stringify({ url: siteUrl, locale }),
       })
       const data: VisibilityResult = await res.json()
       setResult(data)
