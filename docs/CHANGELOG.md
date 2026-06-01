@@ -2,6 +2,11 @@
 
 ---
 
+## 2026-06-01 — SEO Plus: AI görünürlük API endpoint'i (Perplexity sorgusu)
+- **Sorun:** SEO Plus modülünde AI görünürlük kontrolü için backend endpoint yoktu.
+- **Çözüm:** `app/api/seo/ai-visibility/route.ts` oluşturuldu — domain'i Perplexity API'ye sorarak AI motorlarında görünürlüğü kontrol eder. `PERPLEXITY_API_KEY` yoksa `not_configured` döner, crash olmaz. Yanıtta `visible`, `excerpt` ve `domain` alanları döner.
+- **Dosyalar:** `app/api/seo/ai-visibility/route.ts` (yeni)
+
 ## 2026-06-01 — geoAnalyzer: recursion guard + external-link edge case + DOM mutation fix
 - **Sorun:** `flattenGraph` sonsuz döngüye girebilirdi; `analyzeEeat` canonical/og:url yokken tüm absolute linkleri harici sayıyordu; `analyzeCitability` zaten temizlenmiş DOM'dan script/style kaldırmayı tekrarlıyordu.
 - **Çözüm:** `flattenGraph` için `depth > 10` guard eklendi. `analyzeEeat` içinde `baseHost` boşsa harici link kontrolü atlanarak `warning` döndürülür. `analyzeCitability` içindeki tekrarlı `script, style, noscript` cleanup kaldırıldı (`analyzeAiReadability` ilk çalıştığından bu adım gereksizdi).
