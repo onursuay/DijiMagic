@@ -58,10 +58,17 @@ email_automations (
 )
 ```
 
-**Küçük migration (ek):** `email_sends` tablosuna nullable `automation_id uuid` kolonu eklenir
-(FK `email_automations(id) ON DELETE SET NULL`). Böylece otomasyon gönderimleri de kayıt altında
-ve raporlanabilir olur. Mevcut `onConflict: 'campaign_id,email'` upsert'i bozmamak için otomasyon
-gönderimleri **plain insert** ile yazılır (campaign_id NULL).
+**Küçük migration (ek):** `email_sends` tablosunda iki değişiklik:
+1. `automation_id uuid` (nullable) kolonu eklenir — FK `email_automations(id) ON DELETE SET NULL`.
+2. `campaign_id` **NOT NULL kısıtı kaldırılır** (`DROP NOT NULL`) — otomasyon gönderimleri
+   `campaign_id = NULL` ile yazılabilsin. Mevcut FK (`ON DELETE CASCADE`) korunur.
+
+Otomasyon gönderimleri **plain insert** (upsert değil) ile yazılır: `campaign_id=NULL`, `automation_id` dolu.
+Mevcut `UNIQUE (campaign_id, email)` kısıtı bozulmaz — Postgres'te `NULL` değerler unique'te birbirinden
+distinct sayılır, dolayısıyla "her tetiklenmede" tekrar gönderim çakışma üretmez.
+
+**Risk:** `DROP NOT NULL` bir kısıt **gevşetmesidir** — mevcut satırların hepsinde campaign_id zaten dolu,
+mevcut sorgular/upsert'ler etkilenmez. Geriye dönük güvenli.
 
 > **Migration prod notu (omddq):** Bu kolon omddq'ya da uygulanmalı. `automation_id` nullable +
 > default yok → mevcut satırları etkilemez, geriye dönük güvenli. `email_automations` tablosunun
@@ -79,6 +86,11 @@ export async function buildDispatch(userId: string): Promise<{ dispatch: Dispatc
 - `sendCampaign` bu fonksiyonu çağıracak şekilde refactor edilir (davranış **birebir korunur**).
 - `automationRunner` aynı `buildDispatch` + mevcut `buildHtml` + `unsubscribeUrl` yardımcılarını
   yeniden kullanır → tek alıcıya gönderim, zorunlu KVKK unsubscribe footer'ı otomatik.
+- `buildHtml` `sender.ts`'de modül-içi (private) — `automationRunner`'ın da kullanması için `export`
+  edilir (davranış değişmez).
+- **Unsubscribe tuzu:** `unsubscribeUrl(appUrl, campaignId, email)` imza tuzu olarak campaignId alır.
+  Otomasyonda campaignId yok → sabit `'automation'` string'i geçilir. `/unsubscribe` route'u e-posta
+  bazlı opt_out yapar; `c='automation'` ile imza tutarlı doğrulanır.
 - Bu, presentation/iş mantığı tekrarını önler ve iki yolun davranışını aynı tutar.
 
 ## Dosya Değişiklikleri
@@ -108,9 +120,15 @@ export async function buildDispatch(userId: string): Promise<{ dispatch: Dispatc
 - Lead'in `email` alanı yoksa sessiz atlanır.
 
 ### Yeni kişi eklendi
-- [app/api/email/contacts/route.ts](../../../app/api/email/contacts/route.ts) POST içinde,
-  **yalnızca tekil manuel ekleme** (tek kişi, source=manual) yolunda tetiklenir.
-- Toplu CSV import ve CRM aktarımı **tetiklemez** (timeout/rate-limit/spam koruması).
+- **Yeni UI gerekli:** Kişiler sekmesinde şu an yalnızca toplu "CRM'den Aktar" ve "CSV/Excel Yükle"
+  var; **tekil "Kişi Ekle" formu yok**. `contact_added` tetikleyicisinin anlamlı çalışması için
+  Kişiler sekmesine küçük bir "Kişi Ekle" (tek kişi: e-posta + ad + telefon) formu eklenir →
+  `POST /api/email/contacts { rows:[{...}], source:'manual' }`.
+- [app/api/email/contacts/route.ts](../../../app/api/email/contacts/route.ts) POST içinde tetik koşulu:
+  **`rows.length === 1 && source === 'manual' && result.inserted === 1`**. `inserted === 1`,
+  kişinin gerçekten yeni olduğunu garanti eder (idempotent `ignoreDuplicates` → mevcut kişi tekrar
+  eklenirse `inserted === 0`, tetiklenmez). Toplu CSV import (source='csv') ve CRM aktarımı
+  (source='crm') hiç tetiklemez (timeout/rate-limit/spam koruması).
 - `runContactAddedAutomations(userId, contact)` → trigger.type === 'contact_added' enabled otomasyonlar.
 
 ### Geçmişe dönük yok
