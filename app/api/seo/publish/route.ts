@@ -82,6 +82,12 @@ export async function POST(request: Request) {
       datePublished: new Date().toISOString(),
       author: { '@type': 'Organization' },
     })
+      // Escape sequences that could break out of a <script> block
+      .replace(/</g, '\\u003c')
+      .replace(/>/g, '\\u003e')
+      .replace(/&/g, '\\u0026')
+      .replace(/ /g, '\\u2028')
+      .replace(/ /g, '\\u2029')
     contentHtml = `<script type="application/ld+json">${schemaJson}</script>\n${contentHtml}`
   }
 
