@@ -2,6 +2,11 @@
 
 ---
 
+## 2026-06-01 — Email Otomasyon: AutomationsTab UI bileşeni oluşturuldu
+- **Sorun:** Otomasyon sekmesi için liste + composer arayüzü yoktu.
+- **Çözüm:** `AutomationsTab.tsx` bileşeni oluşturuldu. CampaignsTab ile aynı layout (sol form + sağ iframe önizlemesi), WizardSelect tetikleyici dropdown (CRM aşaması veya yeni kişi), `flash` prop entegrasyonu, `animate-card-enter` + staggered index, etkinleştir/devre dışı bırak toggle, düzenle/sil, tam EN/TR i18n uyumu.
+- **Dosyalar:** components/email/AutomationsTab.tsx
+
 ## 2026-06-01 — Email Otomasyon: Tekil manuel kişi eklemede contact_added tetiği
 - **Sorun:** Yeni bir kişi manuel olarak tek tek eklendiğinde `contact_added` türündeki otomasyon e-postaları tetiklenmiyordu.
 - **Çözüm:** `POST /api/email/contacts` handler'ına best-effort otomasyon tetiği eklendi. Yalnızca `rows.length === 1 && source === 'manual' && result.inserted === 1` koşulu sağlandığında (gerçekten yeni, tekil, manuel ekleme) `runContactAddedAutomations` çağrılır. Toplu CSV/CRM import'lar tetiklemez. 9 saniyelik timeout race ve `.catch(() => {})` ile best-effort; hata hiçbir zaman response'u bozmaz.
