@@ -20,9 +20,8 @@
   }
 }
 
-/* Global scale: 85% of browser default (16px → 13.6px) */
 html {
-  font-size: 85%;
+  font-size: 100%;
 }
 
 :root {
