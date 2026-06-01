@@ -46,32 +46,63 @@ export function SubscriptionProvider({ children }: { children: ReactNode }) {
   const [isOwner, setIsOwner] = useState(false)
 
   const refresh = useCallback(async () => {
-    try {
-      const res = await fetch('/api/billing/current', { cache: 'no-store' })
-      if (!res.ok) { setSub(FREE_DEFAULT); return }
-      const data = await res.json()
-      setIsOwner(Boolean(data?.isOwner))
-      if (data?.ok && data.subscription) {
-        setSub({
-          planId: data.subscription.planId,
-          status: data.subscription.status,
-          billingCycle: data.subscription.billingCycle,
-          startDate: data.subscription.startDate,
-          trialEndDate: data.subscription.trialEndDate,
-          currentPeriodEnd: data.subscription.currentPeriodEnd,
-        })
-      } else {
-        setSub(FREE_DEFAULT)
+    // Billing durumunu güvenilir biçimde çöz. Yalnızca 200 yanıt durumu
+    // "çözülmüş" sayar; geçici ağ/5xx/erken-401 (oturum cookie'si henüz
+    // hazır değil) hatalarında birkaç kez dener.
+    //
+    // KRİTİK — FAIL-OPEN: Hiçbir denemede çözülemezse durumu kilitleyici
+    // FREE_DEFAULT'a DÜŞÜRME; mevcut (iyi huylu) durumu KORU. Aksi halde
+    // tek bir geçici billing hatası owner'ı ve ödeme yapan kullanıcıyı
+    // CRM/Email/Marketing gibi tam-sayfa gate'li modüllerden kilitler.
+    // Gerçek erişim kontrolü backend guard'larında kalır (modal yalnız UX).
+    for (let attempt = 0; attempt < 3; attempt++) {
+      try {
+        const res = await fetch('/api/billing/current', { cache: 'no-store' })
+        if (res.ok) {
+          const data = await res.json()
+          setIsOwner(Boolean(data?.isOwner))
+          if (data?.ok && data.subscription) {
+            setSub({
+              planId: data.subscription.planId,
+              status: data.subscription.status,
+              billingCycle: data.subscription.billingCycle,
+              startDate: data.subscription.startDate,
+              trialEndDate: data.subscription.trialEndDate,
+              currentPeriodEnd: data.subscription.currentPeriodEnd,
+            })
+          } else {
+            // 200 + abonelik yok → gerçekten ücretsiz/expired kullanıcı.
+            setSub(FREE_DEFAULT)
+          }
+          setLoading(false)
+          return
+        }
+        // non-ok (401/5xx) → geçici olabilir, tekrar dene
+      } catch {
+        // ağ hatası → tekrar dene
       }
-    } finally {
-      setLoading(false)
+      await new Promise((r) => setTimeout(r, 500 * (attempt + 1)))
     }
+    // Tüm denemeler başarısız: FAIL-OPEN — durumu düşürme, sadece yüklemeyi bitir.
+    setLoading(false)
   }, [])
 
   useEffect(() => {
     refresh()
     setAiScanUsedToday(getAiScanUsage().count)
     setStrategyUsedThisMonth(getStrategyUsage().count)
+
+    // Bayat provider durumunu otomatik iyileştir: sekme tekrar odaklanınca
+    // veya görünür olunca billing'i sessizce yeniden çek — böylece kullanıcı
+    // manuel hard refresh yapmak zorunda kalmaz.
+    const onFocus = () => { void refresh() }
+    const onVisible = () => { if (document.visibilityState === 'visible') void refresh() }
+    window.addEventListener('focus', onFocus)
+    document.addEventListener('visibilitychange', onVisible)
+    return () => {
+      window.removeEventListener('focus', onFocus)
+      document.removeEventListener('visibilitychange', onVisible)
+    }
   }, [refresh])
 
   const paid = isPaidSubscription(sub)
