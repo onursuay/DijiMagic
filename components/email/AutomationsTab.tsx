@@ -2,7 +2,7 @@
 
 import { useCallback, useEffect, useMemo, useState } from 'react'
 import { useTranslations } from 'next-intl'
-import { Plus, Loader2, Trash2, ArrowLeft, Zap, Workflow, ChevronDown, ShieldCheck } from 'lucide-react'
+import { Plus, Loader2, Trash2, ArrowLeft, Zap, Workflow, ChevronDown, ShieldCheck, AlertCircle } from 'lucide-react'
 import WizardSelect from '@/components/meta/wizard/WizardSelect'
 import { STAGES } from '@/components/crm/stageMeta'
 
@@ -42,6 +42,7 @@ export default function AutomationsTab({ flash, onManageSending }: { flash: (k: 
   const [html, setHtml] = useState('')
   const [saving, setSaving] = useState(false)
   const [backOpen, setBackOpen] = useState(false)
+  const [accountReady, setAccountReady] = useState<boolean | null>(null)
 
   const load = useCallback(async () => {
     setLoading(true)
@@ -58,10 +59,21 @@ export default function AutomationsTab({ flash, onManageSending }: { flash: (k: 
     { value: 'contact', label: t('automations.triggerContact') },
   ], [t, tc])
 
-  const openNew = () => { setEditId(null); setName(''); setTrig('stage:uygun'); setSubject(''); setHtml(''); setComposing(true); setBackOpen(false) }
+  const checkAccount = () => {
+    setAccountReady(null)
+    fetch('/api/email/sending-accounts').then(r => r.json()).then(d => {
+      setAccountReady((d.accounts ?? []).some((a: { status: string }) => a.status === 'active'))
+    }).catch(() => setAccountReady(false))
+  }
+
+  const openNew = () => {
+    setEditId(null); setName(''); setTrig('stage:uygun'); setSubject(''); setHtml(''); setComposing(true); setBackOpen(false)
+    checkAccount()
+  }
   const openEdit = (a: AutomationItem) => {
     setEditId(a.id); setName(a.name)
     setTrig(encodeTrigger(a.trigger as Trigger)); setSubject(a.subject); setHtml(a.html); setComposing(true); setBackOpen(false)
+    checkAccount()
   }
 
   const handleSave = useCallback(async () => {
@@ -98,20 +110,37 @@ export default function AutomationsTab({ flash, onManageSending }: { flash: (k: 
   if (composing) {
     return (
       <div>
-        <div className="rounded-2xl border border-primary/20 bg-primary/5 p-4 flex items-center justify-between gap-3 mb-6">
-          <div className="flex items-start gap-3 min-w-0">
-            <div className="w-9 h-9 rounded-lg bg-primary/10 flex items-center justify-center shrink-0">
-              <ShieldCheck className="w-5 h-5 text-primary" />
+        {accountReady === false ? (
+          <div className="rounded-2xl border border-red-200 bg-red-50 p-4 flex items-center justify-between gap-3 mb-6">
+            <div className="flex items-start gap-3 min-w-0">
+              <div className="w-9 h-9 rounded-lg bg-red-100 flex items-center justify-center shrink-0">
+                <AlertCircle className="w-5 h-5 text-red-600" />
+              </div>
+              <div className="min-w-0">
+                <p className="text-sm font-semibold text-gray-900">{t('sending.noAccountTitle')}</p>
+                <p className="text-sm text-gray-600 mt-0.5">{t('sending.noAccountDesc')}</p>
+              </div>
             </div>
-            <div className="min-w-0">
-              <p className="text-sm font-semibold text-gray-900">{t('sending.bannerTitle')}</p>
-              <p className="text-sm text-gray-600 mt-0.5">{t('sending.bannerDesc')}</p>
-            </div>
+            <button onClick={onManageSending} className="shrink-0 inline-flex items-center gap-1.5 px-3.5 py-2 rounded-xl bg-red-600 text-white text-sm font-medium hover:bg-red-700 transition">
+              {t('sending.addAccount')}
+            </button>
           </div>
-          <button onClick={onManageSending} className="shrink-0 inline-flex items-center gap-1.5 px-3.5 py-2 rounded-xl bg-primary text-white text-sm font-medium hover:bg-primary/90 transition">
-            {t('sending.manage')}
-          </button>
-        </div>
+        ) : (
+          <div className="rounded-2xl border border-primary/20 bg-primary/5 p-4 flex items-center justify-between gap-3 mb-6">
+            <div className="flex items-start gap-3 min-w-0">
+              <div className="w-9 h-9 rounded-lg bg-primary/10 flex items-center justify-center shrink-0">
+                <ShieldCheck className="w-5 h-5 text-primary" />
+              </div>
+              <div className="min-w-0">
+                <p className="text-sm font-semibold text-gray-900">{t('sending.bannerTitle')}</p>
+                <p className="text-sm text-gray-600 mt-0.5">{t('sending.bannerDesc')}</p>
+              </div>
+            </div>
+            <button onClick={onManageSending} className="shrink-0 inline-flex items-center gap-1.5 px-3.5 py-2 rounded-xl bg-primary text-white text-sm font-medium hover:bg-primary/90 transition">
+              {t('sending.manage')}
+            </button>
+          </div>
+        )}
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
           <div className="bg-white rounded-2xl border border-gray-200 shadow-sm p-6 space-y-4">
             <div>
@@ -132,7 +161,12 @@ export default function AutomationsTab({ flash, onManageSending }: { flash: (k: 
               <p className="text-xs text-gray-400 mt-1">{t('automations.contentHint')}</p>
             </div>
             <div className="flex items-center justify-end gap-2 pt-2 border-t border-gray-100">
-              <button onClick={handleSave} disabled={saving} className="inline-flex items-center gap-1.5 px-5 py-2 rounded-xl bg-primary text-white text-sm font-medium hover:bg-primary/90 disabled:opacity-50 active:scale-[0.97] transition-all">
+              <button
+                onClick={handleSave}
+                disabled={saving || accountReady === false}
+                title={accountReady === false ? t('sending.noAccountSendHint') : undefined}
+                className="inline-flex items-center gap-1.5 px-5 py-2 rounded-xl bg-primary text-white text-sm font-medium hover:bg-primary/90 disabled:opacity-40 disabled:cursor-not-allowed active:scale-[0.97] transition-all"
+              >
                 {saving ? <Loader2 className="w-4 h-4 animate-spin" /> : <Zap className="w-4 h-4" />} {t('automations.save')}
               </button>
             </div>
