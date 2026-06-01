@@ -70,7 +70,20 @@ export async function POST(request: Request) {
   }
 
   // Markdown → HTML
-  const contentHtml = await marked(article.content as string)
+  let contentHtml = await marked(article.content as string)
+
+  // Article schema markup: JSON-LD prepend when requested
+  const articleParams = (article.params ?? {}) as Record<string, string>
+  if (articleParams.articleSchema === 'true') {
+    const schemaJson = JSON.stringify({
+      '@context': 'https://schema.org',
+      '@type': 'Article',
+      headline: (article.title as string) || '',
+      datePublished: new Date().toISOString(),
+      author: { '@type': 'Organization' },
+    })
+    contentHtml = `<script type="application/ld+json">${schemaJson}</script>\n${contentHtml}`
+  }
 
   try {
     const connector = getConnector(resolved.platform, resolved.credentials)

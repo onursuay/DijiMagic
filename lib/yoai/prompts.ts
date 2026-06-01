@@ -40,7 +40,14 @@ Gereksiz açıklama yapma, doğrudan içeriği üret.`
 - Anahtar kelimeyi doğal şekilde başlık ve paragraflara yerleştir
 - Meta açıklama önerisi ekle (max 160 karakter)
 - İçeriğin sonunda anahtar kelime yoğunluğu notu ekle
-- ${params.wordCount} kelime civarında tut, 600 kelimeyi KESİNLİKLE geçme`,
+- ${params.wordCount} kelime civarında tut, 600 kelimeyi KESİNLİKLE geçme${params.aiFormat === 'true' ? `
+
+## AI'YA UYGUN FORMAT (yapay zeka arama motorları için optimize):
+- Her bölüm net bir H2 (##) veya H3 (###) başlığıyla başlasın
+- Paragraflar 2-3 cümleyi geçmesin — uzun "duvar metin" blokları YASAK
+- Konu cümlesini paragrafın ilk cümlesine koy
+- Madde listeleri ve tablolar uygun yerlerde kullan
+- Toplam kelime sayısı değişmez, SADECE yapı daha net olacak` : ''}`,
 
     ad_copy: `${base}
 

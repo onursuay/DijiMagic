@@ -102,6 +102,10 @@ export default function SeoArticlesTab({ activeSiteUrl }: Props) {
   const [previewArticle, setPreviewArticle] = useState<Article | null>(null)
   const [copied, setCopied] = useState(false)
 
+  // AI format & schema toggles
+  const [aiFormat, setAiFormat] = useState(false)
+  const [articleSchema, setArticleSchema] = useState(false)
+
   // Publish modal
   const [publishArticle, setPublishArticle] = useState<Article | null>(null)
   const [publishSites, setPublishSites] = useState<SiteOption[]>([])
@@ -225,7 +229,7 @@ export default function SeoArticlesTab({ activeSiteUrl }: Props) {
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
           category: 'seo_article',
-          params: { keyword: keyword.trim(), wordCount, tone, ...(effectiveSiteUrl ? { siteUrl: effectiveSiteUrl } : {}) },
+          params: { keyword: keyword.trim(), wordCount, tone, ...(effectiveSiteUrl ? { siteUrl: effectiveSiteUrl } : {}), ...(aiFormat ? { aiFormat: 'true' } : {}) },
         }),
         signal: controller.signal,
       })
@@ -281,7 +285,7 @@ export default function SeoArticlesTab({ activeSiteUrl }: Props) {
           title: generatedTitle || `${keyword} - SEO`,
           content: generatedContent,
           category: 'seo_article',
-          params: { keyword, wordCount, tone, ...(effectiveSiteUrl ? { siteUrl: effectiveSiteUrl } : {}) },
+          params: { keyword, wordCount, tone, ...(effectiveSiteUrl ? { siteUrl: effectiveSiteUrl } : {}), ...(articleSchema ? { articleSchema: 'true' } : {}) },
           word_count: generatedContent.split(/\s+/).filter(Boolean).length,
         }),
       })
@@ -530,6 +534,34 @@ export default function SeoArticlesTab({ activeSiteUrl }: Props) {
                 ]}
               />
             </div>
+          </div>
+
+          {/* AI Format & Schema toggles */}
+          <div className="flex flex-wrap gap-4 mt-3">
+            <label className="flex items-center gap-2 cursor-pointer">
+              <input
+                type="checkbox"
+                checked={aiFormat}
+                onChange={e => setAiFormat(e.target.checked)}
+                className="w-4 h-4 accent-primary rounded"
+              />
+              <div>
+                <span className="text-sm font-medium text-gray-700">{t('aiFormat')}</span>
+                <span className="text-caption text-gray-400 ml-1">— {t('aiFormatHint')}</span>
+              </div>
+            </label>
+            <label className="flex items-center gap-2 cursor-pointer">
+              <input
+                type="checkbox"
+                checked={articleSchema}
+                onChange={e => setArticleSchema(e.target.checked)}
+                className="w-4 h-4 accent-primary rounded"
+              />
+              <div>
+                <span className="text-sm font-medium text-gray-700">{t('articleSchema')}</span>
+                <span className="text-caption text-gray-400 ml-1">— {t('articleSchemaHint')}</span>
+              </div>
+            </label>
           </div>
 
           <div className="flex items-center gap-2">

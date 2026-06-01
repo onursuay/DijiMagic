@@ -2,6 +2,11 @@
 
 ---
 
+## 2026-06-01 — SEO Plus: makale üretim toggle'ları — AI format + Article schema
+- **Sorun:** Makale üretirken "AI'ya uygun format" ve "Article schema markup ekle" seçenekleri yoktu; yayın sırasında JSON-LD schema ekleme desteği de bulunmuyordu.
+- **Çözüm:** `SeoArticlesTab.tsx`'e `aiFormat` ve `articleSchema` state'leri + checkbox toggle'ları eklendi. `aiFormat` üretim API çağrısına `params` ile geçilir; `buildGenerationPrompt` → `seo_article` case'ine AI format bloku eklendi (paragraf kısalığı, H2/H3 yapısı, konu cümlesi önde). `articleSchema` kaydetme çağrısına `params` ile geçilir; yayın route'unda (`app/api/seo/publish/route.ts`) `articleSchema === 'true'` ise `<script type="application/ld+json">` bloku HTML'e ön eklenir.
+- **Dosyalar:** `components/seo/SeoArticlesTab.tsx`, `lib/yoai/prompts.ts`, `app/api/seo/publish/route.ts`
+
 ## 2026-06-01 — SEO sayfası: split SEO/GEO skor kartı ve koşullu panel gösterimi
 - **Sorun:** SEO sayfasında GEO/AEO analizi hesaplansa da kullanıcıya gösterilecek UI entegrasyonu yoktu; mevcut tek "Overall Score" kartı sadece SEO skorunu gösteriyordu.
 - **Çözüm:** `app/seo/page.tsx` güncellendi. (A) `GeoAeoScoreCard`, `GeoAeoAnalysisPanel`, `GeoAeoResult` import'ları eklendi. (B) `activeScore`, `geoResult`, `geoLoading` state değişkenleri eklendi. (C) `handleAnalyze` içinde SEO analizi başlarken arka planda `/api/seo/analyze-geo` fire-and-forget çağrısı başlatılır; auto-analyze akışında geoState sıfırlanır. (D) Eski tekil Overall Score kartı, iki tıklanabilir sekmeli (SEO | GEO/AEO) grid kartla değiştirildi. (E) Tüm SEO detay panelleri (Lighthouse, keywords, kategoriler, kırık linkler, yönlendirmeler, öneriler) yalnızca `activeScore === 'seo'` veya rakip karşılaştırması aktifken gösterilir; `activeScore === 'geo'` seçilince `GeoAeoAnalysisPanel` gösterilir.
