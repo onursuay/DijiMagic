@@ -334,7 +334,8 @@
         "searchAccounts": "Search accounts...",
         "metaAccounts": "Meta Accounts",
         "googleAccounts": "Google Accounts",
-        "addGoogleAccount": "Add Google account"
+        "addGoogleAccount": "Add Google account",
+        "remove": "Remove"
       },
       "performanceRecommendations": {
         "unavailable": "Optimization recommendations are temporarily unavailable. We'll retry later."

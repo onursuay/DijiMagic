@@ -79,9 +79,9 @@ export function useGoogleAdsConnection({ addToast, onAccountSelected, onInitRead
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [])
 
-  // Account modal: fetch accounts when opened
-  useEffect(() => {
-    if (!showAccountModal || !isGoogleConnected) return
+  // Fetch managers/accounts list (used by both the modal and the dropdown browse view)
+  const loadAccounts = useCallback(() => {
+    if (!isGoogleConnected) return
     setAccountsError(null)
     setManagers([])
     setChildren([])
@@ -104,7 +104,13 @@ export function useGoogleAdsConnection({ addToast, onAccountSelected, onInitRead
       })
       .catch((e) => setAccountsError(e instanceof Error ? e.message : 'Network error'))
       .finally(() => setManagersLoading(false))
-  }, [showAccountModal, isGoogleConnected, tEnt])
+  }, [isGoogleConnected, tEnt])
+
+  // Account modal: fetch accounts when opened
+  useEffect(() => {
+    if (!showAccountModal || !isGoogleConnected) return
+    loadAccounts()
+  }, [showAccountModal, isGoogleConnected, loadAccounts])
 
   const openAccountModal = useCallback(() => {
     setShowAccountModal(true)
@@ -195,6 +201,6 @@ export function useGoogleAdsConnection({ addToast, onAccountSelected, onInitRead
     children, childrenLoading,
     accountStep, selectedManagerId,
     selectingKey, accountsError,
-    openAccountModal, onManagerOrAccountClick, onChildClick, backToManagers,
+    openAccountModal, loadAccounts, onManagerOrAccountClick, onChildClick, backToManagers,
   }
 }

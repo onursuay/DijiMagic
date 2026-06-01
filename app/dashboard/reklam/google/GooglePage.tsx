@@ -13,6 +13,7 @@ import PMaxCampaignWizard from '@/components/google/wizard/pmax/PMaxCampaignWiza
 import DisplayCampaignWizard from '@/components/google/wizard/display/DisplayCampaignWizard'
 import type { CampaignGoal } from '@/components/google/wizard/shared/WizardTypes'
 import GoogleAccountModal from '@/components/google/GoogleAccountModal'
+import GoogleAccountDropdown from '@/components/google/GoogleAccountDropdown'
 import DateRangePicker from '@/components/DateRangePicker'
 import MetricFilterDropdown from '@/components/reklam/MetricFilterDropdown'
 import GoogleTableReal from './components/GoogleTableReal'
@@ -436,10 +437,7 @@ export default function GooglePage() {
           disabled: showEmptyState,
           title: showEmptyState ? t('selectAdAccountFirst') : undefined,
         }}
-        googleAccountName={!showEmptyState ? connection.selected?.customerName : undefined}
-        googleActiveId={!showEmptyState ? (connection.selected?.customerId ?? null) : null}
-        onGoogleChangeAccount={!showEmptyState ? connection.openAccountModal : undefined}
-        googleChangeAccountLabel={tTable('common.change')}
+        accountSwitcherSlot={!showEmptyState ? <GoogleAccountDropdown connection={connection} /> : undefined}
       />
       <div className="flex-1 overflow-y-auto bg-gray-50">
         <div className="p-6 space-y-6">

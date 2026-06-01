@@ -334,7 +334,8 @@
         "searchAccounts": "Hesap ara...",
         "metaAccounts": "Meta Hesapları",
         "googleAccounts": "Google Hesapları",
-        "addGoogleAccount": "Google hesabı ekle"
+        "addGoogleAccount": "Google hesabı ekle",
+        "remove": "Çıkar"
       },
       "performanceRecommendations": {
         "unavailable": "Optimizasyon önerileri şu anda alınamadı. Daha sonra tekrar denenecek."
