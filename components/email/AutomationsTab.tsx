@@ -2,7 +2,7 @@
 
 import { useCallback, useEffect, useMemo, useState } from 'react'
 import { useTranslations } from 'next-intl'
-import { Plus, Loader2, Trash2, ArrowLeft, Zap, Workflow, ChevronDown, ShieldCheck, AlertCircle } from 'lucide-react'
+import { Plus, Loader2, Trash2, ArrowLeft, Zap, Workflow, ShieldCheck, AlertCircle } from 'lucide-react'
 import WizardSelect from '@/components/meta/wizard/WizardSelect'
 import { STAGES } from '@/components/crm/stageMeta'
 
@@ -41,7 +41,6 @@ export default function AutomationsTab({ flash, onManageSending }: { flash: (k: 
   const [subject, setSubject] = useState('')
   const [html, setHtml] = useState('')
   const [saving, setSaving] = useState(false)
-  const [backOpen, setBackOpen] = useState(false)
   const [accountReady, setAccountReady] = useState<boolean | null>(null)
 
   const load = useCallback(async () => {
@@ -67,12 +66,12 @@ export default function AutomationsTab({ flash, onManageSending }: { flash: (k: 
   }
 
   const openNew = () => {
-    setEditId(null); setName(''); setTrig('stage:uygun'); setSubject(''); setHtml(''); setComposing(true); setBackOpen(false)
+    setEditId(null); setName(''); setTrig('stage:uygun'); setSubject(''); setHtml(''); setComposing(true)
     checkAccount()
   }
   const openEdit = (a: AutomationItem) => {
     setEditId(a.id); setName(a.name)
-    setTrig(encodeTrigger(a.trigger as Trigger)); setSubject(a.subject); setHtml(a.html); setComposing(true); setBackOpen(false)
+    setTrig(encodeTrigger(a.trigger as Trigger)); setSubject(a.subject); setHtml(a.html); setComposing(true)
     checkAccount()
   }
 
@@ -160,7 +159,10 @@ export default function AutomationsTab({ flash, onManageSending }: { flash: (k: 
               <textarea value={html} onChange={(e) => setHtml(e.target.value)} rows={12} placeholder={t('automations.contentPlaceholder')} className="w-full rounded-xl border border-gray-200 px-3 py-2 text-sm font-mono focus:border-primary focus:ring-2 focus:ring-primary/20 outline-none" />
               <p className="text-xs text-gray-400 mt-1">{t('automations.contentHint')}</p>
             </div>
-            <div className="flex items-center justify-end gap-2 pt-2 border-t border-gray-100">
+            <div className="flex items-center justify-between gap-2 pt-2 border-t border-gray-100">
+              <button onClick={() => setComposing(false)} className="inline-flex items-center gap-1.5 px-4 py-2 rounded-xl border border-gray-200 text-sm text-gray-600 hover:bg-gray-50 hover:text-gray-900 transition-all">
+                <ArrowLeft className="w-4 h-4" /> {t('automations.back')}
+              </button>
               <button
                 onClick={handleSave}
                 disabled={saving || accountReady === false}
@@ -184,23 +186,6 @@ export default function AutomationsTab({ flash, onManageSending }: { flash: (k: 
                   html.trim() || `<p style="color:#d1d5db">${t('automations.previewEmpty')}</p>`
                 }</body></html>`}
               />
-              <div className="px-4 py-3 border-t border-gray-100 bg-gray-50/60 flex flex-col items-end gap-2">
-                <button
-                  onClick={() => setBackOpen(v => !v)}
-                  className="inline-flex items-center gap-1.5 text-xs text-gray-400 hover:text-gray-600 transition-colors"
-                >
-                  <span>{t('automations.back')}</span>
-                  <ChevronDown className={`w-3.5 h-3.5 transition-transform duration-200 ${backOpen ? 'rotate-180' : ''}`} />
-                </button>
-                {backOpen && (
-                  <button
-                    onClick={() => setComposing(false)}
-                    className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl border border-gray-200 text-sm text-gray-600 hover:text-gray-800 hover:bg-gray-50 transition-all"
-                  >
-                    <ArrowLeft className="w-3.5 h-3.5" /> {t('automations.back')}
-                  </button>
-                )}
-              </div>
             </div>
           </div>
         </div>

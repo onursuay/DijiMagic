@@ -2,7 +2,7 @@
 
 import { useCallback, useEffect, useMemo, useState } from 'react'
 import { useTranslations } from 'next-intl'
-import { Plus, Loader2, Send, Trash2, ArrowLeft, Users, Inbox, ChevronDown, ShieldCheck, AlertCircle } from 'lucide-react'
+import { Plus, Loader2, Send, Trash2, ArrowLeft, Users, Inbox, ShieldCheck, AlertCircle } from 'lucide-react'
 import WizardSelect from '@/components/meta/wizard/WizardSelect'
 import { STAGES } from '@/components/crm/stageMeta'
 
@@ -46,7 +46,6 @@ export default function CampaignsTab({ flash, onManageSending }: { flash: (k: 'o
   const [recipientCount, setRecipientCount] = useState<number | null>(null)
   const [saving, setSaving] = useState(false)
   const [sending, setSending] = useState(false)
-  const [backOpen, setBackOpen] = useState(false)
   const [accountReady, setAccountReady] = useState<boolean | null>(null)
 
   const load = useCallback(async () => {
@@ -80,7 +79,7 @@ export default function CampaignsTab({ flash, onManageSending }: { flash: (k: 'o
   ], [t, tc])
 
   const openNew = () => {
-    setEditId(null); setName(''); setSubject(''); setHtml(''); setSeg('all'); setComposing(true); setBackOpen(false)
+    setEditId(null); setName(''); setSubject(''); setHtml(''); setSeg('all'); setComposing(true)
     setAccountReady(null)
     fetch('/api/email/sending-accounts').then(r => r.json()).then(d => {
       setAccountReady((d.accounts ?? []).some((a: { status: string }) => a.status === 'active'))
@@ -195,18 +194,23 @@ export default function CampaignsTab({ flash, onManageSending }: { flash: (k: 'o
               <textarea value={html} onChange={(e) => setHtml(e.target.value)} rows={12} placeholder={t('campaigns.contentPlaceholder')} className="w-full rounded-xl border border-gray-200 px-3 py-2 text-sm font-mono focus:border-primary focus:ring-2 focus:ring-primary/20 outline-none" />
               <p className="text-xs text-gray-400 mt-1">{t('campaigns.contentHint')}</p>
             </div>
-            <div className="flex items-center justify-end gap-2 pt-2 border-t border-gray-100">
-              <button onClick={handleSave} disabled={saving} className="px-4 py-2 rounded-xl border border-gray-200 text-sm text-gray-700 hover:bg-gray-50 disabled:opacity-50">
-                {saving ? <Loader2 className="w-4 h-4 animate-spin" /> : t('campaigns.saveDraft')}
+            <div className="flex items-center justify-between gap-2 pt-2 border-t border-gray-100">
+              <button onClick={() => setComposing(false)} className="inline-flex items-center gap-1.5 px-4 py-2 rounded-xl border border-gray-200 text-sm text-gray-600 hover:bg-gray-50 hover:text-gray-900 transition-all">
+                <ArrowLeft className="w-4 h-4" /> {t('campaigns.back')}
               </button>
-              <button
-                onClick={handleSend}
-                disabled={sending || accountReady === false}
-                title={accountReady === false ? t('sending.noAccountSendHint') : undefined}
-                className="inline-flex items-center gap-1.5 px-5 py-2 rounded-xl bg-primary text-white text-sm font-medium hover:bg-primary/90 disabled:opacity-40 disabled:cursor-not-allowed"
-              >
-                {sending ? <Loader2 className="w-4 h-4 animate-spin" /> : <Send className="w-4 h-4" />} {t('campaigns.send')}
-              </button>
+              <div className="flex items-center gap-2">
+                <button onClick={handleSave} disabled={saving} className="px-4 py-2 rounded-xl border border-gray-200 text-sm text-gray-700 hover:bg-gray-50 disabled:opacity-50">
+                  {saving ? <Loader2 className="w-4 h-4 animate-spin" /> : t('campaigns.saveDraft')}
+                </button>
+                <button
+                  onClick={handleSend}
+                  disabled={sending || accountReady === false}
+                  title={accountReady === false ? t('sending.noAccountSendHint') : undefined}
+                  className="inline-flex items-center gap-1.5 px-5 py-2 rounded-xl bg-primary text-white text-sm font-medium hover:bg-primary/90 disabled:opacity-40 disabled:cursor-not-allowed"
+                >
+                  {sending ? <Loader2 className="w-4 h-4 animate-spin" /> : <Send className="w-4 h-4" />} {t('campaigns.send')}
+                </button>
+              </div>
             </div>
           </div>
 
@@ -226,23 +230,6 @@ export default function CampaignsTab({ flash, onManageSending }: { flash: (k: 'o
                   html.trim() || `<p style="color:#d1d5db">${t('campaigns.previewEmpty')}</p>`
                 }<hr style="margin-top:28px;border:none;border-top:1px solid #e5e7eb"/><p style="font-size:11px;color:#9ca3af;margin-top:12px">${t('campaigns.unsubPreview')}</p></body></html>`}
               />
-              <div className="px-4 py-3 border-t border-gray-100 bg-gray-50/60 flex flex-col items-end gap-2">
-                <button
-                  onClick={() => setBackOpen(v => !v)}
-                  className="inline-flex items-center gap-1.5 text-xs text-gray-400 hover:text-gray-600 transition-colors"
-                >
-                  <span>{t('campaigns.back')}</span>
-                  <ChevronDown className={`w-3.5 h-3.5 transition-transform duration-200 ${backOpen ? 'rotate-180' : ''}`} />
-                </button>
-                {backOpen && (
-                  <button
-                    onClick={() => setComposing(false)}
-                    className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl border border-gray-200 text-sm text-gray-600 hover:text-gray-800 hover:bg-gray-50 transition-all"
-                  >
-                    <ArrowLeft className="w-3.5 h-3.5" /> {t('campaigns.back')}
-                  </button>
-                )}
-              </div>
             </div>
           </div>
         </div>
