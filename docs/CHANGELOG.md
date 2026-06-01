@@ -2,6 +2,11 @@
 
 ---
 
+## 2026-06-01 — SSRF koruması: analyze-geo URL doğrulaması
+- **Sorun:** `app/api/seo/analyze-geo/route.ts` kullanıcı girdisini doğrulamadan fetch ediyordu; saldırgan `http://127.0.0.1/...` veya `http://169.254.169.254/metadata` göndererek iç ağa erişebilirdi.
+- **Çözüm:** `isPrivateIp()` + `assertSafeUrl()` fonksiyonları eklendi. `dns/promises` ile hostname çözümlenerek tüm IP'ler RFC1918/loopback/link-local aralıklarına karşı kontrol edilir. Yalnızca HTTP/HTTPS izin verilir. Hata yanıtları iç detay sızdırmaz; `typeof url !== 'string'` input doğrulaması eklendi; `redirect: 'follow'` açık hale getirildi.
+- **Dosyalar:** `app/api/seo/analyze-geo/route.ts`
+
 ## 2026-06-01 — SEO Plus: AI görünürlük API endpoint'i (Perplexity sorgusu)
 - **Sorun:** SEO Plus modülünde AI görünürlük kontrolü için backend endpoint yoktu.
 - **Çözüm:** `app/api/seo/ai-visibility/route.ts` oluşturuldu — domain'i Perplexity API'ye sorarak AI motorlarında görünürlüğü kontrol eder. `PERPLEXITY_API_KEY` yoksa `not_configured` döner, crash olmaz. Yanıtta `visible`, `excerpt` ve `domain` alanları döner.
