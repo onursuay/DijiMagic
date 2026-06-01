@@ -20,7 +20,7 @@
         "optimization": "Optimization",
         "strategy": "Strategy",
         "yoalgoritma": "YoAlgorithm",
-        "seo": "SEO",
+        "seo": "SEO Plus",
         "audience_ai": "AI-Based Audience",
         "ad_account_slot": "Ad Account",
         "marketing_setup": "Conversion Wizard",
@@ -199,7 +199,7 @@
         "hedefKitle": "Audience analysis and segmentation",
         "tasarim": "Design ad visuals and creatives",
         "raporlar": "View detailed reports",
-        "seo": "Search engine optimization tools",
+        "seo": "Analyze your visibility in search engines and AI platforms",
         "entegrasyon": "Manage your platform integrations",
         "katalog": "Manage your product catalog"
       }
@@ -2664,8 +2664,8 @@
       "description": "Manage your catalogs"
     },
     "seo": {
-      "title": "SEO Analysis",
-      "description": "Analyze your website's SEO performance",
+      "title": "SEO Plus",
+      "description": "Analyze your visibility in search engines and AI platforms",
       "urlPlaceholder": "https://example.com",
       "analyzeButton": "Analyze",
       "analyzing": "Analyzing...",
@@ -2820,6 +2820,10 @@
         "copy": "Copy",
         "copied": "Copied",
         "downloadHtml": "Download HTML",
+        "aiFormat": "AI-friendly format",
+        "aiFormatHint": "Structured headings, short paragraphs",
+        "articleSchema": "Add Article schema markup",
+        "articleSchemaHint": "Structured data with JSON-LD",
         "sites": {
           "title": "My Sites",
           "description": "Connect your website to publish your articles.",
@@ -3010,6 +3014,35 @@
         "medium": "Average",
         "weak": "Weak",
         "critical": "Critical"
+      },
+      "geoAeo": {
+        "scoreTitle": "GEO/AEO Score",
+        "loading": "Analyzing...",
+        "notAnalyzed": "Not analyzed yet",
+        "notAnalyzedHint": "Click Analyze to start",
+        "categories": {
+          "schema": "Schema & Structured Data",
+          "contentFormat": "Content Format",
+          "eeat": "E-E-A-T Signals",
+          "aiReadability": "AI Readability",
+          "citability": "Citability"
+        },
+        "categoryDescriptions": {
+          "schema": "JSON-LD structured data markup and schema types",
+          "contentFormat": "Content structure processable by AI engines (lists, tables, definitions)",
+          "eeat": "Experience, Expertise, Trust and Authority signals",
+          "aiReadability": "Content structure that AI systems can easily parse",
+          "citability": "Content features that can be cited by AI engines"
+        },
+        "aiVisibility": {
+          "button": "Are You Visible on AI?",
+          "visible": "Visible in AI engines",
+          "notVisible": "Not visible yet",
+          "notConfigured": "API not configured",
+          "checking": "Checking...",
+          "visibleDesc": "ChatGPT & Perplexity are aware of this site.",
+          "notVisibleDesc": "AI engines don't recognize this site yet. Content and schema improvements can increase visibility."
+        }
       }
     }
   },
@@ -3025,7 +3058,7 @@
     "tasarim": "Design",
     "raporlar": "Reports",
     "katalog": "Catalog",
-    "seo": "SEO",
+    "seo": "SEO Plus",
     "crm": "CRM",
     "emailmarketing": "Email Marketing",
     "entegrasyon": "Integration",

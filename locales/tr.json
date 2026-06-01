@@ -20,7 +20,7 @@
         "optimization": "Optimizasyon",
         "strategy": "Strateji",
         "yoalgoritma": "YoAlgoritma",
-        "seo": "SEO",
+        "seo": "SEO Plus",
         "audience_ai": "AI Tabanlı Hedef Kitle",
         "ad_account_slot": "Reklam Hesabı",
         "marketing_setup": "Dönüşüm Sihirbazı",
@@ -199,7 +199,7 @@
         "hedefKitle": "Hedef kitle analizi ve segmentasyonu",
         "tasarim": "Reklam görselleri ve kreatifler tasarlayın",
         "raporlar": "Detaylı raporları görüntüleyin",
-        "seo": "Arama motoru optimizasyonu araçları",
+        "seo": "Arama motorları ve yapay zeka platformlarındaki görünürlüğünüzü analiz edin",
         "entegrasyon": "Platform entegrasyonlarınızı yönetin",
         "katalog": "Ürün kataloğunuzu yönetin"
       }
@@ -2664,8 +2664,8 @@
       "description": "Kataloglarınızı yönetin"
     },
     "seo": {
-      "title": "SEO Analiz",
-      "description": "Web sitenizin SEO performansını analiz edin",
+      "title": "SEO Plus",
+      "description": "Arama motorları ve yapay zeka platformlarındaki görünürlüğünüzü analiz edin",
       "urlPlaceholder": "https://example.com",
       "analyzeButton": "Analiz Et",
       "analyzing": "Analiz ediliyor...",
@@ -2820,6 +2820,10 @@
         "copy": "Kopyala",
         "copied": "Kopyalandı",
         "downloadHtml": "HTML İndir",
+        "aiFormat": "AI'ya uygun format",
+        "aiFormatHint": "Yapılandırılmış başlıklar, kısa paragraflar",
+        "articleSchema": "Article schema markup ekle",
+        "articleSchemaHint": "JSON-LD ile yapısal veri",
         "sites": {
           "title": "Sitelerim",
           "description": "Makalelerinizi yayınlamak için web sitenizi bağlayın.",
@@ -3010,6 +3014,35 @@
         "medium": "Orta",
         "weak": "Zayıf",
         "critical": "Kritik"
+      },
+      "geoAeo": {
+        "scoreTitle": "GEO/AEO Puanı",
+        "loading": "Analiz ediliyor...",
+        "notAnalyzed": "Henüz analiz yapılmadı",
+        "notAnalyzedHint": "Analiz Et butonuna tıklayın",
+        "categories": {
+          "schema": "Schema & Yapısal Veri",
+          "contentFormat": "İçerik Formatı",
+          "eeat": "E-E-A-T Sinyalleri",
+          "aiReadability": "AI Okunabilirlik",
+          "citability": "Alıntılanabilirlik"
+        },
+        "categoryDescriptions": {
+          "schema": "JSON-LD yapısal veri işaretleme ve schema türleri",
+          "contentFormat": "AI motorlarının işleyebileceği içerik yapısı (liste, tablo, tanım)",
+          "eeat": "Deneyim, Uzmanlık, Güven ve Otorite sinyalleri",
+          "aiReadability": "Yapay zeka sistemlerinin kolayca parse edebileceği içerik yapısı",
+          "citability": "AI motorları tarafından alıntılanabilecek içerik özellikleri"
+        },
+        "aiVisibility": {
+          "button": "AI'da Görünüyor musun?",
+          "visible": "AI motorlarında görünüyor",
+          "notVisible": "Henüz görünmüyor",
+          "notConfigured": "API yapılandırılmamış",
+          "checking": "Kontrol ediliyor...",
+          "visibleDesc": "ChatGPT & Perplexity bu sitenin varlığından haberdar.",
+          "notVisibleDesc": "AI motorları bu siteyi henüz tanımıyor. İçerik ve schema iyileştirmeleri görünürlüğü artırabilir."
+        }
       }
     }
   },
@@ -3025,7 +3058,7 @@
     "tasarim": "Tasarım",
     "raporlar": "Raporlar",
     "katalog": "Katalog",
-    "seo": "SEO",
+    "seo": "SEO Plus",
     "crm": "CRM",
     "emailmarketing": "Email Marketing",
     "entegrasyon": "Entegrasyon",

@@ -96,7 +96,7 @@ export const navItems: NavItem[] = [
   },
   {
     id: 'seo',
-    label: 'SEO',
+    label: 'SEO Plus',
     href: '/seo',
     icon: Search,
   },

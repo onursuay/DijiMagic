@@ -2,6 +2,11 @@
 
 ---
 
+## 2026-06-01 — SEO modülü "SEO Plus" olarak yeniden adlandırıldı + GEO/AEO i18n anahtarları eklendi
+- **Sorun:** SEO modülü artık klasik arama motoru analizinin ötesine geçerek GEO (Generative Engine Optimization) ve AEO (Answer Engine Optimization) yetenekleri kazanıyor; eski "SEO" adı ve açıklaması bu genişlemeyi yansıtmıyordu.
+- **Çözüm:** Modül adı her yerde "SEO Plus" oldu (sidebar etiketi, sayfa başlığı, billing feature adı, dashboard section açıklaması). Yeni GEO/AEO puanı, kategori açıklamaları ve AI görünürlük kontrolü için `dashboard.seo.geoAeo` namespace'i eklendi. `dashboard.seo.articles` içine AI formatı ve Article schema i18n anahtarları eklendi. `lib/nav.ts` hardcoded label güncellendi.
+- **Dosyalar:** `locales/tr.json`, `locales/en.json`, `lib/nav.ts`
+
 ## 2026-06-01 — "Dönüşüm Sihirbazı" sidebar ikonu sihirli değnek oldu
 - **Sorun:** Yeniden adlandırılan "Dönüşüm Sihirbazı" alanının sidebar ikonu hâlâ eski `Rocket` (roket) idi; yeni "Sihirbaz" temasıyla uyumsuzdu.
 - **Çözüm:** İkon lucide-react `WandSparkles` (sihirli değnek + pırıltılar) ile değiştirildi.
