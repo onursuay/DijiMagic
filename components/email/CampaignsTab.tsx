@@ -2,7 +2,7 @@
 
 import { useCallback, useEffect, useMemo, useState } from 'react'
 import { useTranslations } from 'next-intl'
-import { Plus, Loader2, Send, Trash2, ArrowLeft, Users, Inbox, ChevronDown } from 'lucide-react'
+import { Plus, Loader2, Send, Trash2, ArrowLeft, Users, Inbox, ChevronDown, ShieldCheck } from 'lucide-react'
 import WizardSelect from '@/components/meta/wizard/WizardSelect'
 import { STAGES } from '@/components/crm/stageMeta'
 
@@ -29,7 +29,7 @@ function decodeSeg(v: string): Segment {
   return { type: 'all' }
 }
 
-export default function CampaignsTab({ flash }: { flash: (k: 'ok' | 'err', m: string, ms?: number) => void }) {
+export default function CampaignsTab({ flash, onManageSending }: { flash: (k: 'ok' | 'err', m: string, ms?: number) => void; onManageSending: () => void }) {
   const t = useTranslations('email')
   const tc = useTranslations('crm')
 
@@ -133,6 +133,20 @@ export default function CampaignsTab({ flash }: { flash: (k: 'ok' | 'err', m: st
   if (composing) {
     return (
       <div>
+        <div className="rounded-2xl border border-primary/20 bg-primary/5 p-4 flex items-center justify-between gap-3 mb-6">
+          <div className="flex items-start gap-3 min-w-0">
+            <div className="w-9 h-9 rounded-lg bg-primary/10 flex items-center justify-center shrink-0">
+              <ShieldCheck className="w-5 h-5 text-primary" />
+            </div>
+            <div className="min-w-0">
+              <p className="text-sm font-semibold text-gray-900">{t('sending.bannerTitle')}</p>
+              <p className="text-sm text-gray-600 mt-0.5">{t('sending.bannerDesc')}</p>
+            </div>
+          </div>
+          <button onClick={onManageSending} className="shrink-0 inline-flex items-center gap-1.5 px-3.5 py-2 rounded-xl bg-primary text-white text-sm font-medium hover:bg-primary/90 transition">
+            {t('sending.manage')}
+          </button>
+        </div>
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
           {/* Form */}
           <div className="bg-white rounded-2xl border border-gray-200 shadow-sm p-6 space-y-4">

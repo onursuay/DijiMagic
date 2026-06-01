@@ -171,22 +171,6 @@ export default function EmailDashboard() {
         <SendingAccounts flash={flash} onClose={() => setManagingSending(false)} isOwner={isOwner} />
       ) : (
        <>
-      {/* Gönderim hesabı yönlendirmesi */}
-      <div className="rounded-2xl border border-primary/20 bg-primary/5 p-4 flex items-center justify-between gap-3 mb-6">
-        <div className="flex items-start gap-3 min-w-0">
-          <div className="w-9 h-9 rounded-lg bg-primary/10 flex items-center justify-center shrink-0">
-            <ShieldCheck className="w-5 h-5 text-primary" />
-          </div>
-          <div className="min-w-0">
-            <p className="text-sm font-semibold text-gray-900">{t('sending.bannerTitle')}</p>
-            <p className="text-sm text-gray-600 mt-0.5">{t('sending.bannerDesc')}</p>
-          </div>
-        </div>
-        <button onClick={() => setManagingSending(true)} className="shrink-0 inline-flex items-center gap-1.5 px-3.5 py-2 rounded-xl bg-primary text-white text-sm font-medium hover:bg-primary/90 transition">
-          {t('sending.manage')}
-        </button>
-      </div>
-
       {/* Sekmeler */}
       <div className="flex items-center gap-2 mb-6 border-b border-gray-200">
         {tabs.map(({ key, icon: Icon, soon }) => (
@@ -308,9 +292,9 @@ export default function EmailDashboard() {
         </>
       )}
 
-      {tab === 'campaigns' && <CampaignsTab flash={flash} />}
+      {tab === 'campaigns' && <CampaignsTab flash={flash} onManageSending={() => setManagingSending(true)} />}
 
-      {tab === 'automation' && <AutomationsTab flash={flash} />}
+      {tab === 'automation' && <AutomationsTab flash={flash} onManageSending={() => setManagingSending(true)} />}
        </>
       )}
     </div>
