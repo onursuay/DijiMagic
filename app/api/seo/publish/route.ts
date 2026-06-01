@@ -26,6 +26,19 @@ function getUserId(cookieStore: Awaited<ReturnType<typeof cookies>>): string | n
   return cookieStore.get('user_id')?.value ?? null
 }
 
+/**
+ * Escape characters that can break out of an inline <script> block.
+ * Handles </script> injection, HTML entities, and Unicode line terminators.
+ */
+function escapeForScriptTag(json: string): string {
+  return json
+    .replace(/</g, '\\u003c')
+    .replace(/>/g, '\\u003e')
+    .replace(/&/g, '\\u0026')
+    .replace(new RegExp(String.fromCharCode(0x2028), 'g'), '\\u2028')
+    .replace(new RegExp(String.fromCharCode(0x2029), 'g'), '\\u2029')
+}
+
 export async function POST(request: Request) {
   if (!supabase) return NextResponse.json({ ok: false, error: 'database_unavailable' }, { status: 503 })
   const cookieStore = await cookies()
@@ -75,19 +88,13 @@ export async function POST(request: Request) {
   // Article schema markup: JSON-LD prepend when requested
   const articleParams = (article.params ?? {}) as Record<string, string>
   if (articleParams.articleSchema === 'true') {
-    const schemaJson = JSON.stringify({
+    const schemaJson = escapeForScriptTag(JSON.stringify({
       '@context': 'https://schema.org',
       '@type': 'Article',
       headline: (article.title as string) || '',
       datePublished: new Date().toISOString(),
       author: { '@type': 'Organization' },
-    })
-      // Escape sequences that could break out of a <script> block
-      .replace(/</g, '\\u003c')
-      .replace(/>/g, '\\u003e')
-      .replace(/&/g, '\\u0026')
-      .replace(/ /g, '\\u2028')
-      .replace(/ /g, '\\u2029')
+    }))
     contentHtml = `<script type="application/ld+json">${schemaJson}</script>\n${contentHtml}`
   }
 
