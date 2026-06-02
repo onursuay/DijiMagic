@@ -2,6 +2,11 @@
 
 ---
 
+## 2026-06-02 — Email Funnel: Koşullu Adım Dallanması
+- **Sorun:** Drip otomasyonu tüm adımları koşulsuz gönderiyordu; açılma/tıklama davranışına göre dallanma yoktu.
+- **Çözüm:** `email_automation_steps.condition` JSONB kolonu (always/if_opened/if_not_opened/if_clicked); `email_drip_queue.parent_queue_id` + `email_send_id` ile önceki adımın event'leri sorgulanıyor; cron processor koşulu değerlendirip ya gönderir ya `skipped` işaretler, sonraki adımı lazy kuyruğa ekler; UI'da her adım sekmesine WizardSelect koşul dropdown + koşul badge (✓ / ✗ / ↗) eklendi.
+- **Dosyalar:** `supabase/migrations/20260602002000_*`, `lib/email/automationStepsStore.ts`, `lib/email/dripQueue.ts`, `lib/email/automationRunner.ts`, `app/api/cron/email-drip-process/route.ts`, `components/email/AutomationsTab.tsx`, `locales/tr.json`, `locales/en.json`
+
 ## 2026-06-02 — Email Funnel: Koşul dropdown + sekme badge (UI)
 - **Sorun:** Otomasyon adımı formunda koşul (her zaman / önceki açıldıysa / açılmadıysa / tıklandıysa) seçimi yoktu; sekme butonlarından seçili koşul anlaşılamıyordu.
 - **Çözüm:** (1) `StepDraft` interface'ine `condition: { type }` eklendi. (2) `openNew`, `openEdit`, "+ Adım Ekle" default değerlerine `condition: { type: 'always' }` eklendi. (3) `handleSave` payload'ına condition dahil edildi. (4) Sekme butonlarına koşul badge'i (✓ açıldıysa / ✗ açılmadıysa / ↗ tıklandıysa) eklendi. (5) Aktif adım formunda (adım > 0) delay'den önce WizardSelect koşul dropdown'u eklendi. (6) `tr.json` + `en.json`: `automations.steps.condition` anahtarları eklendi. TypeScript: 0 hata.
