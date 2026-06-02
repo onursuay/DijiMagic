@@ -27,12 +27,6 @@ export default function BusinessSwitcherDropdown({
 }: Props) {
   const t = useTranslations('account.businessSwitcher')
 
-  const platformLabel = (b: BusinessGroup) => {
-    if (b.meta && b.google) return t('bothPlatforms')
-    if (b.meta) return t('metaOnly')
-    return t('googleOnly')
-  }
-
   return (
     <div className="absolute right-0 mt-2 w-80 bg-white rounded-lg shadow-xl border border-gray-200 z-50">
       <div className="flex items-center justify-between p-3 border-b border-gray-200">
@@ -56,9 +50,14 @@ export default function BusinessSwitcherDropdown({
               disabled={busyId === b.id}
               className={`w-full text-left px-4 py-2.5 hover:bg-gray-50 transition-colors flex items-center justify-between ${active ? 'bg-emerald-50' : ''}`}
             >
-              <div className="min-w-0">
+              <div className="min-w-0 flex items-center gap-1.5">
                 <p className="text-sm font-medium text-gray-900 truncate">{b.name}</p>
-                <p className="text-caption text-gray-500">{platformLabel(b)}</p>
+                {b.meta && (
+                  <img src="/platform-icons/meta.svg" alt="Meta" width={14} height={14} className="w-3.5 h-3.5 shrink-0" />
+                )}
+                {b.google && (
+                  <img src="/platform-icons/google-ads.svg" alt="Google" width={14} height={14} className="w-3.5 h-3.5 shrink-0" />
+                )}
               </div>
               <div className="flex items-center gap-2 shrink-0">
                 {busyId === b.id
