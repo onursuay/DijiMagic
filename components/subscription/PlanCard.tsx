@@ -13,9 +13,15 @@ interface Props {
   highlighted?: boolean
   adAccountCount: number
   onAccountChange: (count: number) => void
+  /**
+   * Glass surface variant — harmonizes the card with the near-black ("#060609")
+   * public pricing page (translucent white-alpha + emerald accent) instead of the
+   * solid slate (`bg-gray-800`) used on the authenticated /abonelik page.
+   */
+  glass?: boolean
 }
 
-export default function PlanCard({ plan, billingCycle, isCurrentPlan, onSelect, highlighted, adAccountCount, onAccountChange }: Props) {
+export default function PlanCard({ plan, billingCycle, isCurrentPlan, onSelect, highlighted, adAccountCount, onAccountChange, glass }: Props) {
   const t = useTranslations('subscription')
   const isEnterprise = plan.id === 'enterprise'
 
@@ -46,13 +52,25 @@ export default function PlanCard({ plan, billingCycle, isCurrentPlan, onSelect, 
     }
   }
 
+  // Surface tokens — `glass` (public pricing, near-black bg) vs solid (/abonelik, slate bg).
+  const cardSurface = glass
+    ? highlighted
+      ? 'bg-emerald-500/[0.06] border-emerald-400/30 ring-1 ring-emerald-400/20 shadow-[0_8px_40px_-12px_rgba(16,185,129,0.35)]'
+      : 'bg-white/[0.025] border-white/[0.07] hover:border-white/[0.14] hover:bg-white/[0.04]'
+    : highlighted
+      ? 'bg-gray-800 border-primary shadow-lg shadow-primary/20 ring-1 ring-primary/30'
+      : 'bg-gray-800 border-gray-700 hover:border-gray-600'
+  const dividerBorder = glass ? 'border-white/[0.08]' : 'border-gray-700'
+  const stepperIdle = glass
+    ? 'border-white/[0.12] text-gray-400 hover:text-white hover:border-white/25 cursor-pointer'
+    : 'border-gray-600 text-gray-400 hover:text-white hover:border-gray-500 cursor-pointer'
+  const stepperDisabled = glass
+    ? 'border-white/[0.06] text-gray-600 cursor-not-allowed'
+    : 'border-gray-700 text-gray-600 cursor-not-allowed'
+
   return (
     <div
-      className={`relative flex flex-col rounded-2xl border p-6 transition-all bg-gray-800 ${
-        highlighted
-          ? 'border-primary shadow-lg shadow-primary/20 ring-1 ring-primary/30'
-          : 'border-gray-700 hover:border-gray-600'
-      }`}
+      className={`relative flex flex-col rounded-2xl border p-6 transition-all ${cardSurface}`}
     >
       {/* Popular / Trial badge */}
       {highlighted && plan.trialDays > 0 ? (
@@ -103,15 +121,13 @@ export default function PlanCard({ plan, billingCycle, isCurrentPlan, onSelect, 
       </div>
 
       {/* Ad accounts */}
-      <div className="mb-5 pb-5 border-b border-gray-700">
+      <div className={`mb-5 pb-5 border-b ${dividerBorder}`}>
         <div className="flex items-center gap-2">
           <button
             onClick={handleDecrease}
             disabled={adAccountCount <= minAccounts}
             className={`p-1 rounded border transition-colors ${
-              adAccountCount <= minAccounts
-                ? 'border-gray-700 text-gray-600 cursor-not-allowed'
-                : 'border-gray-600 text-gray-400 hover:text-white hover:border-gray-500 cursor-pointer'
+              adAccountCount <= minAccounts ? stepperDisabled : stepperIdle
             }`}
           >
             <Minus className="w-3 h-3" />
@@ -123,9 +139,7 @@ export default function PlanCard({ plan, billingCycle, isCurrentPlan, onSelect, 
             onClick={handleIncrease}
             disabled={adAccountCount >= maxAccounts}
             className={`p-1 rounded border transition-colors ${
-              adAccountCount >= maxAccounts
-                ? 'border-gray-700 text-gray-600 cursor-not-allowed'
-                : 'border-gray-600 text-gray-400 hover:text-white hover:border-gray-500 cursor-pointer'
+              adAccountCount >= maxAccounts ? stepperDisabled : stepperIdle
             }`}
           >
             <Plus className="w-3 h-3" />
@@ -161,7 +175,11 @@ export default function PlanCard({ plan, billingCycle, isCurrentPlan, onSelect, 
         ) : isEnterprise ? (
           <button
             onClick={() => onSelect(plan.id)}
-            className="w-full py-2.5 text-sm font-medium text-gray-300 bg-gray-700 rounded-lg hover:bg-gray-600 transition-colors"
+            className={`w-full py-2.5 text-sm font-medium rounded-lg transition-colors ${
+              glass
+                ? 'text-gray-200 bg-white/[0.06] border border-white/[0.1] hover:bg-white/[0.1]'
+                : 'text-gray-300 bg-gray-700 hover:bg-gray-600'
+            }`}
           >
             {t('contactUs')}
           </button>

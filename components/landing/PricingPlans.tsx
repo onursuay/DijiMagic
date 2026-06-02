@@ -83,6 +83,7 @@ export default function PricingPlans() {
             isCurrentPlan={false}
             onSelect={handleSelect}
             highlighted={plan.id === 'premium'}
+            glass
             adAccountCount={accountCounts[plan.id] ?? MIN_AD_ACCOUNTS}
             onAccountChange={(count) => setAccountCounts(prev => ({ ...prev, [plan.id]: count }))}
           />

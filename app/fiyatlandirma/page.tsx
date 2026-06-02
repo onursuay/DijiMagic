@@ -21,8 +21,6 @@ export default async function FiyatlandirmaPage() {
   const ctaSchedule = isEn ? 'Book a Call' : 'Görüşme Planla'
   const footerText = isEn ? '2025 YO Dijital. All rights reserved.' : '2025 YO Dijital. Tüm hakları saklıdır.'
 
-  const faq = t.raw('faq') as { q: string; a: string }[]
-
   // Legal links — locale-aware URLs (EN uses /en/ prefix for compliance), matching the landing footer.
   const legal = {
     privacy: { label: isEn ? 'Privacy Policy' : 'Gizlilik Politikası', href: isEn ? '/en/privacy-policy' : '/gizlilik-politikasi' },
@@ -61,47 +59,25 @@ export default async function FiyatlandirmaPage() {
         <div className="absolute inset-0 pointer-events-none" aria-hidden="true">
           <div className="absolute top-[10%] left-1/2 -translate-x-1/2 w-[900px] h-[600px] rounded-full blur-[160px]" style={{ background: 'radial-gradient(ellipse, rgba(16,185,129,0.07) 0%, rgba(20,184,166,0.03) 50%, transparent 80%)' }} />
         </div>
-        <div className="relative max-w-3xl mx-auto text-center">
+        <div className="relative max-w-5xl mx-auto text-center">
           <div className="inline-flex items-center gap-2.5 text-[14px] font-medium text-emerald-400/90 border border-emerald-400/20 bg-emerald-400/[0.06] px-5 py-2.5 rounded-full mb-6">
             <Image src="/icons/ai-brain.png" alt="" width={18} height={18} style={{ filter: 'brightness(0) saturate(100%) invert(73%) sepia(52%) saturate(456%) hue-rotate(108deg) brightness(95%) contrast(91%)' }} />
             {t('badge')}
           </div>
-          <h1 className="text-4xl sm:text-5xl md:text-6xl font-black leading-[1.1] tracking-tight text-white mb-5">
+          <h1 className="text-3xl sm:text-4xl md:text-5xl lg:text-[2.5rem] xl:text-5xl 2xl:text-6xl lg:whitespace-nowrap font-black leading-[1.1] tracking-tight text-white mb-5">
             {t('heroTitle')}{' '}
             <span className="bg-gradient-to-r from-emerald-400 via-teal-300 to-cyan-400 bg-clip-text text-transparent">{t('heroTitleAccent')}</span>
           </h1>
-          <p className="text-lg md:text-xl text-gray-300 leading-relaxed max-w-2xl mx-auto">
-            {t('heroSubtitle')}
-          </p>
+          <div className="text-lg md:text-xl text-gray-300 leading-relaxed space-y-1">
+            <p className="lg:whitespace-nowrap">{t('heroSubtitle')}</p>
+            <p className="lg:whitespace-nowrap">{t('heroSubtitle2')}</p>
+          </div>
         </div>
       </section>
 
       {/* ═══════════ PLANS ═══════════ */}
       <section className="w-full px-6 pb-14 md:pb-20">
         <PricingPlans />
-      </section>
-
-      {/* ═══════════ FAQ ═══════════ */}
-      <section className="relative w-full px-6 py-14 md:py-20 bg-white/[0.015] border-y border-white/[0.04]">
-        <div className="relative max-w-3xl mx-auto">
-          <div className="text-center mb-10">
-            <h2 className="text-3xl md:text-4xl font-bold tracking-tight mb-3">{t('faqTitle')}</h2>
-            <p className="text-base text-gray-500 max-w-xl mx-auto leading-relaxed">{t('faqSubtitle')}</p>
-          </div>
-          <div className="space-y-3">
-            {faq.map((item, i) => (
-              <details key={i} className="group bg-white/[0.025] border border-white/[0.06] rounded-2xl px-5 open:border-emerald-400/20 transition-colors">
-                <summary className="flex items-center justify-between gap-4 py-4 cursor-pointer list-none text-base font-semibold text-white">
-                  {item.q}
-                  <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="shrink-0 text-emerald-400 transition-transform group-open:rotate-180">
-                    <path d="M6 9l6 6 6-6" />
-                  </svg>
-                </summary>
-                <p className="text-base text-gray-300 leading-relaxed pb-4 -mt-1">{item.a}</p>
-              </details>
-            ))}
-          </div>
-        </div>
       </section>
 
       {/* ═══════════ BOTTOM CTA ═══════════ */}

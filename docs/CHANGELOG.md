@@ -2,6 +2,11 @@
 
 ---
 
+## 2026-06-02 — Fiyatlandırma Sayfası: Tema Uyumu + Hero Düzeni
+- **Sorun:** `/fiyatlandirma` plan kartları `bg-gray-800` (mavimsi slate) ile sayfanın saf siyah (`#060609`) zeminine uymuyordu; "İşletmeniz İçin Doğru Planı Seçin" başlığı ve alt metin desktop'ta alt satıra kayıyordu; gereksiz SSS bölümü vardı.
+- **Çözüm:** PlanCard'a `glass` varyantı eklendi (white-alpha cam yüzey + emerald premium glow, sayfanın FAQ/toggle yüzeyleriyle uyumlu); `/abonelik` `solid` default ile korundu. Hero başlığa `lg:whitespace-nowrap` + responsive boyut, alt metin iki cümleye bölünüp (`heroSubtitle`/`heroSubtitle2`) her biri desktop'ta tek satır. SSS bölümü kaldırıldı.
+- **Dosyalar:** `app/fiyatlandirma/page.tsx`, `components/subscription/PlanCard.tsx`, `components/landing/PricingPlans.tsx`, `locales/tr.json`, `locales/en.json`
+
 ## 2026-06-02 — Email Funnel: Koşullu Adım Dallanması
 - **Sorun:** Drip otomasyonu tüm adımları koşulsuz gönderiyordu; açılma/tıklama davranışına göre dallanma yoktu.
 - **Çözüm:** `email_automation_steps.condition` JSONB kolonu (always/if_opened/if_not_opened/if_clicked); `email_drip_queue.parent_queue_id` + `email_send_id` ile önceki adımın event'leri sorgulanıyor; cron processor koşulu değerlendirip ya gönderir ya `skipped` işaretler, sonraki adımı lazy kuyruğa ekler; UI'da her adım sekmesine WizardSelect koşul dropdown + koşul badge (✓ / ✗ / ↗) eklendi.
