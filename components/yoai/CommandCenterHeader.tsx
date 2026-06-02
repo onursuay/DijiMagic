@@ -21,7 +21,6 @@ export default function CommandCenterHeader({
   health,
   lastAnalysis,
   loading,
-  aiGenerated,
   onCreateAd,
   approvalsPendingCount,
 }: Props) {
@@ -68,18 +67,15 @@ export default function CommandCenterHeader({
           </div>
 
           <div className="flex items-center gap-2">
+            {/* Son güncelleme — renkli pill (eski "AI Analiz" rozeti kaldırıldı) */}
             <span className={`text-xs font-medium rounded-full px-3 py-1 inline-flex items-center gap-1.5 ${
-              aiGenerated ? 'text-primary bg-primary/10 border border-primary/20'
-                : health ? 'text-blue-300 bg-blue-500/10 border border-blue-500/20'
-                : 'text-gray-500 bg-gray-800 border border-gray-700/50'
+              lastAnalysis
+                ? 'text-primary bg-primary/10 border border-primary/20'
+                : 'text-gray-400 bg-gray-800 border border-gray-700/50'
             }`}>
-              {aiGenerated ? t('aiAnalysis') : health ? t('ruleEngine') : t('ready')}
-            </span>
-
-            <span className="text-xs text-gray-500 inline-flex items-center gap-1.5">
               <Clock className="w-3.5 h-3.5" />
               {t('last')}: {formattedTime}
-              <span className="w-1.5 h-1.5 rounded-full bg-primary animate-pulse" />
+              {lastAnalysis && <span className="w-1.5 h-1.5 rounded-full bg-primary animate-pulse" />}
             </span>
 
             {onCreateAd && (
