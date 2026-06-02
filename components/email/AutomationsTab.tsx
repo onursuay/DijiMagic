@@ -101,7 +101,10 @@ export default function AutomationsTab({ flash, onManageSending }: { flash: (k: 
   }
 
   const handleSave = useCallback(async () => {
-    if (!steps[0]?.subject.trim() || !steps[0]?.html.trim()) { flash('err', t('automations.needContent')); return }
+    // Tüm adımlar kontrol edilir — yalnız ilk adıma bakmak, kullanıcı 2.+ adıma
+    // içerik yazıp ilk adımı boş bıraktığında yanlışlıkla hata veriyordu.
+    const invalidIdx = steps.findIndex((s) => !s.subject.trim() || !s.html.trim())
+    if (invalidIdx !== -1) { setActiveStep(invalidIdx); flash('err', t('automations.needContent')); return }
     setSaving(true)
     try {
       const payload = {

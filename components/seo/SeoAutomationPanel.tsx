@@ -101,6 +101,18 @@ export default function SeoAutomationPanel() {
     setSaving(true)
     setSaved(false)
     setSaveError(false)
+    // "Kaydet"e basıldığında input'ta yazılı ama henüz Enter ile eklenmemiş
+    // kelimeyi de dahil et — aksi halde kullanıcının yazdığı kelime kaydedilmez
+    // ve sayfa yenilenince kaybolurdu.
+    let effectiveKeywords = kwOverride ?? keywords
+    if (kwOverride === undefined) {
+      const pending = kwInput.trim()
+      if (pending && !effectiveKeywords.includes(pending)) {
+        effectiveKeywords = [...effectiveKeywords, pending]
+        setKeywords(effectiveKeywords)
+        setKwInput('')
+      }
+    }
     try {
       const payload = {
         id: scheduleId,
@@ -114,7 +126,7 @@ export default function SeoAutomationPanel() {
         wordCount,
         autoPublish,
         generateImage: true, // her makaleye görsel otomatik üretilir — kullanıcıya seçenek sunulmaz
-        keywordPool: kwOverride ?? keywords,
+        keywordPool: effectiveKeywords,
       }
       const res = await fetch(scheduleId ? `/api/seo/schedules/${scheduleId}` : '/api/seo/schedules', {
         method: scheduleId ? 'PATCH' : 'POST',
@@ -125,6 +137,7 @@ export default function SeoAutomationPanel() {
       if (data.ok) {
         setScheduleId(data.schedule.id)
         setLastStatus(data.schedule.last_status)
+        if (Array.isArray(data.schedule.keyword_pool)) setKeywords(data.schedule.keyword_pool)
         setSaved(true)
         setTimeout(() => setSaved(false), 3000)
       } else {

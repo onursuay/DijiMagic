@@ -71,8 +71,14 @@ export default function CrmDashboard() {
   const [leadsLoading, setLeadsLoading] = useState(true)
   const [view, setView] = useState<'board' | 'list'>('board')
   const [filter, setFilter] = useState<FilterKey>('all')
-  // Aktif sayfa (tek sayfa görünür — karışmasın)
-  const [activePageId, setActivePageId] = useState<string | null>(null)
+  // Aktif sayfa (tek sayfa görünür — karışmasın).
+  // localStorage'daki son seçim ilk render'da senkron okunur → bağlı sayfalar
+  // yüklenir yüklenmez doğru sayfa adı görünür; "önce ilk sayfa sonra doğru
+  // sayfa" şeklindeki flicker oluşmaz.
+  const [activePageId, setActivePageId] = useState<string | null>(() => {
+    if (typeof window === 'undefined') return null
+    try { return window.localStorage.getItem('crm.activePageId') } catch { return null }
+  })
   const [pageMenuOpen, setPageMenuOpen] = useState(false)
   const pageMenuRef = useRef<HTMLDivElement>(null)
   const [detailId, setDetailId] = useState<string | null>(null)

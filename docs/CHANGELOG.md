@@ -2,6 +2,11 @@
 
 ---
 
+## 2026-06-02 — Üç hata düzeltmesi: Email çok-adım validasyonu, CRM sayfa seçici flicker, SEO anahtar kelime kaybı
+- **Sorun:** (1) Email Marketing otomasyonunda 2.+ adıma konu/içerik yazılıp ilk adım boş bırakılınca "Konu ve içerik zorunlu" hatası alınıyordu — validasyon yalnız `steps[0]`'a bakıyordu. (2) CRM'de birden çok sayfa bağlıyken yenilemede önce ilk sayfa (alfabetik/insertion sırası) görünüp sonra doğru aktif sayfaya geçen flicker vardı — `activePageId` `null` başlayıp doğru değer `useEffect`'te sonradan set ediliyordu. (3) SEO Plus üretim ayarlarında anahtar kelime input'a yazılıp Enter'a basılmadan "Kaydet"e basılınca kelime kaydedilmiyor, yenilemede kayboluyordu.
+- **Çözüm:** (1) `handleSave` tüm adımları `findIndex` ile kontrol eder; eksik adım varsa o adıma odaklanıp uyarı verir. (2) `activePageId` lazy initializer ile `localStorage`'dan ilk render'da senkron okunur → bağlı sayfalar gelir gelmez doğru ad görünür, flicker yok. (3) `handleSave` input'taki commit edilmemiş kelimeyi de havuza dahil eder; ayrıca kayıt sonrası `keyword_pool` DB'nin döndürdüğü değerle senkronize edilir.
+- **Dosyalar:** `components/email/AutomationsTab.tsx`, `components/crm/CrmDashboard.tsx`, `components/seo/SeoAutomationPanel.tsx`
+
 ## 2026-06-02 — Fiyatlandırma Sayfası: Tema Uyumu + Hero Düzeni
 - **Sorun:** `/fiyatlandirma` plan kartları `bg-gray-800` (mavimsi slate) ile sayfanın saf siyah (`#060609`) zeminine uymuyordu; "İşletmeniz İçin Doğru Planı Seçin" başlığı ve alt metin desktop'ta alt satıra kayıyordu; gereksiz SSS bölümü vardı.
 - **Çözüm:** PlanCard'a `glass` varyantı eklendi (white-alpha cam yüzey + emerald premium glow, sayfanın FAQ/toggle yüzeyleriyle uyumlu); `/abonelik` `solid` default ile korundu. Hero başlığa `lg:whitespace-nowrap` + responsive boyut, alt metin iki cümleye bölünüp (`heroSubtitle`/`heroSubtitle2`) her biri desktop'ta tek satır. SSS bölümü kaldırıldı.
