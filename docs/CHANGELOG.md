@@ -2,6 +2,11 @@
 
 ---
 
+## 2026-06-02 — Email: Resend Webhook — Bounce/Complaint Auto Opt-Out
+- **Sorun:** Resend'den gelen bounce ve şikayet (complaint) olayları işlenmiyordu; hard bounce veya şikayet olan alıcılar otomatik olarak opt-out yapılmıyordu.
+- **Çözüm:** `POST /api/email/webhooks/resend` endpoint'i eklendi. `?secret=` query parametresiyle `RESEND_WEBHOOK_SECRET` doğrulaması yapılır. `email.bounced` (hard) ve `email.complained` olaylarında `email_events` tablosuna kayıt atılır, `email_sends.status` güncellenir, `email_contacts.opt_out` ve `crm_leads.email_opt_out` alanları otomatik olarak true yapılır. `email.delivered` olayında da status `delivered` güncellenir. Ayrıca `email_sends` tablosuna `'complained'` status değeri eklendi.
+- **Dosyalar:** `app/api/email/webhooks/resend/route.ts`, `supabase/migrations/20260602000000_email_sends_bounce_webhook.sql`
+
 ## 2026-06-02 — Email Marketing: Açılma takibi + kampanya detay istatistik sayfası
 - **Sorun:** Gönderilen kampanyalarda açılma/tıklama/teslim edilemedi istatistikleri takip edilmiyor ve gösterilmiyordu.
 - **Çözüm:** (1) Her gönderilen maile gizli 1x1 piksel eklendi (`buildHtml`); piksel yüklenince `/api/email/track/open` endpoint'i `email_events` tablosuna `opened` kaydı atar. (2) `/api/email/campaigns/[id]/stats` API'si: gönderim + olay verilerini birleştirip saatlik açılma dağılımı ve alıcı bazlı liste döndürür. (3) `CampaignDetail.tsx`: 4 özet kart (Gönderilen / Açılma Oranı / Tıklama / Bounced) + Recharts AreaChart (saatlik açılmalar) + alıcı tablosu (açıldı/tıkladı/bounced sütunları). (4) Kampanya listesinde gönderilmiş kampanyalara tıklanınca veya BarChart2 butonuyla detay açılır.
