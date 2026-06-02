@@ -147,16 +147,16 @@ export default function AdCreationWizard({ onClose, connectedPlatforms, initialP
       const text = await res.text()
 
       let json: any
-      try { json = JSON.parse(text) } catch { json = { ok: false, error: `Geçersiz yanıt: ${text.slice(0, 200)}` } }
+      try { json = JSON.parse(text) } catch { json = { ok: false, error: t('publishInvalidResponse', { detail: text.slice(0, 200) }) } }
 
-      const rawMsg = (json.message || json.error || 'İşlem tamamlandı') as string
+      const rawMsg = (json.message || json.error || t('publishGenericDone')) as string
       const cleanMsg = rawMsg.replace(/\bPAUSED\b/g, 'taslak').replace(/\bENABLED\b/g, 'aktif')
       setPublishResult({ ok: json.ok, message: cleanMsg })
       setStep('done')
       onPublished?.(!!json.ok)
     } catch (e) {
       const msg = e instanceof Error ? e.message : String(e)
-      setPublishResult({ ok: false, message: `Bağlantı hatası: ${msg}` })
+      setPublishResult({ ok: false, message: t('publishConnError', { detail: msg }) })
       setStep('done')
       onPublished?.(false)
     }
@@ -246,15 +246,15 @@ export default function AdCreationWizard({ onClose, connectedPlatforms, initialP
             <div>
               {competitorInfo && (
                 <div className="bg-[#1a2540] border border-[#1e2d45] rounded-xl px-4 py-3 mb-5">
-                  <p className="text-[11px] font-semibold text-slate-400 uppercase tracking-wider mb-1">Analiz Özeti</p>
+                  <p className="text-[11px] font-semibold text-slate-400 uppercase tracking-wider mb-1">{t('analysisSummary')}</p>
                   <p className="text-xs text-slate-300">
-                    {competitorInfo.competitorCount} rakip reklam analiz edildi. {competitorInfo.summary}
+                    {t('competitorAnalyzed', { count: competitorInfo.competitorCount, summary: competitorInfo.summary })}
                   </p>
                 </div>
               )}
 
               <h3 className="text-sm font-semibold text-white mb-4">
-                {proposals.length} Kampanya Önerisi — Birini Seçin
+                {t('proposalsSelect', { count: proposals.length })}
               </h3>
               <div className="space-y-4">
                 {proposals.map((p, i) => (
@@ -267,13 +267,13 @@ export default function AdCreationWizard({ onClose, connectedPlatforms, initialP
                   onClick={() => { setStep('platform'); setProposals([]); setError(null) }}
                   className="inline-flex items-center gap-1.5 px-4 py-2 text-slate-400 text-sm hover:bg-white/5 rounded-lg transition-colors"
                 >
-                  <ChevronLeft className="w-4 h-4" />Geri
+                  <ChevronLeft className="w-4 h-4" />{t('back')}
                 </button>
                 <button
                   onClick={handleContinueFromPreview}
                   className="inline-flex items-center gap-2 px-6 py-2.5 bg-emerald-600 hover:bg-emerald-500 text-white rounded-xl text-sm font-medium transition-colors"
                 >
-                  Devam Et<ChevronRight className="w-4 h-4" />
+                  {t('continue')}<ChevronRight className="w-4 h-4" />
                 </button>
               </div>
             </div>
@@ -287,8 +287,8 @@ export default function AdCreationWizard({ onClose, connectedPlatforms, initialP
                   <span className="text-sm font-bold text-blue-400">M</span>
                 </div>
                 <div>
-                  <h3 className="text-sm font-semibold text-white">Ön Kontrol</h3>
-                  <p className="text-xs text-slate-400">Kampanya oluşturulmadan önce gerekli varlıklar doğrulanır</p>
+                  <h3 className="text-sm font-semibold text-white">{t('preflightTitle')}</h3>
+                  <p className="text-xs text-slate-400">{t('preflightDesc')}</p>
                 </div>
               </div>
               <MetaPreflightPanel
@@ -313,8 +313,8 @@ export default function AdCreationWizard({ onClose, connectedPlatforms, initialP
                   <span className="text-sm font-bold text-blue-400">M</span>
                 </div>
                 <div>
-                  <h3 className="text-sm font-semibold text-white">Kreatif Hazırlama</h3>
-                  <p className="text-xs text-slate-400">Görsel + Metin — AI tarafından üretilir ve Meta'ya yüklenir</p>
+                  <h3 className="text-sm font-semibold text-white">{t('creativeTitle')}</h3>
+                  <p className="text-xs text-slate-400">{t('creativeDesc')}</p>
                 </div>
               </div>
               <MetaCreativePanel
@@ -338,20 +338,20 @@ export default function AdCreationWizard({ onClose, connectedPlatforms, initialP
                   <span className="text-sm font-bold text-red-400">G</span>
                 </div>
                 <div>
-                  <h3 className="text-sm font-semibold text-white">Son Onay</h3>
-                  <p className="text-xs text-slate-400">Aşağıdaki kampanya oluşturulacak — kontrol edin</p>
+                  <h3 className="text-sm font-semibold text-white">{t('confirmTitle')}</h3>
+                  <p className="text-xs text-slate-400">{t('confirmDesc')}</p>
                 </div>
               </div>
 
               <div className="bg-[#1a2540] border border-[#1e2d45] rounded-xl p-4 space-y-2.5 mb-5">
                 {[
-                  { label: 'Platform', value: selected.platform },
-                  { label: 'Kampanya', value: selected.campaignName },
-                  { label: 'Hedef', value: selected.objectiveLabel || (selected.campaignObjective ? OBJECTIVE_LABELS[selected.campaignObjective] || selected.campaignObjective : undefined) },
-                  { label: 'Bütçe', value: selected.dailyBudget != null ? `₺${selected.dailyBudget}/gün` : undefined },
-                  { label: 'Reklam Grubu', value: selected.adsetName },
-                  { label: 'Başlık', value: selected.headlines?.[0] || selected.headline },
-                  { label: 'Hedef URL', value: selected.finalUrl },
+                  { label: t('fieldPlatform'), value: selected.platform },
+                  { label: t('fieldCampaign'), value: selected.campaignName },
+                  { label: t('fieldObjective'), value: selected.objectiveLabel || (selected.campaignObjective ? OBJECTIVE_LABELS[selected.campaignObjective] || selected.campaignObjective : undefined) },
+                  { label: t('fieldBudget'), value: selected.dailyBudget != null ? t('budgetPerDay', { amount: selected.dailyBudget }) : undefined },
+                  { label: t('fieldAdGroup'), value: selected.adsetName },
+                  { label: t('fieldHeadline'), value: selected.headlines?.[0] || selected.headline },
+                  { label: t('fieldUrl'), value: selected.finalUrl },
                 ].filter(f => f.value).map(f => (
                   <div key={f.label} className="grid grid-cols-3 gap-2">
                     <span className="text-[11px] text-slate-500 font-semibold uppercase tracking-wide pt-0.5">{f.label}</span>
@@ -361,11 +361,11 @@ export default function AdCreationWizard({ onClose, connectedPlatforms, initialP
               </div>
 
               <div className="bg-emerald-500/5 border border-emerald-500/20 rounded-xl px-4 py-3 text-xs text-emerald-300 mb-5 leading-relaxed">
-                <p className="font-semibold mb-1">Bu işlem ne yapacak:</p>
+                <p className="font-semibold mb-1">{t('whatHappens')}</p>
                 <ul className="list-disc list-inside space-y-0.5 text-emerald-200/80">
-                  <li>Google Ads hesabınızda yeni bir kampanya, reklam grubu ve reklam oluşturur.</li>
-                  <li>Kampanya taslak olarak hazırlanır — bütçeyi ve detayları kontrol edin.</li>
-                  <li>Yayına almak için Google Ads Manager üzerinden aktif edebilirsiniz.</li>
+                  <li>{t('whatHappens1')}</li>
+                  <li>{t('whatHappens2')}</li>
+                  <li>{t('whatHappens3')}</li>
                 </ul>
               </div>
 
@@ -374,13 +374,13 @@ export default function AdCreationWizard({ onClose, connectedPlatforms, initialP
                   onClick={() => setStep('preview')}
                   className="inline-flex items-center gap-1.5 px-4 py-2 text-slate-400 text-sm hover:bg-white/5 rounded-lg transition-colors"
                 >
-                  <ChevronLeft className="w-4 h-4" />Geri
+                  <ChevronLeft className="w-4 h-4" />{t('back')}
                 </button>
                 <button
                   onClick={() => handlePublish(null, null)}
                   className="inline-flex items-center gap-2 px-6 py-2.5 bg-emerald-600 hover:bg-emerald-500 text-white rounded-xl text-sm font-medium transition-colors"
                 >
-                  Yayınla<ChevronRight className="w-4 h-4" />
+                  {t('publish')}<ChevronRight className="w-4 h-4" />
                 </button>
               </div>
             </div>
@@ -390,9 +390,9 @@ export default function AdCreationWizard({ onClose, connectedPlatforms, initialP
           {step === 'publishing' && (
             <div className="flex flex-col items-center justify-center py-16">
               <Loader2 className="w-10 h-10 text-emerald-400 animate-spin mb-4" />
-              <h3 className="text-lg font-semibold text-white mb-2">Kampanya Oluşturuluyor</h3>
+              <h3 className="text-lg font-semibold text-white mb-2">{t('publishingTitle')}</h3>
               <p className="text-sm text-slate-400">
-                {platform} üzerinde kampanya + reklam seti + reklam oluşturuluyor…
+                {t('publishingDesc', { platform: platform ?? '' })}
               </p>
             </div>
           )}
@@ -405,7 +405,7 @@ export default function AdCreationWizard({ onClose, connectedPlatforms, initialP
                   <div className="w-16 h-16 bg-emerald-500/10 rounded-full flex items-center justify-center mb-4">
                     <CheckCircle className="w-9 h-9 text-emerald-400" />
                   </div>
-                  <h3 className="text-lg font-semibold text-white mb-2">Kampanya Oluşturuldu</h3>
+                  <h3 className="text-lg font-semibold text-white mb-2">{t('doneSuccess')}</h3>
                   <p className="text-sm text-slate-400 text-center max-w-sm">{publishResult.message}</p>
                 </>
               ) : (
@@ -413,7 +413,7 @@ export default function AdCreationWizard({ onClose, connectedPlatforms, initialP
                   <div className="w-16 h-16 bg-red-500/10 rounded-full flex items-center justify-center mb-4">
                     <AlertTriangle className="w-9 h-9 text-red-400" />
                   </div>
-                  <h3 className="text-lg font-semibold text-white mb-2">Oluşturulamadı</h3>
+                  <h3 className="text-lg font-semibold text-white mb-2">{t('doneFailed')}</h3>
                   <p className="text-sm text-slate-400 text-center max-w-sm">{publishResult.message}</p>
                 </>
               )}
@@ -421,7 +421,7 @@ export default function AdCreationWizard({ onClose, connectedPlatforms, initialP
                 onClick={onClose}
                 className="mt-6 px-6 py-2.5 bg-white/5 hover:bg-white/10 border border-white/10 text-slate-200 rounded-xl text-sm font-medium transition-colors"
               >
-                Kapat
+                {t('close')}
               </button>
             </div>
           )}
