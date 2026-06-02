@@ -2,6 +2,11 @@
 
 ---
 
+## 2026-06-02 — Email Funnel: Cron koşul değerlendirme + lazy next step enqueue
+- **Sorun:** Cron processor koşul değerlendirmesi (evaluateCondition), skipped durumu ve lazy next-step enqueue yapmıyordu; email_send_id geri yazılmıyordu.
+- **Çözüm:** `email-drip-process/route.ts` yeniden yazıldı: (1) her item için önce `getStep` ile adım içeriği alınır, (2) `evaluateCondition` koşulu değerlendirir, koşul sağlanmazsa `markItemSkipped`, (3) gönderim sonrası `email_sends` satırından `id` okunarak `setEmailSendId` ile queue item'a yazılır, (4) `getNextStep` + `enqueueNextStep` ile bir sonraki adım lazy kuyruğa eklenir. Response'a `skipped` sayacı eklendi.
+- **Dosyalar:** `app/api/cron/email-drip-process/route.ts`
+
 ## 2026-06-02 — Email Funnel: StepRow condition, lazy enqueue, evaluateCondition
 - **Sorun:** Drip queue tüm adımları baştan kuyruğa ekleyerek koşul değerlendirmesi (if_opened/if_not_opened/if_clicked) yapılamıyordu; skipped durumu yoktu; getStep/getNextStep fonksiyonları eksikti.
 - **Çözüm:** (1) `automationStepsStore.ts`: `StepRow`'a `condition: StepCondition` alanı eklendi, `getStep` ve `getNextStep` fonksiyonları eklendi, `StepInput`'a `condition` eklendi. (2) `dripQueue.ts`: `enqueueSteps` kaldırılıp yerine lazy `enqueueFirstStep` + `enqueueNextStep` geldi; `evaluateCondition` fonksiyonu parent email_events'ini kontrol eder; `setEmailSendId`, `markItemSkipped` eklendi; `QueueItem`'a `parent_queue_id` ve `email_send_id` alanları eklendi. (3) `automationRunner.ts`: `enqueueSteps` → `enqueueFirstStep` (yalnız `steps[0]`) olarak güncellendi.
