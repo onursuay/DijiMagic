@@ -8,6 +8,13 @@ import { STAGES } from '@/components/crm/stageMeta'
 
 type Trigger = { type: 'crm_stage_enter'; stage: string } | { type: 'contact_added' }
 
+interface StepDraft {
+  step_order: number
+  subject: string
+  html: string
+  delay_days: number
+}
+
 interface AutomationItem {
   id: string
   name: string
@@ -16,6 +23,7 @@ interface AutomationItem {
   html: string
   enabled: boolean
   createdAt: string
+  steps?: StepDraft[]
 }
 
 // Trigger ↔ WizardSelect value kodlaması ('contact' | 'stage:giris' ...)
@@ -43,6 +51,10 @@ export default function AutomationsTab({ flash, onManageSending }: { flash: (k: 
   const [saving, setSaving] = useState(false)
   const [accountReady, setAccountReady] = useState<boolean | null>(null)
 
+  // multi-step state
+  const [steps, setSteps] = useState<StepDraft[]>([{ step_order: 0, subject: '', html: '', delay_days: 0 }])
+  const [activeStep, setActiveStep] = useState(0)
+
   const load = useCallback(async () => {
     setLoading(true)
     try {
@@ -66,20 +78,38 @@ export default function AutomationsTab({ flash, onManageSending }: { flash: (k: 
   }
 
   const openNew = () => {
-    setEditId(null); setName(''); setTrig('stage:uygun'); setSubject(''); setHtml(''); setComposing(true)
+    setEditId(null); setName(''); setTrig('stage:uygun'); setSubject(''); setHtml('')
+    setSteps([{ step_order: 0, subject: '', html: '', delay_days: 0 }])
+    setActiveStep(0)
+    setComposing(true)
     checkAccount()
   }
   const openEdit = (a: AutomationItem) => {
     setEditId(a.id); setName(a.name)
-    setTrig(encodeTrigger(a.trigger as Trigger)); setSubject(a.subject); setHtml(a.html); setComposing(true)
+    setTrig(encodeTrigger(a.trigger as Trigger)); setSubject(a.subject); setHtml(a.html)
+    const existingSteps = (a.steps && a.steps.length > 0)
+      ? a.steps.map((s: StepDraft) => ({
+          step_order: s.step_order, subject: s.subject, html: s.html, delay_days: s.delay_days
+        }))
+      : [{ step_order: 0, subject: a.subject || '', html: a.html || '', delay_days: 0 }]
+    setSteps(existingSteps)
+    setActiveStep(0)
+    setComposing(true)
     checkAccount()
   }
 
   const handleSave = useCallback(async () => {
-    if (!subject.trim() || !html.trim()) { flash('err', t('automations.needContent')); return }
+    if (!steps[0]?.subject.trim() || !steps[0]?.html.trim()) { flash('err', t('automations.needContent')); return }
     setSaving(true)
     try {
-      const payload = { name: name || t('automations.namePlaceholder'), trigger: decodeTrigger(trig), subject, html, enabled: true }
+      const payload = {
+        name: name || t('automations.namePlaceholder'),
+        trigger: decodeTrigger(trig),
+        subject: steps[0]?.subject ?? '',
+        html: steps[0]?.html ?? '',
+        enabled: true,
+        steps: steps.map((s, i) => ({ step_order: i, subject: s.subject, html: s.html, delay_days: s.delay_days })),
+      }
       const url = editId ? `/api/email/automations/${editId}` : '/api/email/automations'
       const method = editId ? 'PATCH' : 'POST'
       const res = await fetch(url, { method, headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(payload) })
@@ -87,7 +117,7 @@ export default function AutomationsTab({ flash, onManageSending }: { flash: (k: 
       if (d.ok) { flash('ok', t('automations.saved')); setComposing(false); load() }
       else flash('err', t('contacts.error'))
     } finally { setSaving(false) }
-  }, [editId, name, trig, subject, html, flash, t, load])
+  }, [editId, name, trig, steps, flash, t, load])
 
   const toggleEnabled = useCallback(async (a: AutomationItem) => {
     await fetch(`/api/email/automations/${a.id}`, { method: 'PATCH', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ enabled: !a.enabled }) })
@@ -150,15 +180,96 @@ export default function AutomationsTab({ flash, onManageSending }: { flash: (k: 
               <label className="block text-sm font-medium text-gray-700 mb-1.5">{t('automations.triggerLabel')}</label>
               <WizardSelect value={trig} onChange={setTrig} options={trigOptions} />
             </div>
+
+            {/* ── Adım sekmeleri ── */}
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1.5">{t('automations.subject')}</label>
-              <input value={subject} onChange={(e) => setSubject(e.target.value)} className="w-full rounded-xl border border-gray-200 px-3 py-2 text-sm focus:border-primary focus:ring-2 focus:ring-primary/20 outline-none" />
+              <label className="block text-sm font-medium text-gray-700 mb-2">{t('automations.steps.label')}</label>
+              <div className="flex items-center gap-1 mb-4 flex-wrap">
+                {steps.map((_, i) => (
+                  <button
+                    key={i}
+                    onClick={() => setActiveStep(i)}
+                    className={`px-3 py-1.5 rounded-lg text-sm font-medium transition ${
+                      activeStep === i ? 'bg-primary text-white' : 'bg-gray-100 text-gray-600 hover:bg-gray-200'
+                    }`}
+                  >
+                    {t('automations.steps.tab', { n: i + 1 })}
+                  </button>
+                ))}
+                {steps.length < 5 && (
+                  <button
+                    onClick={() => {
+                      setSteps((prev) => [
+                        ...prev,
+                        { step_order: prev.length, subject: '', html: '', delay_days: 1 },
+                      ])
+                      setActiveStep(steps.length)
+                    }}
+                    className="px-3 py-1.5 rounded-lg text-sm text-primary border border-primary/30 hover:bg-primary/5 transition"
+                  >
+                    {t('automations.steps.add')}
+                  </button>
+                )}
+              </div>
+
+              {steps[activeStep] && (
+                <div className="space-y-4">
+                  {activeStep === 0 ? (
+                    <p className="text-xs text-gray-500">{t('automations.steps.delayFirst')}</p>
+                  ) : (
+                    <div>
+                      <label className="block text-sm font-medium text-gray-700 mb-1.5">
+                        {t('automations.steps.delayLabel')}
+                      </label>
+                      <input
+                        type="number"
+                        min={1}
+                        max={30}
+                        value={steps[activeStep].delay_days}
+                        onChange={(e) => {
+                          const v = Math.max(1, parseInt(e.target.value) || 1)
+                          setSteps((prev) => prev.map((s, i) => i === activeStep ? { ...s, delay_days: v } : s))
+                        }}
+                        className="w-24 rounded-xl border border-gray-200 px-3 py-2 text-sm focus:border-primary focus:ring-2 focus:ring-primary/20 outline-none"
+                      />
+                    </div>
+                  )}
+
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-1.5">{t('automations.subject')}</label>
+                    <input
+                      value={steps[activeStep].subject}
+                      onChange={(e) => setSteps((prev) => prev.map((s, i) => i === activeStep ? { ...s, subject: e.target.value } : s))}
+                      className="w-full rounded-xl border border-gray-200 px-3 py-2 text-sm focus:border-primary focus:ring-2 focus:ring-primary/20 outline-none"
+                    />
+                  </div>
+
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-1.5">{t('automations.content')}</label>
+                    <textarea
+                      value={steps[activeStep].html}
+                      onChange={(e) => setSteps((prev) => prev.map((s, i) => i === activeStep ? { ...s, html: e.target.value } : s))}
+                      rows={10}
+                      className="w-full rounded-xl border border-gray-200 px-3 py-2 text-sm font-mono focus:border-primary focus:ring-2 focus:ring-primary/20 outline-none"
+                    />
+                    <p className="text-xs text-gray-400 mt-1">{t('automations.contentHint')}</p>
+                  </div>
+
+                  {steps.length > 1 && (
+                    <button
+                      onClick={() => {
+                        setSteps((prev) => prev.filter((_, i) => i !== activeStep).map((s, i) => ({ ...s, step_order: i })))
+                        setActiveStep(Math.max(0, activeStep - 1))
+                      }}
+                      className="text-xs text-red-500 hover:text-red-700 transition"
+                    >
+                      {t('automations.steps.remove')}
+                    </button>
+                  )}
+                </div>
+              )}
             </div>
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1.5">{t('automations.content')}</label>
-              <textarea value={html} onChange={(e) => setHtml(e.target.value)} rows={12} placeholder={t('automations.contentPlaceholder')} className="w-full rounded-xl border border-gray-200 px-3 py-2 text-sm font-mono focus:border-primary focus:ring-2 focus:ring-primary/20 outline-none" />
-              <p className="text-xs text-gray-400 mt-1">{t('automations.contentHint')}</p>
-            </div>
+
             <div className="flex items-center justify-end gap-2 pt-2 border-t border-gray-100">
               <button
                 onClick={handleSave}
@@ -173,14 +284,14 @@ export default function AutomationsTab({ flash, onManageSending }: { flash: (k: 
           <div className="lg:sticky lg:top-4 self-start">
             <div className="rounded-2xl border border-gray-200 bg-white shadow-sm overflow-hidden animate-card-enter">
               <div className="px-5 py-3 border-b border-gray-100 bg-gray-50">
-                <p className="text-sm font-semibold text-gray-900 mt-0.5">{subject || '—'}</p>
+                <p className="text-sm font-semibold text-gray-900 mt-0.5">{steps[activeStep]?.subject || '—'}</p>
               </div>
               <iframe
                 title="automation-preview"
                 sandbox=""
                 className="w-full min-h-[320px] border-0 block bg-white"
                 srcDoc={`<!doctype html><html><head><meta charset="utf-8"><base target="_blank"></head><body style="margin:0;padding:20px;font-family:Arial,Helvetica,sans-serif;color:#1f2937;line-height:1.6;font-size:14px">${
-                  html.trim() || `<p style="color:#d1d5db">${t('automations.previewEmpty')}</p>`
+                  (steps[activeStep]?.html ?? '').trim() || `<p style="color:#d1d5db">${t('automations.previewEmpty')}</p>`
                 }</body></html>`}
               />
             </div>

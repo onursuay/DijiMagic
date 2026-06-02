@@ -3286,7 +3286,16 @@
       "preview": "PREVIEW",
       "previewEmpty": "Content preview appears here.",
       "triggerSummaryStage": "When entering {stage}",
-      "triggerSummaryContact": "When a new contact is added"
+      "triggerSummaryContact": "When a new contact is added",
+      "steps": {
+        "label": "Steps",
+        "add": "+ Add Step",
+        "tab": "Step {n}",
+        "remove": "Delete this step",
+        "delayFirst": "Sent immediately when triggered",
+        "delayLabel": "Days after previous step?",
+        "maxReached": "You can add up to 5 steps."
+      }
     }
   },
   "crm": {

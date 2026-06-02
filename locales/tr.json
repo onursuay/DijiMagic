@@ -3286,7 +3286,16 @@
       "preview": "ÖNİZLEME",
       "previewEmpty": "İçerik önizlemesi burada görünür.",
       "triggerSummaryStage": "{stage} aşamasına girince",
-      "triggerSummaryContact": "Yeni kişi eklenince"
+      "triggerSummaryContact": "Yeni kişi eklenince",
+      "steps": {
+        "label": "Adımlar",
+        "add": "+ Adım Ekle",
+        "tab": "Adım {n}",
+        "remove": "Bu adımı sil",
+        "delayFirst": "Tetiklenince hemen gönderilir",
+        "delayLabel": "Önceki adımdan kaç gün sonra?",
+        "maxReached": "En fazla 5 adım ekleyebilirsiniz."
+      }
     }
   },
   "crm": {
