@@ -2,6 +2,11 @@
 
 ---
 
+## 2026-06-02 — feat(email/drip): Drip Queue Altyapısı + Saatlik Cron Processor
+- **Sorun:** Email otomasyonları tek seferde tüm adımları gönderiyordu; zamanlı (delay_days) damla kampanyası (drip) desteği yoktu.
+- **Çözüm:** (1) `automationStepsStore.ts` — `email_automation_steps` tablosunu yönetir (listSteps, replaceSteps). (2) `dripQueue.ts` — `email_drip_queue` tablosuna adımları `scheduled_at` ile ekler; `getDueItems`, `markItemSent`, `markItemFailed` fonksiyonları. (3) `automationRunner.ts` güncellendi: adım varsa anında göndermek yerine kuyruğa alır; `isOptedOut` export edildi. (4) `/api/cron/email-drip-process` saatlik cron endpoint: zamanı gelen kuyruk öğelerini işler, gönderir, `email_sends` kaydeder. (5) `vercel.json`'a saatlik cron eklendi.
+- **Dosyalar:** `lib/email/automationStepsStore.ts`, `lib/email/dripQueue.ts`, `lib/email/automationRunner.ts`, `app/api/cron/email-drip-process/route.ts`, `vercel.json`
+
 ## 2026-06-02 — fix(email/webhook): Güvenlik ve kalite iyileştirmeleri
 - **Sorun:** Resend webhook route'unda timing-attack açığı, tip güvensizliği, null crash riski ve try-catch eksikliği vardı.
 - **Çözüm:** (1) Secret karşılaştırması `timingSafeEqual` ile güvenli hale getirildi. (2) `ResendWebhookEvent` interface eklendi, bounce tipi `'hard' | 'soft'` olarak daraltıldı. (3) `send.email` null check eklendi (crash önleme). (4) Supabase işlemleri try-catch içine alındı, hata loglanıp `ok: true` dönüyor.
