@@ -2,6 +2,11 @@
 
 ---
 
+## 2026-06-02 — feat(email/drip): Multi-Step Otomasyon Composer UI (tab'lı adım editörü)
+- **Sorun:** AutomationsTab composer'ı tek konu+içerik alanından oluşuyordu; çok adımlı drip dizisi oluşturulamıyordu.
+- **Çözüm:** `StepDraft` interface ve `steps`/`activeStep` state eklendi. Composer'daki konu+içerik alanları yerine sekme tabanlı adım editörü geldi (max 5 adım, adım sil, gecikme günü). `handleSave` adımları API payload'una gönderir (legacy `subject`/`html` ilk adımdan beslenir). Preview iframe aktif adımı gösterir. `openNew` ve `openEdit` steps state'i sıfırlar/yükler. i18n: `automations.steps.*` anahtarları tr.json ve en.json'a eklendi. TypeScript kontrolü: 0 hata.
+- **Dosyalar:** `components/email/AutomationsTab.tsx`, `locales/tr.json`, `locales/en.json`
+
 ## 2026-06-02 — feat(email/drip): Automation API Steps Desteği (GET list + POST/PATCH)
 - **Sorun:** Automation API endpoint'leri (GET list, POST yeni otomasyon, PATCH güncelleme) adım (steps) verisi döndürmüyor ve kaydetmiyordu.
 - **Çözüm:** `listSteps`, `replaceSteps`, `StepInput` import'ları eklendi. GET handler her otomasyonun adımlarını `Promise.all` ile paralel çeker ve `steps` alanıyla döner. POST handler body'deki `steps` dizisini `replaceSteps` ile kaydeder. PATCH handler body'de `steps` tanımlıysa yine `replaceSteps` ile günceller. TypeScript kontrolü: 0 hata.
