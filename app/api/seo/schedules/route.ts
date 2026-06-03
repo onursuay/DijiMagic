@@ -51,6 +51,21 @@ export async function POST(request: Request) {
     ? (body.keywordPool as unknown[]).map((k) => String(k).trim()).filter(Boolean).slice(0, 50)
     : undefined
 
+  const MODES = ['daily', 'weekly_days', 'monthly_days'] as const
+  const scheduleMode = MODES.includes(body.scheduleMode as never)
+    ? (body.scheduleMode as 'daily' | 'weekly_days' | 'monthly_days')
+    : undefined
+
+  const daysOfWeek = Array.isArray(body.daysOfWeek)
+    ? (body.daysOfWeek as unknown[]).map(Number).filter((n) => Number.isInteger(n) && n >= 0 && n <= 6)
+    : undefined
+  const daysOfMonth = Array.isArray(body.daysOfMonth)
+    ? (body.daysOfMonth as unknown[]).map(Number).filter((n) => Number.isInteger(n) && n >= 1 && n <= 31)
+    : undefined
+  const targetCategories = Array.isArray(body.targetCategories)
+    ? (body.targetCategories as unknown[]).map((c) => String(c).trim()).filter(Boolean).slice(0, 50)
+    : undefined
+
   const schedule = await upsertSchedule(userId, {
     id: body.id as string | undefined,
     siteConnectionId: (body.siteConnectionId as string) ?? undefined,
@@ -62,6 +77,10 @@ export async function POST(request: Request) {
     tone: (body.tone as string) ?? undefined,
     wordCount: typeof body.wordCount === 'number' ? body.wordCount : undefined,
     keywordPool,
+    scheduleMode,
+    daysOfWeek,
+    daysOfMonth,
+    targetCategories,
     autoPublish: typeof body.autoPublish === 'boolean' ? body.autoPublish : undefined,
     generateImage: typeof body.generateImage === 'boolean' ? body.generateImage : undefined,
   })
