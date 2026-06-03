@@ -44,20 +44,36 @@ export async function GET(request: Request) {
       .limit(1)
       .maybeSingle()
 
-    // Pipeline'ı try/catch ile çalıştır — gerçek hatayı/stack'i yakala.
-    let pipelineResult: unknown = null
-    let pipelineError: string | null = null
+    // upsertBrief'in adımlarını birebir replike et — gerçek Postgres hatasını yakala.
+    let getResult: { existingId: string | null; getError: string | null } = { existingId: null, getError: null }
+    let updProbe: { error: string | null; data: boolean } = { error: 'no_conn', data: false }
     let rowAfter: unknown = null
     if (conn.data) {
       const c = conn.data as { id: string; user_id: string; base_url: string }
-      try {
-        pipelineResult = await runSiteBriefPipeline(c.id, c.user_id)
-      } catch (e) {
-        pipelineError = `${(e as Error).message}\n${(e as Error).stack ?? ''}`.slice(0, 800)
+      const g = await supabase
+        .from('site_content_briefs')
+        .select('*')
+        .eq('site_connection_id', c.id)
+        .maybeSingle()
+      getResult = {
+        existingId: (g.data as { id?: string } | null)?.id ?? null,
+        getError: g.error ? `${g.error.code}: ${g.error.message}` : null,
+      }
+      if (getResult.existingId) {
+        const upd = await supabase
+          .from('site_content_briefs')
+          .update({ scan_status: 'running', last_error: `diag_upsert_${stamp}`, updated_at: stamp })
+          .eq('id', getResult.existingId)
+          .select()
+          .single()
+        updProbe = {
+          error: upd.error ? `${upd.error.code}: ${upd.error.message} | details=${upd.error.details ?? '-'} | hint=${upd.error.hint ?? '-'}` : null,
+          data: !!upd.data,
+        }
       }
       const after = await supabase
         .from('site_content_briefs')
-        .select('scan_status,company_name,categories,last_error')
+        .select('scan_status,last_error')
         .eq('site_connection_id', c.id)
         .maybeSingle()
       rowAfter = after.data
@@ -70,8 +86,8 @@ export async function GET(request: Request) {
       readError: read.error ? `${read.error.code}: ${read.error.message}` : null,
       readRows: read.data?.length ?? 0,
       probedConn: conn.data ?? null,
-      pipelineResult,
-      pipelineError,
+      getResult,
+      updProbe,
       rowAfter,
     })
   }
