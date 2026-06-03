@@ -242,11 +242,12 @@ export default function SeoAutomationPanel() {
         </div>
       ) : (
         <>
-      {/* Enabled toggle */}
+      {/* Üretim modu: otomatik mi / manuel mi */}
       <label className="flex items-center gap-2 cursor-pointer">
         <input type="checkbox" checked={enabled} onChange={(e) => setEnabled(e.target.checked)} className="w-4 h-4 rounded accent-purple-600" />
         <span className="text-sm font-medium text-gray-900">{enabled ? t('enabled') : t('disabled')}</span>
       </label>
+      {!enabled && <p className="text-xs text-gray-500 leading-relaxed">{t('manualHint')}</p>}
 
       <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
         {/* Site */}
@@ -261,6 +262,8 @@ export default function SeoAutomationPanel() {
           />
         </div>
 
+        {enabled && (
+          <>
         {/* Time */}
         <div>
           <label className="block text-xs font-medium text-gray-600 mb-1">{t('time')}</label>
@@ -326,7 +329,10 @@ export default function SeoAutomationPanel() {
                 )
               })}
             </div>
+            <p className="text-xs text-gray-500 mt-1.5 leading-relaxed">{t('monthlyClampHint')}</p>
           </div>
+        )}
+          </>
         )}
 
         {/* Tone */}
@@ -357,13 +363,15 @@ export default function SeoAutomationPanel() {
         </div>
       </div>
 
-      {/* Toggles — görsel üretimi otomatik & gizli (kullanıcı seçimine sunulmaz) */}
-      <div className="space-y-2">
-        <label className="flex items-center gap-2 cursor-pointer">
-          <input type="checkbox" checked={autoPublish} onChange={(e) => setAutoPublish(e.target.checked)} className="w-4 h-4 rounded accent-purple-600" />
-          <span className="text-sm text-gray-700">{t('autoPublish')}</span>
-        </label>
-      </div>
+      {/* Otomatik yayınla — yalnız otomatik modda anlamlı (görsel üretimi otomatik & gizli) */}
+      {enabled && (
+        <div className="space-y-2">
+          <label className="flex items-center gap-2 cursor-pointer">
+            <input type="checkbox" checked={autoPublish} onChange={(e) => setAutoPublish(e.target.checked)} className="w-4 h-4 rounded accent-purple-600" />
+            <span className="text-sm text-gray-700">{t('autoPublish')}</span>
+          </label>
+        </div>
+      )}
 
       {/* Hedef kategoriler (brief'ten) */}
       <div>
