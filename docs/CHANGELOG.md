@@ -2,6 +2,11 @@
 
 ---
 
+## 2026-06-04 — SEO: Yayın Hedefi kartları toggle+modal UX'e çevrildi
+- **Sorun:** WordPress ve Webhook kartları satır içi açılıp/kapanıyordu; tıklanabilir olduğu hissettirmiyordu.
+- **Çözüm:** Kartlar artık tıklandığında primary renk ile seçili hale geliyor ve içerik girişi için blur backdrop'lu centered modal açılıyor; inline açılım kaldırıldı. `alwaysOpen` prop ile form modal içinde wrapper'sız render ediliyor.
+- **Dosyalar:** `SeoSitesPanel.tsx`, `SeoWordPressConnect.tsx`, `SeoWebhookConnect.tsx`, `locales/tr.json`, `locales/en.json`
+
 ## 2026-06-04 — SEO Plus: Yayın Hedefi 3'lü grid + renk + metin iyileştirmeleri
 - **Sorun:** Yayın Hedefi kartları alt alta sıralıydı; checkbox/buton rengi mor (purple) idi; etiket metni uzun ve tire içeriyordu
 - **Çözüm:** Yayın Hedefi içeriği `grid-cols-1 md:grid-cols-3` ile yan yana; her sütuna `animate-card-enter` staggered animasyon eklendi. Checkbox `accent-primary`, Save butonu `bg-primary` olarak güncellendi; purple renklerin tamamı primary/emerald'a taşındı. Etiket "Makaleyi otomatik yayınla (kapalıysa taslak olarak kalır.)" olarak kısaltıldı (TR + EN).
