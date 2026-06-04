@@ -2915,6 +2915,7 @@
           "errGeneric": "An error occurred.",
           "errRestBlocked": "Couldn't establish an automatic publishing connection to this address (the site may not expose a publishing API, or a firewall may be blocking it). You can generate articles and add them to your site via Copy / Download HTML.",
           "errNoAppPasswords": "One-click publishing authorization isn't enabled on this site. Ask the site admin to enable it, or add articles manually via Copy / Download HTML.",
+          "close": "Close",
           "publishTarget": "Publish Target",
           "publishTargetDesc": "Your articles are published to the website in your business profile.",
           "yourSiteFromProfile": "Your website (from your business profile)",

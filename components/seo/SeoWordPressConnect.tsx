@@ -13,6 +13,8 @@ interface Props {
   onConnected: () => void
   /** Tek-tık yetkilendirme uygun değilse panel otomatik açık başlasın. */
   defaultOpen?: boolean
+  /** Modal içinde render: kart wrapper'ı olmadan, toggle butonu olmadan form gösterir. */
+  alwaysOpen?: boolean
 }
 
 /**
@@ -22,7 +24,7 @@ interface Props {
  * ekrana düşebildiğinden, kullanıcı WP profilinden ürettiği uygulama parolasını
  * buraya yapıştırır. Doğrulama hafif `users/me` ucundan (10sn timeout) yapılır.
  */
-export default function SeoWordPressConnect({ defaultUrl, onConnected, defaultOpen = false }: Props) {
+export default function SeoWordPressConnect({ defaultUrl, onConnected, defaultOpen = false, alwaysOpen = false }: Props) {
   const t = useTranslations('dashboard.seo.articles.sites.wpManual')
 
   const [open, setOpen] = useState(defaultOpen)
@@ -76,7 +78,7 @@ export default function SeoWordPressConnect({ defaultUrl, onConnected, defaultOp
     }
   }
 
-  if (!open) {
+  if (!open && !alwaysOpen) {
     return (
       <button
         onClick={() => setOpen(true)}
@@ -97,15 +99,17 @@ export default function SeoWordPressConnect({ defaultUrl, onConnected, defaultOp
   const canSubmit = url.trim().length > 0 && username.trim().length > 0 && appPassword.replace(/\s+/g, '').length >= 16
 
   return (
-    <div className="border border-primary/20 rounded-xl p-4 bg-primary/5 space-y-3">
-      <div className="flex items-center justify-between">
-        <h4 className="text-sm font-semibold text-gray-900 flex items-center gap-2">
-          <KeyRound className="w-4 h-4" /> {t('title')}
-        </h4>
-        <button onClick={() => setOpen(false)} className="p-1 text-gray-400 hover:text-gray-600">
-          <ChevronUp className="w-4 h-4" />
-        </button>
-      </div>
+    <div className={alwaysOpen ? 'space-y-3' : 'border border-primary/20 rounded-xl p-4 bg-primary/5 space-y-3'}>
+      {!alwaysOpen && (
+        <div className="flex items-center justify-between">
+          <h4 className="text-sm font-semibold text-gray-900 flex items-center gap-2">
+            <KeyRound className="w-4 h-4" /> {t('title')}
+          </h4>
+          <button onClick={() => setOpen(false)} className="p-1 text-gray-400 hover:text-gray-600">
+            <ChevronUp className="w-4 h-4" />
+          </button>
+        </div>
+      )}
 
       <div>
         <label className="block text-xs font-medium text-gray-600 mb-1">{t('urlLabel')}</label>

@@ -4,7 +4,7 @@ import { useState, useEffect, useCallback } from 'react'
 import { useTranslations } from 'next-intl'
 import {
   Loader2, Globe, Trash2, CheckCircle2, AlertCircle,
-  RefreshCw, ExternalLink, ArrowRight,
+  RefreshCw, ExternalLink, ArrowRight, KeyRound, Webhook, ChevronDown, X,
 } from 'lucide-react'
 import SeoWebhookConnect from './SeoWebhookConnect'
 import SeoWordPressConnect from './SeoWordPressConnect'
@@ -24,43 +24,46 @@ interface SiteConnection {
 }
 
 interface Props {
-  /** callback'ten dönen durum: 'connected' | 'rejected' | 'error', reason ile */
   banner?: { kind: 'connected' | 'rejected' | 'error'; reason?: string } | null
-  /** İşletme profilindeki web sitesi URL'i (SEO bu siteden beslenir) */
   profileUrl?: string | null
 }
 
-/** "Hata" değil de "bu site otomatik yayına uygun değil" anlamına gelen sebepler — kırmızı yerine nötr bilgi olarak gösterilir. */
 const SOFT_REASONS = new Set(['not_wordpress', 'rest_blocked', 'no_app_passwords'])
 
 /* ═══════ Component ═══════ */
 
 export default function SeoSitesPanel({ banner, profileUrl }: Props) {
   const t = useTranslations('dashboard.seo.articles.sites')
+  const tWp = useTranslations('dashboard.seo.articles.sites.wpManual')
+  const tWh = useTranslations('dashboard.seo.articles.sites.webhook')
 
   const [connections, setConnections] = useState<SiteConnection[]>([])
   const [loading, setLoading] = useState(true)
   const [testingId, setTestingId] = useState<string | null>(null)
   const [testResult, setTestResult] = useState<Record<string, boolean>>({})
-  // Site WordPress tek-tık yayına uygun değilse (callback'te anlaşılır) yetkilendir kutusu tamamen kalkar,
-  // asıl yayın yolu webhook olur. Tarayıcıda kalıcı tutulur (profil URL'i başına).
   const [wpIncompatible, setWpIncompatible] = useState(false)
+  const [activeModal, setActiveModal] = useState<'wordpress' | 'webhook' | null>(null)
 
   const wpKey = profileUrl ? `yoai_seo_wp_incompatible:${profileUrl}` : null
 
-  // Daha önce uyumsuz işaretlendiyse hatırla.
   useEffect(() => {
     if (!wpKey) { setWpIncompatible(false); return }
     try { setWpIncompatible(localStorage.getItem(wpKey) === '1') } catch { /* ignore */ }
   }, [wpKey])
 
-  // Callback "site WordPress değil / yayına uygun değil" döndüyse kalıcı işaretle.
   useEffect(() => {
     if (wpKey && banner?.kind === 'error' && SOFT_REASONS.has(banner.reason || '')) {
       try { localStorage.setItem(wpKey, '1') } catch { /* ignore */ }
       setWpIncompatible(true)
     }
   }, [banner, wpKey])
+
+  // WordPress uyumsuzsa ve bağlantı yoksa webhook modalını otomatik aç
+  useEffect(() => {
+    if (!loading && connections.length === 0 && wpIncompatible) {
+      setActiveModal('webhook')
+    }
+  }, [loading, connections.length, wpIncompatible])
 
   const fetchConnections = useCallback(async () => {
     setLoading(true)
@@ -74,7 +77,6 @@ export default function SeoSitesPanel({ banner, profileUrl }: Props) {
 
   useEffect(() => { fetchConnections() }, [fetchConnections])
 
-  // callback'ten döndüyse listeyi tazele
   useEffect(() => {
     if (banner?.kind === 'connected') fetchConnections()
   }, [banner, fetchConnections])
@@ -94,7 +96,6 @@ export default function SeoSitesPanel({ banner, profileUrl }: Props) {
     }
   }
 
-  // Yayın yetkisi akışı — URL profildEN gelir, kullanıcı URL girmez.
   const handleAuthorize = () => {
     if (!profileUrl) return
     window.location.href = `/api/seo/sites/connect?siteUrl=${encodeURIComponent(profileUrl)}&platform=wordpress`
@@ -130,153 +131,241 @@ export default function SeoSitesPanel({ banner, profileUrl }: Props) {
     }
   }
 
-  return (
-    <div className="bg-white border border-gray-200 rounded-xl p-5 space-y-4">
-      <div>
-        <h3 className="text-sm font-semibold text-gray-900 flex items-center gap-2">
-          <Globe className="w-4 h-4" /> {t('publishTarget')}
-        </h3>
-        <p className="text-xs text-gray-500 mt-0.5">{t('publishTargetDesc')}</p>
-      </div>
+  const closeModal = () => setActiveModal(null)
 
-      {/* Banner */}
-      {banner?.kind === 'connected' && (
-        <div className="bg-emerald-50 border border-emerald-200 rounded-lg p-3 text-sm text-emerald-700 flex items-center gap-2">
-          <CheckCircle2 className="w-4 h-4" /> {t('connectedToast')}
+  const handleConnected = () => {
+    fetchConnections()
+    closeModal()
+  }
+
+  return (
+    <>
+      <div className="bg-white border border-gray-200 rounded-xl p-5 space-y-4">
+        <div>
+          <h3 className="text-base font-semibold text-gray-900 flex items-center gap-2">
+            <Globe className="w-4 h-4" /> {t('publishTarget')}
+          </h3>
+          <p className="text-xs text-gray-500 mt-0.5">{t('publishTargetDesc')}</p>
         </div>
-      )}
-      {banner?.kind === 'rejected' && (
-        <div className="bg-gray-50 border border-gray-200 rounded-lg p-3 text-sm text-gray-700">
-          {t('rejectedToast')}
-        </div>
-      )}
-      {banner?.kind === 'error' && (
-        SOFT_REASONS.has(banner.reason || '') ? (
-          <div className="bg-gray-50 border border-gray-200 rounded-lg p-3 text-sm text-gray-700 flex items-start gap-2">
-            <AlertCircle className="w-4 h-4 mt-0.5 shrink-0 text-gray-400" /> {reasonText(banner.reason)}
+
+        {/* Banner */}
+        {banner?.kind === 'connected' && (
+          <div className="bg-emerald-50 border border-emerald-200 rounded-lg p-3 text-sm text-emerald-700 flex items-center gap-2">
+            <CheckCircle2 className="w-4 h-4" /> {t('connectedToast')}
+          </div>
+        )}
+        {banner?.kind === 'rejected' && (
+          <div className="bg-gray-50 border border-gray-200 rounded-lg p-3 text-sm text-gray-700">
+            {t('rejectedToast')}
+          </div>
+        )}
+        {banner?.kind === 'error' && (
+          SOFT_REASONS.has(banner.reason || '') ? (
+            <div className="bg-gray-50 border border-gray-200 rounded-lg p-3 text-sm text-gray-700 flex items-start gap-2">
+              <AlertCircle className="w-4 h-4 mt-0.5 shrink-0 text-gray-400" /> {reasonText(banner.reason)}
+            </div>
+          ) : (
+            <div className="bg-red-50 border border-red-200 rounded-lg p-3 text-sm text-red-700 flex items-start gap-2">
+              <AlertCircle className="w-4 h-4 mt-0.5 shrink-0" /> {reasonText(banner.reason)}
+            </div>
+          )
+        )}
+
+        {loading ? (
+          <div className="flex justify-center py-8 text-gray-400">
+            <Loader2 className="w-5 h-5 animate-spin" />
           </div>
         ) : (
-          <div className="bg-red-50 border border-red-200 rounded-lg p-3 text-sm text-red-700 flex items-start gap-2">
-            <AlertCircle className="w-4 h-4 mt-0.5 shrink-0" /> {reasonText(banner.reason)}
-          </div>
-        )
-      )}
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-4 items-start">
 
-      {loading ? (
-        <div className="flex justify-center py-8 text-gray-400">
-          <Loader2 className="w-5 h-5 animate-spin" />
-        </div>
-      ) : (
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-4 items-start">
-          {/* Sütun 1: Bağlı siteler veya yetkilendirme */}
-          <div
-            className="animate-card-enter"
-            style={{ ['--card-index' as string]: 0 }}
-          >
-            {connections.length > 0 && (
-              <div className="space-y-2">
-                {connections.map((c) => (
-                  <div key={c.id} className="flex items-center justify-between gap-3 border border-gray-200 rounded-xl p-3 hover:shadow-md transition-all duration-300">
-                    <div className="min-w-0 flex-1">
-                      <div className="flex items-center gap-2 flex-wrap">
-                        <Globe className="w-4 h-4 text-gray-400 shrink-0" />
-                        <span className="text-sm font-medium text-gray-900 truncate">{c.label || c.baseUrl}</span>
-                        <span className="inline-flex px-1.5 py-0.5 text-[10px] font-medium rounded bg-gray-100 text-gray-500">
-                          {platformLabel(c.platform)}
-                        </span>
-                        <span className={`inline-flex px-2 py-0.5 text-xs font-medium rounded-full ${
-                          c.status === 'active' ? 'bg-emerald-50 text-emerald-700'
-                            : c.status === 'error' ? 'bg-red-50 text-red-700'
-                            : 'bg-gray-100 text-gray-600'
-                        }`}>
-                          {c.status === 'active' ? t('statusActive') : c.status === 'error' ? t('statusError') : t('statusRevoked')}
-                        </span>
-                      </div>
-                      <p className="text-xs text-gray-500 mt-0.5 truncate">
-                        {c.username ? `${c.username} · ` : ''}{c.baseUrl}
-                      </p>
-                      {testResult[c.id] !== undefined && (
-                        <p className={`text-xs mt-1 flex items-center gap-1 ${testResult[c.id] ? 'text-emerald-600' : 'text-red-600'}`}>
-                          {testResult[c.id] ? <CheckCircle2 className="w-3 h-3" /> : <AlertCircle className="w-3 h-3" />}
-                          {testResult[c.id] ? t('testOk') : t('testFail')}
+            {/* ── Sütun 1: Bağlı siteler veya yetkilendirme ── */}
+            <div className="animate-card-enter" style={{ ['--card-index' as string]: 0 }}>
+              {connections.length > 0 && (
+                <div className="space-y-2">
+                  {connections.map((c) => (
+                    <div
+                      key={c.id}
+                      className="flex items-center justify-between gap-3 border border-gray-200 rounded-xl p-3 hover:shadow-md transition-all duration-300"
+                    >
+                      <div className="min-w-0 flex-1">
+                        <div className="flex items-center gap-2 flex-wrap">
+                          <Globe className="w-4 h-4 text-gray-400 shrink-0" />
+                          <span className="text-sm font-medium text-gray-900 truncate">{c.label || c.baseUrl}</span>
+                          <span className="inline-flex px-1.5 py-0.5 text-[10px] font-medium rounded bg-gray-100 text-gray-500">
+                            {platformLabel(c.platform)}
+                          </span>
+                          <span className={`inline-flex px-2 py-0.5 text-xs font-medium rounded-full ${
+                            c.status === 'active' ? 'bg-emerald-50 text-emerald-700'
+                              : c.status === 'error' ? 'bg-red-50 text-red-700'
+                              : 'bg-gray-100 text-gray-600'
+                          }`}>
+                            {c.status === 'active' ? t('statusActive') : c.status === 'error' ? t('statusError') : t('statusRevoked')}
+                          </span>
+                        </div>
+                        <p className="text-xs text-gray-500 mt-0.5 truncate">
+                          {c.username ? `${c.username} · ` : ''}{c.baseUrl}
                         </p>
-                      )}
+                        {testResult[c.id] !== undefined && (
+                          <p className={`text-xs mt-1 flex items-center gap-1 ${testResult[c.id] ? 'text-emerald-600' : 'text-red-600'}`}>
+                            {testResult[c.id] ? <CheckCircle2 className="w-3 h-3" /> : <AlertCircle className="w-3 h-3" />}
+                            {testResult[c.id] ? t('testOk') : t('testFail')}
+                          </p>
+                        )}
+                      </div>
+                      <div className="flex items-center gap-1 shrink-0">
+                        <button
+                          onClick={() => handleTest(c.id)}
+                          disabled={testingId === c.id}
+                          className="p-1.5 text-gray-400 hover:text-primary rounded transition-colors"
+                          title={t('test')}
+                        >
+                          {testingId === c.id ? <Loader2 className="w-4 h-4 animate-spin" /> : <RefreshCw className="w-4 h-4" />}
+                        </button>
+                        <button
+                          onClick={() => handleDelete(c.id)}
+                          className="p-1.5 text-gray-400 hover:text-red-500 rounded transition-colors"
+                          title={t('remove')}
+                        >
+                          <Trash2 className="w-4 h-4" />
+                        </button>
+                      </div>
                     </div>
-                    <div className="flex items-center gap-1 shrink-0">
-                      <button
-                        onClick={() => handleTest(c.id)}
-                        disabled={testingId === c.id}
-                        className="p-1.5 text-gray-400 hover:text-primary rounded transition-colors"
-                        title={t('test')}
-                      >
-                        {testingId === c.id ? <Loader2 className="w-4 h-4 animate-spin" /> : <RefreshCw className="w-4 h-4" />}
-                      </button>
-                      <button
-                        onClick={() => handleDelete(c.id)}
-                        className="p-1.5 text-gray-400 hover:text-red-500 rounded transition-colors"
-                        title={t('remove')}
-                      >
-                        <Trash2 className="w-4 h-4" />
-                      </button>
-                    </div>
-                  </div>
-                ))}
-              </div>
-            )}
-
-            {connections.length === 0 && profileUrl && !wpIncompatible && (
-              <div className="border border-primary/20 rounded-xl p-4 bg-primary/5 space-y-3">
-                <div>
-                  <p className="text-xs font-medium text-gray-500">{t('yourSiteFromProfile')}</p>
-                  <p className="text-sm font-medium text-gray-900 mt-0.5 break-all">{profileUrl}</p>
+                  ))}
                 </div>
-                <p className="text-sm text-gray-600">{t('notAuthorizedDesc')}</p>
-                <p className="text-xs text-gray-500">{t('authorizeHint')}</p>
-                <button
-                  onClick={handleAuthorize}
-                  className="inline-flex items-center gap-1.5 px-4 py-2 text-sm text-white bg-primary rounded-lg hover:bg-primary/90 transition-colors"
-                >
-                  <ExternalLink className="w-3.5 h-3.5" /> {t('authorize')}
-                </button>
-              </div>
-            )}
+              )}
 
-            {connections.length === 0 && profileUrl && wpIncompatible && (
-              <div className="bg-gray-50 border border-gray-200 rounded-xl p-3 text-sm text-gray-700 flex items-start gap-2">
-                <AlertCircle className="w-4 h-4 mt-0.5 shrink-0 text-gray-400" /> {t('wpIncompatibleNote')}
-              </div>
-            )}
+              {connections.length === 0 && profileUrl && !wpIncompatible && (
+                <div className="border border-primary/20 rounded-xl p-4 bg-primary/5 space-y-3">
+                  <div>
+                    <p className="text-xs font-medium text-gray-500">{t('yourSiteFromProfile')}</p>
+                    <p className="text-sm font-medium text-gray-900 mt-0.5 break-all">{profileUrl}</p>
+                  </div>
+                  <p className="text-sm text-gray-600">{t('notAuthorizedDesc')}</p>
+                  <p className="text-xs text-gray-500">{t('authorizeHint')}</p>
+                  <button
+                    onClick={handleAuthorize}
+                    className="inline-flex items-center gap-1.5 px-4 py-2 text-sm text-white bg-primary rounded-lg hover:bg-primary/90 transition-colors"
+                  >
+                    <ExternalLink className="w-3.5 h-3.5" /> {t('authorize')}
+                  </button>
+                </div>
+              )}
 
-            {connections.length === 0 && !profileUrl && (
-              <div className="bg-primary/5 border border-primary/20 rounded-xl p-4">
-                <p className="text-sm text-gray-700">{t('noProfileUrl')}</p>
-                <a
-                  href="/yoalgoritma"
-                  className="inline-flex items-center gap-1.5 mt-3 px-4 py-2 text-sm text-white bg-primary rounded-lg hover:bg-primary/90 transition-colors"
-                >
-                  {t('openProfile')} <ArrowRight className="w-3.5 h-3.5" />
-                </a>
-              </div>
-            )}
+              {connections.length === 0 && profileUrl && wpIncompatible && (
+                <div className="bg-gray-50 border border-gray-200 rounded-xl p-3 text-sm text-gray-700 flex items-start gap-2">
+                  <AlertCircle className="w-4 h-4 mt-0.5 shrink-0 text-gray-400" /> {t('wpIncompatibleNote')}
+                </div>
+              )}
+
+              {connections.length === 0 && !profileUrl && (
+                <div className="bg-primary/5 border border-primary/20 rounded-xl p-4">
+                  <p className="text-sm text-gray-700">{t('noProfileUrl')}</p>
+                  <a
+                    href="/yoalgoritma"
+                    className="inline-flex items-center gap-1.5 mt-3 px-4 py-2 text-sm text-white bg-primary rounded-lg hover:bg-primary/90 transition-colors"
+                  >
+                    {t('openProfile')} <ArrowRight className="w-3.5 h-3.5" />
+                  </a>
+                </div>
+              )}
+            </div>
+
+            {/* ── Sütun 2: Uygulama Parolası seçim kartı ── */}
+            <div className="animate-card-enter" style={{ ['--card-index' as string]: 1 }}>
+              <button
+                type="button"
+                onClick={() => setActiveModal(activeModal === 'wordpress' ? null : 'wordpress')}
+                className={`w-full flex items-center justify-between gap-3 rounded-xl p-4 text-left transition-all duration-200 hover:shadow-md ${
+                  activeModal === 'wordpress'
+                    ? 'border-2 border-primary bg-primary/5 ring-2 ring-primary/15'
+                    : 'border border-dashed border-gray-300 hover:border-primary/50 hover:bg-primary/5'
+                }`}
+              >
+                <span className="flex items-center gap-2.5">
+                  <KeyRound className={`w-4 h-4 shrink-0 ${activeModal === 'wordpress' ? 'text-primary' : 'text-gray-400'}`} />
+                  <span>
+                    <span className="block text-sm font-medium text-gray-900">{tWp('title')}</span>
+                    <span className="block text-xs text-gray-500 leading-relaxed">{tWp('subtitle')}</span>
+                  </span>
+                </span>
+                <ChevronDown className={`w-4 h-4 shrink-0 transition-transform duration-200 ${activeModal === 'wordpress' ? 'rotate-180 text-primary' : 'text-gray-400'}`} />
+              </button>
+            </div>
+
+            {/* ── Sütun 3: Webhook seçim kartı ── */}
+            <div className="animate-card-enter" style={{ ['--card-index' as string]: 2 }}>
+              <button
+                type="button"
+                onClick={() => setActiveModal(activeModal === 'webhook' ? null : 'webhook')}
+                className={`w-full flex items-center justify-between gap-3 rounded-xl p-4 text-left transition-all duration-200 hover:shadow-md ${
+                  activeModal === 'webhook'
+                    ? 'border-2 border-primary bg-primary/5 ring-2 ring-primary/15'
+                    : 'border border-dashed border-gray-300 hover:border-primary/50 hover:bg-primary/5'
+                }`}
+              >
+                <span className="flex items-center gap-2.5">
+                  <Webhook className={`w-4 h-4 shrink-0 ${activeModal === 'webhook' ? 'text-primary' : 'text-gray-400'}`} />
+                  <span>
+                    <span className="block text-sm font-medium text-gray-900">{tWh('title')}</span>
+                    <span className="block text-xs text-gray-500 leading-relaxed">{tWh('subtitle')}</span>
+                  </span>
+                </span>
+                <ChevronDown className={`w-4 h-4 shrink-0 transition-transform duration-200 ${activeModal === 'webhook' ? 'rotate-180 text-primary' : 'text-gray-400'}`} />
+              </button>
+            </div>
+
           </div>
+        )}
+      </div>
 
-          {/* Sütun 2: Uygulama Parolası ile WordPress bağlantısı */}
+      {/* ── Modal overlay ── */}
+      {activeModal && (
+        <div
+          className="fixed inset-0 z-50 flex items-center justify-center p-4"
+          onClick={closeModal}
+        >
+          <div className="absolute inset-0 bg-black/40 backdrop-blur-sm" />
           <div
-            className="animate-card-enter"
-            style={{ ['--card-index' as string]: 1 }}
+            className="relative bg-white rounded-2xl shadow-2xl w-full max-w-lg overflow-hidden animate-card-enter"
+            style={{ ['--card-index' as string]: 0 }}
+            onClick={(e) => e.stopPropagation()}
           >
-            <SeoWordPressConnect defaultUrl={profileUrl} onConnected={fetchConnections} />
-          </div>
+            {/* Modal başlık */}
+            <div className="flex items-center justify-between px-5 py-4 border-b border-gray-100">
+              <h3 className="text-base font-semibold text-gray-900 flex items-center gap-2">
+                {activeModal === 'wordpress' ? (
+                  <><KeyRound className="w-4 h-4 text-primary" /> {tWp('title')}</>
+                ) : (
+                  <><Webhook className="w-4 h-4 text-primary" /> {tWh('title')}</>
+                )}
+              </h3>
+              <button
+                onClick={closeModal}
+                aria-label={t('close')}
+                className="p-1.5 text-gray-400 hover:text-gray-700 rounded-lg hover:bg-gray-100 transition-colors"
+              >
+                <X className="w-4 h-4" />
+              </button>
+            </div>
 
-          {/* Sütun 3: Webhook / özel yazılım bağlantısı */}
-          <div
-            className="animate-card-enter"
-            style={{ ['--card-index' as string]: 2 }}
-          >
-            <SeoWebhookConnect onConnected={fetchConnections} defaultOpen={connections.length === 0 && wpIncompatible} />
+            {/* Modal içerik */}
+            <div className="p-5 max-h-[80vh] overflow-y-auto">
+              {activeModal === 'wordpress' ? (
+                <SeoWordPressConnect
+                  defaultUrl={profileUrl}
+                  onConnected={handleConnected}
+                  alwaysOpen
+                />
+              ) : (
+                <SeoWebhookConnect
+                  onConnected={handleConnected}
+                  alwaysOpen
+                />
+              )}
+            </div>
           </div>
         </div>
       )}
-    </div>
+    </>
   )
 }

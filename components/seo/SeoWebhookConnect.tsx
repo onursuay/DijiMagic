@@ -11,6 +11,8 @@ interface Props {
   onConnected: () => void
   /** WordPress tek-tık uygun değilse panel otomatik açık başlasın (asıl yayın yolu webhook olur). */
   defaultOpen?: boolean
+  /** Modal içinde render: kart wrapper'ı olmadan, toggle butonu olmadan form gösterir. */
+  alwaysOpen?: boolean
 }
 
 /* Geliştiriciye gösterilen örnek kodlar — API alanı adlarıdır, çeviriye tabi değildir. */
@@ -63,7 +65,7 @@ $data = json_decode($raw, true);
 http_response_code(200);
 echo json_encode(['url' => 'https://siteniz.com/yazi/' . $data['article']['slug']]);`
 
-export default function SeoWebhookConnect({ onConnected, defaultOpen = false }: Props) {
+export default function SeoWebhookConnect({ onConnected, defaultOpen = false, alwaysOpen = false }: Props) {
   const t = useTranslations('dashboard.seo.articles.sites.webhook')
 
   const [open, setOpen] = useState(defaultOpen)
@@ -123,7 +125,7 @@ export default function SeoWebhookConnect({ onConnected, defaultOpen = false }: 
     }
   }
 
-  if (!open) {
+  if (!open && !alwaysOpen) {
     return (
       <button
         onClick={() => setOpen(true)}
@@ -142,15 +144,17 @@ export default function SeoWebhookConnect({ onConnected, defaultOpen = false }: 
   }
 
   return (
-    <div className="border border-primary/20 rounded-xl p-4 bg-primary/5 space-y-3">
-      <div className="flex items-center justify-between">
-        <h4 className="text-sm font-semibold text-gray-900 flex items-center gap-2">
-          <Webhook className="w-4 h-4" /> {t('title')}
-        </h4>
-        <button onClick={() => setOpen(false)} className="p-1 text-gray-400 hover:text-gray-600">
-          <ChevronUp className="w-4 h-4" />
-        </button>
-      </div>
+    <div className={alwaysOpen ? 'space-y-3' : 'border border-primary/20 rounded-xl p-4 bg-primary/5 space-y-3'}>
+      {!alwaysOpen && (
+        <div className="flex items-center justify-between">
+          <h4 className="text-sm font-semibold text-gray-900 flex items-center gap-2">
+            <Webhook className="w-4 h-4" /> {t('title')}
+          </h4>
+          <button onClick={() => setOpen(false)} className="p-1 text-gray-400 hover:text-gray-600">
+            <ChevronUp className="w-4 h-4" />
+          </button>
+        </div>
+      )}
 
       <div>
         <label className="block text-xs font-medium text-gray-600 mb-1">{t('urlLabel')}</label>
