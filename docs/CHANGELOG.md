@@ -2,6 +2,11 @@
 
 ---
 
+## 2026-06-04 — SEO: otomatik yayın başarısız olunca "Yayınlanamadı" şeffaflığı + bağlan popup genişletildi
+- **Sorun:** (1) "Makaleyi otomatik yayınla" seçili olduğu hâlde makale Taslak kalıyordu ve kullanıcıya **neden** olduğu söylenmiyordu — otomatik makale önce taslak kaydedilir, yalnız yayın başarılı olursa "yayınlandı"ya yükselir; yayın başarısız olunca (site bağlantısı/uygulama parolası geçersiz, site erişilemez vb.) sessizce taslak kalıyordu. (2) WordPress "Uygulama Parolası ile bağlan" popup'ı dar olduğundan açıklama cümleleri alt satıra kayıyordu.
+- **Çözüm:** Otomatik yayın denenip başarısız olduğunda neden, makalenin `params.autoPublishError` alanına yazılıyor (migration yok). Makale listesinde taslak + bu alan doluysa "Yayınlanamadı" rozeti + ipucu (site bağlantısını/parolayı kontrol et) gösteriliyor — sessiz başarısızlık kalktı. Bağlan modalı `max-w-lg` → `max-w-2xl` genişletildi (cümleler tek satıra sığar). TR+EN anahtarlar eklendi.
+- **Dosyalar:** `lib/seo/runScheduleArticle.ts`, `components/seo/SeoArticlesTab.tsx`, `components/seo/SeoSitesPanel.tsx`, `locales/tr.json`, `locales/en.json`
+
 ## 2026-06-04 — SEO Otomatik Üretim: girilen saat:dakikada TAM çalışır (cron dakikalık)
 - **Sorun:** Kullanıcı yayın saatini 09:50 girse de makale 09:50'de üretilmiyordu. Cron `0 * * * *` (saatte bir, yalnız 0. dakika) çalıştığından, 09:50 hedefi ancak bir sonraki saat başında (10:00) telafi penceresiyle üretiliyordu. Ayrıca dakika seçici yalnız 5'er dakikalık slot sunuyordu → kullanıcıya "istediğin saati gir" denip aslında yaklaşık çalıştırmak yanıltıcıydı.
 - **Çözüm:** SEO cron'u `* * * * *` (dakikalık) yapıldı → kullanıcının girdiği saat:dakika TAM yakalanıyor. Frontend dakika seçici 00–59 tam aralığa açıldı (5'er slot kısıtı kaldırıldı). Üretim idempotent kalır (`claimScheduleRun` atomik claim + `last_run_date` günde-bir guard) — dakikalık tetiklemede çift üretim olmaz. Kod yorumları (cron route + `isScheduleDue`) dakikalık modele göre güncellendi. Inngest kullanılmadı (prod'da güvenilir değil; inline-cron korunur).

@@ -2830,6 +2830,8 @@
         "status": "Status",
         "draft": "Draft",
         "published": "Published",
+        "autoPublishFailed": "Not published",
+        "autoPublishFailedHint": "Auto-publish failed — check the site connection and application password. The article was saved as a draft.",
         "edit": "Edit",
         "publish": "Publish",
         "unpublish": "Revert to Draft",

@@ -2830,6 +2830,8 @@
         "status": "Durum",
         "draft": "Taslak",
         "published": "Yayında",
+        "autoPublishFailed": "Yayınlanamadı",
+        "autoPublishFailedHint": "Otomatik yayın başarısız oldu — site bağlantısını ve uygulama parolasını kontrol edin. Makale taslak olarak kaydedildi.",
         "edit": "Düzenle",
         "publish": "Yayınla",
         "unpublish": "Taslağa Al",

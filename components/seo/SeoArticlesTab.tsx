@@ -685,6 +685,15 @@ export default function SeoArticlesTab({ activeSiteUrl }: Props) {
                     }`}>
                       {article.status === 'published' ? t('published') : t('draft')}
                     </span>
+                    {/* Otomatik yayın denenip başarısız olduysa kullanıcıya nedenini göster */}
+                    {article.status === 'draft' && article.params?.autoPublishError && (
+                      <span
+                        className="mt-1 flex items-center gap-1 text-[10px] text-red-600"
+                        title={t('autoPublishFailedHint')}
+                      >
+                        <AlertCircle className="w-3 h-3 shrink-0" /> {t('autoPublishFailed')}
+                      </span>
+                    )}
                   </td>
                   <td className="px-4 py-3 text-gray-500 text-xs hidden lg:table-cell">{new Date(article.created_at).toLocaleDateString()}</td>
                   <td className="px-4 py-3">

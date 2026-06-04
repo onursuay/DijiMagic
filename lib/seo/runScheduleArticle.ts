@@ -148,6 +148,7 @@ export async function runScheduleArticle(
   }
 
   // 7) Taslağı kaydet (yoai_articles)
+  const articleParams: Record<string, unknown> = { keyword: topic.keyword, wordCount: s.word_count, tone: s.tone }
   let articleId: string | null = null
   if (supabase) {
     const { data, error } = await supabase
@@ -157,7 +158,7 @@ export async function runScheduleArticle(
         category: 'seo_article',
         title: article.title,
         content: article.markdown,
-        params: { keyword: topic.keyword, wordCount: s.word_count, tone: s.tone },
+        params: articleParams,
         word_count: article.wordCount,
         status: 'draft',
         source: 'auto',
@@ -214,6 +215,20 @@ export async function runScheduleArticle(
     } catch (e) {
       publishResult = { ok: false, error: (e as Error).message }
     }
+  }
+
+  // 8b) Otomatik yayın denendi ama başarısız oldu → nedeni makaleye yaz.
+  // UI'da bu makale taslak olarak görünürken "Yayınlanamadı" rozeti + ipucu
+  // gösterilir; böylece kullanıcı "otomatik yayınla seçili ama neden taslak?"
+  // sorusuyla baş başa kalmaz. (migration yok — mevcut params jsonb genişletilir.)
+  if (s.auto_publish && !publishResult.ok && supabase && articleId) {
+    await supabase
+      .from('yoai_articles')
+      .update({
+        params: { ...articleParams, autoPublishError: publishResult.error ?? 'publish_failed' },
+        updated_at: new Date().toISOString(),
+      })
+      .eq('id', articleId)
   }
 
   // 9) Çalışmayı işaretle

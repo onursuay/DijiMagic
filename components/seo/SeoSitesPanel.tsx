@@ -326,7 +326,7 @@ export default function SeoSitesPanel({ banner, profileUrl }: Props) {
         >
           <div className="absolute inset-0 bg-black/40 backdrop-blur-sm" />
           <div
-            className="relative bg-white rounded-2xl shadow-2xl w-full max-w-lg overflow-hidden animate-card-enter"
+            className="relative bg-white rounded-2xl shadow-2xl w-full max-w-2xl overflow-hidden animate-card-enter"
             style={{ ['--card-index' as string]: 0 }}
             onClick={(e) => e.stopPropagation()}
           >
