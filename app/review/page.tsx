@@ -178,7 +178,7 @@ export default function ReviewPage() {
           Kampanya sihirbazını açıp Traffic + WhatsApp hedefi ile minimal bir kampanya oluşturun.
         </p>
         <Link
-          href="/dashboard/reklam/meta?tab=kampanyalar"
+          href="/meta-ads/kampanyalar"
           className="inline-block px-4 py-2 bg-violet-600 text-white rounded-lg text-sm font-medium hover:bg-violet-700"
         >
           Meta Reklam Sayfasına Git → Yeni Kampanya

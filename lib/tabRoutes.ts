@@ -98,10 +98,12 @@ export const TAB_ROUTES = {
     base: '/optimizasyon',
     kind: 'simple',
     defaultTab: 'meta',
+    // TikTok "Yakında" — kasıtlı olarak registry'de YOK: /optimizasyon/tiktok
+    // varsayılan 'meta'ya düşer (canlı TikTok endpoint'leri tetiklenmez). UI'da
+    // devre dışı "Yakında" butonu kalır. TikTok yayına alınınca buraya eklenecek.
     tabs: [
       { slug: 'meta', id: 'meta' },
       { slug: 'google', id: 'google' },
-      { slug: 'tiktok', id: 'tiktok' },
     ],
   },
   'raporlar': {
