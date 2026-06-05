@@ -68,7 +68,7 @@ const BASIC_FEATURES = [
   'Google Reklamları',
   'Meta Hedef Kitle (AI)',
   'Meta Reklamları',
-  '20 Tasarım Kredisi',
+  'Tasarım',
 ]
 
 const STARTER_FEATURES = [
@@ -78,7 +78,7 @@ const STARTER_FEATURES = [
   'Google Reklamları',
   'Meta Hedef Kitle (AI)',
   'Meta Reklamları',
-  '60 Tasarım Kredisi',
+  'Tasarım',
 ]
 
 const PREMIUM_FEATURES = [
@@ -88,7 +88,7 @@ const PREMIUM_FEATURES = [
   'Meta Raporları',
   'Google Reklamları',
   'Meta Reklamları',
-  '100 Tasarım Kredisi',
+  'Tasarım',
 ]
 
 const ENTERPRISE_FEATURES = [
