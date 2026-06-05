@@ -3747,6 +3747,7 @@
     "yearly": "Yıllık",
     "yearlyBilled": "yıllık faturalandırılır",
     "perMonth": "aylık",
+    "perYear": "yıl",
     "trialBadge": "14 gün ücretsiz",
     "selectPlan": "Planı Seç",
     "popular": "En Popüler",
@@ -3755,6 +3756,23 @@
     "adAccounts": "Reklam Hesabı",
     "maxAccountsHint": "7+ hesap için Enterprise",
     "features": "Öne Çıkan Özellikler",
+    "featureLabels": {
+      "reklamYonetimi": "Meta & Google Reklam Yönetimi",
+      "raporlar": "Meta & Google Raporları",
+      "hedefKitle": "Hedef Kitle Yönetimi",
+      "tasarim": "AI Tasarım Stüdyosu",
+      "entegrasyon": "Tüm Entegrasyonlar",
+      "optimizasyon": "Optimizasyon",
+      "hedefKitleAI": "AI Tabanlı Hedef Kitle",
+      "seoPlus": "SEO Plus",
+      "aiStrateji": "AI Strateji",
+      "aiStratejiSinirsiz": "AI Strateji (Sınırsız)",
+      "yoAlgoritma": "YoAlgoritma",
+      "crm": "CRM Sistemi",
+      "emailMarketing": "Email Marketing",
+      "donusumSihirbazi": "Dönüşüm Sihirbazı",
+      "sinirsizHesap": "Sınırsız Reklam Hesabı"
+    },
     "currentPlan": {
       "title": "Mevcut Aboneliğiniz",
       "plan": "Plan",
@@ -3776,7 +3794,12 @@
       "buy": "Satın Al",
       "selectPackage": "Paket Seçin",
       "purchased": "Kredi Yüklendi!",
-      "packages": "Kredi Paketleri"
+      "packages": "Kredi Paketleri",
+      "creditUnit": "kredi",
+      "popular": "Popüler",
+      "redirecting": "Ödeme sayfasına yönlendiriliyor...",
+      "notConfigured": "Ödeme sistemi henüz yapılandırılmadı. Lütfen daha sonra tekrar deneyin.",
+      "startError": "Ödeme başlatılamadı. Lütfen tekrar deneyin."
     },
     "optimizationNote": "Optimizasyon özelliği deneme sürecinde kullanılamaz.",
     "gateModal": {
@@ -3790,7 +3813,7 @@
     "planDescriptions": {
       "basic": "Reklam yönetiminde temel ihtiyaçlarınız için tüm araçlar.",
       "starter": "Büyümek için gereken optimizasyon çözümleri.",
-      "premium": "Optimizasyon ve stratejiyle, tek tıkla güçlü kampanyalar.",
+      "premium": "AI Strateji, YoAlgoritma, CRM ve Email Marketing dahil tam pazarlama suite'i.",
       "enterprise": "Reklam veren ajanslar için sınırsız reklam gücü."
     }
   },

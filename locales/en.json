@@ -3747,6 +3747,7 @@
     "yearly": "Yearly",
     "yearlyBilled": "billed annually",
     "perMonth": "per month",
+    "perYear": "year",
     "trialBadge": "14 days free",
     "selectPlan": "Select Plan",
     "popular": "Most Popular",
@@ -3755,6 +3756,23 @@
     "adAccounts": "Ad Account",
     "maxAccountsHint": "Enterprise for 7+ accounts",
     "features": "Key Features",
+    "featureLabels": {
+      "reklamYonetimi": "Meta & Google Ad Management",
+      "raporlar": "Meta & Google Reports",
+      "hedefKitle": "Audience Management",
+      "tasarim": "AI Design Studio",
+      "entegrasyon": "All Integrations",
+      "optimizasyon": "Optimization",
+      "hedefKitleAI": "AI-Powered Audiences",
+      "seoPlus": "SEO Plus",
+      "aiStrateji": "AI Strategy",
+      "aiStratejiSinirsiz": "AI Strategy (Unlimited)",
+      "yoAlgoritma": "YoAlgorithm",
+      "crm": "CRM System",
+      "emailMarketing": "Email Marketing",
+      "donusumSihirbazi": "Conversion Wizard",
+      "sinirsizHesap": "Unlimited Ad Accounts"
+    },
     "currentPlan": {
       "title": "Current Subscription",
       "plan": "Plan",
@@ -3776,7 +3794,12 @@
       "buy": "Buy Now",
       "selectPackage": "Select a Package",
       "purchased": "Credits Added!",
-      "packages": "Credit Packages"
+      "packages": "Credit Packages",
+      "creditUnit": "credits",
+      "popular": "Popular",
+      "redirecting": "Redirecting to payment page...",
+      "notConfigured": "Payment system is not configured yet. Please try again later.",
+      "startError": "Could not start payment. Please try again."
     },
     "optimizationNote": "Optimization feature is not available during trial.",
     "gateModal": {
@@ -3790,7 +3813,7 @@
     "planDescriptions": {
       "basic": "All the tools you need for basic ad management.",
       "starter": "Optimization solutions for growth.",
-      "premium": "Powerful campaigns with optimization and strategy.",
+      "premium": "The full marketing suite — AI Strategy, YoAlgorithm, CRM and Email Marketing included.",
       "enterprise": "Unlimited ad power for agencies."
     }
   },

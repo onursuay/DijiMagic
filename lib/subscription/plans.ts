@@ -1,24 +1,41 @@
 import type { SubscriptionPlan, CreditPackage } from './types'
 
 /**
- * Monthly prices indexed by ad account count.
- * Prices are in TRY (₺) — İyzico TRY ile tahsil eder; bu rakamlar nihai TL fiyatlarıdır.
+ * Plan fiyatları USD ($) cinsindendir — kullanıcıya ABD doları gösterilir.
+ * İyzico TL tahsil ettiği için ödeme anında bu rakamlar `USD_TRY_RATE` ile TL'ye
+ * çevrilir (bkz. `toChargeTRY` + lib/billing/catalog.ts). Buradaki sayılar her
+ * zaman GÖSTERİLEN (USD) fiyatlardır; tahsil edilen TL değil.
+ *
+ * Konumlandırma: doğrudan rakip iyzads ($49/$99/$199) her kademede ~%20 altından
+ * fiyatlanır → "iyzads'ın sunduğu her şey, daha fazla modülle, daha ucuza".
  */
 const ACCOUNT_PRICES: Record<string, Record<number, number>> = {
-  basic:   { 2: 49, 3: 69, 4: 89, 5: 109 },
-  starter: { 2: 99, 3: 139, 4: 189, 5: 229 },
-  premium: { 2: 199, 3: 289, 4: 379, 5: 469 },
+  basic:   { 2: 39, 3: 54, 4: 69, 5: 84 },
+  starter: { 2: 79, 3: 109, 4: 139, 5: 169 },
+  premium: { 2: 159, 3: 229, 4: 299, 5: 369 },
 }
 
-/** Per-extra-account cost for accounts beyond the lookup table */
+/** Per-extra-account cost (USD) for accounts beyond the lookup table */
 const EXTRA_ACCOUNT_COST: Record<string, number> = {
-  basic: 20,
-  starter: 40,
-  premium: 90,
+  basic: 15,
+  starter: 30,
+  premium: 70,
 }
 
 /** Yearly discount multiplier (30% off) */
 export const YEARLY_DISCOUNT = 0.70
+
+/**
+ * Manuel yönetilen USD→TRY kuru. Canlı kur yerine sabit + küçük tampon kullanılır
+ * (checkout anında fiyat oynamasın, marj korunsun). Periyodik güncellenir.
+ * Gösterilen fiyat USD; İyzico'ya giden tutar = USD × USD_TRY_RATE (TL).
+ */
+export const USD_TRY_RATE = 47
+
+/** USD gösterim fiyatını İyzico'ya gönderilecek TL tutarına (2 ondalık) çevirir. */
+export function toChargeTRY(usd: number): number {
+  return Math.round(usd * USD_TRY_RATE * 100) / 100
+}
 
 /** Ad-account count bounds for the self-serve plans (Basic / Starter / Premium) */
 export const MIN_AD_ACCOUNTS = 2
@@ -28,7 +45,7 @@ export const ENTERPRISE_MIN_AD_ACCOUNTS = 7
 export const ENTERPRISE_MAX_AD_ACCOUNTS = 50
 
 /**
- * Get monthly price for a plan based on ad account count.
+ * Get monthly price (USD) for a plan based on ad account count.
  */
 export function getMonthlyPrice(planId: string, adAccounts: number): number {
   const prices = ACCOUNT_PRICES[planId]
@@ -42,11 +59,11 @@ export function getMonthlyPrice(planId: string, adAccounts: number): number {
   const maxDefined = Math.max(...Object.keys(prices).map(Number))
   const basePrice = prices[maxDefined]
   const extra = adAccounts - maxDefined
-  return basePrice + extra * (EXTRA_ACCOUNT_COST[planId] || 20)
+  return basePrice + extra * (EXTRA_ACCOUNT_COST[planId] || 15)
 }
 
 /**
- * Get yearly price for a plan (30% discount).
+ * Get yearly price (USD) for a plan (30% discount).
  */
 export function getYearlyPrice(planId: string, adAccounts: number): number {
   const monthly = getMonthlyPrice(planId, adAccounts)
@@ -54,58 +71,66 @@ export function getYearlyPrice(planId: string, adAccounts: number): number {
 }
 
 /**
- * Get per-month price when billing yearly.
+ * Get per-month price (USD) when billing yearly.
  */
 export function getYearlyMonthlyPrice(planId: string, adAccounts: number): number {
   const yearly = getYearlyPrice(planId, adAccounts)
   return Math.round(yearly / 12 * 100) / 100
 }
 
-/** Feature lists matching each plan's capabilities */
+/**
+ * Plan özellik anahtarları — i18n key'leri (subscription.featureLabels.*).
+ * Ham metin değil; UI bunları `t()` ile çevirir (EN/TR uyumu zorunlu).
+ * Kademe dağılımı (onaylı):
+ *  - Basic   : reklam yönetimi + raporlar + temel hedef kitle + tasarım
+ *  - Starter : + Optimizasyon + AI Hedef Kitle + SEO Plus
+ *  - Premium : + AI Strateji + YoAlgoritma + CRM + Email Marketing + Dönüşüm Sihirbazı
+ *  - Enterprise: hepsi sınırsız + sınırsız reklam hesabı
+ */
 const BASIC_FEATURES = [
-  'Google Raporları',
-  'Meta Raporları',
-  'Google Reklamları',
-  'Meta Hedef Kitle (AI)',
-  'Meta Reklamları',
-  'Tasarım',
+  'reklamYonetimi',
+  'raporlar',
+  'hedefKitle',
+  'tasarim',
+  'entegrasyon',
 ]
 
 const STARTER_FEATURES = [
-  'Optimizasyon',
-  'Google Raporları',
-  'Meta Raporları',
-  'Google Reklamları',
-  'Meta Hedef Kitle (AI)',
-  'Meta Reklamları',
-  'Tasarım',
+  'optimizasyon',
+  'hedefKitleAI',
+  'seoPlus',
+  'reklamYonetimi',
+  'raporlar',
+  'tasarim',
 ]
 
 const PREMIUM_FEATURES = [
-  'AI Strateji (AI)',
-  'Optimizasyon',
-  'Google Raporları',
-  'Meta Raporları',
-  'Google Reklamları',
-  'Meta Reklamları',
-  'Tasarım',
+  'aiStrateji',
+  'yoAlgoritma',
+  'crm',
+  'emailMarketing',
+  'donusumSihirbazi',
+  'optimizasyon',
+  'hedefKitleAI',
+  'seoPlus',
 ]
 
 const ENTERPRISE_FEATURES = [
-  'AI Strateji (Sınırsız)',
-  'Optimizasyon',
-  'Meta Reklamları',
-  'Google Reklamları',
-  'Meta Raporları',
-  'Google Raporları',
-  'Tasarım',
+  'aiStratejiSinirsiz',
+  'yoAlgoritma',
+  'crm',
+  'emailMarketing',
+  'donusumSihirbazi',
+  'optimizasyon',
+  'seoPlus',
+  'sinirsizHesap',
 ]
 
 /** Feature section titles per plan */
 export const PLAN_SECTION_TITLES: Record<string, string> = {
   basic: 'Tek Panelden Yönetin',
   starter: 'Profesyonel Reklam Yönetimi',
-  premium: 'Tek Tıkla Reklamcılık',
+  premium: 'Tam Pazarlama Suite’i',
   enterprise: 'Sınırsız Reklam Gücü',
 }
 
@@ -113,8 +138,8 @@ export const SUBSCRIPTION_PLANS: SubscriptionPlan[] = [
   {
     id: 'basic',
     name: 'Basic',
-    monthlyPrice: 49,
-    yearlyPrice: 411.60,
+    monthlyPrice: 39,
+    yearlyPrice: 327.60,
     features: BASIC_FEATURES,
     adAccountLimit: 2,
     includesOptimization: false,
@@ -125,8 +150,8 @@ export const SUBSCRIPTION_PLANS: SubscriptionPlan[] = [
   {
     id: 'starter',
     name: 'Starter',
-    monthlyPrice: 99,
-    yearlyPrice: 831.60,
+    monthlyPrice: 79,
+    yearlyPrice: 663.60,
     features: STARTER_FEATURES,
     adAccountLimit: 2,
     includesOptimization: true,
@@ -137,8 +162,8 @@ export const SUBSCRIPTION_PLANS: SubscriptionPlan[] = [
   {
     id: 'premium',
     name: 'Premium',
-    monthlyPrice: 199,
-    yearlyPrice: 1671.60,
+    monthlyPrice: 159,
+    yearlyPrice: 1335.60,
     features: PREMIUM_FEATURES,
     adAccountLimit: 2,
     includesOptimization: true,
@@ -161,7 +186,7 @@ export const SUBSCRIPTION_PLANS: SubscriptionPlan[] = [
 ]
 
 export const CREDIT_PACKAGES: CreditPackage[] = [
-  { id: 'pkg-100', credits: 100, price: 49, label: '100 Kredi' },
-  { id: 'pkg-500', credits: 500, price: 199, label: '500 Kredi', popular: true },
-  { id: 'pkg-1000', credits: 1000, price: 349, label: '1.000 Kredi' },
+  { id: 'pkg-100', credits: 100, price: 9, label: '100 Kredi' },
+  { id: 'pkg-500', credits: 500, price: 39, label: '500 Kredi', popular: true },
+  { id: 'pkg-1000', credits: 1000, price: 69, label: '1.000 Kredi' },
 ]

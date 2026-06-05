@@ -26,13 +26,13 @@ export default function CreditLoadSection() {
       const data = await res.json()
       if (!res.ok || !data?.ok || !data.paymentPageUrl) {
         alert(data?.error === 'iyzico_not_configured'
-          ? 'Ödeme sistemi henüz yapılandırılmadı. Lütfen daha sonra tekrar deneyin.'
-          : 'Ödeme başlatılamadı. Lütfen tekrar deneyin.')
+          ? t('notConfigured')
+          : t('startError'))
         return
       }
       window.location.href = data.paymentPageUrl
     } catch {
-      alert('Ödeme başlatılamadı. Lütfen tekrar deneyin.')
+      alert(t('startError'))
     } finally {
       setStarting(false)
     }
@@ -42,11 +42,11 @@ export default function CreditLoadSection() {
     <div id="krediler" className="bg-white rounded-2xl border border-gray-200 p-6">
       <h3 className="text-base font-bold text-gray-900 mb-4">{t('title')}</h3>
 
-      <div className="flex items-center gap-3 mb-6 p-4 bg-amber-50 border border-amber-200 rounded-xl">
-        <Coins className="w-6 h-6 text-amber-500" />
+      <div className="flex items-center gap-3 mb-6 p-4 bg-primary/5 border border-primary/20 rounded-xl">
+        <Coins className="w-6 h-6 text-primary" />
         <div>
-          <p className="text-sm text-amber-600">{t('balance')}</p>
-          <p className="text-2xl font-bold text-amber-700">{credits}</p>
+          <p className="text-sm text-gray-600">{t('balance')}</p>
+          <p className="text-2xl font-bold text-primary">{credits}</p>
         </div>
       </div>
 
@@ -78,17 +78,17 @@ export default function CreditLoadSection() {
                 </div>
                 <div>
                   <p className="text-sm font-semibold text-gray-900">{pkg.label}</p>
-                  <p className="text-sm text-gray-500">{pkg.credits} kredi</p>
+                  <p className="text-sm text-gray-500">{pkg.credits} {t('creditUnit')}</p>
                 </div>
                 {pkg.popular && (
                   <span className="px-2 py-0.5 text-[10px] font-bold bg-primary text-white rounded-full">
                     <Sparkles className="w-3 h-3 inline mr-0.5" />
-                    Popüler
+                    {t('popular')}
                   </span>
                 )}
               </div>
               <span className={`text-sm font-semibold ${isSelected ? 'text-primary' : 'text-gray-900'}`}>
-                ₺{pkg.price}
+                ${pkg.price}
               </span>
             </button>
           )
@@ -105,10 +105,10 @@ export default function CreditLoadSection() {
         }`}
       >
         {starting
-          ? 'Ödeme sayfasına yönlendiriliyor...'
+          ? t('redirecting')
           : selectedPkg
-            ? `₺${selectedPkg.price} — ${t('buy') ?? 'Satın Al'}`
-            : t('selectPackage') ?? 'Paket Seçin'}
+            ? `$${selectedPkg.price} — ${t('buy')}`
+            : t('selectPackage')}
       </button>
 
       <div className="space-y-1.5 text-sm text-gray-500 mt-4">
