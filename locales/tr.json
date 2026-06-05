@@ -2986,7 +2986,12 @@
             "errAuthBlocked": "Sitenize ulaşıldı ancak sunucunuz kimlik doğrulama bilgisini WordPress’e iletmiyor (Authorization başlığı engelleniyor). Bu bir parola hatası değildir — girdiğiniz bilgiler doğru olabilir. Hosting/sunucu ayarlarından Authorization başlığının PHP’ye iletilmesini sağlayın; alternatif olarak “Başka bir site / özel yazılım” (Webhook) yöntemiyle bağlanabilirsiniz.",
             "errUnreachable": "Siteye ulaşılamadı (zaman aşımı). Site çok yavaş olabilir; biraz sonra tekrar deneyin.",
             "errNotWordpress": "Bu adreste WordPress REST API bulunamadı. Site adresini kontrol edin.",
-            "errSaveFailed": "Bağlantı kaydedilemedi. Lütfen tekrar deneyin."
+            "errSaveFailed": "Bağlantı kaydedilemedi. Lütfen tekrar deneyin.",
+            "authBlockedFixTitle": "Sunucunuza ekleyin (kök .htaccess dosyası):",
+            "authBlockedFixHint": "Bu satırları sitenizin kök dizinindeki .htaccess dosyasının en üstüne ekleyip kaydedin, sonra Tekrar Dene'ye tıklayın. Çoğu paylaşımlı sunucu (LiteSpeed / Apache 2.4.13+) bunu destekler.",
+            "copy": "Kopyala",
+            "copied": "Kopyalandı",
+            "retry": "Tekrar Dene"
           }
         },
         "setup": "Kurulum",

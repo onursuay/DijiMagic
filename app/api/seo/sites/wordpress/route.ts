@@ -4,6 +4,7 @@ import { supabase } from '@/lib/supabase/client'
 import { isCryptoReady } from '@/lib/seo/crypto'
 import { listConnections, upsertConnection } from '@/lib/seo/siteConnectionStore'
 import { WordPressConnector } from '@/lib/seo/connectors/wordpress'
+import { WordPressXmlRpcConnector } from '@/lib/seo/connectors/wordpressXmlRpc'
 
 /**
  * WordPress'e MANUEL "Uygulama Şifresi" ile bağlanma.
@@ -65,14 +66,32 @@ export async function POST(request: Request) {
   // Hafif uçtan doğrula (testConnection → users/me, 10sn timeout).
   const connector = new WordPressConnector({ baseUrl, wpUsername: username, wpAppPassword: appPassword })
   const test = await connector.testConnection()
+
+  // Hangi taşıma yolu kaydedilecek: varsayılan REST.
+  let transport: 'rest' | 'xmlrpc' = 'rest'
+
   if (!test.ok) {
-    const code =
-      test.errorCode === 'auth' ? 'auth_failed'
-      : test.errorCode === 'auth_blocked' ? 'auth_blocked'
-      : test.errorCode === 'network' ? 'unreachable'
-      : test.errorCode === 'not_found' ? 'not_wordpress'
-      : 'test_failed'
-    return NextResponse.json({ ok: false, error: code }, { status: 400 })
+    // Sunucu Authorization başlığını düşürüyorsa (auth_blocked) REST imkânsız;
+    // AYNI uygulama parolasını XML-RPC üzerinden (gövdede taşır, başlık gerekmez) dene.
+    if (test.errorCode === 'auth_blocked') {
+      const xml = new WordPressXmlRpcConnector({ baseUrl, wpUsername: username, wpAppPassword: appPassword })
+      const xmlTest = await xml.testConnection()
+      if (xmlTest.ok) {
+        transport = 'xmlrpc' // başarı: kullanıcı hata görmeden bağlanır
+      } else {
+        // XML-RPC kimliği gördü ve reddetti → parola gerçekten hatalı.
+        // XML-RPC kapalı/ulaşılamaz → .htaccess rehberi (auth_blocked) göster.
+        const code = xmlTest.errorCode === 'auth' ? 'auth_failed' : 'auth_blocked'
+        return NextResponse.json({ ok: false, error: code }, { status: 400 })
+      }
+    } else {
+      const code =
+        test.errorCode === 'auth' ? 'auth_failed'
+        : test.errorCode === 'network' ? 'unreachable'
+        : test.errorCode === 'not_found' ? 'not_wordpress'
+        : 'test_failed'
+      return NextResponse.json({ ok: false, error: code }, { status: 400 })
+    }
   }
 
   // İlk hedefse varsayılan yap (publish varsayılanı kullanır).
@@ -93,7 +112,7 @@ export async function POST(request: Request) {
     label,
     baseUrl,
     isDefault: isFirst,
-    secrets: { wpUsername: username, wpAppPassword: appPassword },
+    secrets: { wpUsername: username, wpAppPassword: appPassword, wpTransport: transport },
   })
 
   if (!connection) return NextResponse.json({ ok: false, error: 'save_failed' }, { status: 500 })

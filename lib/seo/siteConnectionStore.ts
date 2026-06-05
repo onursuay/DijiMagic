@@ -23,6 +23,7 @@ export type SiteConnectionStatus = 'active' | 'error' | 'revoked'
 interface SecretBag {
   wpUsername?: string
   wpAppPassword?: string
+  wpTransport?: 'rest' | 'xmlrpc'   // gizli değil; migration'sız taşıma için credentials JSON'ında tutulur
   accessToken?: string
   apiKey?: string
   apiSecret?: string
@@ -127,6 +128,7 @@ function toCredentials(row: SiteConnectionRow): SiteCredentials {
     baseUrl: row.base_url,
     wpUsername: secrets.wpUsername,
     wpAppPassword: secrets.wpAppPassword,
+    wpTransport: secrets.wpTransport,
     accessToken: secrets.accessToken,
     apiKey: secrets.apiKey,
     apiSecret: secrets.apiSecret,

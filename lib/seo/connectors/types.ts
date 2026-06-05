@@ -20,12 +20,18 @@ export type ConnectorErrorCode =
   | 'unsupported'
   | 'unknown'
 
+/** WordPress yayın taşıma yolu — REST (Application Password) veya XML-RPC. */
+export type WpTransport = 'rest' | 'xmlrpc'
+
 /** Şifresi ÇÖZÜLMÜŞ kimlik bilgileri — yalnızca server belleğinde, connector'a verilir. */
 export interface SiteCredentials {
   baseUrl: string                 // https://site.com (trailing slash temizlenmiş)
   // WordPress
   wpUsername?: string
   wpAppPassword?: string
+  // WordPress taşıma yolu: sunucu Authorization başlığını düşürüyorsa 'xmlrpc'.
+  // Tanımsız → 'rest' (varsayılan, modern Application Password yolu).
+  wpTransport?: WpTransport
   // Shopify / İdeaSoft (bearer/admin token)
   accessToken?: string
   // İdeaSoft OAuth2

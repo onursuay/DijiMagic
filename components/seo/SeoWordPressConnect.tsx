@@ -4,7 +4,23 @@ import { useState, useEffect } from 'react'
 import { useTranslations } from 'next-intl'
 import {
   Loader2, KeyRound, ChevronDown, ChevronUp, Eye, EyeOff, ExternalLink,
+  Copy, Check, RefreshCw,
 } from 'lucide-react'
+
+/**
+ * Sunucu Authorization başlığını PHP'ye iletmiyorsa (auth_blocked) kullanıcıya
+ * gösterilen kök .htaccess düzeltmesi. Literal sunucu yapılandırması — i18n'e
+ * taşınmaz (çevrilmez), yalnız etrafındaki etiketler çevrilir.
+ */
+const HTACCESS_SNIPPET = `# YoAi — Authorization başlığını PHP'ye ilet
+CGIPassAuth On
+
+# Alternatif (Apache mod_rewrite):
+<IfModule mod_rewrite.c>
+RewriteEngine On
+RewriteCond %{HTTP:Authorization} ^(.*)
+RewriteRule .* - [E=HTTP_AUTHORIZATION:%{HTTP:Authorization}]
+</IfModule>`
 
 interface Props {
   /** Etkin site URL'i (analiz tabındaki aktif URL) — form öntanımlı doldurulur. */
@@ -36,7 +52,8 @@ export default function SeoWordPressConnect({ defaultUrl, onConnected, defaultOp
   const [appPassword, setAppPassword] = useState('')
   const [showPass, setShowPass] = useState(false)
   const [busy, setBusy] = useState(false)
-  const [error, setError] = useState<string | null>(null)
+  const [errorCode, setErrorCode] = useState<string | null>(null)
+  const [copied, setCopied] = useState(false)
 
   // Etkin site URL'i değişirse (analiz tabındaki URL) ve kullanıcı henüz elle dokunmadıysa öntanımlıyı güncelle.
   useEffect(() => {
@@ -57,7 +74,7 @@ export default function SeoWordPressConnect({ defaultUrl, onConnected, defaultOp
   }
 
   const handleConnect = async () => {
-    setError(null)
+    setErrorCode(null)
     setBusy(true)
     try {
       const res = await fetch('/api/seo/sites/wordpress', {
@@ -70,12 +87,22 @@ export default function SeoWordPressConnect({ defaultUrl, onConnected, defaultOp
         setUsername(''); setAppPassword(''); setOpen(false)
         onConnected()
       } else {
-        setError(errText(data.error))
+        setErrorCode(data.error || 'save_failed')
       }
     } catch {
-      setError(t('errSaveFailed'))
+      setErrorCode('save_failed')
     } finally {
       setBusy(false)
+    }
+  }
+
+  const copySnippet = async () => {
+    try {
+      await navigator.clipboard.writeText(HTACCESS_SNIPPET)
+      setCopied(true)
+      setTimeout(() => setCopied(false), 2000)
+    } catch {
+      /* pano erişimi yoksa sessiz geç */
     }
   }
 
@@ -158,8 +185,38 @@ export default function SeoWordPressConnect({ defaultUrl, onConnected, defaultOp
         <p className="text-xs text-gray-500 mt-1">{t('passwordHint')}</p>
       </div>
 
-      {error && (
-        <div className="bg-red-50 border border-red-200 rounded-lg p-2.5 text-xs text-red-700">{error}</div>
+      {errorCode && errorCode !== 'auth_blocked' && (
+        <div className="bg-red-50 border border-red-200 rounded-lg p-2.5 text-xs text-red-700">{errText(errorCode)}</div>
+      )}
+
+      {errorCode === 'auth_blocked' && (
+        <div className="bg-primary/5 border border-primary/20 rounded-lg p-3 space-y-2.5">
+          <p className="text-xs text-gray-700 leading-relaxed">{t('errAuthBlocked')}</p>
+          <div className="space-y-1">
+            <p className="text-[11px] font-medium text-gray-600">{t('authBlockedFixTitle')}</p>
+            <div className="relative">
+              <pre className="bg-gray-900 text-gray-100 text-[11px] leading-relaxed rounded-lg p-2.5 pr-20 overflow-x-auto font-mono whitespace-pre">{HTACCESS_SNIPPET}</pre>
+              <button
+                type="button"
+                onClick={copySnippet}
+                className="absolute top-1.5 right-1.5 inline-flex items-center gap-1 px-2 py-1 text-[10px] font-medium text-gray-100 bg-white/10 hover:bg-white/20 rounded transition-colors"
+              >
+                {copied ? <Check className="w-3 h-3" /> : <Copy className="w-3 h-3" />}
+                {copied ? t('copied') : t('copy')}
+              </button>
+            </div>
+            <p className="text-[11px] text-gray-500">{t('authBlockedFixHint')}</p>
+          </div>
+          <button
+            type="button"
+            onClick={handleConnect}
+            disabled={busy || !canSubmit}
+            className="inline-flex items-center gap-1.5 px-3.5 py-1.5 text-xs text-white bg-primary rounded-lg hover:bg-primary/90 disabled:opacity-50 transition-all active:scale-[0.97]"
+          >
+            {busy ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <RefreshCw className="w-3.5 h-3.5" />}
+            {t('retry')}
+          </button>
+        </div>
       )}
 
       <div className="flex items-center justify-between gap-2">

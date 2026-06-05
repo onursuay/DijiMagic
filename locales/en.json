@@ -2986,7 +2986,12 @@
             "errAuthBlocked": "We reached your site, but your server isn’t passing the authentication credentials to WordPress (the Authorization header is being blocked). This is not a password error — the details you entered may be correct. Enable forwarding of the Authorization header to PHP in your hosting/server settings, or connect using the “Other site / custom software” (Webhook) method.",
             "errUnreachable": "Couldn't reach the site (timeout). The site may be very slow; try again shortly.",
             "errNotWordpress": "No WordPress REST API found at this address. Check the site address.",
-            "errSaveFailed": "Couldn't save the connection. Please try again."
+            "errSaveFailed": "Couldn't save the connection. Please try again.",
+            "authBlockedFixTitle": "Add to your server (root .htaccess file):",
+            "authBlockedFixHint": "Add these lines to the top of the .htaccess file in your site's root, save, then click Retry. Most shared servers (LiteSpeed / Apache 2.4.13+) support this.",
+            "copy": "Copy",
+            "copied": "Copied",
+            "retry": "Retry"
           }
         },
         "setup": "Setup",

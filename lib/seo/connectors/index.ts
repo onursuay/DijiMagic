@@ -1,5 +1,6 @@
 import type { SiteConnector, SiteCredentials, SitePlatform } from './types'
 import { WordPressConnector } from './wordpress'
+import { WordPressXmlRpcConnector } from './wordpressXmlRpc'
 import { GenericWebhookConnector } from './genericWebhook'
 
 /**
@@ -24,7 +25,11 @@ export function isPlatformAvailable(platform: SitePlatform): boolean {
 export function getConnector(platform: SitePlatform, creds: SiteCredentials): SiteConnector {
   switch (platform) {
     case 'wordpress':
-      return new WordPressConnector(creds)
+      // Sunucu Authorization başlığını düşürüyorsa bağlama akışı 'xmlrpc' kaydeder;
+      // o zaman kimliği gövdede taşıyan XML-RPC connector'ı kullanılır.
+      return creds.wpTransport === 'xmlrpc'
+        ? new WordPressXmlRpcConnector(creds)
+        : new WordPressConnector(creds)
     case 'generic':
       return new GenericWebhookConnector(creds)
     case 'shopify':
