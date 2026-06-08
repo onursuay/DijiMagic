@@ -14,6 +14,7 @@ import { buildPerAdSystemBlocks } from '../../lib/yoai/ai/perAdPrompt'
 import { buildSystemBlocks } from '../../lib/yoai/ai/systemPrompt'
 import { buildOptimizationSystemPrompt } from '../../lib/meta/optimization/aiRecommender'
 import { buildStrategySystemPrompt } from '../../lib/strategy/ai-generator'
+import { buildGenerationPrompt } from '../../lib/yoai/prompts'
 // <<BUILDER IMPORTS — yeni import'ları BU SATIRIN ÜSTÜNE ekle>>
 
 const FULL_MARKER = 'Meta Reklam Analiz Bilgisi'
@@ -87,6 +88,16 @@ test('strateji: Meta kanalı bilgi içerir, sadece-Google içermez', () => {
   assert.ok(withMeta.includes(FULL_MARKER), 'Meta kanalı bilgi içermiyor')
   assert.ok(withMeta.includes('dijital pazarlama stratejisti'), 'temel system prompt kaybolmuş')
   assert.ok(!googleOnly.includes(FULL_MARKER), 'sadece-Google strateji bilgi içermemeli')
+})
+
+test('sohbet: kreatif kategoriler kreatif ilkeleri içerir, diğerleri içermez', () => {
+  const p: Record<string, string> = {}
+  for (const cat of ['ad_copy', 'social_media', 'landing_page'] as const) {
+    assert.ok(buildGenerationPrompt(cat, p).includes(CREATIVE_MARKER), `${cat} kreatif ilke içermeli`)
+  }
+  for (const cat of ['seo_article', 'email_marketing', 'product_description', 'slogan'] as const) {
+    assert.ok(!buildGenerationPrompt(cat, p).includes(CREATIVE_MARKER), `${cat} kreatif ilke İÇERMEMELİ`)
+  }
 })
 
 // <<INJECTION TESTS — yeni test()'leri BU SATIRIN ÜSTÜNE ekle>>

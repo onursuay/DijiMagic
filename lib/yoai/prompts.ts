@@ -1,4 +1,5 @@
 import type { ContentCategory } from './types'
+import { META_CREATIVE_PRINCIPLES } from './ai/docs/meta_analysis_knowledge'
 
 // ── Intent Detection Prompt ─────────────────────────────────────
 export const INTENT_DETECTION_PROMPT = `Kullanıcının mesajını analiz et ve aşağıdaki kategorilerden BİRİNİ döndür.
@@ -144,6 +145,10 @@ Gereksiz açıklama yapma, doğrudan içeriği üret.`
 - Her sloganın altına kısa açıklama/kullanım önerisi ekle`,
   }
 
+  const CREATIVE_CATEGORIES: ReadonlyArray<typeof category> = ['ad_copy', 'social_media', 'landing_page']
+  if (CREATIVE_CATEGORIES.includes(category)) {
+    return `${categoryPrompts[category]}\n\n${META_CREATIVE_PRINCIPLES}`
+  }
   return categoryPrompts[category]
 }
 
