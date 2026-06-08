@@ -686,7 +686,7 @@ import { META_ANALYSIS_KNOWLEDGE } from '@/lib/yoai/ai/docs/meta_analysis_knowle
 
 ```typescript
 /** Strateji system prompt'unu üretir; Meta kanalı seçiliyse Meta analiz bilgisini ekler. */
-export function buildStrategySystemPrompt(channels: { meta?: boolean }): string {
+export function buildStrategySystemPrompt(channels: { meta?: boolean; google?: boolean; tiktok?: boolean }): string {
   return channels?.meta ? `${SYSTEM_PROMPT}\n\n${META_ANALYSIS_KNOWLEDGE}` : SYSTEM_PROMPT
 }
 ```
