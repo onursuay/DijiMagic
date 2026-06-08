@@ -2,6 +2,11 @@
 
 ---
 
+## 2026-06-08 — Meta Ads analiz bilgisi 4 AI motoruna entegre edildi
+- **Sorun:** YoAlgoritma / Optimizasyon / Strateji / sohbet, Meta'nın sistem mekaniğini (Breakdown Effect, learning phase, marjinal vs. ortalama CPA, auction overlap, pacing, ad relevance) bilmeden öneri/kopya üretiyordu — "yüksek ortalama CPA'lı segmenti durdur" gibi klasik hatalara açıktı.
+- **Çözüm:** `meta-ads-analyzer` reposunun (MIT) 9 referans dokümanı tek Türkçe küratörlü dosyaya damıtıldı (`meta_analysis_knowledge.ts`). 3 analiz motoruna **tam doküman** Meta-only cached system block olarak, sohbetin **kreatif kategorilerine** (reklam metni / sosyal medya / landing) kreatif alt-küme (`META_CREATIVE_PRINCIPLES`) enjekte edildi. Google yolları ve SEO/e-posta/slogan kategorileri etkilenmez. Meta/Google API, veri çekme, change-set ve **publish** akışlarına dokunulmadı — yalnız prompt katmanı zenginleşti (cached → token maliyeti artmaz). Reponun MCP server + token script'leri (dev aracı) kapsam dışı bırakıldı. 9/9 birim testi geçer; `tsc --noEmit` temiz.
+- **Dosyalar:** `lib/yoai/ai/docs/meta_analysis_knowledge.ts` (yeni), `lib/yoai/ai/perCampaignPrompt.ts`, `lib/yoai/ai/perAdPrompt.ts`, `lib/yoai/ai/systemPrompt.ts`, `lib/meta/optimization/aiRecommender.ts`, `lib/strategy/ai-generator.ts`, `lib/yoai/prompts.ts`, `src/tests/metaAnalysisKnowledge.test.ts`
+
 ## 2026-06-07 — SEO makale yılı GÜNCEL YIL'a sabitlendi (eski yıl "2025" başlık fix)
 - **Sorun:** 2026 yılındayken otomatik üretilen makale başlığı eski yılı içeriyordu ("Koltuk Yıkama Fiyatları Ankara **2025** Rehberi"). Kök neden: anahtar kelime seçimi (`aiSelectKeyword`) ve makale üretim prompt'ları (otomatik + manuel) Claude'a **güncel tarih/yıl bilgisini hiç geçirmiyordu**; model kendi bilgi kesim yılına (2025) düşüp başlık/içerikte eski yılı yazıyordu. "2025"in asıl kaynağı, başlığa giren anahtar kelimenin kendisiydi.
 - **Çözüm:** Üç prompt noktasına da `new Date().getFullYear()` ile dinamik güncel yıl + "yıl geçecekse MUTLAKA güncel yılı kullan; geçmiş yılları ASLA yazma" direktifi eklendi. Hardcoded yıl yok — her yıl otomatik doğru. Hem otomatik hem manuel üretim kapsanır.
