@@ -19,6 +19,7 @@ import {
 } from 'lucide-react'
 import SignupApprovalsPanel from '@/components/gozetim/SignupApprovalsPanel'
 import WizardSelect from '@/components/meta/wizard/WizardSelect'
+import OfficialAdsKnowledgePanel from './OfficialAdsKnowledgePanel'
 
 interface ScanSummary {
   id: string
@@ -276,6 +277,9 @@ export default function GozetimMerkeziClient() {
           {error}
         </div>
       )}
+
+      {/* Resmi Döküman Güncellemeleri — onay bekleyen AI taslakları (Alt-Proje B) */}
+      <OfficialAdsKnowledgePanel />
 
       {/* KPI Kartları — Kullanıcı & Firma */}
       <section className="grid grid-cols-2 gap-3 sm:grid-cols-3 lg:grid-cols-5" data-testid="kpi-section">
