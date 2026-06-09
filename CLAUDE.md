@@ -75,6 +75,18 @@ Bu projede yapılan **HİÇBİR değişiklik** (UI, layout, stil, sütun, refact
 - Şüphe varsa entegrasyon koduna **dokunma**; sadece görünüm katmanını düzenle.
 - İlgili: [feedback_no_touch_meta_google](memory).
 
+## Reklam Metni Dil & İmla Kuralı (ZORUNLU — Meta + Google, Sıfırdan Üretilen Tüm Reklamlar)
+Bundan sonra **sıfırdan oluşturulan tüm reklamların başlık (headline) ve açıklamaları (description)** — **Meta ve Google dahil** — şu kurallara uymak zorundadır:
+
+1. **Türkçe imla ve dilbilgisi kurallarına uygun yazılır.** Büyük/küçük harf, ekler (`-de/-da`, `-ki`, soru eki `mı/mi`), kesme işareti (özel ad + çekim eki: "YoAi'ye"), Türkçe karakterler (ç, ğ, ı, İ, ö, ş, ü) **eksiksiz** ve doğru kullanılır. ASCII eşdeğeri ("guzel", "icin") **YASAK**. Yazım denetiminden geçmiş, akıcı ve doğru Türkçe üretilir.
+
+2. **Google Ads reklamlarında noktalama kısıtı (politika gereği — KRİTİK):**
+   - **Yalnız nokta (`.`)** kullanılabilir.
+   - **Ünlem (`!`), tire (`-`), soru işareti (`?`)** ve benzeri vurgu/noktalama işaretleri Google reklam politikalarına aykırıdır → **kesinlikle kullanılmaz.**
+   - Bu kısıt yalnız Google içindir; Meta başlık/açıklamalarında standart Türkçe noktalama serbesttir (yine imla doğru olmak zorunda).
+
+3. **Kapsam:** Bu kural reklam metnini **üreten** her noktada (AI prompt'ları, şablonlar, varsayılan metin önerileri) geçerlidir. Üretim katmanı değişir; Meta/Google **API ve publish akışı KORUNUR** ([feedback_no_touch_meta_google](memory)) — yalnız metnin içeriği bu kurallara uydurulur.
+
 ## Otomatik Commit + Push
 Her değişiklik tamamlandıktan sonra otomatik olarak:
 1. Değiştirilen dosyaları stage et
