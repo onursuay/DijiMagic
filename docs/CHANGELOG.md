@@ -2,6 +2,11 @@
 
 ---
 
+## 2026-06-09 — Kendini güncelleyen resmi reklam bilgi tabanı (alt-proje B)
+- **Sorun:** Aylık doküman taraması (officialAdsDocsRefresh) değişiklikleri yalnız snapshot'a yazıyordu; AI'nin kullandığı bilgiye dönüşmüyordu (kopuk köprü). Ayrıca düz fetch JS-render resmi dokümanlarda zayıftı; onay/bildirim yoktu.
+- **Çözüm:** (1) AI parser köprüsü (`officialAdsKnowledgeParser`) değişen snapshot'ı review_required taslaklara çevirir (versiyonlu + idempotent, flag `OFFICIAL_ADS_AI_PARSER`, default-off). (2) Resmi doküman çekme Firecrawl (html/markdown) + düz fetch fallback. (3) Best-effort owner e-posta (`officialAdsChangeNotifier`). (4) Gözetim Merkezi'nde onay paneli + super-admin endpoint'leri (`approve` önceki versiyonu emekliye ayırır → canlı). (5) Onaylı bilgi analiz prompt'larına da enjekte (`officialKnowledgeBlock`, empty-safe) — reklam üretimi+politika+analiz birleşti. Meta/Google publish, Apify, sosyal dokunulmadı.
+- **Dosyalar:** `lib/yoai/officialAdsKnowledgeParser.ts`, `officialAdsChangeNotifier.ts`, `officialAdsKnowledgeDecision.ts`, `officialAdsDocsRefresh.ts`, `lib/yoai/ai/docs/officialKnowledgeBlock.ts`, `lib/yoai/ai/{systemPrompt,perCampaignPrompt,agent,perCampaignAgent}.ts`, `inngest/functions/{yoalgoritmaScan,perCampaignImprovements}.ts`, `app/api/cron/official-ads-refresh/route.ts`, `app/api/admin/gozetim-merkezi/official-ads/{pending,decision}/route.ts`, `app/gozetim-merkezi/OfficialAdsKnowledgePanel.tsx`, `.env.example`, ilgili testler
+
 ## 2026-06-09 — Firecrawl web tarama entegrasyonu (alt-proje C)
 - **Sorun:** Marka/rakip web siteleri yalnız basit HTTP fetch + regex ile taranıyordu; JS-render içerik ve çok sayfalı bilgi (hizmetler/lokasyon/USP) kaçıyordu.
 - **Çözüm:** Yeni `lib/firecrawl/` katmanı (map → kilit sayfa seç → scrape → birleşik markdown). `businessSourceScanner` web kaynaklarında Firecrawl hazırsa derin tarar, değilse HTTP fetch'e düşer (default-off `FIRECRAWL_ENABLED` flag, sıfır regresyon). Ortak `analyzeContent` yardımcısı her iki içerik kaynağında aynı sinyal çıkarımını çalıştırır. Sosyal profiller + Meta/Google rakip reklamları (Apify) **değişmedi**.
