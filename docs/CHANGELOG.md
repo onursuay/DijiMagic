@@ -2,6 +2,11 @@
 
 ---
 
+## 2026-06-09 — Firecrawl web tarama entegrasyonu (alt-proje C)
+- **Sorun:** Marka/rakip web siteleri yalnız basit HTTP fetch + regex ile taranıyordu; JS-render içerik ve çok sayfalı bilgi (hizmetler/lokasyon/USP) kaçıyordu.
+- **Çözüm:** Yeni `lib/firecrawl/` katmanı (map → kilit sayfa seç → scrape → birleşik markdown). `businessSourceScanner` web kaynaklarında Firecrawl hazırsa derin tarar, değilse HTTP fetch'e düşer (default-off `FIRECRAWL_ENABLED` flag, sıfır regresyon). Ortak `analyzeContent` yardımcısı her iki içerik kaynağında aynı sinyal çıkarımını çalıştırır. Sosyal profiller + Meta/Google rakip reklamları (Apify) **değişmedi**.
+- **Dosyalar:** `lib/firecrawl/{types,client,pageSelector,scrapeSite}.ts`, `lib/yoai/businessSourceScanner.ts`, `src/tests/firecrawl{Client,PageSelector,ScrapeSite}.test.ts`, `src/tests/businessSourceScannerFirecrawl.test.ts`, `.env.example`
+
 ## 2026-06-09 — Reklam metni dil & imla kuralı (Meta + Google) CLAUDE.md'ye eklendi
 - **Sorun:** Sıfırdan üretilen reklam başlık/açıklamaları için kalıcı bir dil standardı yoktu; ayrıca Google Ads'in noktalama politikası (yalnız nokta) proje kurallarında belgelenmemişti.
 - **Çözüm:** CLAUDE.md'ye "Reklam Metni Dil & İmla Kuralı" bölümü eklendi: (1) Meta + Google tüm sıfırdan reklamlar Türkçe imla/dilbilgisine uygun yazılır (Türkçe karakter zorunlu, ASCII eşdeğeri yasak); (2) Google Ads'te yalnız nokta serbest, ünlem/tire/soru işareti politika gereği yasak; (3) kural üretim katmanına (AI prompt/şablon) uygulanır, Meta/Google API ve publish akışı korunur.
