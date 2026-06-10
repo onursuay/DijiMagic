@@ -303,11 +303,14 @@ export async function runOfficialAdsDocsRefresh(
     const fetchResult = await fetchOfficialAdsSource(source)
 
     if (!fetchResult.success) {
-      await supabase
-        .from('official_ads_sources')
-        .update({ status: 'failed', last_checked_at: now, updated_at: now })
-        .eq('id', source.id)
-        .catch(() => {})
+      try {
+        await supabase
+          .from('official_ads_sources')
+          .update({ status: 'failed', last_checked_at: now, updated_at: now })
+          .eq('id', source.id)
+      } catch {
+        /* best-effort — job'ı patlatma */
+      }
 
       result.failedSources++
       result.failed.push({
@@ -322,11 +325,14 @@ export async function runOfficialAdsDocsRefresh(
     const hashChanged = source.content_hash !== fetchResult.contentHash
 
     if (!hashChanged) {
-      await supabase
-        .from('official_ads_sources')
-        .update({ last_checked_at: now, updated_at: now })
-        .eq('id', source.id)
-        .catch(() => {})
+      try {
+        await supabase
+          .from('official_ads_sources')
+          .update({ last_checked_at: now, updated_at: now })
+          .eq('id', source.id)
+      } catch {
+        /* best-effort */
+      }
       continue
     }
 
@@ -364,34 +370,40 @@ export async function runOfficialAdsDocsRefresh(
       }
     }
 
-    await supabase
-      .from('official_ads_doc_snapshots')
-      .insert({
-        source_id: source.id,
-        fetched_at: now,
-        content_hash: fetchResult.contentHash,
-        raw_text: fetchResult.rawText,
-        normalized_text: fetchResult.normalizedText,
-        diff_summary: diffSummary,
-        parser_status: parserStatus,
-        created_items_count: createdItemsCount,
-        created_at: now,
-      })
-      .catch(() => {})
+    try {
+      await supabase
+        .from('official_ads_doc_snapshots')
+        .insert({
+          source_id: source.id,
+          fetched_at: now,
+          content_hash: fetchResult.contentHash,
+          raw_text: fetchResult.rawText,
+          normalized_text: fetchResult.normalizedText,
+          diff_summary: diffSummary,
+          parser_status: parserStatus,
+          created_items_count: createdItemsCount,
+          created_at: now,
+        })
+    } catch {
+      /* best-effort — snapshot kaydı başarısızsa job devam eder */
+    }
 
     const newStatus = classifyOfficialAdsChange(source)
 
-    await supabase
-      .from('official_ads_sources')
-      .update({
-        content_hash: fetchResult.contentHash,
-        last_checked_at: now,
-        last_changed_at: now,
-        status: newStatus,
-        updated_at: now,
-      })
-      .eq('id', source.id)
-      .catch(() => {})
+    try {
+      await supabase
+        .from('official_ads_sources')
+        .update({
+          content_hash: fetchResult.contentHash,
+          last_checked_at: now,
+          last_changed_at: now,
+          status: newStatus,
+          updated_at: now,
+        })
+        .eq('id', source.id)
+    } catch {
+      /* best-effort */
+    }
 
     result.changedSources++
     if (newStatus === 'review_required') result.reviewRequiredCount++
