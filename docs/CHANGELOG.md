@@ -2,6 +2,11 @@
 
 ---
 
+## 2026-06-10 — Optimizasyon: "Sihirli Tara" dropdown'u alt kartın altında kalıyordu (fix)
+- **Sorun:** Optimizasyon listesinde "Sihirli Tara" açılır menüsü, bir alttaki kampanya kartının altında kalıyordu (görünmez/tıklanamaz).
+- **Çözüm:** Kök neden — `.animate-card-enter` `forwards` ile her karta kalıcı `transform` bırakıp ayrı stacking context yaratıyor; iç `z-30` dropdown o context'te hapsoluyor, sonraki kardeş kart üstüne boyanıyor. Global mandated animasyona dokunmadan yerel fix: liste kapsayıcılarına `isolate` + kartlara azalan `z-index` (üst kart üstte). Hem Meta hem Google listesi. Mantık/veri akışı değişmedi, yalnız stacking.
+- **Dosyalar:** `app/optimizasyon/[[...segments]]/page.tsx`, `_learnings/global/engineering-guardrails.md` (yoai-brain)
+
 ## 2026-06-10 — Öğrenen Beyin hesap-scope: öneri-sonucu kayıtlarına account_id atfı
 - **Sorun:** Öğrenme aktif/seçili reklam hesabına göre gelişmeli; ama `yoai_recommendation_results`'ta `account_id` kolonu yok ve `metadata.account_id` boştu → beyin outcome'ları hesaba atfedemiyordu (ilk veride 4/4 unattributed). Cross-account/cross-business ders sızıntısı riski.
 - **Çözüm:** (1) Beyin hesap-farkında: `collect-outcomes.mjs` artık `by_account` + `account_attribution` üretir; `_learnings/global/account-scope.md` zorunlu ilke + doktrin. (2) Atıf akışı (client+server, Meta entegrasyonuna dokunmadan): `/api/meta/status` zaten dönen `adAccountId` → optimizasyon sayfasında yakalanır → `MagicScanResults` persist POST'una `accountId` eklenir → `/api/yoai/optimization/recommendations` okur → `recordBeforeSnapshot` `metadata.account_id`'ye yazar. Meta fetcher/publish/magic-scan route **değişmedi**; yalnız sunum+persist. 2026-06-10 öncesi kayıtlar unattributed kalır (backfill yok, prod-risk).

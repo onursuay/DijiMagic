@@ -460,10 +460,17 @@ export default function OptimizasyonPage() {
           )}
 
           {/* Campaign list */}
+          {/* isolate: kart z-index'lerini liste içinde tutar (modal/toast ile çakışmaz).
+              Azalan z-index: üst kartın "Sihirli Tara" dropdown'u alt kartın üstüne çıkar
+              (animate-card-enter her kartı ayrı stacking context yaptığı için gerekli). */}
           {!loading && filteredCampaigns.length > 0 && (
-            <div className="space-y-3">
+            <div className="space-y-3 isolate">
               {filteredCampaigns.map((campaign, ci) => (
-                <div key={campaign.id} className="animate-card-enter" style={{ ['--card-index' as string]: Math.min(ci, 10) }}>
+                <div
+                  key={campaign.id}
+                  className="relative animate-card-enter"
+                  style={{ ['--card-index' as string]: Math.min(ci, 10), zIndex: filteredCampaigns.length - ci }}
+                >
                   <CampaignCard
                     campaign={campaign}
                     expanded={expandedId === campaign.id}
@@ -527,9 +534,13 @@ export default function OptimizasyonPage() {
               </div>
             )}
             {!extLoading && !extError && extCampaigns.length > 0 && (
-              <div className="space-y-3">
-                {(searchQuery ? extCampaigns.filter(c => c.name.toLowerCase().includes(searchQuery.toLowerCase())) : extCampaigns).map((c, ci) => (
-                  <div key={c.id} className="animate-card-enter" style={{ ['--card-index' as string]: Math.min(ci, 10) }}>
+              <div className="space-y-3 isolate">
+                {(searchQuery ? extCampaigns.filter(c => c.name.toLowerCase().includes(searchQuery.toLowerCase())) : extCampaigns).map((c, ci, arr) => (
+                  <div
+                    key={c.id}
+                    className="relative animate-card-enter"
+                    style={{ ['--card-index' as string]: Math.min(ci, 10), zIndex: arr.length - ci }}
+                  >
                     <GoogleCampaignCard
                       campaign={c}
                       expanded={extExpandedId === c.id}
