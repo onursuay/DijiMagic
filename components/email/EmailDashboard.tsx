@@ -7,6 +7,7 @@ import { parseContactsFile } from './parseContactsFile'
 import CampaignsTab from './CampaignsTab'
 import AutomationsTab from './AutomationsTab'
 import SendingAccounts from './SendingAccounts'
+import WizardSelect from '@/components/meta/wizard/WizardSelect'
 import { useSubscription } from '@/components/providers/SubscriptionProvider'
 import { usePathTab } from '@/hooks/usePathTab'
 
@@ -18,8 +19,16 @@ interface Contact {
   fullName: string | null
   phone: string | null
   source: string
+  pageId: string | null
+  submittedAt: string | null
   optOut: boolean
   createdAt: string
+}
+
+interface EmailAccount {
+  pageId: string
+  pageName: string | null
+  count: number
 }
 
 const PAGE = 50
@@ -35,6 +44,9 @@ export default function EmailDashboard() {
   const [contacts, setContacts] = useState<Contact[]>([])
   const [total, setTotal] = useState(0)
   const [counts, setCounts] = useState<{ total: number; optedOut: number }>({ total: 0, optedOut: 0 })
+  const [accounts, setAccounts] = useState<EmailAccount[]>([])
+  // Hesap (Meta sayfa) filtresi — '' = Tüm Hesaplar.
+  const [accountFilter, setAccountFilter] = useState('')
   const [offset, setOffset] = useState(0)
   const [loading, setLoading] = useState(true)
   const [importing, setImporting] = useState(false)
@@ -55,7 +67,9 @@ export default function EmailDashboard() {
   const loadContacts = useCallback(async (off: number) => {
     setLoading(true)
     try {
-      const res = await fetch(`/api/email/contacts?limit=${PAGE}&offset=${off}`)
+      const params = new URLSearchParams({ limit: String(PAGE), offset: String(off) })
+      if (accountFilter) params.set('pageId', accountFilter)
+      const res = await fetch(`/api/email/contacts?${params.toString()}`)
       const data = await res.json()
       if (data.ok) {
         setContacts(data.contacts ?? [])
@@ -67,9 +81,19 @@ export default function EmailDashboard() {
     } finally {
       setLoading(false)
     }
-  }, [])
+  }, [accountFilter])
 
   useEffect(() => { loadContacts(offset) }, [offset, loadContacts])
+
+  // Hesap (Meta sayfa) listesini yükle — filtre dropdown'u için.
+  useEffect(() => {
+    let cancelled = false
+    fetch('/api/email/accounts')
+      .then((r) => (r.ok ? r.json() : null))
+      .then((d) => { if (!cancelled && d?.ok) setAccounts((d.accounts ?? []) as EmailAccount[]) })
+      .catch(() => { /* sessiz */ })
+    return () => { cancelled = true }
+  }, [])
 
   // Gmail OAuth dönüşü (?gmail=connected|error|...) → bildir + paneli aç.
   useEffect(() => {
@@ -195,9 +219,27 @@ export default function EmailDashboard() {
         <>
           {/* Aksiyonlar + sayaç */}
           <div className="flex flex-wrap items-center justify-between gap-3 mb-4">
-            <div className="text-sm text-gray-600">
-              <span className="font-semibold text-gray-900">{counts.total}</span> {t('contacts.total')}
-              {counts.optedOut > 0 && <span className="text-gray-400"> · {counts.optedOut} {t('contacts.optOut')}</span>}
+            <div className="flex flex-wrap items-center gap-3">
+              <div className="text-sm text-gray-600">
+                <span className="font-semibold text-gray-900">{counts.total}</span> {t('contacts.total')}
+                {counts.optedOut > 0 && <span className="text-gray-400"> · {counts.optedOut} {t('contacts.optOut')}</span>}
+              </div>
+              {/* Hesap (Meta sayfa) filtresi — reklamdan düşen kişiler hangi hesaba ait */}
+              {accounts.length > 0 && (
+                <div className="w-60">
+                  <WizardSelect
+                    value={accountFilter}
+                    onChange={(v) => { setAccountFilter(v); setOffset(0) }}
+                    options={[
+                      { value: '', label: t('contacts.allAccounts') },
+                      ...accounts.map((a) => ({
+                        value: a.pageId,
+                        label: `${a.pageName || a.pageId} (${a.count})`,
+                      })),
+                    ]}
+                  />
+                </div>
+              )}
             </div>
             <div className="flex items-center gap-2">
               <button
@@ -259,6 +301,7 @@ export default function EmailDashboard() {
                     <th className="text-left font-medium px-4 py-3">{t('contacts.colName')}</th>
                     <th className="text-left font-medium px-4 py-3">{t('contacts.colPhone')}</th>
                     <th className="text-left font-medium px-4 py-3">{t('contacts.colSource')}</th>
+                    <th className="text-left font-medium px-4 py-3">{t('contacts.colSubmitted')}</th>
                     <th className="text-left font-medium px-4 py-3">{t('contacts.colDate')}</th>
                     <th className="px-4 py-3"></th>
                   </tr>
@@ -272,6 +315,7 @@ export default function EmailDashboard() {
                       <td className="px-4 py-2.5 text-gray-700">{c.fullName || '—'}</td>
                       <td className="px-4 py-2.5 text-gray-600">{c.phone ? <span className="inline-flex items-center gap-1"><Phone className="w-3.5 h-3.5 text-gray-400" />{c.phone}</span> : '—'}</td>
                       <td className="px-4 py-2.5"><span className="text-xs bg-gray-100 text-gray-600 rounded-full px-2 py-0.5">{sourceLabel(c.source)}</span></td>
+                      <td className="px-4 py-2.5 text-gray-500 text-xs">{c.submittedAt ? fmtDate(c.submittedAt) : '—'}</td>
                       <td className="px-4 py-2.5 text-gray-500 text-xs">{fmtDate(c.createdAt)}</td>
                       <td className="px-4 py-2.5 text-right">
                         <button onClick={() => handleDelete(c.id)} className="p-1.5 text-gray-300 hover:text-red-600 transition"><Trash2 className="w-4 h-4" /></button>

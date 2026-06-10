@@ -5,6 +5,7 @@ import { getPageAccessToken } from '@/lib/meta/pageToken'
 import { getSubscriptionByPageId } from './pageSubscriptionStore'
 import { upsertLead, type CrmLeadFieldEntry } from './leadStore'
 import { parseLeadFields } from './leadFields'
+import { syncLeadToContact } from '@/lib/email/contactStore'
 
 /**
  * Meta leadgen webhook → CRM ingestion.
@@ -95,5 +96,23 @@ export async function ingestLeadgen(
     // upsert hata mı yoksa duplicate-ignore mu? ignoreDuplicates'te null normaldir.
     console.log('[CrmIngest] lead persisted or already existed', leadgenId)
   }
+
+  // Reklamdan düşen lead → Email Marketing kişi havuzuna OTOMATİK ekle (e-postası
+  // varsa). Idempotent + non-fatal: başarısızlık webhook'u etkilemez.
+  if (parsed.email) {
+    try {
+      await syncLeadToContact(sub.user_id, {
+        email: parsed.email,
+        fullName: parsed.fullName,
+        phone: parsed.phone,
+        crmLeadId: row?.id ?? null,
+        pageId: pageId,
+        submittedAt: detail.data.created_time ?? null,
+      })
+    } catch (err) {
+      console.warn('[CrmIngest] email contact sync failed', leadgenId, err)
+    }
+  }
+
   return { ok: true }
 }

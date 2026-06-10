@@ -14,10 +14,11 @@ export async function GET(request: Request) {
   const { searchParams } = new URL(request.url)
   const limit = parseInt(searchParams.get('limit') ?? '50', 10)
   const offset = parseInt(searchParams.get('offset') ?? '0', 10)
+  const pageId = searchParams.get('pageId') || undefined
 
   const [{ contacts, total }, counts] = await Promise.all([
-    listContacts(access.user.id, { limit, offset }),
-    countContacts(access.user.id),
+    listContacts(access.user.id, { limit, offset, pageId }),
+    countContacts(access.user.id, { pageId }),
   ])
 
   return NextResponse.json({
@@ -28,6 +29,8 @@ export async function GET(request: Request) {
       fullName: c.full_name,
       phone: c.phone,
       source: c.source,
+      pageId: c.page_id,
+      submittedAt: c.submitted_at,
       optOut: c.opt_out,
       createdAt: c.created_at,
     })),

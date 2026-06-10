@@ -5,6 +5,7 @@ import { getPageAccessToken } from '@/lib/meta/pageToken'
 import { listSubscriptions } from './pageSubscriptionStore'
 import { upsertLead } from './leadStore'
 import { parseLeadFields } from './leadFields'
+import { upsertContacts, type ContactInput } from '@/lib/email/contactStore'
 
 /**
  * CRM lead PULL akışı (webhook'a alternatif/yedek).
@@ -51,6 +52,9 @@ export async function pullLeadsForUser(
 
   let processed = 0
   let inserted = 0
+  // Reklamdan düşen lead'leri Email Marketing kişi havuzuna OTOMATİK aktar —
+  // döngü boyunca birikir, sonda tek seferde upsert edilir (idempotent + verimli).
+  const contactInputs: ContactInput[] = []
 
   for (const sub of subs) {
     if (Date.now() - startedAt > budgetMs) break
@@ -107,11 +111,31 @@ export async function pullLeadsForUser(
           })
           processed++
           if (row) inserted++ // upsert ignoreDuplicates: yalnız YENİ kayıt row döner
+          if (p.email) {
+            contactInputs.push({
+              email: p.email,
+              fullName: p.fullName,
+              phone: p.phone,
+              source: 'crm',
+              crmLeadId: row?.id ?? null,
+              pageId: sub.page_id,
+              submittedAt: ld.created_time ?? null,
+            })
+          }
         }
 
         after = res.data?.paging?.cursors?.after
         if (!res.data?.paging?.next || !after) break
       }
+    }
+  }
+
+  // Biriken lead'leri kişi havuzuna tek seferde aktar (non-fatal).
+  if (contactInputs.length) {
+    try {
+      await upsertContacts(userId, contactInputs, 'crm')
+    } catch (err) {
+      console.warn('[CrmLeadPull] email contact sync failed', err)
     }
   }
 
