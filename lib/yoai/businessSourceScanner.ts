@@ -1,6 +1,7 @@
 import { scanSocialSource } from './socialSourceScanner'
 import { isFirecrawlReady } from '../firecrawl/client'
 import { scrapeSite } from '../firecrawl/scrapeSite'
+import { cityIncludes } from './turkishText'
 
 /* ──────────────────────────────────────────────────────────
    YoAi — Business Source Scanner
@@ -190,10 +191,10 @@ const TURKISH_CITIES_LOWER = [
 ]
 
 function extractLocations(text: string, max = 6): string[] {
-  const lower = text.toLowerCase()
+  // Türkçe-bilinçli eşleme: büyük "İstanbul" da yakalanır (toLowerCase İ tuzağı fix).
   const found = new Set<string>()
   for (const city of TURKISH_CITIES_LOWER) {
-    if (lower.includes(city)) {
+    if (cityIncludes(text, city)) {
       found.add(city.charAt(0).toLocaleUpperCase('tr-TR') + city.slice(1))
       if (found.size >= max) break
     }
