@@ -312,11 +312,12 @@ def send_mail(html, subject):
 
 # "Nabız atışı" ikonu — ECG/heartbeat dalga çizgisi (inline SVG; kalp emojisi DEĞİL, sarı YOK)
 def pulse(color="#475569", h=15):
-    w = int(h * 2.8)
+    # Yalnız atış (zigzag); iki yandaki düz yatay çizgiler YOK
+    w = int(h * 0.95)
     return (
-        f"<svg width='{w}' height='{h}' viewBox='0 0 120 40' fill='none' "
+        f"<svg width='{w}' height='{h}' viewBox='0 0 34 40' fill='none' "
         f"xmlns='http://www.w3.org/2000/svg' style='vertical-align:middle;display:inline-block'>"
-        f"<polyline points='0,20 44,20 52,20 58,10 64,31 70,3 77,37 83,20 92,20 120,20' "
+        f"<polyline points='0,20 6,11 12,32 18,2 26,37 34,20' "
         f"stroke='{color}' stroke-width='4' stroke-linecap='round' stroke-linejoin='round'/></svg>"
     )
 
