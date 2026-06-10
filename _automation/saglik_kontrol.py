@@ -310,22 +310,27 @@ def send_mail(html, subject):
     return True
 
 
+# "Nabız" ikonu — sağlık/monitör temasına uygun, sarı YOK (Outlook/hotmail uyumlu emoji)
+PULSE = "💓"
+
 def build_html(rows, reds, warns):
-    ok = reds == 0 and warns == 0
     if reds:
-        bg, head = "#b00020", f"🔴 DİKKAT — {reds} sorun" + (f", {warns} uyarı" if warns else "") + " var"
+        bg, head = "#b00020", f"🔴 {reds} sorun" + (f", {warns} uyarı" if warns else "") + " — kontrol edilmeli"
     elif warns:
-        bg, head = "#8a6d00", f"🟡 {warns} uyarı — kontrol edilmeli"
+        bg, head = "#475569", f"{PULSE} {warns} uyarı — kontrol edilmeli"
     else:
-        bg, head = "#0f7b3f", "🟢 SİSTEM SAĞLIĞI — Her şey çalışıyor"
+        bg, head = "#0f7b3f", "🟢 Her şey çalışıyor"
+    # Görüntü katmanı: sarı uyarı ikonu (⚠️) -> nabız ikonu
+    def show(ic):
+        return PULSE if ic == "⚠️" else ic
     items = "".join(
-        f"<li style='margin:4px 0;line-height:1.5'>{ic}&nbsp; {tx}</li>" for ic, tx in rows
+        f"<li style='margin:4px 0;line-height:1.5'>{show(ic)}&nbsp; {tx}</li>" for ic, tx in rows
     )
     now = datetime.now().strftime("%d.%m.%Y %H:%M")
     return f"""<!doctype html><html><body style="margin:0;background:#f1f1f4;padding:24px 0;font-family:-apple-system,Segoe UI,Roboto,Arial,sans-serif;color:#1d1d28">
   <div style="max-width:640px;margin:0 auto;padding:0 16px">
     <div style="margin-bottom:16px">
-      <div style="font-size:22px;font-weight:800;letter-spacing:-0.03em">YoAi · Sistem Sağlığı</div>
+      <div style="font-size:22px;font-weight:800;letter-spacing:-0.03em">{PULSE} YoAi Sağlık Merkezi</div>
       <div style="font-size:13px;color:#666;margin-top:3px">{now} · günlük otomatik kontrol</div>
     </div>
     <div style="border-radius:14px;overflow:hidden;border:1px solid #e6e6ea">
@@ -335,7 +340,7 @@ def build_html(rows, reds, warns):
       </div>
     </div>
     <div style="font-size:12px;color:#999;margin-top:12px;line-height:1.6">
-      Otomatik günlük sağlık kontrolü (her gün 09:00). ✓ çalışıyor · ⚠️ dikkat · 🔴 bozuk.
+      Otomatik günlük sağlık kontrolü (her gün 09:00). ✓ çalışıyor · {PULSE} dikkat · 🔴 bozuk.
       Token/şifreler yerelde tutulur, bu maile yazılmaz. Sorun varsa ilgili parçayı kontrol et.
     </div>
   </div>
@@ -367,11 +372,23 @@ def push_status(repo, rows, reds, warns):
     try:
         git(brain, "add", "_data/saglik_latest.json")
         r = git(brain, "commit", "-m", f"saglik: durum ozeti {date.today().isoformat()} (otomatik)")
-        if r.returncode == 0:
-            pr = git(brain, "push", timeout=90)
-            log(f"durum push: {'OK' if pr.returncode == 0 else pr.stderr[:120]}")
-        else:
+        if r.returncode != 0:
             log("durum push: degisiklik yok")
+            return
+        # Bulut ajani da bu repo'ya yazar -> sapmayi onlemek icin once rebase, sonra push (gerekirse 1 retry)
+        for attempt in (1, 2):
+            pr = git(brain, "push", "origin", "main", timeout=90)
+            if pr.returncode == 0:
+                log("durum push: OK")
+                return
+            # non-fast-forward: remote ilerlemis -> rebase edip tekrar dene
+            git(brain, "fetch", "-q", "origin", "main", timeout=60)
+            rb = git(brain, "rebase", "origin/main", timeout=60)
+            if rb.returncode != 0:
+                git(brain, "rebase", "--abort")
+                log(f"durum push: rebase basarisiz ({pr.stderr[:80]})")
+                return
+        log(f"durum push: basarisiz (2 deneme) {pr.stderr[:80]}")
     except Exception as e:
         log(f"durum push HATA: {e}")
 
@@ -400,12 +417,8 @@ def main():
     reds = sum(1 for ic, _ in rows if ic == "🔴")
     warns = sum(1 for ic, _ in rows if ic == "⚠️")
 
-    if reds:
-        subject = f"🔴 YoAi Sağlık — {reds} sorun var"
-    elif warns:
-        subject = f"🟡 YoAi Sağlık — {warns} uyarı"
-    else:
-        subject = "🟢 YoAi Sağlık — her şey yolunda"
+    # Konu satırı her durumda sabit (kullanıcı isteği)
+    subject = "YoAi Sağlık Merkezi"
 
     html = build_html(rows, reds, warns)
 
