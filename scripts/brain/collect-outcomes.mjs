@@ -95,12 +95,26 @@ function addOutcome(bucket, outcome) {
   bucket.total += 1
 }
 
+/**
+ * Öneri kaydından reklam HESABINI (account_id) çıkarır.
+ * account_id (Meta act_xxxxx / Google müşteri kimliği) operasyonel tanımlayıcıdır,
+ * sır/PII DEĞİLDİR → beyne girebilir. Bulunamazsa null (atfedilemeyen).
+ * NOT: yoai_recommendation_results'ta account_id kolonu YOK; yalnız metadata'da
+ * varsa okunur. Kayıt anında metadata.account_id yazılana kadar çoğu satır null gelir.
+ */
+function extractAccount(row) {
+  const md = (row && typeof row.metadata === 'object' && row.metadata) || {}
+  const cand = md.account_id || md.accountId || md.adAccountId || md.ad_account_id || null
+  if (cand && typeof cand === 'string' && cand.trim()) return cand.trim()
+  return null
+}
+
 /* ── Toplama ── */
 
 async function main() {
   const results = await fetchAll(
     'yoai_recommendation_results',
-    'platform, recommendation_type, campaign_type, outcome, status, metric_delta, after_window_days, created_at, after_recorded_at',
+    'platform, recommendation_type, campaign_type, outcome, status, metric_delta, after_window_days, created_at, after_recorded_at, metadata, source_campaign_id',
   )
   const actions = await fetchAll(
     'yoai_action_outcomes',
@@ -111,6 +125,9 @@ async function main() {
   const outcome_distribution = { improved: 0, declined: 0, no_change: 0, insufficient_data: 0, pending: 0 }
   const byPlatform = {}
   const byType = {}
+  const byAccount = {}
+  let attributed = 0
+  let unattributed = 0
   const roasDeltas = []
   const ctrDeltas = []
   const cpcDeltas = []
@@ -126,6 +143,15 @@ async function main() {
     const typ = r.recommendation_type || 'unknown'
     byType[typ] = byType[typ] || emptyBucket()
     addOutcome(byType[typ], r.outcome)
+
+    // HESAP SCOPE — öğrenme aktif/seçili reklam hesabına göre gelişmeli.
+    // (project_module_active_account_filter + cross-business izolasyonu)
+    const acc = extractAccount(r)
+    if (acc) attributed++
+    else unattributed++
+    const accKey = `${plat}:${acc || 'unattributed'}`
+    byAccount[accKey] = byAccount[accKey] || { platform: plat, account: acc || 'unattributed', attributed: !!acc, ...emptyBucket() }
+    addOutcome(byAccount[accKey], r.outcome)
 
     const d = r.metric_delta || {}
     if (typeof d.roas_delta === 'number') roasDeltas.push(d.roas_delta)
@@ -168,6 +194,25 @@ async function main() {
       ...b,
     })),
     by_platform: Object.entries(byPlatform).map(([platform, b]) => ({ platform, ...b })),
+    by_account: Object.values(byAccount).map((b) => ({
+      platform: b.platform,
+      account: b.account,
+      attributed: b.attributed,
+      improved: b.improved,
+      declined: b.declined,
+      no_change: b.no_change,
+      insufficient_data: b.insufficient_data,
+      pending: b.pending,
+      total: b.total,
+    })),
+    account_attribution: {
+      attributed,
+      unattributed,
+      note:
+        unattributed > 0
+          ? 'Atfedilemeyen kayıtlar: yoai_recommendation_results.metadata.account_id boş. Hesap-scope tam çalışması için kayıt anında account_id metadata\'ya yazılmalı (kullanıcı onayı bekliyor — AI engine yakınında).'
+          : 'Tüm kayıtlar bir reklam hesabına atfedildi.',
+    },
     by_root_cause: Object.entries(byRootCause).map(([root_cause, b]) => ({
       root_cause,
       total: b.total,
