@@ -89,6 +89,9 @@ export interface CreateResultPayload {
   proposalSnapshot?: Record<string, unknown> | null
   beforeSnapshot: MetricSnapshot
   afterWindowDays?: number
+  /** Reklam hesabı (Meta act_xxxxx / Google müşteri kimliği) — metadata.account_id'ye yazılır.
+   *  Öğrenmenin aktif/seçili hesaba göre gelişmesi için (hesap-scope). */
+  accountId?: string | null
 }
 
 export interface RecordAfterSnapshotPayload {
@@ -206,6 +209,8 @@ export async function recordBeforeSnapshot(
       before_snapshot: payload.beforeSnapshot,
       before_recorded_at: new Date().toISOString(),
       after_window_days: payload.afterWindowDays ?? 14,
+      // Hesap-scope: account_id metadata'ya yazılır (kolon yok). Yoksa boş obje (DB default).
+      metadata: payload.accountId ? { account_id: payload.accountId } : {},
       outcome: 'pending' as const,
       status: 'before_recorded' as const,
     }

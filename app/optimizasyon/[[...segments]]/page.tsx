@@ -73,6 +73,7 @@ export default function OptimizasyonPage() {
 
   // Connection state
   const [adAccountName, setAdAccountName] = useState<string | null>(null)
+  const [adAccountId, setAdAccountId] = useState<string | null>(null)
   const [googleName, setGoogleName] = useState<string | null>(null)
   const [tokenExpired, setTokenExpired] = useState(false)
   // True when the score endpoint returns 403 (no plan / no subscription).
@@ -150,6 +151,7 @@ export default function OptimizasyonPage() {
         const data = await res.json()
         if (data.connected && data.adAccountName) {
           setAdAccountName(data.adAccountName)
+          setAdAccountId(data.adAccountId ?? null)
           fetchCampaigns()
         } else {
           setLoading(false)
@@ -473,6 +475,7 @@ export default function OptimizasyonPage() {
                   {expandedId === campaign.id && scanResults[campaign.id] ? (
                     <MagicScanResults
                       result={scanResults[campaign.id]}
+                      accountId={adAccountId}
                       onSuccess={(msg) => {
                         addToast(msg, 'success')
                         setTimeout(() => fetchCampaigns(true), 1500)

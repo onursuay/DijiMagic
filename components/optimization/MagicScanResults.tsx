@@ -17,6 +17,8 @@ import { executeChangeSet, rollbackChangeSet } from '@/lib/meta/optimization/cha
 
 interface MagicScanResultsProps {
   result: MagicScanResult
+  /** Aktif/seçili Meta reklam hesabı (act_xxxxx) — hesap-scope için persist'e gönderilir. */
+  accountId?: string | null
   onSuccess?: (message: string) => void
   onError?: (message: string) => void
   onClose: () => void
@@ -32,7 +34,7 @@ const RISK_COLORS = {
 // Main Component
 // ═══════════════════════════════════════════════════════════════════════════
 
-export default function MagicScanResults({ result, onSuccess, onError, onClose }: MagicScanResultsProps) {
+export default function MagicScanResults({ result, accountId, onSuccess, onError, onClose }: MagicScanResultsProps) {
   const t = useTranslations('dashboard.optimizasyon.magicScan')
 
   const [selected, setSelected] = useState<Set<string>>(new Set())
@@ -58,6 +60,7 @@ export default function MagicScanResults({ result, onSuccess, onError, onClose }
       body: JSON.stringify({
         campaignId: result.campaignId,
         campaignName: result.campaignName,
+        accountId: accountId ?? undefined,
         currency: result.currency,
         timestamp: result.timestamp,
         problemTags: result.problemTags,
@@ -69,7 +72,7 @@ export default function MagicScanResults({ result, onSuccess, onError, onClose }
     }).catch(() => {
       // Persistence is non-blocking; failures are logged server-side.
     })
-  }, [result])
+  }, [result, accountId])
 
   // Group recommendations by category
   const grouped = useMemo(() => {

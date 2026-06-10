@@ -99,8 +99,9 @@ function addOutcome(bucket, outcome) {
  * Öneri kaydından reklam HESABINI (account_id) çıkarır.
  * account_id (Meta act_xxxxx / Google müşteri kimliği) operasyonel tanımlayıcıdır,
  * sır/PII DEĞİLDİR → beyne girebilir. Bulunamazsa null (atfedilemeyen).
- * NOT: yoai_recommendation_results'ta account_id kolonu YOK; yalnız metadata'da
- * varsa okunur. Kayıt anında metadata.account_id yazılana kadar çoğu satır null gelir.
+ * NOT: yoai_recommendation_results'ta account_id kolonu YOK; metadata.account_id'den okunur.
+ * Bu alan 2026-06-10'da magic-scan persist'ine eklendi (client+server) — yeni kayıtlar dolu,
+ * o tarihten ÖNCEKİ kayıtlar null (unattributed) kalır.
  */
 function extractAccount(row) {
   const md = (row && typeof row.metadata === 'object' && row.metadata) || {}
@@ -209,9 +210,11 @@ async function main() {
       attributed,
       unattributed,
       note:
-        unattributed > 0
-          ? 'Atfedilemeyen kayıtlar: yoai_recommendation_results.metadata.account_id boş. Hesap-scope tam çalışması için kayıt anında account_id metadata\'ya yazılmalı (kullanıcı onayı bekliyor — AI engine yakınında).'
-          : 'Tüm kayıtlar bir reklam hesabına atfedildi.',
+        attributed + unattributed === 0
+          ? 'Henüz öneri-sonucu kaydı yok.'
+          : unattributed > 0
+            ? 'Atfedilemeyen kayıtlar 2026-06-10 öncesinde (account_id yazımı eklenmeden) oluşturuldu; metadata.account_id boş. Yeni magic-scan persist\'leri hesabı taşır → ileride atıf artar.'
+            : 'Tüm kayıtlar bir reklam hesabına atfedildi.',
     },
     by_root_cause: Object.entries(byRootCause).map(([root_cause, b]) => ({
       root_cause,

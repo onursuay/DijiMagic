@@ -13,6 +13,8 @@ export const dynamic = 'force-dynamic'
 interface PersistPayload {
   campaignId?: string
   campaignName?: string
+  /** Aktif/seçili Meta reklam hesabı (act_xxxxx) — hesap-scope için metadata'ya yazılır. */
+  accountId?: string
   currency?: string
   timestamp?: number
   problemTags?: unknown[]
@@ -78,6 +80,7 @@ export async function POST(request: Request) {
   const row = await recordBeforeSnapshot(gate.user.id, {
     proposalId,
     sourceCampaignId: body.campaignId,
+    accountId: body.accountId ?? null,
     platform: 'meta',
     recommendationType: 'optimization',
     proposalSnapshot: {
