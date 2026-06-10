@@ -310,27 +310,34 @@ def send_mail(html, subject):
     return True
 
 
-# "Nabız" ikonu — sağlık/monitör temasına uygun, sarı YOK (Outlook/hotmail uyumlu emoji)
-PULSE = "💓"
+# "Nabız atışı" ikonu — ECG/heartbeat dalga çizgisi (inline SVG; kalp emojisi DEĞİL, sarı YOK)
+def pulse(color="#475569", h=15):
+    w = int(h * 2.8)
+    return (
+        f"<svg width='{w}' height='{h}' viewBox='0 0 120 40' fill='none' "
+        f"xmlns='http://www.w3.org/2000/svg' style='vertical-align:middle;display:inline-block'>"
+        f"<polyline points='0,20 44,20 52,20 58,10 64,31 70,3 77,37 83,20 92,20 120,20' "
+        f"stroke='{color}' stroke-width='4' stroke-linecap='round' stroke-linejoin='round'/></svg>"
+    )
 
 def build_html(rows, reds, warns):
     if reds:
         bg, head = "#b00020", f"🔴 {reds} sorun" + (f", {warns} uyarı" if warns else "") + " — kontrol edilmeli"
     elif warns:
-        bg, head = "#475569", f"{PULSE} {warns} uyarı — kontrol edilmeli"
+        bg, head = "#475569", f"{pulse('#ffffff', 17)}&nbsp; {warns} uyarı — kontrol edilmeli"
     else:
         bg, head = "#0f7b3f", "🟢 Her şey çalışıyor"
-    # Görüntü katmanı: sarı uyarı ikonu (⚠️) -> nabız ikonu
+    # Görüntü katmanı: sarı uyarı ikonu (⚠️) -> nabız atışı çizgisi
     def show(ic):
-        return PULSE if ic == "⚠️" else ic
+        return pulse("#475569", 14) if ic == "⚠️" else ic
     items = "".join(
-        f"<li style='margin:4px 0;line-height:1.5'>{show(ic)}&nbsp; {tx}</li>" for ic, tx in rows
+        f"<li style='margin:4px 0;line-height:1.6'>{show(ic)}&nbsp; {tx}</li>" for ic, tx in rows
     )
     now = datetime.now().strftime("%d.%m.%Y %H:%M")
     return f"""<!doctype html><html><body style="margin:0;background:#f1f1f4;padding:24px 0;font-family:-apple-system,Segoe UI,Roboto,Arial,sans-serif;color:#1d1d28">
   <div style="max-width:640px;margin:0 auto;padding:0 16px">
     <div style="margin-bottom:16px">
-      <div style="font-size:22px;font-weight:800;letter-spacing:-0.03em">{PULSE} YoAi Sağlık Merkezi</div>
+      <div style="font-size:22px;font-weight:800;letter-spacing:-0.03em">{pulse('#1d1d28', 22)}&nbsp; YoAi Sağlık Merkezi</div>
       <div style="font-size:13px;color:#666;margin-top:3px">{now} · günlük otomatik kontrol</div>
     </div>
     <div style="border-radius:14px;overflow:hidden;border:1px solid #e6e6ea">
@@ -340,7 +347,7 @@ def build_html(rows, reds, warns):
       </div>
     </div>
     <div style="font-size:12px;color:#999;margin-top:12px;line-height:1.6">
-      Otomatik günlük sağlık kontrolü (her gün 09:00). ✓ çalışıyor · {PULSE} dikkat · 🔴 bozuk.
+      Otomatik günlük sağlık kontrolü (her gün 09:00). ✓ çalışıyor · {pulse('#999999', 12)} dikkat · 🔴 bozuk.
       Token/şifreler yerelde tutulur, bu maile yazılmaz. Sorun varsa ilgili parçayı kontrol et.
     </div>
   </div>
