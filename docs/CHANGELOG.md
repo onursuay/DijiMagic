@@ -2,6 +2,11 @@
 
 ---
 
+## 2026-06-10 — Optimizasyon Sihirli Tarama AI fallback'i: timeout + sebep teşhisi
+- **Sorun:** "AI ile Tara" sık sık "AI talep edildi ancak yanıt alınamadı — sonuçlar kural tabanlı analizden üretildi" gösterip kural motoruna düşüyordu. Kök neden: senkron Claude çağrısının **10s timeout'u** çok agresifti (Strateji aynı tür çağrıda 30s kullanıyor) ve gerçek hata `catch` içinde sessizce yutuluyordu (sebebi görmek imkânsızdı).
+- **Çözüm:** (1) AI timeout 10s → **30s** (Meta + Google/TikTok), route'lara `maxDuration = 60`. (2) Yeni paylaşılan `describeAiFallback(err)` ([lib/anthropic/client.ts]) fallback sebebini kısa koda indirger (`timeout` / `api_4xx` / `parse_error` / `rate_limit`…); recommender'lar `fallbackReason` döndürür, route'lar response'a `aiFallbackReason` olarak ekler (UI'da ham gösterilmez — Network/log üzerinden teşhis). Meta/Google publish & API akışına dokunulmadı; yalnız advisory AI katmanı.
+- **Dosyalar:** `lib/anthropic/client.ts`, `lib/google/optimization/recommender.ts`, `lib/meta/optimization/aiRecommender.ts`, `lib/meta/optimization/types.ts`, `app/api/{google,meta,tiktok}/optimization/magic-scan/route.ts`
+
 ## 2026-06-10 — Resmi doküman tarama prod TypeError fix + migration apply script
 - **Sorun:** Aylık resmi doküman tarama cron'u canlıda `TypeError: e.from(...).insert(...).catch is not a function` ile patlıyordu. Supabase PostgrestBuilder PromiseLike ama `.catch()` metodu yok; testlerde mock `.catch` taşıdığı için yakalanmamıştı (tablolar omddq'da oluşunca ilk kez tetiklendi).
 - **Çözüm:** `officialAdsDocsRefresh`'teki 4 best-effort `.insert/.update(...).catch(() => {})` → `try/await/catch`'e taşındı (non-fatal davranış korunur). Ayrıca `official_ads_*` 4 tablo için tek-komutluk migration apply script eklendi (`npm run db:migrate:official-ads`, omddq guard + doğrulama). Migration omddq'ya uygulandı (10 kaynak + 12 onaylı bilgi seed doğrulandı).

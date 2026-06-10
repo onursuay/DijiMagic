@@ -8,7 +8,7 @@ import type {
   ChangeSet,
 } from './types'
 import { createChangeSet } from './changeSetManager'
-import { getAnthropicClient, getAiEngineModel, isAnthropicReady } from '@/lib/anthropic/client'
+import { getAnthropicClient, getAiEngineModel, isAnthropicReady, describeAiFallback } from '@/lib/anthropic/client'
 import { META_ANALYSIS_KNOWLEDGE } from '@/lib/yoai/ai/docs/meta_analysis_knowledge'
 
 // ═══════════════════════════════════════════════════════════════════════════
@@ -392,7 +392,9 @@ ${problemTags.map(t => `- ${t.id} (${t.severity}): ${JSON.stringify(t.evidence)}
         system: [{ type: 'text', text: systemPrompt, cache_control: { type: 'ephemeral' } }],
         messages: [{ role: 'user', content: userPrompt }],
       },
-      { timeout: 10000 },
+      // 10s çok agresifti — Sonnet'in JSON üretimi yoğunlukta aşıp fallback'e
+      // düşürüyordu. Strateji ile aynı sınır (30s). Route maxDuration=60 ile uyumlu.
+      { timeout: 30000 },
     )
     let content = ''
     for (const block of res.content) if (block.type === 'text') content += block.text
@@ -460,24 +462,31 @@ export async function generateRecommendations(
   problemTags: ProblemTag[],
   locale: string,
   useAI: boolean = false,
-): Promise<{ recommendations: Recommendation[]; aiGenerated: boolean }> {
+): Promise<{ recommendations: Recommendation[]; aiGenerated: boolean; fallbackReason?: string }> {
   if (problemTags.length === 0) {
     return { recommendations: [], aiGenerated: false }
   }
 
-  // Try AI path only when user explicitly chose it AND Claude is configured
-  if (useAI && isAnthropicReady()) {
+  let fallbackReason: string | undefined
+  if (useAI && !isAnthropicReady()) {
+    fallbackReason = 'no_api_key'
+  } else if (useAI && isAnthropicReady()) {
+    // Try AI path only when user explicitly chose it AND Claude is configured
     try {
       const recs = await generateWithAI(campaign, problemTags, locale)
       if (recs.length > 0) {
         return { recommendations: recs, aiGenerated: true }
       }
+      // AI yanıt verdi ama hiç öneri üretmedi → şablona düş, sebebi işaretle.
+      fallbackReason = 'empty'
     } catch (err) {
-      console.error('[Magic Scan AI] Falling back to deterministic:', err)
+      // Sebebi yüzeye çıkar (artık sessizce yutulmuyor) — log + response.aiFallbackReason.
+      fallbackReason = describeAiFallback(err)
+      console.error(`[Magic Scan AI] Fallback (${fallbackReason}):`, err)
     }
   }
 
   // Deterministic fallback
   const recs = generateFallback(campaign, problemTags, locale)
-  return { recommendations: recs, aiGenerated: false }
+  return { recommendations: recs, aiGenerated: false, fallbackReason }
 }

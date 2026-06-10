@@ -11,7 +11,7 @@
    Meta/Google entegrasyon koduna dokunulmaz.
    ────────────────────────────────────────────────────────── */
 
-import { getAnthropicClient, getAiEngineModel, isAnthropicReady } from '@/lib/anthropic/client'
+import { getAnthropicClient, getAiEngineModel, isAnthropicReady, describeAiFallback } from '@/lib/anthropic/client'
 import type {
   Recommendation,
   RecommendationCategory,
@@ -215,7 +215,9 @@ ${campaign.problemTags.map((t) => `- ${t.id} (${t.severity}): ${JSON.stringify(t
       system: [{ type: 'text', text: systemPrompt, cache_control: { type: 'ephemeral' } }],
       messages: [{ role: 'user', content: userPrompt }],
     },
-    { timeout: 10000 },
+    // 10s çok agresifti — Sonnet'in JSON üretimi yoğunlukta aşıp fallback'e
+    // düşürüyordu. Strateji ile aynı sınır (30s). Route maxDuration=60 ile uyumlu.
+    { timeout: 30000 },
   )
   let content = ''
   for (const block of res.content) if (block.type === 'text') content += block.text
@@ -252,17 +254,24 @@ export async function generateGoogleRecommendations(
   campaign: GoogleScanCampaign,
   locale: string,
   useAI: boolean,
-): Promise<{ recommendations: Recommendation[]; aiGenerated: boolean }> {
+): Promise<{ recommendations: Recommendation[]; aiGenerated: boolean; fallbackReason?: string }> {
   if (campaign.problemTags.length === 0) {
     return { recommendations: [], aiGenerated: false }
   }
-  if (useAI && isAnthropicReady()) {
+  let fallbackReason: string | undefined
+  if (useAI && !isAnthropicReady()) {
+    fallbackReason = 'no_api_key'
+  } else if (useAI && isAnthropicReady()) {
     try {
       const recs = await generateWithAI(campaign, locale)
       if (recs.length > 0) return { recommendations: recs, aiGenerated: true }
+      // AI yanıt verdi ama hiç öneri üretmedi → şablona düş, sebebi işaretle.
+      fallbackReason = 'empty'
     } catch (err) {
-      console.error('[Google Magic Scan AI] Fallback:', err)
+      // Sebebi yüzeye çıkar (artık sessizce yutulmuyor) — log + response.aiFallbackReason.
+      fallbackReason = describeAiFallback(err)
+      console.error(`[Google Magic Scan AI] Fallback (${fallbackReason}):`, err)
     }
   }
-  return { recommendations: buildFallback(campaign), aiGenerated: false }
+  return { recommendations: buildFallback(campaign), aiGenerated: false, fallbackReason }
 }

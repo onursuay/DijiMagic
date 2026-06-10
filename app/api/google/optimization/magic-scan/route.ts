@@ -19,6 +19,9 @@ import { COST_PER_AI_SCAN } from '@/lib/subscription/types'
 import { generateGoogleRecommendations, type GoogleScanCampaign } from '@/lib/google/optimization/recommender'
 
 export const dynamic = 'force-dynamic'
+// AI Claude çağrısı (30s timeout) için yeterli pencere — varsayılan kısa limit
+// senkron isteği erken kesip fallback'e düşürebiliyordu.
+export const maxDuration = 60
 
 export async function POST(request: Request) {
   try {
@@ -59,7 +62,7 @@ export async function POST(request: Request) {
       }
     }
 
-    const { recommendations, aiGenerated } = await generateGoogleRecommendations(
+    const { recommendations, aiGenerated, fallbackReason } = await generateGoogleRecommendations(
       campaign,
       locale,
       Boolean(useAI),
@@ -78,6 +81,9 @@ export async function POST(request: Request) {
         aiGenerated,
         aiRequested: Boolean(useAI),
         aiFallbackUsed,
+        // Teşhis: fallback sebebi (timeout / api_4xx / parse_error…). UI'da ham
+        // gösterilmez; Network/log üzerinden kök sebep görünür.
+        aiFallbackReason: aiFallbackUsed ? fallbackReason : undefined,
       },
     })
   } catch (error) {

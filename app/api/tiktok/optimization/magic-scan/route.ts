@@ -13,6 +13,8 @@ import { COST_PER_AI_SCAN } from '@/lib/subscription/types'
 import { generateGoogleRecommendations, type GoogleScanCampaign } from '@/lib/google/optimization/recommender'
 
 export const dynamic = 'force-dynamic'
+// AI Claude çağrısı (30s timeout) için yeterli pencere.
+export const maxDuration = 60
 
 export async function POST(request: Request) {
   try {
@@ -43,7 +45,7 @@ export async function POST(request: Request) {
       }
     }
 
-    const { recommendations, aiGenerated } = await generateGoogleRecommendations(campaign, locale, Boolean(useAI))
+    const { recommendations, aiGenerated, fallbackReason } = await generateGoogleRecommendations(campaign, locale, Boolean(useAI))
     const aiFallbackUsed = Boolean(useAI) && !aiGenerated
 
     return NextResponse.json({
@@ -58,6 +60,7 @@ export async function POST(request: Request) {
         aiGenerated,
         aiRequested: Boolean(useAI),
         aiFallbackUsed,
+        aiFallbackReason: aiFallbackUsed ? fallbackReason : undefined,
       },
     })
   } catch (error) {

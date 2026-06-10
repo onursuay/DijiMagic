@@ -235,4 +235,6 @@ export interface MagicScanResult {
   aiRequested?: boolean
   /** True when AI was requested but the rule-based fallback produced the output. */
   aiFallbackUsed?: boolean
+  /** Diagnostic: why AI fell back (timeout / api_4xx / parse_error…). Not shown raw in UI. */
+  aiFallbackReason?: string
 }

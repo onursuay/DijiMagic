@@ -11,6 +11,8 @@ import { COST_PER_AI_SCAN } from '@/lib/subscription/types'
 import type { OptimizationCampaign, MagicScanResult } from '@/lib/meta/optimization/types'
 
 export const dynamic = 'force-dynamic'
+// AI Claude çağrısı (30s timeout) için yeterli pencere.
+export const maxDuration = 60
 
 export async function POST(request: Request) {
   try {
@@ -77,7 +79,7 @@ export async function POST(request: Request) {
     })
 
     // Step 2: Generate recommendations (AI or deterministic fallback)
-    const { recommendations, aiGenerated } = await generateRecommendations(
+    const { recommendations, aiGenerated, fallbackReason } = await generateRecommendations(
       campaign,
       problemTags,
       locale,
@@ -98,6 +100,9 @@ export async function POST(request: Request) {
       aiGenerated,
       aiRequested: Boolean(useAI),
       aiFallbackUsed,
+      // Teşhis: fallback sebebi (timeout / api_4xx / parse_error…). UI'da ham
+      // gösterilmez; Network/log üzerinden kök sebep görünür.
+      aiFallbackReason: aiFallbackUsed ? fallbackReason : undefined,
     }
 
     return NextResponse.json({ ok: true, data: result })
