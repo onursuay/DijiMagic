@@ -27,6 +27,7 @@ const content = {
     errorMissing: 'E-posta ve şifre gereklidir.',
     errorInvalid: 'E-posta veya şifre hatalı.',
     errorNotVerified: 'Hesabınız henüz doğrulanmamış. E-postanızı kontrol edin.',
+    errorTooMany: 'Çok fazla başarısız deneme. Lütfen 15 dakika sonra tekrar deneyin.',
     errorGeneric: 'Bir hata oluştu. Lütfen tekrar deneyin.',
   },
   en: {
@@ -44,6 +45,7 @@ const content = {
     errorMissing: 'Email and password are required.',
     errorInvalid: 'Invalid email or password.',
     errorNotVerified: 'Your account is not verified yet. Please check your email.',
+    errorTooMany: 'Too many failed attempts. Please try again in 15 minutes.',
     errorGeneric: 'Something went wrong. Please try again.',
   },
 } as const
@@ -135,6 +137,8 @@ export default function LoginPage() {
       if (!res.ok) {
         if (data.error === 'not_verified') {
           setError(t.errorNotVerified)
+        } else if (data.error === 'too_many_attempts') {
+          setError(t.errorTooMany)
         } else if (data.error === 'invalid_credentials') {
           setError(t.errorInvalid)
         } else {

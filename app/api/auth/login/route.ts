@@ -20,6 +20,26 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ ok: false, error: 'service_unavailable' }, { status: 503 })
     }
 
+    // Brute-force throttle: 15 dk içinde 8 başarısız deneme → 15 dk kilit (DB-backed).
+    // bcrypt'ten ÖNCE kontrol edilir; e-posta var/yok ayrımı yapmaz (enumeration sızdırmaz).
+    const LOGIN_MAX = 8, LOGIN_WINDOW = 900, LOGIN_LOCK = 900
+    {
+      const { data: lockRow } = await supabase
+        .from('login_attempts')
+        .select('locked_until')
+        .eq('identifier', cleanEmail)
+        .maybeSingle()
+      if (lockRow?.locked_until && new Date(lockRow.locked_until).getTime() > Date.now()) {
+        return NextResponse.json({ ok: false, error: 'too_many_attempts' }, { status: 429 })
+      }
+    }
+
+    const registerFailure = async () => {
+      await supabase!.rpc('register_login_failure', {
+        p_identifier: cleanEmail, p_max: LOGIN_MAX, p_window_secs: LOGIN_WINDOW, p_lock_secs: LOGIN_LOCK,
+      })
+    }
+
     // Find active user
     const { data: user, error } = await supabase
       .from('signups')
@@ -28,6 +48,7 @@ export async function POST(request: NextRequest) {
       .maybeSingle()
 
     if (error || !user) {
+      await registerFailure()
       return NextResponse.json({ ok: false, error: 'invalid_credentials' }, { status: 401 })
     }
 
@@ -36,14 +57,19 @@ export async function POST(request: NextRequest) {
     }
 
     if (!user.password_hash) {
+      await registerFailure()
       return NextResponse.json({ ok: false, error: 'invalid_credentials' }, { status: 401 })
     }
 
     // Verify password
     const valid = await bcrypt.compare(password, user.password_hash)
     if (!valid) {
+      await registerFailure()
       return NextResponse.json({ ok: false, error: 'invalid_credentials' }, { status: 401 })
     }
+
+    // Başarılı giriş → throttle sayacını sıfırla
+    await supabase.rpc('clear_login_attempts', { p_identifier: cleanEmail })
 
     // Blocklist kontrolü — user ID, email, domain, IP (owner bypass)
     const isOwner = isSuperAdminEmail(user.email as string | null)
