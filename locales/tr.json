@@ -1935,6 +1935,8 @@
       },
       "tiktok": {
         "name": "TikTok Ads",
+        "comingSoon": "Yakında",
+        "comingSoonDesc": "TikTok Ads entegrasyonu çok yakında. Onay süreci tamamlandığında bağlayabileceksiniz.",
         "connected": "Bağlı",
         "notConnected": "Bağlanmadı",
         "connectButton": "TikTok Ads'i Bağla",

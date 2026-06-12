@@ -6,6 +6,7 @@ import {
   markTransactionFailed,
   applySubscriptionPurchase,
   addCreditsServer,
+  setGrantStatus,
 } from '@/lib/billing/db'
 import { priceSubscription, priceCreditPack } from '@/lib/billing/catalog'
 
@@ -85,12 +86,28 @@ async function handle(request: Request): Promise<Response> {
     const won = await markTransactionSucceeded(tx.id, String(retrieved.paymentId), retrieved.raw)
 
     if (won) {
-      if (tx.item_type === 'subscription') {
-        const priced = priceSubscription(tx.plan_id ?? '', tx.billing_cycle ?? '', tx.ad_accounts ?? undefined)
-        if (priced) await applySubscriptionPurchase(tx.user_id, priced)
-      } else if (tx.item_type === 'credit_pack') {
-        const priced = priceCreditPack(tx.package_id ?? '')
-        if (priced) await addCreditsServer(tx.user_id, priced.credits, 'purchase')
+      // Grant'ı AYRI try/catch'te yap: ödeme zaten 'succeeded' işaretlendiği için
+      // grant hatasında müşteriye 'failed' GÖSTERİLEMEZ (çift ödeme riski). Hata
+      // olursa grant_status='failed' işaretlenir (reconcile için) ve kullanıcıya
+      // "ödeme alındı, aktifleşiyor" denir. Grant non-idempotent olduğundan TEK
+      // deneme yapılır (retry çift-grant'a yol açar).
+      try {
+        if (tx.item_type === 'subscription') {
+          const priced = priceSubscription(tx.plan_id ?? '', tx.billing_cycle ?? '', tx.ad_accounts ?? undefined)
+          if (priced) await applySubscriptionPurchase(tx.user_id, priced)
+        } else if (tx.item_type === 'credit_pack') {
+          const priced = priceCreditPack(tx.package_id ?? '')
+          if (priced) await addCreditsServer(tx.user_id, priced.credits, 'purchase')
+        }
+        await setGrantStatus(tx.id, 'granted')
+      } catch (grantErr) {
+        await setGrantStatus(tx.id, 'failed').catch(() => {})
+        console.error(
+          `[Billing] CRITICAL grant_failed_after_payment tx=${tx.id} user=${tx.user_id} item=${tx.item_type} — ödeme ALINDI, entitlement verilemedi, manuel reconcile gerek:`,
+          grantErr instanceof Error ? grantErr.message : grantErr,
+        )
+        // Para alındı → 'failed' DEĞİL; aktivasyon beklemede mesajı.
+        return redirect(base, 'success', 'activation_pending')
       }
     }
 

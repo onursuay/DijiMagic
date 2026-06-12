@@ -213,6 +213,15 @@ export async function markTransactionSucceeded(txId: string, paymentId: string, 
   return (data?.length ?? 0) > 0
 }
 
+/**
+ * Ödeme sonrası entitlement (grant) durumunu işaretler.
+ * 'failed' = ödeme alındı ama abonelik/kredi verilemedi → reconcile gerek.
+ */
+export async function setGrantStatus(txId: string, status: 'granted' | 'failed') {
+  const db = requireClient()
+  await db.from('payment_transactions').update({ grant_status: status }).eq('id', txId)
+}
+
 export async function markTransactionFailed(txId: string, rawCallback: unknown) {
   const db = requireClient()
   await db.from('payment_transactions').update({

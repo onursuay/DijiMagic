@@ -605,82 +605,22 @@ function EntegrasyonContent() {
                 )}
               </div>
 
-              {/* TikTok Ads */}
-              <div className={`bg-white rounded-xl border-2 cardPad transition-all hover:shadow-md ${
-                tiktokStatus.connected ? 'border-primary' : 'border-gray-200'
-              }`}>
-                <div className="flex items-start justify-between mb-4">
+              {/* TikTok Ads — lansmanda gizli (entegrasyon onayı sonrası açılacak) */}
+              <div className="bg-white rounded-xl border-2 border-gray-200 cardPad opacity-80">
+                <div className="flex items-start justify-between mb-3">
                   <div className="flex items-start gap-3">
-                    <div className="h-10 w-10 rounded-xl bg-transparent flex items-center justify-center">
+                    <div className="h-10 w-10 rounded-xl bg-transparent flex items-center justify-center grayscale">
                       <img src="/integration-icons/tiktok.svg" alt="" className="h-6 w-6 object-contain" />
                     </div>
                     <div>
                       <h4 className="font-semibold text-gray-900">{t('tiktok.name')}</h4>
-                      <span className={`inline-block mt-1 px-2.5 py-0.5 text-xs font-medium rounded-full border ${
-                        tiktokStatus.connected ? 'bg-green-50 text-green-600 border-green-200' : 'bg-gray-50 text-gray-500 border-gray-200'
-                      }`}>
-                        {tiktokStatus.connected ? t('tiktok.connected') : t('tiktok.notConnected')}
+                      <span className="inline-block mt-1 px-2.5 py-0.5 text-xs font-medium rounded-full border bg-gray-100 text-gray-600 border-gray-200">
+                        {t('tiktok.comingSoon')}
                       </span>
                     </div>
                   </div>
-                  <button
-                    type="button"
-                    onClick={async () => {
-                      if (tiktokStatus.connected) {
-                        if (confirm(t('tiktok.disconnect'))) {
-                          try {
-                            await fetch('/api/integrations/tiktok-ads/disconnect', { method: 'POST', credentials: 'include' })
-                            setTiktokStatus({ connected: false })
-                          } catch (e) {
-                            console.error('TikTok Ads disconnect failed:', e)
-                          }
-                        }
-                      } else {
-                        window.location.href = '/api/integrations/tiktok-ads/start'
-                      }
-                    }}
-                    disabled={isLoading}
-                    className={`relative inline-flex h-6 w-11 items-center rounded-full transition-colors ${
-                      tiktokStatus.connected ? 'bg-green-500' : 'bg-gray-300'
-                    } ${isLoading ? 'opacity-50 cursor-not-allowed' : 'cursor-pointer'}`}
-                  >
-                    <span className={`inline-block h-4 w-4 transform rounded-full bg-white transition-transform ${
-                      tiktokStatus.connected ? 'translate-x-6' : 'translate-x-1'
-                    }`} />
-                  </button>
                 </div>
-
-                {tiktokStatus.connected && (tiktokStatus.accountName || tiktokStatus.accountId) && (
-                  <div className="mb-3 p-3 bg-green-50 rounded-lg">
-                    <p className="text-caption text-green-900 font-medium mb-1">{t('tiktok.account')}</p>
-                    <p className="text-sm text-green-800">{tiktokStatus.accountName || tiktokStatus.accountId}</p>
-                  </div>
-                )}
-
-                {tiktokStatus.connected && (
-                  <button
-                    onClick={() => window.location.href = '/api/integrations/tiktok-ads/start'}
-                    disabled={isLoading}
-                    type="button"
-                    className="w-full flex items-center justify-center gap-2 btn-h-sm px-4 rounded-lg font-medium text-ui bg-gray-100 text-gray-700 hover:bg-gray-200 transition-colors disabled:opacity-50"
-                  >
-                    <RefreshCw className="w-4 h-4" />
-                    {t('tiktok.changeAccount')}
-                  </button>
-                )}
-
-                {!tiktokStatus.connected && (
-                  <button
-                    onClick={() => window.location.href = '/api/integrations/tiktok-ads/start'}
-                    disabled={isLoading}
-                    className={`w-full flex items-center justify-center gap-2 px-4 py-2 rounded-lg font-medium text-sm bg-primary text-white hover:bg-primary/90 transition-colors ${isLoading ? 'opacity-50 cursor-not-allowed' : ''}`}
-                  >
-                    <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 10V3L4 14h7v7l9-11h-7z" />
-                    </svg>
-                    {t('tiktok.connectButton')}
-                  </button>
-                )}
+                <p className="text-sm leading-relaxed text-gray-500">{t('tiktok.comingSoonDesc')}</p>
               </div>
             </div>
           </div>
