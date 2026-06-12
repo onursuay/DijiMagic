@@ -1,6 +1,7 @@
 'use client'
 
 import { useEffect, useMemo, useState } from 'react'
+import { useTranslations } from 'next-intl'
 import { Loader2, X, Plus, Trash2, ArrowRight, ArrowLeft, CheckCircle2, Building2, MapPin, Target, Globe, ChevronDown, Check } from 'lucide-react'
 import type { SectorMainItem } from '@/lib/yoai/sectorCatalog'
 import { isValidCompetitorReference, MIN_COMPETITORS_REQUIRED } from '@/lib/yoai/businessProfileValidation'
@@ -86,7 +87,8 @@ const EMPTY_PROFILE: ProfileDraft = {
   extra_notes: '',
 }
 
-const STEPS = ['Firma', 'Sektör', 'Hedef', 'Kaynaklar', 'Rakipler', 'Detay'] as const
+const STEP_KEYS = ['company', 'sector', 'goal', 'sources', 'competitors', 'detail'] as const
+const STEP_COUNT = STEP_KEYS.length
 const STEP_ICONS = [Building2, Target, MapPin, Globe, CheckCircle2, ArrowRight] as const
 
 const INPUT_CLASS = 'w-full px-3.5 py-2.5 border border-gray-200 rounded-xl text-sm text-gray-800 placeholder:text-gray-400 shadow-[0_1px_3px_rgba(0,0,0,0.06),inset_0_1px_2px_rgba(0,0,0,0.04)] focus:outline-none focus:ring-2 focus:ring-primary/30 focus:border-primary transition-all disabled:bg-gray-50 disabled:text-gray-500 disabled:cursor-not-allowed'
@@ -108,33 +110,43 @@ function CommaSeparatedInput({ value, onChange, placeholder, className }: { valu
   )
 }
 
-const MAIN_CONVERSION_OPTIONS: WizardSelectOption[] = [
-  { value: 'Telefon araması', label: 'Telefon araması' },
-  { value: 'Online rezervasyon', label: 'Online rezervasyon' },
-  { value: 'Randevu', label: 'Randevu' },
-  { value: 'Lead formu', label: 'Lead formu' },
-  { value: 'WhatsApp mesajı', label: 'WhatsApp mesajı' },
-  { value: 'Satış', label: 'Satış' },
-  { value: 'Mağaza ziyareti', label: 'Mağaza ziyareti' },
-]
+// value (kaydedilen/persist edilen değer) DEĞİŞMEZ; yalnız label i18n'den gelir.
+const MAIN_CONVERSION_VALUES = [
+  'Telefon araması',
+  'Online rezervasyon',
+  'Randevu',
+  'Lead formu',
+  'WhatsApp mesajı',
+  'Satış',
+  'Mağaza ziyareti',
+] as const
+const MAIN_CONVERSION_KEYS = [
+  'phoneCall',
+  'onlineReservation',
+  'appointment',
+  'leadForm',
+  'whatsappMessage',
+  'sale',
+  'storeVisit',
+] as const
 
-const MONTHLY_BUDGET_OPTIONS: WizardSelectOption[] = [
-  { value: '0-2k', label: '0-2.000 TL' },
-  { value: '2k-5k', label: '2.000-5.000 TL' },
-  { value: '5k-15k', label: '5.000-15.000 TL' },
-  { value: '15k-50k', label: '15.000-50.000 TL' },
-  { value: '50k+', label: '50.000 TL üzeri' },
-]
+const MONTHLY_BUDGET_VALUES = ['0-2k', '2k-5k', '5k-15k', '15k-50k', '50k+'] as const
+const MONTHLY_BUDGET_KEYS = ['range0to2k', 'range2kTo5k', 'range5kTo15k', 'range15kTo50k', 'range50kPlus'] as const
 
-const BRAND_TONE_OPTIONS: WizardSelectOption[] = [
-  { value: 'profesyonel/kurumsal', label: 'Profesyonel / Kurumsal' },
-  { value: 'sıcak/aile dostu', label: 'Sıcak / Aile Dostu' },
-  { value: 'genç/enerjik', label: 'Genç / Enerjik' },
-  { value: 'lüks/premium', label: 'Lüks / Premium' },
-  { value: 'uzman/teknik', label: 'Uzman / Teknik' },
-]
-
-const COMPETITOR_STEP_ERROR = `Devam etmek için en az ${MIN_COMPETITORS_REQUIRED} rakip ekleyin. Her rakip için firma adı, web sitesi veya sosyal medya hesabından en az birini girmeniz yeterlidir.`
+const BRAND_TONE_VALUES = [
+  'profesyonel/kurumsal',
+  'sıcak/aile dostu',
+  'genç/enerjik',
+  'lüks/premium',
+  'uzman/teknik',
+] as const
+const BRAND_TONE_KEYS = [
+  'professionalCorporate',
+  'warmFamilyFriendly',
+  'youngEnergetic',
+  'luxuryPremium',
+  'expertTechnical',
+] as const
 
 function withCurrentOption(options: WizardSelectOption[], value: string): WizardSelectOption[] {
   if (!value || options.some((o) => o.value === value)) return options
@@ -160,6 +172,13 @@ interface Props {
 }
 
 export default function BusinessProfileOnboarding({ onComplete, onClose, isEditMode = false }: Props) {
+  const t = useTranslations('dashboard.yoai.businessProfile')
+  const tc = useTranslations('common')
+  const stepLabels = [t('steps.company'), t('steps.sector'), t('steps.goal'), t('steps.sources'), t('steps.competitors'), t('steps.detail')]
+  const mainConversionOptions: WizardSelectOption[] = MAIN_CONVERSION_VALUES.map((value, i) => ({ value, label: t(`conversionGoals.${MAIN_CONVERSION_KEYS[i]}`) }))
+  const monthlyBudgetOptions: WizardSelectOption[] = MONTHLY_BUDGET_VALUES.map((value, i) => ({ value, label: t(`budgetRanges.${MONTHLY_BUDGET_KEYS[i]}`) }))
+  const brandToneOptions: WizardSelectOption[] = BRAND_TONE_VALUES.map((value, i) => ({ value, label: t(`brandTones.${BRAND_TONE_KEYS[i]}`) }))
+  const competitorStepError = t('competitors.minError', { count: MIN_COMPETITORS_REQUIRED })
   const [step, setStep] = useState(0)
   const [draft, setDraft] = useState<ProfileDraft>(EMPTY_PROFILE)
   const [competitors, setCompetitors] = useState<CompetitorDraft[]>([{ ...EMPTY_COMP }, { ...EMPTY_COMP }, { ...EMPTY_COMP }])
@@ -294,11 +313,11 @@ export default function BusinessProfileOnboarding({ onComplete, onClose, isEditM
   const handleNext = () => {
     setErrors([])
     if (step === 4 && validCompetitorCount < MIN_COMPETITORS_REQUIRED) {
-      setErrors([COMPETITOR_STEP_ERROR])
+      setErrors([competitorStepError])
       return
     }
     if (!stepValid) return
-    setStep((s) => Math.min(STEPS.length - 1, s + 1))
+    setStep((s) => Math.min(STEP_COUNT - 1, s + 1))
   }
 
   const submit = async () => {
@@ -315,13 +334,13 @@ export default function BusinessProfileOnboarding({ onComplete, onClose, isEditM
       })
       const json = await res.json()
       if (!res.ok || !json.ok) {
-        const errorList = Array.isArray(json.errors) ? json.errors : [json.detail ? `${json.error}: ${json.detail}` : json.error || 'Kayıt başarısız']
+        const errorList = Array.isArray(json.errors) ? json.errors : [json.detail ? `${json.error}: ${json.detail}` : json.error || t('errors.saveFailed')]
         setErrors(errorList)
         return
       }
       onComplete()
     } catch (e) {
-      setErrors(['Sunucuya ulaşılamadı.'])
+      setErrors([t('errors.serverUnreachable')])
     } finally {
       setSubmitting(false)
     }
@@ -333,7 +352,7 @@ export default function BusinessProfileOnboarding({ onComplete, onClose, isEditM
         <div className="absolute inset-0 left-64 flex items-center justify-center">
           <div className="flex items-center gap-3 bg-white px-6 py-4 rounded-2xl shadow-xl">
             <Loader2 className="w-5 h-5 text-primary animate-spin" />
-            <p className="text-sm text-gray-700">Yükleniyor...</p>
+            <p className="text-sm text-gray-700">{tc('loading')}</p>
           </div>
         </div>
       </div>
@@ -346,11 +365,11 @@ export default function BusinessProfileOnboarding({ onComplete, onClose, isEditM
         {/* Header */}
         <div className="flex items-start justify-between px-6 pt-6 pb-4 border-b border-gray-100 bg-white">
           <div className="flex-1">
-            <h2 id="onboarding-title" className="text-lg font-semibold text-gray-900">İşletme Profili</h2>
-            <p className="text-xs text-gray-500 mt-1">Bu bilgileri YoAi reklam önerileri, strateji ve hedef kitle analizlerinde referans olarak kullanır.</p>
+            <h2 id="onboarding-title" className="text-lg font-semibold text-gray-900">{t('title')}</h2>
+            <p className="text-xs text-gray-500 mt-1">{t('subtitle')}</p>
           </div>
           {onClose && (
-            <button type="button" onClick={onClose} className="ml-3 p-2 hover:bg-gray-100 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary/20 transition-colors" aria-label="Kapat">
+            <button type="button" onClick={onClose} className="ml-3 p-2 hover:bg-gray-100 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary/20 transition-colors" aria-label={tc('close')}>
               <X className="w-5 h-5 text-gray-500" />
             </button>
           )}
@@ -359,17 +378,18 @@ export default function BusinessProfileOnboarding({ onComplete, onClose, isEditM
         {/* Step indicator */}
         <div className="px-6 py-3 border-b border-gray-100 bg-gray-50/40">
           <div className="flex items-center gap-1 overflow-x-auto">
-            {STEPS.map((label, idx) => {
+            {STEP_KEYS.map((stepKey, idx) => {
+              const label = stepLabels[idx]
               const Icon = STEP_ICONS[idx]
               const active = idx === step
               const done = idx < step
               return (
-                <div key={label} className="flex items-center gap-2 shrink-0">
+                <div key={stepKey} className="flex items-center gap-2 shrink-0">
                   <div className={`w-8 h-8 rounded-full flex items-center justify-center text-[11px] font-bold transition-all ${done ? 'bg-primary text-white shadow-[0_0_0_3px_rgba(var(--color-primary-rgb),0.18)]' : active ? 'bg-white border-2 border-primary text-primary shadow-[0_0_0_4px_rgba(var(--color-primary-rgb),0.12),0_2px_8px_rgba(0,0,0,0.10)]' : 'bg-white border-2 border-gray-200 text-gray-400 shadow-sm'}`}>
                     {done ? <CheckCircle2 className="w-4 h-4" /> : <Icon className="w-3.5 h-3.5" />}
                   </div>
                   <span className={`text-[12px] font-medium transition-colors ${active ? 'text-primary' : done ? 'text-primary/70' : 'text-gray-400'}`}>{label}</span>
-                  {idx < STEPS.length - 1 && <span className="w-4 h-px bg-gray-200" />}
+                  {idx < STEP_COUNT - 1 && <span className="w-4 h-px bg-gray-200" />}
                 </div>
               )
             })}
@@ -381,19 +401,19 @@ export default function BusinessProfileOnboarding({ onComplete, onClose, isEditM
           {/* STEP 0: Firma + açıklama */}
           {step === 0 && (
             <div className="space-y-4">
-              <Field label="Firma Adı *">
-                <input value={draft.company_name} onChange={(e) => setField('company_name', e.target.value)} placeholder="Örn: Ankara Restaurant"
+              <Field label={t('fields.companyName')}>
+                <input value={draft.company_name} onChange={(e) => setField('company_name', e.target.value)} placeholder={t('placeholders.companyName')}
                   className={INPUT_CLASS} />
               </Field>
-              <Field label="İşletme Açıklaması * (Ne iş yapıyorsunuz?)">
+              <Field label={t('fields.businessDescription')}>
                 <textarea value={draft.business_description} onChange={(e) => setField('business_description', e.target.value)} rows={4}
-                  placeholder="Örn: Ankara Çankaya'da geleneksel Türk mutfağı sunan, öğle yemeği menüsü ve özel rezervasyon hizmeti veren bir restoran."
+                  placeholder={t('placeholders.businessDescription')}
                   className={TEXTAREA_CLASS} />
-                <p className="text-[11px] text-gray-500 mt-1.5">YoAi bu açıklamadan reklam dilinizi ve tonunuzu çıkaracak.</p>
+                <p className="text-[11px] text-gray-500 mt-1.5">{t('hints.businessDescription')}</p>
               </Field>
-              <Field label="Sunduğunuz Ürünler / Hizmetler (virgülle ayırın)">
+              <Field label={t('fields.productsOrServices')}>
                 <CommaSeparatedInput value={draft.products_or_services} onChange={(v) => setField('products_or_services', v)}
-                  placeholder="Örn: Öğle yemeği menüsü, brunch, özel etkinlik"
+                  placeholder={t('placeholders.productsOrServices')}
                   className={INPUT_CLASS} />
               </Field>
             </div>
@@ -402,27 +422,27 @@ export default function BusinessProfileOnboarding({ onComplete, onClose, isEditM
           {/* STEP 1: Sektör */}
           {step === 1 && (
             <div className="space-y-4">
-              <Field label="Ana Sektör *">
+              <Field label={t('fields.sectorMain')}>
                 <BusinessProfileSelect
                   value={draft.sector_main}
                   onChange={(value) => { setField('sector_main', value); setField('sector_sub', '') }}
                   options={sectorOptions}
-                  placeholder="Seçiniz..."
+                  placeholder={tc('selectPlaceholder')}
                   disabled={sectors.length === 0}
                 />
               </Field>
-              <Field label="Alt Sektör / Faaliyet Tipi">
+              <Field label={t('fields.sectorSub')}>
                 <BusinessProfileSelect
                   value={draft.sector_sub}
                   onChange={(value) => setField('sector_sub', value)}
                   options={subSectorOptions}
-                  placeholder={subSectors.length === 0 ? 'Önce ana sektör seçin' : 'Seçiniz...'}
+                  placeholder={subSectors.length === 0 ? t('placeholders.selectMainSectorFirst') : tc('selectPlaceholder')}
                   disabled={subSectors.length === 0}
                 />
               </Field>
-              <Field label="Uzmanlık / Özel Hizmet (opsiyonel)">
+              <Field label={t('fields.specialization')}>
                 <input value={draft.specialization} onChange={(e) => setField('specialization', e.target.value)}
-                  placeholder="Örn: Vegan menü, çocuk dostu, taş fırın"
+                  placeholder={t('placeholders.specialization')}
                   className={INPUT_CLASS} />
               </Field>
             </div>
@@ -431,22 +451,22 @@ export default function BusinessProfileOnboarding({ onComplete, onClose, isEditM
           {/* STEP 2: Hedef + lokasyon */}
           {step === 2 && (
             <div className="space-y-4">
-              <Field label="Ana Dönüşüm Hedefi *">
+              <Field label={t('fields.mainConversionGoal')}>
                 <BusinessProfileSelect
                   value={draft.main_conversion_goal}
                   onChange={(value) => setField('main_conversion_goal', value)}
-                  options={withCurrentOption(MAIN_CONVERSION_OPTIONS, draft.main_conversion_goal)}
-                  placeholder="Seçiniz..."
+                  options={withCurrentOption(mainConversionOptions, draft.main_conversion_goal)}
+                  placeholder={tc('selectPlaceholder')}
                 />
               </Field>
-              <Field label="Hedef Lokasyon * (virgülle ayırın)">
+              <Field label={t('fields.targetLocations')}>
                 <CommaSeparatedInput value={draft.target_locations} onChange={(v) => setField('target_locations', v)}
-                  placeholder="Örn: Ankara, İstanbul Anadolu Yakası"
+                  placeholder={t('placeholders.targetLocations')}
                   className={INPUT_CLASS} />
               </Field>
-              <Field label="Hedef Kitle (kim alıyor?)">
+              <Field label={t('fields.targetAudience')}>
                 <textarea value={draft.target_audience} onChange={(e) => setField('target_audience', e.target.value)} rows={2}
-                  placeholder="Örn: 25-50 yaş şehirli profesyoneller, çevredeki işletme yöneticileri, hafta sonu aileler"
+                  placeholder={t('placeholders.targetAudience')}
                   className={TEXTAREA_CLASS} />
               </Field>
             </div>
@@ -455,15 +475,15 @@ export default function BusinessProfileOnboarding({ onComplete, onClose, isEditM
           {/* STEP 3: Marka kaynakları */}
           {step === 3 && (
             <div className="space-y-4">
-              <p className="text-xs text-gray-500 -mt-1">En az 1 kaynak girilmesi zorunludur. Kaynaklar gerçek olarak taranır.</p>
-              <SourceField label="Web Sitesi" value={draft.website_url} onChange={(v) => setField('website_url', v)} placeholder="https://..." />
+              <p className="text-xs text-gray-500 -mt-1">{t('sources.intro')}</p>
+              <SourceField label={t('sources.website')} value={draft.website_url} onChange={(v) => setField('website_url', v)} placeholder="https://..." />
               <SourceField label="Instagram" value={draft.instagram_url} onChange={(v) => setField('instagram_url', v)} placeholder="https://instagram.com/..." />
               <SourceField label="Facebook" value={draft.facebook_url} onChange={(v) => setField('facebook_url', v)} placeholder="https://facebook.com/..." />
               <SourceField label="LinkedIn" value={draft.linkedin_url} onChange={(v) => setField('linkedin_url', v)} placeholder="https://linkedin.com/company/..." />
               <SourceField label="YouTube" value={draft.youtube_url} onChange={(v) => setField('youtube_url', v)} placeholder="https://youtube.com/..." />
               <SourceField label="TikTok" value={draft.tiktok_url} onChange={(v) => setField('tiktok_url', v)} placeholder="https://tiktok.com/@..." />
-              <SourceField label="Google İşletme Profili" value={draft.google_business_profile_url} onChange={(v) => setField('google_business_profile_url', v)} placeholder="https://g.page/..." />
-              <SourceField label="Marketplace (Trendyol, Hepsiburada, Amazon)" value={draft.marketplace_url} onChange={(v) => setField('marketplace_url', v)} placeholder="https://..." />
+              <SourceField label={t('sources.googleBusiness')} value={draft.google_business_profile_url} onChange={(v) => setField('google_business_profile_url', v)} placeholder="https://g.page/..." />
+              <SourceField label={t('sources.marketplace')} value={draft.marketplace_url} onChange={(v) => setField('marketplace_url', v)} placeholder="https://..." />
             </div>
           )}
 
@@ -471,25 +491,25 @@ export default function BusinessProfileOnboarding({ onComplete, onClose, isEditM
           {step === 4 && (
             <div className="space-y-3">
               <div className="rounded-xl border border-gray-200 bg-gray-50 px-3 py-2">
-                <p className="text-xs text-gray-600">En az 3 rakip ekleyin. Her rakip için bildiğiniz en az bir bilgiyi girmeniz yeterlidir: firma adı, web sitesi veya sosyal medya hesabı.</p>
+                <p className="text-xs text-gray-600">{t('competitors.intro', { count: MIN_COMPETITORS_REQUIRED })}</p>
                 <p className={`mt-1 text-[11px] font-medium ${validCompetitorCount >= MIN_COMPETITORS_REQUIRED ? 'text-primary' : 'text-red-600'}`}>
-                  Geçerli rakip: {validCompetitorCount} / {MIN_COMPETITORS_REQUIRED}
+                  {t('competitors.validCount', { valid: validCompetitorCount, required: MIN_COMPETITORS_REQUIRED })}
                 </p>
               </div>
               {competitors.map((c, idx) => (
                 <div key={idx} className={`${CARD_CLASS} p-3 space-y-2`}>
                   <div className="flex items-center justify-between">
-                    <span className="text-xs font-semibold text-gray-700">Rakip #{idx + 1}</span>
+                    <span className="text-xs font-semibold text-gray-700">{t('competitors.itemLabel', { index: idx + 1 })}</span>
                     {competitors.length > 1 && (
-                      <button type="button" onClick={() => removeCompetitor(idx)} className="p-1.5 text-red-500 hover:bg-red-50 rounded-lg transition-colors" aria-label={`Rakip ${idx + 1} sil`}>
+                      <button type="button" onClick={() => removeCompetitor(idx)} className="p-1.5 text-red-500 hover:bg-red-50 rounded-lg transition-colors" aria-label={t('competitors.removeAria', { index: idx + 1 })}>
                         <Trash2 className="w-3.5 h-3.5" />
                       </button>
                     )}
                   </div>
-                  <input value={c.competitor_name} onChange={(e) => updateCompetitor(idx, 'competitor_name', e.target.value)} placeholder="Rakip adı"
+                  <input value={c.competitor_name} onChange={(e) => updateCompetitor(idx, 'competitor_name', e.target.value)} placeholder={t('competitors.namePlaceholder')}
                     className={COMPACT_INPUT_CLASS} />
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-2">
-                    <input value={c.website_url} onChange={(e) => updateCompetitor(idx, 'website_url', e.target.value)} placeholder="Web sitesi"
+                    <input value={c.website_url} onChange={(e) => updateCompetitor(idx, 'website_url', e.target.value)} placeholder={t('competitors.websitePlaceholder')}
                       className={COMPACT_INPUT_CLASS} />
                     <input value={c.instagram_url} onChange={(e) => updateCompetitor(idx, 'instagram_url', e.target.value)} placeholder="Instagram"
                       className={COMPACT_INPUT_CLASS} />
@@ -501,15 +521,15 @@ export default function BusinessProfileOnboarding({ onComplete, onClose, isEditM
                       className={COMPACT_INPUT_CLASS} />
                     <input value={c.tiktok_url} onChange={(e) => updateCompetitor(idx, 'tiktok_url', e.target.value)} placeholder="TikTok"
                       className={COMPACT_INPUT_CLASS} />
-                    <input value={c.google_business_url} onChange={(e) => updateCompetitor(idx, 'google_business_url', e.target.value)} placeholder="Google İşletme"
+                    <input value={c.google_business_url} onChange={(e) => updateCompetitor(idx, 'google_business_url', e.target.value)} placeholder={t('competitors.googleBusinessPlaceholder')}
                       className={COMPACT_INPUT_CLASS} />
-                    <input value={c.extra_url} onChange={(e) => updateCompetitor(idx, 'extra_url', e.target.value)} placeholder="Diğer bağlantı"
+                    <input value={c.extra_url} onChange={(e) => updateCompetitor(idx, 'extra_url', e.target.value)} placeholder={t('competitors.otherLinkPlaceholder')}
                       className={COMPACT_INPUT_CLASS} />
                   </div>
                 </div>
               ))}
               <button type="button" onClick={addCompetitor} className="inline-flex items-center gap-1.5 px-3.5 py-2 text-xs font-medium text-primary border border-primary/20 rounded-lg hover:bg-primary/5 focus:outline-none focus:ring-2 focus:ring-primary/20 transition-colors">
-                <Plus className="w-3.5 h-3.5" /> Rakip Ekle
+                <Plus className="w-3.5 h-3.5" /> {t('competitors.add')}
               </button>
             </div>
           )}
@@ -517,47 +537,47 @@ export default function BusinessProfileOnboarding({ onComplete, onClose, isEditM
           {/* STEP 5: Detay */}
           {step === 5 && (
             <div className="space-y-4">
-              <Field label="Anahtar Kelimeler (virgülle ayırın)">
+              <Field label={t('fields.keywords')}>
                 <CommaSeparatedInput value={draft.keywords} onChange={(v) => setField('keywords', v)}
-                  placeholder="Örn: ankara restoran, öğle yemeği, brunch ankara"
+                  placeholder={t('placeholders.keywords')}
                   className={INPUT_CLASS} />
               </Field>
-              <Field label="En Karlı Hizmetler (virgülle ayırın)">
+              <Field label={t('fields.mostProfitableServices')}>
                 <CommaSeparatedInput value={draft.most_profitable_services} onChange={(v) => setField('most_profitable_services', v)}
-                  placeholder="Örn: özel etkinlik, kurumsal yemek paketleri"
+                  placeholder={t('placeholders.mostProfitableServices')}
                   className={INPUT_CLASS} />
               </Field>
               <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
-                <Field label="Aylık Reklam Bütçesi">
+                <Field label={t('fields.monthlyAdBudget')}>
                   <BusinessProfileSelect
                     value={draft.monthly_ad_budget_range}
                     onChange={(value) => setField('monthly_ad_budget_range', value)}
-                    options={MONTHLY_BUDGET_OPTIONS}
-                    placeholder="Seçiniz..."
+                    options={monthlyBudgetOptions}
+                    placeholder={tc('selectPlaceholder')}
                   />
                 </Field>
-                <Field label="Marka Dili / Tonu">
+                <Field label={t('fields.brandTone')}>
                   <BusinessProfileSelect
                     value={draft.brand_tone}
                     onChange={(value) => setField('brand_tone', value)}
-                    options={withCurrentOption(BRAND_TONE_OPTIONS, draft.brand_tone)}
-                    placeholder="Seçiniz..."
+                    options={withCurrentOption(brandToneOptions, draft.brand_tone)}
+                    placeholder={tc('selectPlaceholder')}
                   />
                 </Field>
               </div>
-              <Field label="Yasak İddialar (virgülle ayırın)">
+              <Field label={t('fields.forbiddenClaims')}>
                 <CommaSeparatedInput value={draft.forbidden_claims} onChange={(v) => setField('forbidden_claims', v)}
-                  placeholder="Örn: sağlık iddiası, %100 garanti vaadi"
+                  placeholder={t('placeholders.forbiddenClaims')}
                   className={INPUT_CLASS} />
               </Field>
-              <Field label="Mevzuat / Uyumluluk Notları">
+              <Field label={t('fields.complianceNotes')}>
                 <textarea value={draft.compliance_notes} onChange={(e) => setField('compliance_notes', e.target.value)} rows={2}
-                  placeholder="Örn: Sağlık reklamı için mevzuat sınırları, izin belgeleri"
+                  placeholder={t('placeholders.complianceNotes')}
                   className={TEXTAREA_CLASS} />
               </Field>
-              <Field label="Ek Notlar">
+              <Field label={t('fields.extraNotes')}>
                 <textarea value={draft.extra_notes} onChange={(e) => setField('extra_notes', e.target.value)} rows={2}
-                  placeholder="YoAi'nin bilmesi gereken başka bir bilgi"
+                  placeholder={t('placeholders.extraNotes')}
                   className={TEXTAREA_CLASS} />
               </Field>
             </div>
@@ -576,19 +596,19 @@ export default function BusinessProfileOnboarding({ onComplete, onClose, isEditM
         <div className="flex items-center justify-between px-6 py-4 border-t border-gray-100 bg-gray-50/30">
           <button type="button" onClick={() => setStep((s) => Math.max(0, s - 1))} disabled={step === 0 || submitting}
             className="inline-flex items-center gap-1.5 px-5 py-2.5 rounded-lg text-sm font-medium text-gray-700 border border-gray-300 hover:bg-gray-50 disabled:text-gray-400 disabled:opacity-50 disabled:cursor-not-allowed transition-colors">
-            <ArrowLeft className="w-4 h-4" /> Geri
+            <ArrowLeft className="w-4 h-4" /> {tc('back')}
           </button>
-          <div className="text-xs text-gray-500">{step + 1} / {STEPS.length}</div>
-          {step < STEPS.length - 1 ? (
+          <div className="text-xs text-gray-500">{step + 1} / {STEP_COUNT}</div>
+          {step < STEP_COUNT - 1 ? (
             <button type="button" onClick={handleNext} disabled={submitting || (step !== 4 && !stepValid)}
               className="inline-flex items-center gap-1.5 px-5 py-2.5 bg-primary text-white rounded-lg text-sm font-medium hover:bg-primary/90 focus:outline-none focus:ring-2 focus:ring-primary/25 transition-colors disabled:opacity-50 disabled:cursor-not-allowed">
-              Devam <ArrowRight className="w-4 h-4" />
+              {tc('continue')} <ArrowRight className="w-4 h-4" />
             </button>
           ) : (
             <button type="button" onClick={submit} disabled={!stepValid || submitting}
               className="inline-flex items-center gap-1.5 px-5 py-2.5 bg-primary text-white rounded-lg text-sm font-medium hover:bg-primary/90 focus:outline-none focus:ring-2 focus:ring-primary/25 transition-colors disabled:opacity-50 disabled:cursor-not-allowed">
               {submitting ? <Loader2 className="w-4 h-4 animate-spin" /> : <CheckCircle2 className="w-4 h-4" />}
-              Profili Kaydet
+              {t('saveProfile')}
             </button>
           )}
         </div>
@@ -622,7 +642,7 @@ function BusinessProfileSelect({
   options,
   disabled = false,
   error = false,
-  placeholder = 'Seçiniz...',
+  placeholder = '',
 }: {
   value: string
   onChange: (v: string) => void

@@ -1,6 +1,7 @@
 'use client'
 
 import { useState, useEffect, useCallback, useRef } from 'react'
+import { useTranslations } from 'next-intl'
 import {
   Inbox,
   CheckCircle2,
@@ -26,17 +27,18 @@ interface Props {
   onApprovalChanged?: () => void
 }
 
-const ROOT_CAUSE_LABEL: Record<RootCauseId, string> = {
-  hook_problem: 'Hook Sorunu',
-  landing_page_problem: 'Landing Page Sorunu',
-  creative_fatigue: 'Kreatif Yorgunluğu',
-  audience_mismatch: 'Hedefleme Uyumsuzluğu',
-  event_quality_problem: 'Event Kalitesi',
-  insufficient_data: 'Veri Yetersiz',
-  budget_starvation: 'Bütçe Kısıtı',
-  wrong_optimization_goal: 'Yanlış Optimizasyon Hedefi',
-  pixel_misfire: 'Pixel / Tracking Sorunu',
-  healthy: 'Sağlıklı',
+// RootCauseId → i18n key (kullanıcı-yüzlü etiket çeviriden gelir)
+const ROOT_CAUSE_KEY: Record<RootCauseId, string> = {
+  hook_problem: 'hookProblem',
+  landing_page_problem: 'landingPageProblem',
+  creative_fatigue: 'creativeFatigue',
+  audience_mismatch: 'audienceMismatch',
+  event_quality_problem: 'eventQuality',
+  insufficient_data: 'insufficientData',
+  budget_starvation: 'budgetStarvation',
+  wrong_optimization_goal: 'wrongOptimizationGoal',
+  pixel_misfire: 'pixelMisfire',
+  healthy: 'healthy',
 }
 
 interface Summary {
@@ -80,12 +82,12 @@ interface ApprovalRecord {
   decision_badge?: DecisionBadge | null
 }
 
-const DECISION_BADGE_LABEL: Record<string, string> = {
-  publish_ready: 'Yayına Hazır',
-  needs_edit: 'Düzenleme Gerekli',
-  reject: 'Red',
-  hold: 'Beklet',
-  needs_human_review: 'İnsan Kontrolü',
+const DECISION_BADGE_KEY: Record<string, string> = {
+  publish_ready: 'publishReady',
+  needs_edit: 'needsEdit',
+  reject: 'reject',
+  hold: 'hold',
+  needs_human_review: 'needsHumanReview',
 }
 
 const DECISION_BADGE_CLS: Record<string, string> = {
@@ -94,58 +96,6 @@ const DECISION_BADGE_CLS: Record<string, string> = {
   reject: 'text-red-400',
   hold: 'text-slate-400',
   needs_human_review: 'text-slate-400',
-}
-
-const CAMPAIGN_OBJECTIVE_LABEL: Record<string, string> = {
-  OUTCOME_TRAFFIC: 'Trafik',
-  OUTCOME_ENGAGEMENT: 'Etkileşim',
-  OUTCOME_LEADS: 'Potansiyel Müşteri Toplama',
-  OUTCOME_SALES: 'Dönüşüm / Satış',
-  OUTCOME_AWARENESS: 'Marka Bilinirliği',
-  OUTCOME_APP_PROMOTION: 'Uygulama Tanıtımı',
-  TRAFFIC: 'Trafik',
-  CONVERSIONS: 'Dönüşüm',
-  ENGAGEMENT: 'Etkileşim',
-  LEAD_GENERATION: 'Potansiyel Müşteri Toplama',
-  VIDEO_VIEWS: 'Video İzlenmesi',
-  BRAND_AWARENESS: 'Marka Bilinirliği',
-  REACH: 'Erişim',
-  MESSAGES: 'Mesajlaşma',
-  CATALOG_SALES: 'Katalog Satışları',
-  MAXIMIZE_CONVERSIONS: 'Dönüşümleri Artır',
-  SEND_MESSAGE: 'Mesaj Gönder',
-}
-
-const OPTIMIZATION_GOAL_LABEL_MAP: Record<string, string> = {
-  LINK_CLICKS: 'Bağlantı Tıklamaları',
-  LANDING_PAGE_VIEWS: 'Landing Page Görüntüleme',
-  REACH: 'Erişim',
-  IMPRESSIONS: 'Gösterim',
-  POST_ENGAGEMENT: 'Gönderi Etkileşimi',
-  PAGE_LIKES: 'Sayfa Beğenileri',
-  LEAD_GENERATION: 'Potansiyel Müşteri (Form)',
-  OFFSITE_CONVERSIONS: 'Web Sitesi Dönüşümleri',
-  VALUE: 'Dönüşüm Değeri',
-  THRUPLAY: 'Video İzleme (ThruPlay)',
-  REPLIES: 'Mesaj Yanıtı',
-  CONVERSATIONS: 'Sohbet Başlatma',
-  QUALITY_CALL: 'Kaliteli Arama',
-  MAXIMIZE_CONVERSIONS: 'Dönüşüm Maksimizasyonu',
-  MAXIMIZE_CLICKS: 'Tıklama Maksimizasyonu',
-  TARGET_SPEND: 'Hedef Harcama',
-  TARGET_CPA: 'Hedef CPA',
-  TARGET_ROAS: 'Hedef ROAS',
-}
-
-const DESTINATION_LABEL_MAP: Record<string, string> = {
-  WEBSITE: 'Web Sitesi',
-  APP: 'Uygulama',
-  ON_AD: 'Reklam İçi Form',
-  ON_PAGE: 'Sayfa / Gönderi',
-  MESSENGER: 'Messenger',
-  INSTAGRAM_DIRECT: 'Instagram Direct',
-  WHATSAPP: 'WhatsApp',
-  CALL: 'Telefon Araması',
 }
 
 const PROPOSAL_CACHE_KEY = 'yoai_proposals_cache_v4'
@@ -186,6 +136,8 @@ function readCache(): CacheShape | null {
 }
 
 export default function AiAdSuggestions({ connectedPlatforms, onOpenWizard, onApprovalChanged }: Props) {
+  const t = useTranslations('dashboard.yoai.aiSuggestions')
+  const tc = useTranslations('common')
   const cached = typeof window !== 'undefined' ? readCache() : null
   const [proposals, setProposals] = useState<FullAdProposal[]>(cached?.proposals || [])
   const [summary, setSummary] = useState<Summary>(
@@ -327,10 +279,10 @@ export default function AiAdSuggestions({ connectedPlatforms, onOpenWizard, onAp
   if (error || proposals.length === 0) {
     return (
       <div>
-        <h2 className="text-lg font-semibold text-gray-900 mb-2">AI Reklam Önerileri</h2>
+        <h2 className="text-lg font-semibold text-gray-900 mb-2">{t('title')}</h2>
         <div className="bg-white rounded-2xl border border-gray-100 p-8 text-center">
           <Inbox className="w-8 h-8 text-gray-300 mx-auto mb-2" />
-          <p className="text-sm text-gray-500">{error || 'AI kampanya önerisi üretilemedi.'}</p>
+          <p className="text-sm text-gray-500">{error || t('empty')}</p>
         </div>
       </div>
     )
@@ -389,7 +341,7 @@ export default function AiAdSuggestions({ connectedPlatforms, onOpenWizard, onAp
         const res = await fetch(`/api/yoai/approvals/${approvalId}`, {
           method: 'PATCH',
           headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ status: 'rejected', rejection_reason: 'Kullanıcı tarafından reddedildi' }),
+          body: JSON.stringify({ status: 'rejected', rejection_reason: t('rejectedByUser') }),
           credentials: 'include',
         })
         if (!res.ok) console.warn('[AiAdSuggestions] reject PATCH failed')
@@ -430,20 +382,21 @@ export default function AiAdSuggestions({ connectedPlatforms, onOpenWizard, onAp
       if (!badge) return null
       const decision = badge.finalDecision
       const cls = decision ? (DECISION_BADGE_CLS[decision] ?? 'text-slate-400') : 'text-slate-500'
+      const decisionKey = decision ? DECISION_BADGE_KEY[decision] : undefined
       const label = decision
-        ? (DECISION_BADGE_LABEL[decision] ?? decision)
+        ? (decisionKey ? t(`decisionBadge.${decisionKey}`) : decision)
         : badge.status === 'disabled'
-          ? 'Kapalı'
+          ? t('decisionBadge.disabled')
           : '—'
       return (
         <div className="flex items-center gap-1.5 px-2 py-1 bg-slate-800/60 border border-slate-700/40 rounded-lg text-[11px] text-slate-400">
-          <span>AI:</span>
+          <span>{t('aiPrefix')}</span>
           <span className={`font-medium ${cls}`}>{label}</span>
           {decision && badge.confidence > 0 && (
             <span className="text-slate-500">· {badge.confidence}%</span>
           )}
           {badge.requiresHumanReview && badge.requiredHumanChecksCount > 0 && (
-            <span className="text-slate-500">· {badge.requiredHumanChecksCount} kontrol</span>
+            <span className="text-slate-500">· {t('checksCount', { count: badge.requiredHumanChecksCount })}</span>
           )}
         </div>
       )
@@ -453,8 +406,8 @@ export default function AiAdSuggestions({ connectedPlatforms, onOpenWizard, onAp
       return (
         <div className="flex items-center gap-2 px-3 py-2.5 bg-emerald-950/40 text-[12px] text-emerald-300">
           <CheckCircle2 className="w-3.5 h-3.5 shrink-0" />
-          <span className="font-medium">Yayınlandı</span>
-          <span className="text-[11px] opacity-60 ml-auto">Ads Manager'dan kontrol et</span>
+          <span className="font-medium">{t('status.published')}</span>
+          <span className="text-[11px] opacity-60 ml-auto">{t('checkInAdsManager')}</span>
         </div>
       )
     }
@@ -465,7 +418,7 @@ export default function AiAdSuggestions({ connectedPlatforms, onOpenWizard, onAp
           <div className="flex items-start gap-2 px-3 py-2 bg-red-950/30 border border-red-500/20 rounded-lg text-[12px] text-red-300">
             <X className="w-3.5 h-3.5 shrink-0 mt-0.5" />
             <div className="flex-1">
-              <p className="font-medium">Reddedildi</p>
+              <p className="font-medium">{t('status.rejected')}</p>
               {approval?.rejection_reason && (
                 <p className="text-[11px] opacity-70 mt-0.5">{approval.rejection_reason}</p>
               )}
@@ -476,7 +429,7 @@ export default function AiAdSuggestions({ connectedPlatforms, onOpenWizard, onAp
             disabled={submittingPatch || !approval}
             className="w-full inline-flex items-center justify-center gap-1.5 px-3 py-1.5 bg-slate-800 hover:bg-slate-700 text-slate-200 rounded-lg text-[12px] font-medium disabled:opacity-50"
           >
-            <RotateCcw className="w-3.5 h-3.5" /> Geri Al
+            <RotateCcw className="w-3.5 h-3.5" /> {tc('undo')}
           </button>
           {renderDecisionBadge()}
         </div>
@@ -489,7 +442,7 @@ export default function AiAdSuggestions({ connectedPlatforms, onOpenWizard, onAp
           <div className="flex items-start gap-2 px-3 py-2 bg-slate-800/60 border border-slate-700/40 rounded-lg text-[12px] text-slate-300">
             <PauseCircle className="w-3.5 h-3.5 shrink-0 mt-0.5" />
             <div className="flex-1">
-              <p className="font-medium">Bekletildi</p>
+              <p className="font-medium">{t('status.hold')}</p>
               {approval?.hold_reason && (
                 <p className="text-[11px] opacity-70 mt-0.5">{approval.hold_reason}</p>
               )}
@@ -500,7 +453,7 @@ export default function AiAdSuggestions({ connectedPlatforms, onOpenWizard, onAp
             disabled={submittingPatch || !approval}
             className="w-full inline-flex items-center justify-center gap-1.5 px-3 py-1.5 bg-slate-800 hover:bg-slate-700 text-slate-200 rounded-lg text-[12px] font-medium disabled:opacity-50"
           >
-            <RotateCcw className="w-3.5 h-3.5" /> Aktif Et
+            <RotateCcw className="w-3.5 h-3.5" /> {t('activate')}
           </button>
           {renderDecisionBadge()}
         </div>
@@ -512,7 +465,7 @@ export default function AiAdSuggestions({ connectedPlatforms, onOpenWizard, onAp
       return (
         <div className="bg-red-950/20">
           <p className="text-[11px] text-red-300 text-center py-2.5 px-3 font-medium">
-            Bu öneriyi reddetmek istiyor musunuz?
+            {t('confirmRejectQuestion')}
           </p>
           <div className="flex overflow-hidden rounded-b-2xl border-t border-red-500/20">
             <button
@@ -520,7 +473,7 @@ export default function AiAdSuggestions({ connectedPlatforms, onOpenWizard, onAp
               disabled={submittingPatch}
               className="flex-1 py-2.5 bg-red-600 hover:bg-red-500 active:bg-red-700 text-white font-bold text-[11px] tracking-wider uppercase transition-colors disabled:opacity-40"
             >
-              {submittingPatch ? '…' : 'REDDET'}
+              {submittingPatch ? '…' : tc('reject')}
             </button>
             <button
               onClick={() => setConfirmRejectId(null)}
@@ -528,7 +481,7 @@ export default function AiAdSuggestions({ connectedPlatforms, onOpenWizard, onAp
               style={{ clipPath: 'polygon(16px 0%, 100% 0%, 100% 100%, 0% 100%)', marginLeft: '-16px' }}
               className="flex-1 py-2.5 bg-slate-800 hover:bg-slate-700 text-slate-200 text-[11px] tracking-wider uppercase transition-colors disabled:opacity-40"
             >
-              VAZGEÇ
+              {tc('discard')}
             </button>
           </div>
         </div>
@@ -542,7 +495,7 @@ export default function AiAdSuggestions({ connectedPlatforms, onOpenWizard, onAp
             onClick={() => onOpenWizard(proposal)}
             className="flex-1 py-3 bg-emerald-600 hover:bg-emerald-500 active:bg-emerald-700 text-white font-bold text-[12px] tracking-wider uppercase transition-colors"
           >
-            ONAYLA
+            {tc('approve')}
           </button>
           <button
             onClick={() => proposalId && setConfirmRejectId(proposalId)}
@@ -550,12 +503,12 @@ export default function AiAdSuggestions({ connectedPlatforms, onOpenWizard, onAp
             style={{ clipPath: 'polygon(16px 0%, 100% 0%, 100% 100%, 0% 100%)', marginLeft: '-16px' }}
             className="flex-1 py-3 bg-red-600 hover:bg-red-500 active:bg-red-700 text-white font-bold text-[12px] tracking-wider uppercase transition-colors disabled:opacity-40"
           >
-            REDDET
+            {tc('reject')}
           </button>
         </div>
         {status === 'failed' && approval?.status_reason && (
           <p className="text-[11px] text-slate-400 px-3 pt-2 pb-1">
-            <span className="font-medium">Son deneme:</span> {approval.status_reason}
+            <span className="font-medium">{t('lastAttempt')}</span> {approval.status_reason}
           </p>
         )}
         {(() => { const badge = renderDecisionBadge(); return badge ? <div className="px-3 pb-3 pt-2">{badge}</div> : null })()}
@@ -575,7 +528,7 @@ export default function AiAdSuggestions({ connectedPlatforms, onOpenWizard, onAp
             : undefined
           const diagnostic = diag
             ? {
-                label: ROOT_CAUSE_LABEL[diag.primary.id],
+                label: t(`rootCause.${ROOT_CAUSE_KEY[diag.primary.id]}`),
                 summary: diag.primary.summary,
                 action: dec?.actions[0]?.title,
                 isHealthy: diag.primary.id === 'healthy',

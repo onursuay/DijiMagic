@@ -11,6 +11,7 @@
    ────────────────────────────────────────────────────────── */
 
 import { useEffect, useState, useCallback } from 'react'
+import { useTranslations, useLocale } from 'next-intl'
 import {
   Inbox,
   Clock,
@@ -26,6 +27,7 @@ import {
   ChevronDown,
   ChevronUp,
 } from 'lucide-react'
+import { translateEnum, type Locale } from '@/lib/yoai/translations'
 
 type ApprovalStatus =
   | 'pending'
@@ -71,54 +73,33 @@ interface ApprovalRecord {
   } | null
 }
 
-const REJECTION_CATEGORY_LABELS: Record<string, string> = {
-  'yanlış_kampanya_türü': 'Yanlış Kampanya Türü',
-  'düşük_kalite': 'Düşük Kalite',
-  'bütçe_uygunsuz': 'Bütçe Uygunsuz',
-  'kreatif_uygunsuz': 'Kreatif Uygunsuz',
-  'hedefleme_uygunsuz': 'Hedefleme Uygunsuz',
-  'marka_dili_uygunsuz': 'Marka Dili Uygunsuz',
-  'politika_riski': 'Politika Riski',
-  'diğer': 'Diğer',
+// Ret/bekletme kategorileri — app-içi enum, kullanıcı etiketi i18n'den gelir.
+const REJECTION_CATEGORY_KEYS: Record<string, string> = {
+  'yanlış_kampanya_türü': 'wrongCampaignType',
+  'düşük_kalite': 'lowQuality',
+  'bütçe_uygunsuz': 'budgetUnsuitable',
+  'kreatif_uygunsuz': 'creativeUnsuitable',
+  'hedefleme_uygunsuz': 'targetingUnsuitable',
+  'marka_dili_uygunsuz': 'brandToneUnsuitable',
+  'politika_riski': 'policyRisk',
+  'diğer': 'other',
 }
 
-const HOLD_CATEGORY_LABELS: Record<string, string> = {
-  'daha_sonra': 'Daha Sonra',
-  'müşteri_onayı_bekliyor': 'Müşteri Onayı Bekliyor',
-  'bütçe_bekliyor': 'Bütçe Bekliyor',
-  'kreatif_bekliyor': 'Kreatif Bekliyor',
-  'veri_yetersiz': 'Veri Yetersiz',
-  'diğer': 'Diğer',
+const HOLD_CATEGORY_KEYS: Record<string, string> = {
+  'daha_sonra': 'later',
+  'müşteri_onayı_bekliyor': 'awaitingClientApproval',
+  'bütçe_bekliyor': 'awaitingBudget',
+  'kreatif_bekliyor': 'awaitingCreative',
+  'veri_yetersiz': 'insufficientData',
+  'diğer': 'other',
 }
 
-const CTA_LABELS: Record<string, string> = {
-  SEND_MESSAGE: 'Mesaj Gönder',
-  LEARN_MORE: 'Daha Fazla Bilgi Al',
-  SHOP_NOW: 'Alışveriş Yap',
-  SIGN_UP: 'Kayıt Ol',
-  CONTACT_US: 'Bize Ulaş',
-  GET_QUOTE: 'Teklif Al',
-  CALL_NOW: 'Hemen Ara',
-  DOWNLOAD: 'İndir',
-  APPLY_NOW: 'Başvur',
-  BOOK_NOW: 'Rezervasyon Yap',
-  WATCH_MORE: 'Daha Fazla İzle',
-}
-
-function humanizeCta(raw: string): string {
-  if (CTA_LABELS[raw]) return CTA_LABELS[raw]
-  return raw
-    .replace(/_/g, ' ')
-    .toLowerCase()
-    .replace(/\b\w/g, (c) => c.toUpperCase())
-}
-
-const DECISION_BADGE_LABELS: Record<string, string> = {
-  publish_ready: 'Yayına Hazır',
-  needs_edit: 'Düzenleme Gerekli',
-  reject: 'Red',
-  hold: 'Beklet',
-  needs_human_review: 'İnsan Kontrolü',
+const DECISION_BADGE_KEYS: Record<string, string> = {
+  publish_ready: 'publishReady',
+  needs_edit: 'needsEdit',
+  reject: 'reject',
+  hold: 'hold',
+  needs_human_review: 'needsHumanReview',
 }
 
 const DECISION_BADGE_CLASSES: Record<string, string> = {
@@ -131,13 +112,13 @@ const DECISION_BADGE_CLASSES: Record<string, string> = {
 
 const OUTCOME_META: Record<
   string,
-  { label: string; classes: string; icon: typeof TrendingUp }
+  { labelKey: string; classes: string; icon: typeof TrendingUp }
 > = {
-  improved: { label: 'İyileşti', classes: 'bg-emerald-50 text-emerald-700 border-emerald-200', icon: TrendingUp },
-  declined: { label: 'Geriledi', classes: 'bg-red-50 text-red-700 border-red-200', icon: TrendingDown },
-  no_change: { label: 'Değişim Yok', classes: 'bg-gray-100 text-gray-600 border-gray-200', icon: Minus },
-  insufficient_data: { label: 'Veri Yetersiz', classes: 'bg-gray-50 text-gray-500 border-gray-200', icon: Minus },
-  pending: { label: 'Sonuç Bekleniyor', classes: 'bg-gray-50 text-gray-500 border-gray-200', icon: Clock },
+  improved: { labelKey: 'improved', classes: 'bg-emerald-50 text-emerald-700 border-emerald-200', icon: TrendingUp },
+  declined: { labelKey: 'declined', classes: 'bg-red-50 text-red-700 border-red-200', icon: TrendingDown },
+  no_change: { labelKey: 'noChange', classes: 'bg-gray-100 text-gray-600 border-gray-200', icon: Minus },
+  insufficient_data: { labelKey: 'insufficientData', classes: 'bg-gray-50 text-gray-500 border-gray-200', icon: Minus },
+  pending: { labelKey: 'pendingResult', classes: 'bg-gray-50 text-gray-500 border-gray-200', icon: Clock },
 }
 
 interface Props {
@@ -146,54 +127,54 @@ interface Props {
 
 const STATUS_META: Record<
   ApprovalStatus,
-  { label: string; icon: typeof Clock; classes: string }
+  { labelKey: string; icon: typeof Clock; classes: string }
 > = {
   pending: {
-    label: 'Bekliyor',
+    labelKey: 'pending',
     icon: Clock,
     classes: 'bg-primary/10 text-primary border-primary/20',
   },
   approved: {
-    label: 'Onaylandı',
+    labelKey: 'approved',
     icon: CheckCircle2,
     classes: 'bg-emerald-50 text-emerald-700 border-emerald-200',
   },
   published: {
-    label: 'Yayınlandı',
+    labelKey: 'published',
     icon: CheckCircle2,
     classes: 'bg-emerald-50 text-emerald-700 border-emerald-200',
   },
   rejected: {
-    label: 'Reddedildi',
+    labelKey: 'rejected',
     icon: X,
     classes: 'bg-gray-100 text-gray-600 border-gray-200',
   },
   hold: {
-    label: 'Bekletildi',
+    labelKey: 'hold',
     icon: PauseCircle,
     classes: 'bg-gray-100 text-gray-600 border-gray-200',
   },
   editing: {
-    label: 'Düzenleniyor',
+    labelKey: 'editing',
     icon: Pencil,
     classes: 'bg-gray-100 text-gray-700 border-gray-200',
   },
   failed: {
-    label: 'Yayında Hata',
+    labelKey: 'failed',
     icon: AlertTriangle,
     classes: 'bg-red-50 text-red-700 border-red-200',
   },
   expired: {
-    label: 'Süresi Doldu',
+    labelKey: 'expired',
     icon: Clock,
     classes: 'bg-gray-100 text-gray-500 border-gray-200',
   },
 }
 
-function formatTime(iso: string | null): string {
+function formatTime(iso: string | null, locale: string): string {
   if (!iso) return '—'
   try {
-    return new Date(iso).toLocaleString('tr-TR', {
+    return new Date(iso).toLocaleString(locale === 'en' ? 'en-US' : 'tr-TR', {
       day: '2-digit',
       month: 'short',
       hour: '2-digit',
@@ -211,6 +192,7 @@ interface OutcomeResult {
 }
 
 export default function ApprovalHistoryPanel({ refreshKey }: Props) {
+  const t = useTranslations('dashboard.yoai.approvalHistory')
   const [records, setRecords] = useState<ApprovalRecord[] | null>(null)
   const [loading, setLoading] = useState(true)
   const [expandedId, setExpandedId] = useState<string | null>(null)
@@ -277,13 +259,13 @@ export default function ApprovalHistoryPanel({ refreshKey }: Props) {
       <div className="mb-5">
         <div className="flex items-center gap-2 mb-1">
           <History className="w-4 h-4 text-gray-500" />
-          <h2 className="text-lg font-semibold text-gray-900">Onay Geçmişi</h2>
+          <h2 className="text-lg font-semibold text-gray-900">{t('title')}</h2>
           {records && records.length > 0 && (
-            <span className="text-[12px] text-gray-500">son {records.length} kayıt</span>
+            <span className="text-[12px] text-gray-500">{t('recentCount', { count: records.length })}</span>
           )}
         </div>
         <p className="text-[13px] text-gray-500 leading-relaxed">
-          AI tarafından oluşturulan reklam önerilerinizin onay, bekletme, reddetme ve yayın geçmişini buradan takip edebilirsiniz.
+          {t('description')}
         </p>
       </div>
 
@@ -291,7 +273,7 @@ export default function ApprovalHistoryPanel({ refreshKey }: Props) {
         <div className="bg-white rounded-2xl border border-dashed border-gray-200 p-8 text-center">
           <Inbox className="w-8 h-8 text-gray-300 mx-auto mb-3" />
           <p className="text-sm text-gray-500">
-            Henüz onaylanmış, reddedilmiş veya bekletilmiş öneri yok.
+            {t('empty')}
           </p>
         </div>
       ) : (
@@ -323,13 +305,16 @@ interface CardProps {
 }
 
 function ApprovalCard({ rec, expanded, outcomeResult, onToggleDetail }: CardProps) {
+  const t = useTranslations('dashboard.yoai.approvalHistory')
+  const locale = useLocale() as Locale
+  const plat: 'meta' | 'google' = rec.platform?.toLowerCase() === 'google' ? 'google' : 'meta'
   const meta = STATUS_META[rec.status] || STATUS_META.pending
   const Icon = meta.icon
 
   const title =
     rec.proposal_snapshot?.campaignName ||
     rec.proposal_snapshot?.headline ||
-    'İsimsiz Öneri'
+    t('untitledProposal')
 
   const reason = rec.rejection_reason || rec.hold_reason || rec.status_reason || null
   const rejectionCategory = rec.metadata?.rejection_category as string | null | undefined
@@ -352,7 +337,7 @@ function ApprovalCard({ rec, expanded, outcomeResult, onToggleDetail }: CardProp
             className={`inline-flex items-center gap-1.5 px-2 py-1 rounded-lg border text-[11px] font-medium ${meta.classes}`}
           >
             <Icon className="w-3 h-3" />
-            {meta.label}
+            {t(`status.${meta.labelKey}`)}
           </span>
           <span className="inline-flex items-center px-2 py-1 rounded-lg border border-gray-200 bg-gray-50 text-[11px] font-medium text-gray-600 uppercase tracking-wide">
             {rec.platform}
@@ -361,7 +346,7 @@ function ApprovalCard({ rec, expanded, outcomeResult, onToggleDetail }: CardProp
             <span
               className={`inline-flex items-center px-2 py-1 rounded-lg border text-[11px] font-medium ${badgeClass}`}
             >
-              AI: {DECISION_BADGE_LABELS[badgeDecision] ?? badgeDecision}
+              {t('aiPrefix')} {DECISION_BADGE_KEYS[badgeDecision] ? t(`decisionBadge.${DECISION_BADGE_KEYS[badgeDecision]}`) : badgeDecision}
             </span>
           )}
           {outcomeMeta && OutcomeIcon && (
@@ -369,7 +354,7 @@ function ApprovalCard({ rec, expanded, outcomeResult, onToggleDetail }: CardProp
               className={`inline-flex items-center gap-1 px-2 py-1 rounded-lg border text-[11px] font-medium ${outcomeMeta.classes}`}
             >
               <OutcomeIcon className="w-3 h-3" />
-              {outcomeMeta.label}
+              {t(`outcome.${outcomeMeta.labelKey}`)}
             </span>
           )}
         </div>
@@ -382,30 +367,30 @@ function ApprovalCard({ rec, expanded, outcomeResult, onToggleDetail }: CardProp
         {/* Key details */}
         <div className="space-y-1.5">
           {rec.proposal_snapshot?.objectiveLabel && (
-            <InfoRow label="Hedef" value={rec.proposal_snapshot.objectiveLabel} />
+            <InfoRow label={t('fields.objective')} value={rec.proposal_snapshot.objectiveLabel} />
           )}
           {rec.proposal_snapshot?.dailyBudget != null && (
-            <InfoRow label="Günlük Bütçe" value={`₺${rec.proposal_snapshot.dailyBudget}`} />
+            <InfoRow label={t('fields.dailyBudget')} value={`₺${rec.proposal_snapshot.dailyBudget}`} />
           )}
           {rec.proposal_snapshot?.headline && (
-            <InfoRow label="Başlık" value={rec.proposal_snapshot.headline} truncate />
+            <InfoRow label={t('fields.headline')} value={rec.proposal_snapshot.headline} truncate />
           )}
           {rec.proposal_snapshot?.callToAction && (
-            <InfoRow label="CTA" value={humanizeCta(rec.proposal_snapshot.callToAction)} />
+            <InfoRow label={t('fields.cta')} value={translateEnum(rec.proposal_snapshot.callToAction, locale, plat)} />
           )}
           {reason && (
-            <InfoRow label="Neden" value={reason} truncate />
+            <InfoRow label={t('fields.reason')} value={reason} truncate />
           )}
           {(rejectionCategory || holdCategory) && (
             <div className="flex items-center gap-1.5 flex-wrap pt-0.5">
               {rejectionCategory && (
                 <span className="inline-flex items-center px-2 py-0.5 rounded-md bg-red-50 text-red-700 border border-red-200 text-[11px] font-medium">
-                  {REJECTION_CATEGORY_LABELS[rejectionCategory] ?? rejectionCategory}
+                  {REJECTION_CATEGORY_KEYS[rejectionCategory] ? t(`rejectionCategory.${REJECTION_CATEGORY_KEYS[rejectionCategory]}`) : rejectionCategory}
                 </span>
               )}
               {holdCategory && (
                 <span className="inline-flex items-center px-2 py-0.5 rounded-md bg-gray-50 text-gray-600 border border-gray-200 text-[11px] font-medium">
-                  {HOLD_CATEGORY_LABELS[holdCategory] ?? holdCategory}
+                  {HOLD_CATEGORY_KEYS[holdCategory] ? t(`holdCategory.${HOLD_CATEGORY_KEYS[holdCategory]}`) : holdCategory}
                 </span>
               )}
             </div>
@@ -414,9 +399,9 @@ function ApprovalCard({ rec, expanded, outcomeResult, onToggleDetail }: CardProp
 
         {/* Date */}
         <p className="text-[11px] text-gray-400 mt-3">
-          {formatTime(rec.updated_at || rec.created_at)}
+          {formatTime(rec.updated_at || rec.created_at, locale)}
           {rec.published_at && (
-            <span className="text-emerald-500 ml-2">· yayın {formatTime(rec.published_at)}</span>
+            <span className="text-emerald-500 ml-2">{t('publishedAt', { time: formatTime(rec.published_at, locale) })}</span>
           )}
         </p>
       </div>
@@ -424,31 +409,31 @@ function ApprovalCard({ rec, expanded, outcomeResult, onToggleDetail }: CardProp
       {/* Expanded details — user-facing only, no technical IDs */}
       {expanded && (
         <div className="mx-3 mb-3 rounded-xl bg-gray-50/60 border border-gray-100 px-3 py-3">
-          <p className="text-[11px] font-medium text-gray-400 uppercase tracking-wide mb-2">Detaylar</p>
+          <p className="text-[11px] font-medium text-gray-400 uppercase tracking-wide mb-2">{t('details')}</p>
           <div className="space-y-1.5">
             {rec.proposal_snapshot?.headline && (
-              <DetailRow label="Başlık" value={rec.proposal_snapshot.headline} />
+              <DetailRow label={t('fields.headline')} value={rec.proposal_snapshot.headline} />
             )}
             {rec.proposal_snapshot?.objectiveLabel && (
-              <DetailRow label="Hedef" value={rec.proposal_snapshot.objectiveLabel} />
+              <DetailRow label={t('fields.objective')} value={rec.proposal_snapshot.objectiveLabel} />
             )}
             {rec.proposal_snapshot?.dailyBudget != null && (
-              <DetailRow label="Günlük Bütçe" value={`₺${rec.proposal_snapshot.dailyBudget}`} />
+              <DetailRow label={t('fields.dailyBudget')} value={`₺${rec.proposal_snapshot.dailyBudget}`} />
             )}
             {rec.proposal_snapshot?.callToAction && (
-              <DetailRow label="CTA" value={humanizeCta(rec.proposal_snapshot.callToAction)} />
+              <DetailRow label={t('fields.cta')} value={translateEnum(rec.proposal_snapshot.callToAction, locale, plat)} />
             )}
             {reason && (
-              <DetailRow label="Neden" value={reason} />
+              <DetailRow label={t('fields.reason')} value={reason} />
             )}
             {outcomeResult?.outcome_summary && (
-              <DetailRow label="Sonuç Notu" value={outcomeResult.outcome_summary} />
+              <DetailRow label={t('fields.outcomeNote')} value={outcomeResult.outcome_summary} />
             )}
             {badge?.confidence != null && badge.confidence > 0 && (
-              <DetailRow label="AI Güven" value={`${badge.confidence}%`} />
+              <DetailRow label={t('fields.aiConfidence')} value={`${badge.confidence}%`} />
             )}
-            <DetailRow label="Oluşturuldu" value={formatTime(rec.created_at)} />
-            <DetailRow label="Güncellendi" value={formatTime(rec.updated_at)} />
+            <DetailRow label={t('fields.createdAt')} value={formatTime(rec.created_at, locale)} />
+            <DetailRow label={t('fields.updatedAt')} value={formatTime(rec.updated_at, locale)} />
             {/* proposal_id, publish_audit_id, source_campaign_id: admin/debug only — not shown here */}
           </div>
         </div>
@@ -463,12 +448,12 @@ function ApprovalCard({ rec, expanded, outcomeResult, onToggleDetail }: CardProp
           {expanded ? (
             <>
               <ChevronUp className="w-3.5 h-3.5" />
-              Detayları Gizle
+              {t('hideDetails')}
             </>
           ) : (
             <>
               <ChevronDown className="w-3.5 h-3.5" />
-              Detayları Gör
+              {t('showDetails')}
             </>
           )}
         </button>

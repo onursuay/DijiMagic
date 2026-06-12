@@ -9,12 +9,14 @@
    Veri kaynağı: yoai_model_decisions DB satırları (role bazlı).
    ────────────────────────────────────────────────────────── */
 
-const JUDGE_DECISION_LABELS: Record<string, string> = {
-  publish_ready: 'Yayına Hazır',
-  needs_edit: 'Düzenleme Gerekiyor',
-  reject: 'Reddedilmeli',
-  hold: 'Bekletilmeli',
-  needs_human_review: 'İnsan Kontrolü Gerekiyor',
+import { useTranslations } from 'next-intl'
+
+const JUDGE_DECISION_KEYS: Record<string, string> = {
+  publish_ready: 'publishReady',
+  needs_edit: 'needsEdit',
+  reject: 'reject',
+  hold: 'hold',
+  needs_human_review: 'needsHumanReview',
 }
 
 const JUDGE_DECISION_CLASSES: Record<string, string> = {
@@ -25,12 +27,12 @@ const JUDGE_DECISION_CLASSES: Record<string, string> = {
   needs_human_review: 'bg-gray-50 text-gray-700 border-gray-200',
 }
 
-const ROLE_LABELS: Record<string, string> = {
-  strategist: 'Stratejist',
-  creative: 'Kreatif',
-  risk_policy: 'Risk/Politika',
-  technical_validator: 'Teknik',
-  judge: 'Hakem',
+const ROLE_KEYS: Record<string, string> = {
+  strategist: 'strategist',
+  creative: 'creative',
+  risk_policy: 'riskPolicy',
+  technical_validator: 'technical',
+  judge: 'judge',
 }
 
 const STATUS_DOT: Record<string, string> = {
@@ -61,10 +63,12 @@ interface Props {
 }
 
 export default function DecisionDeskSummary({ rows, loading }: Props) {
+  const t = useTranslations('dashboard.yoai.decisionDesk')
+
   if (loading) {
     return (
       <div className="rounded-xl border border-gray-100 bg-gray-50 px-4 py-3 text-[12px] text-gray-400">
-        Decision Desk yükleniyor…
+        {t('loading')}
       </div>
     )
   }
@@ -72,9 +76,9 @@ export default function DecisionDeskSummary({ rows, loading }: Props) {
   if (!rows || rows.length === 0) {
     return (
       <div className="rounded-xl border border-gray-100 bg-gray-50 px-4 py-3 text-[12px] text-gray-500">
-        Henüz Multi-AI karar kaydı yok.{' '}
+        {t('empty')}{' '}
         <span className="text-gray-400">
-          (Multi-AI shadow mode kapalı veya bu öneri için henüz çalışmadı)
+          {t('emptyHint')}
         </span>
       </div>
     )
@@ -116,15 +120,15 @@ export default function DecisionDeskSummary({ rows, loading }: Props) {
     ? (JUDGE_DECISION_CLASSES[finalDecision] ?? 'bg-gray-50 text-gray-700 border-gray-200')
     : 'bg-gray-50 text-gray-500 border-gray-200'
   const decisionLabel = finalDecision
-    ? (JUDGE_DECISION_LABELS[finalDecision] ?? finalDecision)
-    : 'Karar yok'
+    ? (JUDGE_DECISION_KEYS[finalDecision] ? t(`decision.${JUDGE_DECISION_KEYS[finalDecision]}`) : finalDecision)
+    : t('noDecision')
 
   return (
     <div className="space-y-3">
       {/* Başlık + judge kararı */}
       <div className="flex items-center gap-2 flex-wrap">
         <span className="text-[11px] font-bold text-gray-500 uppercase tracking-wide">
-          Decision Desk
+          {t('title')}
         </span>
         <span
           className={`inline-flex items-center px-2.5 py-1 rounded-lg border text-[12px] font-semibold ${decisionClass}`}
@@ -133,15 +137,15 @@ export default function DecisionDeskSummary({ rows, loading }: Props) {
         </span>
         {judgeRow && (
           <>
-            <span className="text-[11px] text-gray-500">Güven: {judgeRow.confidence}%</span>
+            <span className="text-[11px] text-gray-500">{t('confidence', { value: judgeRow.confidence })}</span>
             {judgeRow.risk_level && (
-              <span className="text-[11px] text-gray-500">Risk: {judgeRow.risk_level}</span>
+              <span className="text-[11px] text-gray-500">{t('risk', { level: judgeRow.risk_level })}</span>
             )}
             {campaignTypeFidelity !== null && (
               <span
                 className={`text-[11px] ${campaignTypeFidelity ? 'text-emerald-600' : 'text-red-600'}`}
               >
-                Kampanya Türü: {campaignTypeFidelity ? 'Uyumlu' : 'Uyumsuz'}
+                {t('campaignTypeFidelity', { value: campaignTypeFidelity ? t('compatible') : t('incompatible') })}
               </span>
             )}
           </>
@@ -156,8 +160,8 @@ export default function DecisionDeskSummary({ rows, loading }: Props) {
           return (
             <div key={role} className="flex items-center gap-1.5">
               <span className={`w-2 h-2 rounded-full shrink-0 ${dotClass}`} />
-              <span className="text-[11px] text-gray-600">{ROLE_LABELS[role] ?? role}</span>
-              <span className="text-[10px] text-gray-400">{row ? row.status : 'yok'}</span>
+              <span className="text-[11px] text-gray-600">{ROLE_KEYS[role] ? t(`roles.${ROLE_KEYS[role]}`) : role}</span>
+              <span className="text-[10px] text-gray-400">{row ? row.status : t('none')}</span>
             </div>
           )
         })}
@@ -167,7 +171,7 @@ export default function DecisionDeskSummary({ rows, loading }: Props) {
       {finalRecommendation && (
         <div className="bg-gray-50 rounded-xl px-3 py-2 text-[12px] text-gray-700">
           <p className="font-semibold text-gray-500 text-[11px] uppercase tracking-wide mb-1">
-            Final Öneri
+            {t('finalRecommendation')}
           </p>
           <p className="leading-relaxed">{finalRecommendation}</p>
         </div>
@@ -177,7 +181,7 @@ export default function DecisionDeskSummary({ rows, loading }: Props) {
       {finalCreativeBrief && (
         <div className="bg-gray-50 rounded-xl px-3 py-2 text-[12px] text-gray-700">
           <p className="font-semibold text-gray-500 text-[11px] uppercase tracking-wide mb-1">
-            Kreatif Brief
+            {t('creativeBrief')}
           </p>
           <p className="leading-relaxed">{finalCreativeBrief}</p>
         </div>
@@ -187,7 +191,7 @@ export default function DecisionDeskSummary({ rows, loading }: Props) {
       {finalPayloadNotes && (
         <div className="bg-gray-50 rounded-xl px-3 py-2 text-[12px] text-gray-600">
           <p className="font-semibold text-gray-500 text-[11px] uppercase tracking-wide mb-1">
-            Payload Notları
+            {t('payloadNotes')}
           </p>
           <p className="leading-relaxed">{finalPayloadNotes}</p>
         </div>
@@ -197,7 +201,7 @@ export default function DecisionDeskSummary({ rows, loading }: Props) {
       {requiredHumanChecks.length > 0 && (
         <div>
           <p className="text-[11px] font-semibold text-gray-500 uppercase tracking-wide mb-1">
-            İnsan Kontrolü Gereken ({requiredHumanChecks.length})
+            {t('humanChecksRequired', { count: requiredHumanChecks.length })}
           </p>
           <ul className="space-y-0.5">
             {requiredHumanChecks.map((c, i) => (
@@ -214,7 +218,7 @@ export default function DecisionDeskSummary({ rows, loading }: Props) {
       {unresolvedRisks.length > 0 && (
         <div>
           <p className="text-[11px] font-semibold text-red-500 uppercase tracking-wide mb-1">
-            Çözülmemiş Riskler
+            {t('unresolvedRisks')}
           </p>
           <ul className="space-y-0.5">
             {unresolvedRisks.map((r, i) => (

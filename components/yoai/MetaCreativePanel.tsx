@@ -14,6 +14,7 @@
    ────────────────────────────────────────────────────────── */
 
 import { useEffect, useState } from 'react'
+import { useTranslations } from 'next-intl'
 import { Loader2, RefreshCcw, CheckCircle2, AlertTriangle } from 'lucide-react'
 
 export interface MetaCreativePayload {
@@ -52,6 +53,8 @@ export default function MetaCreativePanel({
   onBack,
   onConfirm,
 }: Props) {
+  const t = useTranslations('dashboard.yoai.metaCreative')
+  const tc = useTranslations('common')
   const [phase, setPhase] = useState<Phase>('generating')
   const [imageUrl, setImageUrl] = useState<string | null>(null)
   const [imageHash, setImageHash] = useState<string | null>(null)
@@ -85,14 +88,14 @@ export default function MetaCreativePanel({
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ prompt: enhanced, aspect_ratio: '1:1' }),
       })
-      if (!genRes.ok) throw new Error('Görsel üretilemedi.')
+      if (!genRes.ok) throw new Error(t('errors.imageGenerationFailed'))
       const genData = await genRes.json()
       const url: string | undefined = genData.url
-      if (!url) throw new Error('Görsel URL alınamadı.')
+      if (!url) throw new Error(t('errors.imageUrlMissing'))
       setImageUrl(url)
       setPhase('preview')
     } catch (e) {
-      setErr(e instanceof Error ? e.message : 'Bilinmeyen hata')
+      setErr(e instanceof Error ? e.message : t('errors.unknown'))
       setPhase('error')
     }
   }
@@ -104,7 +107,7 @@ export default function MetaCreativePanel({
     try {
       // Fetch generated image and convert to File
       const imgRes = await fetch(imageUrl)
-      if (!imgRes.ok) throw new Error('Görsel indirilemedi.')
+      if (!imgRes.ok) throw new Error(t('errors.imageDownloadFailed'))
       const blob = await imgRes.blob()
       const file = new File([blob], `yoai-ad-${Date.now()}.png`, {
         type: blob.type || 'image/png',
@@ -117,12 +120,12 @@ export default function MetaCreativePanel({
       const up = await fetch('/api/meta/upload-media', { method: 'POST', body: fd })
       const upData = await up.json().catch(() => ({}))
       if (!up.ok || !upData.ok || !upData.hash) {
-        throw new Error(upData.message || upData.error || 'Meta yüklemesi başarısız.')
+        throw new Error(upData.message || upData.error || t('errors.metaUploadFailed'))
       }
       setImageHash(upData.hash)
       setPhase('ready')
     } catch (e) {
-      setErr(e instanceof Error ? e.message : 'Yükleme hatası')
+      setErr(e instanceof Error ? e.message : t('errors.uploadError'))
       setPhase('error')
     }
   }
@@ -151,14 +154,14 @@ export default function MetaCreativePanel({
       {/* Image preview area */}
       <div className="aspect-square w-full max-w-sm mx-auto rounded-xl overflow-hidden border border-gray-200 bg-gray-50 flex items-center justify-center">
         {imageUrl ? (
-          <img src={imageUrl} alt="Reklam görseli" className="w-full h-full object-cover" />
+          <img src={imageUrl} alt={t('imageAlt')} className="w-full h-full object-cover" />
         ) : phase === 'generating' ? (
           <div className="flex flex-col items-center gap-2 text-gray-500">
             <Loader2 className="w-6 h-6 animate-spin text-primary" />
-            <span className="text-xs">AI görsel üretiliyor…</span>
+            <span className="text-xs">{t('generatingImage')}</span>
           </div>
         ) : (
-          <div className="flex flex-col items-center gap-2 text-gray-400 text-xs">Görsel yok</div>
+          <div className="flex flex-col items-center gap-2 text-gray-400 text-xs">{t('noImage')}</div>
         )}
       </div>
 
@@ -169,7 +172,7 @@ export default function MetaCreativePanel({
             onClick={generate}
             className="inline-flex items-center gap-1.5 text-xs text-gray-600 hover:text-primary"
           >
-            <RefreshCcw className="w-3 h-3" /> Yeniden üret
+            <RefreshCcw className="w-3 h-3" /> {t('regenerate')}
           </button>
         </div>
       )}
@@ -177,7 +180,7 @@ export default function MetaCreativePanel({
       {/* Ad text (editable primaryText) */}
       <div className="border border-gray-200 rounded-xl p-4 space-y-3">
         <div>
-          <p className="text-xs font-semibold text-gray-700 mb-1">Birincil Metin</p>
+          <p className="text-xs font-semibold text-gray-700 mb-1">{t('primaryText')}</p>
           <textarea
             value={primaryText}
             onChange={(e) => setPrimaryText(e.target.value)}
@@ -187,19 +190,19 @@ export default function MetaCreativePanel({
         </div>
         {headline && (
           <div>
-            <p className="text-xs font-semibold text-gray-700 mb-1">Başlık</p>
+            <p className="text-xs font-semibold text-gray-700 mb-1">{t('headline')}</p>
             <p className="text-sm text-gray-900">{headline}</p>
           </div>
         )}
         {description && (
           <div>
-            <p className="text-xs font-semibold text-gray-700 mb-1">Açıklama</p>
+            <p className="text-xs font-semibold text-gray-700 mb-1">{t('description')}</p>
             <p className="text-sm text-gray-600">{description}</p>
           </div>
         )}
         <div className="flex items-center gap-4 text-xs text-gray-500">
-          {callToAction && <span>CTA: <strong className="text-gray-800">{callToAction}</strong></span>}
-          {websiteUrl && <span className="truncate">URL: {websiteUrl}</span>}
+          {callToAction && <span>{t('ctaLabel')} <strong className="text-gray-800">{callToAction}</strong></span>}
+          {websiteUrl && <span className="truncate">{t('urlLabel')} {websiteUrl}</span>}
         </div>
       </div>
 
@@ -209,20 +212,20 @@ export default function MetaCreativePanel({
           onClick={uploadToMeta}
           className="w-full py-2.5 bg-gray-100 hover:bg-gray-200 text-gray-800 rounded-xl text-sm font-medium"
         >
-          Görseli Meta'ya Yükle
+          {t('uploadToMeta')}
         </button>
       )}
 
       {phase === 'uploading' && (
         <div className="flex items-center justify-center gap-2 py-2 text-sm text-gray-600">
-          <Loader2 className="w-4 h-4 animate-spin" /> Meta'ya yükleniyor…
+          <Loader2 className="w-4 h-4 animate-spin" /> {t('uploadingToMeta')}
         </div>
       )}
 
       {phase === 'ready' && imageHash && (
         <div className="flex items-center gap-2 bg-emerald-50 border border-emerald-200 rounded-xl px-4 py-2.5 text-sm text-emerald-800">
           <CheckCircle2 className="w-4 h-4" />
-          Görsel Meta'ya yüklendi (imageHash hazır).
+          {t('uploadedToMeta')}
         </div>
       )}
 
@@ -235,7 +238,7 @@ export default function MetaCreativePanel({
               onClick={() => (imageUrl ? uploadToMeta() : generate())}
               className="text-xs underline mt-1"
             >
-              Tekrar dene
+              {tc('retry')}
             </button>
           </div>
         </div>
@@ -244,7 +247,7 @@ export default function MetaCreativePanel({
       {/* Actions */}
       <div className="flex items-center justify-between pt-2">
         <button onClick={onBack} className="px-4 py-2 text-sm text-gray-600 hover:bg-gray-100 rounded-lg">
-          Geri
+          {tc('back')}
         </button>
         <button
           onClick={handleConfirm}
@@ -255,7 +258,7 @@ export default function MetaCreativePanel({
               : 'bg-primary text-white hover:bg-primary/90'
           }`}
         >
-          Taslak Kampanya Oluştur
+          {t('createDraftCampaign')}
         </button>
       </div>
     </div>

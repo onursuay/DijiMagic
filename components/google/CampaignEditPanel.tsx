@@ -1,11 +1,13 @@
 'use client'
 
 import { useState, useEffect, useCallback, useMemo, useRef } from 'react'
+import { useTranslations, useLocale } from 'next-intl'
 import {
   Search, ChevronRight, ChevronDown, Megaphone, FolderOpen, FileText,
   Plus, X, Loader2, Key, MapPin, Clock, Trash2, Users,
   Banknote, Globe, Settings2, Check, Monitor,
 } from 'lucide-react'
+import { translateEnum } from '@/lib/yoai/translations'
 import { CAMPAIGN_TYPE_BIDDING, type AdvertisingChannelType } from './wizard/shared/WizardTypes'
 import CampaignSearchTermsTab from './detail/CampaignSearchTermsTab'
 import CampaignAssetsTab from './detail/CampaignAssetsTab'
@@ -89,31 +91,29 @@ interface Props {
    Constants
    ═══════════════════════════════════════════ */
 
-const BIDDING_STRATEGIES = [
-  { value: 'MAXIMIZE_CLICKS', label: 'Tıklamaları Artır' },
-  { value: 'MAXIMIZE_CONVERSIONS', label: 'Dönüşümleri Artır' },
-  { value: 'TARGET_CPA', label: 'Hedef EBM (CPA)' },
-  { value: 'TARGET_ROAS', label: 'Hedef ROAS' },
-  { value: 'MANUAL_CPC', label: 'Manuel TBM (CPC)' },
-  { value: 'TARGET_IMPRESSION_SHARE', label: 'Hedef Gösterim Payı' },
+/** Bidding strategy values (visible labels resolved via translateEnum(value, locale, 'google')) */
+const BIDDING_STRATEGY_VALUES = [
+  'MAXIMIZE_CLICKS',
+  'MAXIMIZE_CONVERSIONS',
+  'TARGET_CPA',
+  'TARGET_ROAS',
+  'MANUAL_CPC',
+  'TARGET_IMPRESSION_SHARE',
 ]
 
-const MATCH_TYPES = [
-  { value: 'BROAD', label: 'Geniş' },
-  { value: 'PHRASE', label: 'Öbek' },
-  { value: 'EXACT', label: 'Tam' },
-]
+/** Keyword match-type values (visible labels resolved via translateEnum(value, locale, 'google')) */
+const MATCH_TYPE_VALUES: Array<'BROAD' | 'PHRASE' | 'EXACT'> = ['BROAD', 'PHRASE', 'EXACT']
 
-const PIN_OPTIONS = [
-  { value: '', label: 'Sabitleme yok' },
-  { value: 'HEADLINE_1', label: 'Pozisyon 1' },
-  { value: 'HEADLINE_2', label: 'Pozisyon 2' },
-  { value: 'HEADLINE_3', label: 'Pozisyon 3' },
+const PIN_OPTION_VALUES: Array<{ value: string; labelKey: string }> = [
+  { value: '', labelKey: 'noPin' },
+  { value: 'HEADLINE_1', labelKey: 'position1' },
+  { value: 'HEADLINE_2', labelKey: 'position2' },
+  { value: 'HEADLINE_3', labelKey: 'position3' },
 ]
-const DESC_PIN_OPTIONS = [
-  { value: '', label: 'Sabitleme yok' },
-  { value: 'DESCRIPTION_1', label: 'Pozisyon 1' },
-  { value: 'DESCRIPTION_2', label: 'Pozisyon 2' },
+const DESC_PIN_OPTION_VALUES: Array<{ value: string; labelKey: string }> = [
+  { value: '', labelKey: 'noPin' },
+  { value: 'DESCRIPTION_1', labelKey: 'position1' },
+  { value: 'DESCRIPTION_2', labelKey: 'position2' },
 ]
 
 const STRATEGY_MAP: Record<string, string> = {
@@ -127,9 +127,10 @@ const STRATEGY_MAP: Record<string, string> = {
   'TARGET_IMPRESSION_SHARE': 'TARGET_IMPRESSION_SHARE',
 }
 
-const DAY_LABELS: Record<DayOfWeek, string> = {
-  MONDAY: 'Pazartesi', TUESDAY: 'Salı', WEDNESDAY: 'Çarşamba',
-  THURSDAY: 'Perşembe', FRIDAY: 'Cuma', SATURDAY: 'Cumartesi', SUNDAY: 'Pazar',
+/** Day-of-week values (full visible labels resolved via t('daySchedule.<key>')) */
+const DAY_LABEL_KEYS: Record<DayOfWeek, string> = {
+  MONDAY: 'monday', TUESDAY: 'tuesday', WEDNESDAY: 'wednesday',
+  THURSDAY: 'thursday', FRIDAY: 'friday', SATURDAY: 'saturday', SUNDAY: 'sunday',
 }
 
 interface InfoCard {
@@ -137,200 +138,20 @@ interface InfoCard {
   body: string
 }
 
-const INFO_CARDS: Record<string, InfoCard[]> = {
-  genel: [
-    {
-      title: 'Kampanya adı ve iç yönetim',
-      body: 'Kampanya adı kullanıcılara gösterilmez; tamamen dahili yönetim içindir. Bu yüzden isim yapısı tarih, kanal, hedef ve varyant mantığıyla okunabilir olmalıdır. Doğru adlandırma; raporlama, filtreleme ve ekip içi operasyon hızını doğrudan artırır.',
-    },
-    {
-      title: 'Günlük bütçe nasıl çalışır',
-      body: 'Google Ads günlük bütçeyi tam sabit bir tavan gibi değil, ortalama günlük harcama mantığıyla işler. Bazı günlerde sistem daha fazla harcama yapabilir; bunu yüksek trafik fırsatlarını yakalamak için kullanır. Bütçe değerlendirmesi tek güne bakılarak değil, dönem ortalaması üzerinden yapılmalıdır.',
-    },
-    {
-      title: 'Teklif stratejisi seçimi',
-      body: 'Teklif stratejisi kampanya hedefiyle uyumlu olmalıdır. Trafik odaklı yapılarda tıklama odaklı stratejiler daha uygunken, satış veya lead odaklı yapılarda dönüşüm odaklı stratejiler daha mantıklıdır. Yanlış teklif stratejisi iyi reklamı bile verimsiz hale getirebilir.',
-    },
-    {
-      title: 'Arama Ağı Ortakları etkisi',
-      body: 'Arama Ağı Ortakları seçeneği reklamların yalnızca Google aramada değil, Google ile iş ortaklığı olan arama sitelerinde de görünmesine izin verebilir. Bu ayar erişimi artırabilir ancak trafik kalitesi kampanyaya göre değişebilir. Ayrı performans kontrolü yapılmadan kör şekilde açık bırakılmamalıdır.',
-    },
-    {
-      title: 'Görüntülü Reklam Ağı kapsamı',
-      body: 'Görüntülü Reklam Ağı açıldığında reklamlar çok daha geniş bir envanterde görünüm alabilir; buna web siteleri, uygulamalar ve video içerikleri dahildir. Bu genişleme görünürlüğü artırsa da arama niyeti kadar sıcak trafik getirmeyebilir. Search kampanyalarında bu ayar hedefe göre dikkatli değerlendirilmelidir.',
-    },
-  ],
-  negatif_anahtar_kelimeler: [
-    {
-      title: 'Negatif anahtar kelimenin amacı',
-      body: 'Negatif anahtar kelimeler reklamların görünmesini istemediğiniz aramaları dışlamak için kullanılır. Bu yapı alakasız trafiği azaltır, bütçeyi korur ve dönüşüm kalitesini yükseltir. Özellikle geniş eşleme kullanılan kampanyalarda kritik kontrol katmanıdır.',
-    },
-    {
-      title: 'Boşa harcamayı azaltır',
-      body: 'Yanlış arama niyeti taşıyan kullanıcılar tıklama getirse bile çoğu zaman dönüşüm getirmez. Negatif listeler bu tür sorguları filtreleyerek maliyetin daha hedefli aramalara yönelmesini sağlar. Bu nedenle negatif yapı performans iyileştirme değil, bütçe savunma mekanizmasıdır.',
-    },
-    {
-      title: 'Eşleme mantığına dikkat',
-      body: 'Negatif anahtar kelimeler pozitif anahtar kelimelerle aynı mantıkta çalışmaz; bu yüzden geniş, sıralı ve tam eşleme yorumları birebir aynı sanılmamalıdır. Fazla agresif negatif kullanım değerli trafiği de kesebilir. Liste büyütmeden önce gerçekten hangi aramaların dışlanması gerektiği doğrulanmalıdır.',
-    },
-    {
-      title: 'Kampanya mı reklam grubu mu',
-      body: 'Negatifler kampanya düzeyinde eklendiğinde tüm reklam gruplarını etkiler. Daha hassas kontrol gerektiğinde reklam grubu seviyesinde ayrıştırma yapmak daha sağlıklıdır. Ortak ve tekrarlayan dışlamalar için merkezi liste mantığı tercih edilmelidir.',
-    },
-    {
-      title: 'Arama terimi raporuyla birlikte çalışır',
-      body: 'Negatif yapı bir defa kurulup bırakılmaz. Arama terimleri düzenli incelenerek yeni alakasız sorgular negatif listeye eklenmelidir. En doğru negatifler tahminden değil, gerçek kullanıcı sorgularından çıkar.',
-    },
-  ],
-  yer: [
-    {
-      title: 'Konum hedefleme temeli',
-      body: 'Konum hedefleme reklamların hangi coğrafi bölgelerde gösterileceğini belirler. Ülke, şehir, ilçe, belirli alanlar veya yarıçap bazlı hedefleme yapılabilir. Yerel hizmet veren işletmelerde bu alan doğrudan maliyet verimliliğini etkiler.',
-    },
-    {
-      title: 'Bulunma ve ilgi ayrımı',
-      body: 'Konum ayarlarında kullanıcıların fiziksel olarak hedef bölgede bulunması ile o bölgeye ilgi göstermesi aynı şey değildir. Bu ayrım yanlış kurgulanırsa reklamlar hedef bölge dışındaki kullanıcılara da yayılabilir. Özellikle lokal hizmet kampanyalarında bu ayar dikkatle seçilmelidir.',
-    },
-    {
-      title: 'Hariç tutulan bölgeler',
-      body: 'Sadece hedeflenecek bölgeleri seçmek yetmez; gerekirse gösterim alınmaması gereken konumlar da hariç tutulmalıdır. Hizmet verilmeyen bölgeler, düşük kaliteli alanlar veya bütçeyi dağıtan şehirler dışlama listesine alınabilir. Bu kontrol özellikle geniş coğrafi yapılarda önemlidir.',
-    },
-    {
-      title: 'Yarıçap hedefleme kullanımı',
-      body: 'Mağaza, klinik, servis alanı veya fiziksel hizmet veren işletmeler için yarıçap hedefleme çok işlevseldir. Kullanıcının işletmeye olan mesafesi dönüşüm olasılığını ciddi biçimde etkileyebilir. Ancak yarıçap çok geniş açılırsa yerel avantaj kaybolur.',
-    },
-    {
-      title: 'Konum performansı okunmalı',
-      body: 'Konum raporları hangi şehir veya bölgelerin daha verimli çalıştığını gösterir. Performansı düşük bölgeler azaltılabilir, güçlü bölgelerde teklif veya bütçe artırılabilir. Konum yönetimi sadece hedefleme değil, optimizasyon alanıdır.',
-    },
-  ],
-  ogeler: [
-    {
-      title: 'Öğeler neden önemlidir',
-      body: 'Öğeler reklamın sadece daha büyük görünmesini sağlamaz; aynı zamanda kullanıcıya ek bilgi sunar. Ek bağlantılar, açıklamalar, telefon, adres veya fiyat gibi öğeler reklamın tıklanma potansiyelini artırabilir. Güçlü öğe yapısı reklam alanını daha verimli kullanır.',
-    },
-    {
-      title: 'Sitelink kullanımı',
-      body: 'Sitelink öğeleri kullanıcıyı doğrudan ilgili alt sayfalara yönlendirebilir. Bu sayede tek reklamla birden fazla niyet karşılanır ve kullanıcı daha hızlı uygun sayfaya gider. Özellikle hizmet, kategori ve kampanya sayfaları için değerlidir.',
-    },
-    {
-      title: 'Açıklama ve yapılandırılmış snippet',
-      body: 'Açıklama tipi öğeler marka veya hizmet avantajlarını hızlıca vurgulamak için kullanılır. Bu alanlar fiyat, deneyim, hız, kapsam, destek veya uzmanlık gibi ayırıcı unsurları öne çıkarmak için idealdir. Reklam metnini tekrar etmek yerine tamamlayıcı bilgi vermelidir.',
-    },
-    {
-      title: 'Çağrı ve konum öğeleri',
-      body: 'Telefon ve adres odaklı öğeler özellikle lokal ve mobil odaklı kampanyalarda güçlü sonuç verir. Kullanıcının doğrudan arama yapması veya işletme konumunu görmesi karar süresini kısaltır. Ancak bu öğeler işletmenin gerçek operasyon yapısıyla uyumlu olmalıdır.',
-    },
-    {
-      title: 'Öğe performansı takip edilmeli',
-      body: 'Tüm öğeler aynı katkıyı sağlamaz. Kullanılan öğelerin görünüm, etkileşim ve dönüşüm katkısı düzenli incelenmelidir. Gereksiz veya düşük katkılı öğeler temizlenmeli, güçlü olanlar genişletilmelidir.',
-    },
-  ],
-  arama_terimleri: [
-    {
-      title: 'Gerçek kullanıcı dili burada görünür',
-      body: 'Arama terimleri raporu, reklamınızı tetikleyen gerçek kullanıcı sorgularını gösterir. Anahtar kelime planı teoriktir; bu rapor ise sahadaki gerçek niyeti gösterir. Bu yüzden optimizasyonun en değerli kaynaklarından biridir.',
-    },
-    {
-      title: 'Yeni anahtar kelime fırsatları',
-      body: 'Yüksek niyetli ve dönüşüm getiren sorgular burada tespit edilip anahtar kelime setine dahil edilebilir. Böylece kampanya daha kontrollü ve daha kasıtlı bir yapıya taşınır. Başarılı sorguları sadece izlemek yetmez, yapılandırmaya çevirmek gerekir.',
-    },
-    {
-      title: 'Negatif üretim alanı',
-      body: 'Alakasız, zayıf veya istenmeyen sorgular bu raporda fark edilerek negatif anahtar kelimeye dönüştürülmelidir. Bu işlem trafik kalitesini artırır ve gereksiz maliyeti azaltır. Arama terimi raporu ile negatif yönetimi birlikte düşünülmelidir.',
-    },
-    {
-      title: 'Eşleme tipi analizi',
-      body: 'Hangi sorguların hangi anahtar kelime mantığıyla geldiği incelendiğinde eşleme stratejisinin ne kadar kontrollü olduğu anlaşılır. Fazla dağınık sorgular geniş eşlemenin agresif kaldığını gösterebilir. Bu durumda anahtar kelime mimarisi yeniden daraltılmalıdır.',
-    },
-    {
-      title: 'Reklam metni ve açılış sayfası içgörüsü',
-      body: 'Kullanıcıların kullandığı dil, reklam başlıklarında ve açılış sayfalarında da kullanılabilir. En iyi terimler sadece keyword havuzu için değil, mesajlaşma stratejisi için de kritik veri sunar. Bu rapor içerik optimizasyonu için de altın madendir.',
-    },
-  ],
-  hedef_kitleler: [
-    {
-      title: 'Hedef kitle mantığı',
-      body: 'Hedef kitle segmentleri kullanıcıları ilgi alanı, niyet, davranış ve demografik sinyallere göre gruplar. Bu yapı reklamı sadece ne arandığına göre değil, kimin aradığına göre de daha akıllı yönetmeyi sağlar. Özellikle daha kaliteli trafik ayrımı için önemlidir.',
-    },
-    {
-      title: 'Gözlem ve hedefleme farkı',
-      body: 'Gözlem modu kitleyi kısıtlamaz; sadece performansı izlemenizi sağlar. Hedefleme modu ise reklamı yalnızca seçilen segmentlere sınırlar. Bu iki mod karıştırılırsa kampanya ya gereksiz daralır ya da içgörü üretmeden geniş kalır.',
-    },
-    {
-      title: 'Yeniden pazarlama gücü',
-      body: 'Web site ziyaretçileri, sepet terk edenler veya belirli aksiyonları alan kullanıcılar yeniden pazarlama listeleriyle tekrar hedeflenebilir. Bu yapı genellikle soğuk trafikten daha yüksek dönüşüm potansiyeli taşır. Ancak liste kalitesi ve üyelik süresi stratejik seçilmelidir.',
-    },
-    {
-      title: 'Segment verisi optimizasyon için kullanılır',
-      body: 'Kitle raporları hangi segmentlerin tıklama aldığını değil, hangi segmentlerin iş sonucu ürettiğini anlamak için okunmalıdır. Yüksek CTR her zaman iyi kitle anlamına gelmez. Dönüşüm, maliyet ve kalite birlikte değerlendirilmelidir.',
-    },
-    {
-      title: 'Demografi tek başına yetmez',
-      body: 'Yaş, cinsiyet veya hane geliri gibi demografik sinyaller faydalı olabilir ama tek başına strateji kurmak için çoğu zaman yetersizdir. Bunlar davranış ve niyet sinyalleriyle birlikte okunduğunda anlam kazanır. Kör demografik daraltma hacmi gereksiz kesebilir.',
-    },
-  ],
-  acilis_sayfalari: [
-    {
-      title: 'Açılış sayfası reklamın devamıdır',
-      body: 'Kullanıcı reklama tıkladıktan sonra deneyim açılış sayfasında devam eder. Bu nedenle reklam mesajı ile sayfa içeriği arasında kopukluk olmamalıdır. Güçlü reklam, zayıf sayfa yüzünden boşa düşebilir.',
-    },
-    {
-      title: 'Alaka düzeyi kaliteyi etkiler',
-      body: 'Açılış sayfası ile reklam metni ve arama niyeti uyumlu değilse kalite puanı ve dönüşüm oranı zarar görür. Kullanıcı farklı bir vaat görüp başka bir içerikle karşılaşırsa hemen çıkma yükselir. Mesaj eşleşmesi burada kilit unsurdur.',
-    },
-    {
-      title: 'Hız ve mobil deneyim kritik',
-      body: 'Yavaş açılan veya mobilde kötü çalışan sayfalar reklam performansını doğrudan baltalar. Kullanıcı tıklama sonrası beklemek istemez; gecikme dönüşüm ihtimalini düşürür. Mobil öncelikli test yapılmadan açılış sayfası sağlıklı kabul edilmemelidir.',
-    },
-    {
-      title: 'Tek sayfa, tek amaç',
-      body: 'Açılış sayfası kullanıcıyı dağıtmak için değil, bir sonraki adıma taşımak için tasarlanmalıdır. Fazla seçenek, zayıf hiyerarşi veya dağınık içerik karar sürecini bozar. Reklamın amacı neyse sayfanın ana aksiyonu da o olmalıdır.',
-    },
-    {
-      title: 'Performans sinyalleri izlenmeli',
-      body: 'Sayfadaki bounce, scroll, form tamamlama, call click veya WhatsApp click gibi davranışlar reklam kalitesini yorumlamak için önemlidir. Sorun her zaman trafikte olmayabilir; bazen problem sayfanın kendisidir. Reklam optimizasyonu ile sayfa optimizasyonu birlikte yürümelidir.',
-    },
-  ],
-  gosterilme_yeri: [
-    {
-      title: 'Zamanlama kontrolü',
-      body: 'Reklam planlaması reklamların hangi gün ve saatlerde gösterileceğini kontrol etmeye yarar. Her saat aynı kalitede trafik üretmez. Özellikle satış, telefon veya operasyon saatine bağlı yapılarda bu alan kritik hale gelir.',
-    },
-    {
-      title: 'Çalışma saatine göre gösterim',
-      body: 'Kullanıcının dönüşüm alma ihtimali işletmenin cevap verebildiği saatlerle yakından ilişkilidir. Çağrı, WhatsApp veya hızlı dönüş gerektiren sektörlerde mesai dışı trafik çoğu zaman zayıf kalır. Gösterim zamanlaması iş akışıyla uyumlu olmalıdır.',
-    },
-    {
-      title: 'Saat bazlı verim farkları',
-      body: 'Bazı saatler yüksek hacim getirirken bazı saatler daha yüksek dönüşüm oranı üretebilir. Bu fark raporlarla okunup teklif veya yayın planı buna göre düzenlenmelidir. Zamanlama sadece açık-kapalı ayarı değil, verim filtresidir.',
-    },
-    {
-      title: 'Cihaz ve zaman birlikte okunmalı',
-      body: 'Aynı saat dilimi mobilde başka, masaüstünde başka performans gösterebilir. Bu yüzden zamanlama verisi cihaz performansıyla birlikte yorumlandığında daha anlamlı sonuç verir. Tek boyutlu okuma çoğu zaman yanıltıcıdır.',
-    },
-    {
-      title: 'Kısa veriyle sert karar verme',
-      body: 'Gösterim zamanı kararları çok kısa veri aralıklarıyla verilmemelidir. Özellikle düşük hacimli kampanyalarda birkaç günlük veri yanıltıcı olabilir. Daha sağlıklı karar için anlamlı dönem verisiyle hareket edilmelidir.',
-    },
-  ],
-  anahtar_kelimeler: [
-    {
-      title: 'Anahtar kelime rolü',
-      body: 'Anahtar kelimeler reklamınızın hangi aramalarda gösterileceğini belirler. Bu yapı kampanyanın trafik karakterini doğrudan etkiler. Geniş eşleme en fazla erişimi sağlar ancak alakasız aramalarda da tetiklenebilir; sıralı ve tam eşleme daha kontrollü gösterim sunar.',
-    },
-    {
-      title: 'Eşleme tipleri ve davranış',
-      body: 'Sıralı eşleme tam sırayı koruyarak daha hedefli gösterim sağlar. Tam eşleme yalnızca tam aramada veya çok yakın varyasyonlarda tetiklenir. Kalite puanı yüksek anahtar kelimeler daha düşük maliyetle daha üst sıralarda yer alır. Eşleme stratejisi kampanya hedefiyle uyumlu olmalıdır.',
-    },
-    {
-      title: 'Performans odaklı yönetim',
-      body: 'Anahtar kelime yönetimi sadece ekleme-çıkarma değildir. Düşük performanslı kelimeler daraltılabilir, güçlü olanlara teklif artışı verilebilir. Arama terimi raporu ile birlikte okunduğunda anahtar kelime seti sürekli optimize edilebilir.',
-    },
-  ],
+/** Number of educational info cards per canonical info key (titles/bodies live in i18n under edu.<key>.<idx>.title/body) */
+const INFO_CARD_COUNTS: Record<string, number> = {
+  genel: 5,
+  negatif_anahtar_kelimeler: 5,
+  yer: 5,
+  ogeler: 5,
+  arama_terimleri: 5,
+  hedef_kitleler: 5,
+  acilis_sayfalari: 5,
+  gosterilme_yeri: 5,
+  anahtar_kelimeler: 3,
 }
 
-/** UI tab (ViewId) → INFO_CARDS canonical key mapping */
+/** UI tab (ViewId) → edu canonical key mapping */
 const TAB_TO_INFO_KEY: Record<string, string> = {
   genel: 'genel',
   anahtar_kelimeler: 'anahtar_kelimeler',
@@ -351,18 +172,6 @@ const MINUTE_LABELS: Record<Minute, string> = { ZERO: '00', FIFTEEN: '15', THIRT
 /* ═══════════════════════════════════════════
    Campaign Type Schema
    ═══════════════════════════════════════════ */
-
-const CHANNEL_TYPE_LABELS: Record<string, string> = {
-  SEARCH: 'Arama',
-  DISPLAY: 'Görüntülü Reklam',
-  VIDEO: 'Video',
-  SHOPPING: 'Alışveriş',
-  PERFORMANCE_MAX: 'Maksimum Performans',
-  DEMAND_GEN: 'Talep Oluşturma',
-  MULTI_CHANNEL: 'Çok Kanallı',
-  SMART: 'Akıllı',
-  LOCAL: 'Yerel',
-}
 
 type SectionId =
   | 'name' | 'budget' | 'bidding' | 'networks'
@@ -415,28 +224,12 @@ const DEFAULT_SCHEMA: EditSchema = {
   ad: ['adReadonly'],
 }
 
-const AD_TYPE_LABELS: Record<string, string> = {
-  RESPONSIVE_SEARCH_AD: 'Duyarlı Arama Reklamı',
-  RESPONSIVE_DISPLAY_AD: 'Duyarlı Görüntülü Reklam',
-  VIDEO_AD: 'Video Reklam',
-  VIDEO_RESPONSIVE_AD: 'Duyarlı Video Reklam',
-  SHOPPING_PRODUCT_AD: 'Alışveriş Ürün Reklamı',
-  SHOPPING_SMART_AD: 'Akıllı Alışveriş Reklamı',
-  DEMAND_GEN_MULTI_ASSET_AD: 'Talep Oluşturma Reklamı',
-  DEMAND_GEN_CAROUSEL_AD: 'Talep Oluşturma Carousel',
-  DEMAND_GEN_VIDEO_RESPONSIVE_AD: 'Talep Oluşturma Video',
-  PERFORMANCE_MAX_AD: 'Performance Max Reklamı',
-  DISCOVERY_MULTI_ASSET_AD: 'Discovery Reklamı',
-  DISCOVERY_CAROUSEL_AD: 'Discovery Carousel',
-  APP_AD: 'Uygulama Reklamı',
-  SMART_CAMPAIGN_AD: 'Akıllı Kampanya Reklamı',
-}
-
-const AD_READONLY_MESSAGES: Record<string, string> = {
-  VIDEO: 'Video reklam içeriği Google Ads web arayüzünden düzenlenebilir.',
-  DEMAND_GEN: 'Talep oluşturma reklam içeriği Google Ads web arayüzünden düzenlenebilir.',
-  PERFORMANCE_MAX: 'Performance Max asset grupları Google Ads web arayüzünden düzenlenebilir.',
-  SHOPPING: 'Alışveriş reklam içeriği Google Merchant Center üzerinden yönetilir.',
+/** Read-only ad notice message key per channel type (resolved via t('adReadonly.<key>')) */
+const AD_READONLY_MESSAGE_KEYS: Record<string, string> = {
+  VIDEO: 'video',
+  DEMAND_GEN: 'demandGen',
+  PERFORMANCE_MAX: 'performanceMax',
+  SHOPPING: 'shopping',
 }
 
 /* ═══════════════════════════════════════════
@@ -456,16 +249,17 @@ type ViewId =
 
 type GyzSubTab = 'cihazlar' | 'zamanlama' | 'yerler' | 'konumlar'
 
-const VIEW_LABELS: Record<ViewId, string> = {
-  genel: 'Genel',
-  anahtar_kelimeler: 'Anahtar Kelimeler',
-  negatif_ak: 'Negatif Anahtar Kelimeler',
-  hedef_kitleler: 'Hedef Kitleler',
-  yer: 'Yer',
-  ogeler: 'Öğeler',
-  arama_terimleri: 'Arama Terimleri',
-  acilis_sayfalari: 'Açılış Sayfaları',
-  gosterim_yeri_zamani: 'Gösterilme Yeri ve Zamanı',
+/** View tab id → i18n key under viewLabels.<key> */
+const VIEW_LABEL_KEYS: Record<ViewId, string> = {
+  genel: 'genel',
+  anahtar_kelimeler: 'anahtarKelimeler',
+  negatif_ak: 'negatifAk',
+  hedef_kitleler: 'hedefKitleler',
+  yer: 'yer',
+  ogeler: 'ogeler',
+  arama_terimleri: 'aramaTerimleri',
+  acilis_sayfalari: 'acilisSayfalari',
+  gosterim_yeri_zamani: 'gosterimYeriZamani',
 }
 
 function getAvailableViews(entityType: Selection['type'], channelType: string): ViewId[] {
@@ -540,6 +334,8 @@ function AudienceView({ data, isLoading, error, onFetch, entityType, onEditSegme
   onEditSegments?: () => void
   onEditDemographics?: () => void
 }) {
+  const t = useTranslations('dashboard.google.campaignEdit')
+  const locale = useLocale()
   useEffect(() => { onFetch() }, [onFetch])
 
   // Action buttons — always show even during loading/empty
@@ -547,7 +343,7 @@ function AudienceView({ data, isLoading, error, onFetch, entityType, onEditSegme
     <div className="flex items-center justify-between mb-4">
       <h3 className="text-[15px] font-semibold text-gray-900 flex items-center gap-2">
         <Users className="w-5 h-5 text-gray-500" />
-        Hedef Kitleler
+        {t('viewLabels.hedefKitleler')}
       </h3>
       <div className="flex items-center gap-2">
         {onEditSegments && (
@@ -555,7 +351,7 @@ function AudienceView({ data, isLoading, error, onFetch, entityType, onEditSegme
             onClick={onEditSegments}
             className="inline-flex items-center gap-1.5 px-3 py-1.5 text-[13px] font-medium text-blue-700 bg-blue-50 border border-blue-200 rounded-lg hover:bg-blue-100 transition-colors"
           >
-            Kitle Segmentlerini Düzenle
+            {t('audience.editSegments')}
           </button>
         )}
         {onEditDemographics && (
@@ -563,25 +359,18 @@ function AudienceView({ data, isLoading, error, onFetch, entityType, onEditSegme
             onClick={onEditDemographics}
             className="inline-flex items-center gap-1.5 px-3 py-1.5 text-[13px] font-medium text-purple-700 bg-purple-50 border border-purple-200 rounded-lg hover:bg-purple-100 transition-colors"
           >
-            Demografiyi Düzenle
+            {t('audience.editDemographics')}
           </button>
         )}
       </div>
     </div>
   ) : null
 
-  if (isLoading) return <div>{actionBar}<div className="p-6 text-center text-gray-500">Hedef kitle verileri yükleniyor...</div></div>
+  if (isLoading) return <div>{actionBar}<div className="p-6 text-center text-gray-500">{t('audience.loading')}</div></div>
   if (error) return <div>{actionBar}<ViewErrorAlert error={error} /></div>
-  if (!data || data.length === 0) return <div>{actionBar}<div className="p-6 text-center text-gray-400">Hedef kitle verisi bulunamadı.</div></div>
+  if (!data || data.length === 0) return <div>{actionBar}<div className="p-6 text-center text-gray-400">{t('audience.empty')}</div></div>
 
-  const AUDIENCE_TYPE_LABELS: Record<string, string> = {
-    USER_LIST: 'Kullanıcı Listesi',
-    USER_INTEREST: 'İlgi Alanı',
-    CUSTOM_AUDIENCE: 'Özel Kitle',
-    COMBINED_AUDIENCE: 'Birleşik Kitle',
-    LIFE_EVENT: 'Yaşam Olayı',
-  }
-  const typeLabel = (t: string) => AUDIENCE_TYPE_LABELS[t] || t || '—'
+  const typeLabel = (v: string) => translateEnum(v, locale as any, 'google') || '—'
 
   return (
     <div>
@@ -590,14 +379,14 @@ function AudienceView({ data, isLoading, error, onFetch, entityType, onEditSegme
       <table className="w-full">
         <thead className="bg-gray-50">
           <tr>
-            <th className="px-4 py-3 text-left text-[12px] font-medium text-gray-500 uppercase">Hedef Kitle</th>
-            <th className="px-4 py-3 text-left text-[12px] font-medium text-gray-500 uppercase">Tip</th>
-            <th className="px-4 py-3 text-right text-[12px] font-medium text-gray-500 uppercase">Gösterim</th>
-            <th className="px-4 py-3 text-right text-[12px] font-medium text-gray-500 uppercase">Tıklama</th>
-            <th className="px-4 py-3 text-right text-[12px] font-medium text-gray-500 uppercase">CTR</th>
-            <th className="px-4 py-3 text-right text-[12px] font-medium text-gray-500 uppercase">Ort. TBM</th>
-            <th className="px-4 py-3 text-right text-[12px] font-medium text-gray-500 uppercase">Maliyet</th>
-            <th className="px-4 py-3 text-right text-[12px] font-medium text-gray-500 uppercase">Dönüşüm</th>
+            <th className="px-4 py-3 text-left text-[12px] font-medium text-gray-500 uppercase">{t('audience.colAudience')}</th>
+            <th className="px-4 py-3 text-left text-[12px] font-medium text-gray-500 uppercase">{t('audience.colType')}</th>
+            <th className="px-4 py-3 text-right text-[12px] font-medium text-gray-500 uppercase">{t('metrics.impressions')}</th>
+            <th className="px-4 py-3 text-right text-[12px] font-medium text-gray-500 uppercase">{t('metrics.clicks')}</th>
+            <th className="px-4 py-3 text-right text-[12px] font-medium text-gray-500 uppercase">{t('metrics.ctr')}</th>
+            <th className="px-4 py-3 text-right text-[12px] font-medium text-gray-500 uppercase">{t('metrics.avgCpc')}</th>
+            <th className="px-4 py-3 text-right text-[12px] font-medium text-gray-500 uppercase">{t('metrics.cost')}</th>
+            <th className="px-4 py-3 text-right text-[12px] font-medium text-gray-500 uppercase">{t('metrics.conversions')}</th>
           </tr>
         </thead>
         <tbody className="divide-y divide-gray-200">
@@ -627,8 +416,9 @@ function AudienceView({ data, isLoading, error, onFetch, entityType, onEditSegme
 }
 
 function DeviceView({ data, isLoading }: { data: any[]; isLoading: boolean }) {
-  if (isLoading) return <div className="p-6 text-center text-gray-500">Cihaz verileri yükleniyor...</div>
-  if (!data || data.length === 0) return <div className="p-6 text-center text-gray-400">Cihaz verisi bulunamadı.</div>
+  const t = useTranslations('dashboard.google.campaignEdit')
+  if (isLoading) return <div className="p-6 text-center text-gray-500">{t('devices.loading')}</div>
+  if (!data || data.length === 0) return <div className="p-6 text-center text-gray-400">{t('devices.empty')}</div>
 
   const fmtN = (v: number) => v.toLocaleString('tr-TR')
   const fmtC = (v: number) => v.toLocaleString('tr-TR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })
@@ -638,13 +428,13 @@ function DeviceView({ data, isLoading }: { data: any[]; isLoading: boolean }) {
       <table className="w-full">
         <thead className="bg-gray-50">
           <tr>
-            <th className="px-4 py-3 text-left text-[12px] font-medium text-gray-500 uppercase">Cihaz</th>
-            <th className="px-4 py-3 text-right text-[12px] font-medium text-gray-500 uppercase">Gösterim</th>
-            <th className="px-4 py-3 text-right text-[12px] font-medium text-gray-500 uppercase">Tıklama</th>
-            <th className="px-4 py-3 text-right text-[12px] font-medium text-gray-500 uppercase">CTR</th>
-            <th className="px-4 py-3 text-right text-[12px] font-medium text-gray-500 uppercase">Ort. TBM</th>
-            <th className="px-4 py-3 text-right text-[12px] font-medium text-gray-500 uppercase">Maliyet</th>
-            <th className="px-4 py-3 text-right text-[12px] font-medium text-gray-500 uppercase">Dönüşüm</th>
+            <th className="px-4 py-3 text-left text-[12px] font-medium text-gray-500 uppercase">{t('devices.colDevice')}</th>
+            <th className="px-4 py-3 text-right text-[12px] font-medium text-gray-500 uppercase">{t('metrics.impressions')}</th>
+            <th className="px-4 py-3 text-right text-[12px] font-medium text-gray-500 uppercase">{t('metrics.clicks')}</th>
+            <th className="px-4 py-3 text-right text-[12px] font-medium text-gray-500 uppercase">{t('metrics.ctr')}</th>
+            <th className="px-4 py-3 text-right text-[12px] font-medium text-gray-500 uppercase">{t('metrics.avgCpc')}</th>
+            <th className="px-4 py-3 text-right text-[12px] font-medium text-gray-500 uppercase">{t('metrics.cost')}</th>
+            <th className="px-4 py-3 text-right text-[12px] font-medium text-gray-500 uppercase">{t('metrics.conversions')}</th>
           </tr>
         </thead>
         <tbody className="divide-y divide-gray-200">
@@ -666,25 +456,26 @@ function DeviceView({ data, isLoading }: { data: any[]; isLoading: boolean }) {
 }
 
 function PlacementsView({ data, isLoading, error, onFetch }: ViewComponentProps) {
+  const t = useTranslations('dashboard.google.campaignEdit')
   useEffect(() => { onFetch() }, [onFetch])
-  if (isLoading) return <div className="p-6 text-center text-gray-500">Gösterilme yerleri yükleniyor...</div>
+  if (isLoading) return <div className="p-6 text-center text-gray-500">{t('placements.loading')}</div>
   if (error) return <ViewErrorAlert error={error} />
-  if (!data || data.length === 0) return <div className="p-6 text-center text-gray-400">Gösterilme yeri verisi bulunamadı.</div>
+  if (!data || data.length === 0) return <div className="p-6 text-center text-gray-400">{t('placements.empty')}</div>
 
   return (
     <div>
-      <h3 className="text-[15px] font-semibold text-gray-900 mb-4">Gösterilme Yerleri</h3>
+      <h3 className="text-[15px] font-semibold text-gray-900 mb-4">{t('placements.title')}</h3>
       <div className="overflow-x-auto">
         <table className="w-full">
           <thead className="bg-gray-50">
             <tr>
-              <th className="px-4 py-3 text-left text-[12px] font-medium text-gray-500 uppercase">Yerleşim</th>
-              <th className="px-4 py-3 text-left text-[12px] font-medium text-gray-500 uppercase">Tip</th>
-              <th className="px-4 py-3 text-right text-[12px] font-medium text-gray-500 uppercase">Gösterim</th>
-              <th className="px-4 py-3 text-right text-[12px] font-medium text-gray-500 uppercase">Tıklama</th>
-              <th className="px-4 py-3 text-right text-[12px] font-medium text-gray-500 uppercase">CTR</th>
-              <th className="px-4 py-3 text-right text-[12px] font-medium text-gray-500 uppercase">Maliyet</th>
-              <th className="px-4 py-3 text-right text-[12px] font-medium text-gray-500 uppercase">Dönüşüm</th>
+              <th className="px-4 py-3 text-left text-[12px] font-medium text-gray-500 uppercase">{t('placements.colPlacement')}</th>
+              <th className="px-4 py-3 text-left text-[12px] font-medium text-gray-500 uppercase">{t('placements.colType')}</th>
+              <th className="px-4 py-3 text-right text-[12px] font-medium text-gray-500 uppercase">{t('metrics.impressions')}</th>
+              <th className="px-4 py-3 text-right text-[12px] font-medium text-gray-500 uppercase">{t('metrics.clicks')}</th>
+              <th className="px-4 py-3 text-right text-[12px] font-medium text-gray-500 uppercase">{t('metrics.ctr')}</th>
+              <th className="px-4 py-3 text-right text-[12px] font-medium text-gray-500 uppercase">{t('metrics.cost')}</th>
+              <th className="px-4 py-3 text-right text-[12px] font-medium text-gray-500 uppercase">{t('metrics.conversions')}</th>
             </tr>
           </thead>
           <tbody className="divide-y divide-gray-200">
@@ -721,6 +512,9 @@ function PlacementsView({ data, isLoading, error, onFetch }: ViewComponentProps)
    ═══════════════════════════════════════════ */
 
 export default function CampaignEditPanel({ campaignId, onClose, onToast, allCampaignIds, allCampaignData, onSwitchCampaign }: Props) {
+  const t = useTranslations('dashboard.google.campaignEdit')
+  const tc = useTranslations('common')
+  const locale = useLocale()
   const [loading, setLoading] = useState(true)
   const [saving, setSaving] = useState(false)
 
@@ -848,8 +642,12 @@ export default function CampaignEditPanel({ campaignId, onClose, onToast, allCam
 
   const infoCards = useMemo(() => {
     const resolvedInfoKey = TAB_TO_INFO_KEY[selectedView] ?? selectedView
-    return INFO_CARDS[resolvedInfoKey] ?? []
-  }, [selectedView])
+    const count = INFO_CARD_COUNTS[resolvedInfoKey] ?? 0
+    return Array.from({ length: count }, (_, i) => ({
+      title: t(`edu.${resolvedInfoKey}.${i}.title`),
+      body: t(`edu.${resolvedInfoKey}.${i}.body`),
+    }))
+  }, [selectedView, t])
 
   useEffect(() => {
     if (infoCards.length <= 1) return
@@ -875,7 +673,7 @@ export default function CampaignEditPanel({ campaignId, onClose, onToast, allCam
     try {
       const res = await fetch(`/api/integrations/google-ads/campaigns/${campaignId}/edit-data`, { cache: 'no-store' })
       const data = await res.json()
-      if (!res.ok) throw new Error(data.error || 'Veri yüklenemedi')
+      if (!res.ok) throw new Error(data.error || t('toasts.loadError'))
       setCampaign(data.campaign)
       setAdGroups(data.adGroups ?? [])
       setAds(data.ads ?? [])
@@ -895,11 +693,11 @@ export default function CampaignEditPanel({ campaignId, onClose, onToast, allCam
         setExpandedGroups(new Set(data.adGroups.map((ag: AdGroupData) => ag.id)))
       }
     } catch (e: any) {
-      onToast(e.message || 'Veri yüklenemedi', 'error')
+      onToast(e.message || t('toasts.loadError'), 'error')
     } finally {
       setLoading(false)
     }
-  }, [campaignId, onToast])
+  }, [campaignId, onToast, t])
 
   useEffect(() => { fetchData() }, [fetchData])
 
@@ -963,28 +761,28 @@ export default function CampaignEditPanel({ campaignId, onClose, onToast, allCam
 
   const gyzSubTabs = useMemo(() => {
     const tabs: { id: GyzSubTab; label: string; icon: typeof Monitor }[] = [
-      { id: 'cihazlar', label: 'Cihazlar', icon: Monitor },
-      { id: 'zamanlama', label: 'Zamanlama', icon: Clock },
+      { id: 'cihazlar', label: t('gyzSubTabs.devices'), icon: Monitor },
+      { id: 'zamanlama', label: t('gyzSubTabs.schedule'), icon: Clock },
     ]
     if (['DISPLAY', 'VIDEO', 'DEMAND_GEN'].includes(channelType)) {
-      tabs.push({ id: 'yerler', label: 'Yerler', icon: Globe })
-      tabs.push({ id: 'konumlar', label: 'Konumlar', icon: MapPin })
+      tabs.push({ id: 'yerler', label: t('gyzSubTabs.placements'), icon: Globe })
+      tabs.push({ id: 'konumlar', label: t('gyzSubTabs.locations'), icon: MapPin })
     }
     return tabs
-  }, [channelType])
+  }, [channelType, t])
 
   /* ── Per-view fallback user messages ── */
   const VIEW_USER_MESSAGES: Record<ViewId, string> = useMemo(() => ({
-    genel: 'Genel bilgiler şu anda alınamadı.',
-    anahtar_kelimeler: 'Anahtar kelime verileri şu anda alınamadı.',
-    negatif_ak: 'Negatif anahtar kelime verileri şu anda alınamadı.',
-    hedef_kitleler: 'Hedef kitle verileri şu anda alınamadı.',
-    yer: 'Yer verileri şu anda alınamadı.',
-    ogeler: 'Öğe verileri şu anda alınamadı.',
-    arama_terimleri: 'Arama terimleri verileri şu anda alınamadı.',
-    acilis_sayfalari: 'Açılış sayfası verisi şu anda getirilemedi.',
-    gosterim_yeri_zamani: 'Gösterilme yeri ve zamanı verileri şu anda alınamadı.',
-  }), [])
+    genel: t('viewErrors.genel'),
+    anahtar_kelimeler: t('viewErrors.anahtarKelimeler'),
+    negatif_ak: t('viewErrors.negatifAk'),
+    hedef_kitleler: t('viewErrors.hedefKitleler'),
+    yer: t('viewErrors.yer'),
+    ogeler: t('viewErrors.ogeler'),
+    arama_terimleri: t('viewErrors.aramaTerimleri'),
+    acilis_sayfalari: t('viewErrors.acilisSayfalari'),
+    gosterim_yeri_zamani: t('viewErrors.gosterimYeriZamani'),
+  }), [t])
 
   /** Throw a structured ViewErrorInfo from an API error response */
   function throwViewError(data: any, view: ViewId): never {
@@ -1092,10 +890,10 @@ export default function CampaignEditPanel({ campaignId, onClose, onToast, allCam
     })
     if (!res.ok) {
       const data = await res.json()
-      throw new Error(data.error || 'Hariç tutulamadı')
+      throw new Error(data.error || t('toasts.excludeError'))
     }
-    onToast(`"${searchTerm}" negatif anahtar kelime olarak eklendi`, 'success')
-  }, [campaign?.resourceName, onToast])
+    onToast(t('toasts.searchTermAddedAsNegative', { term: searchTerm }), 'success')
+  }, [campaign?.resourceName, onToast, t])
 
   /* ── Add search terms as positive keywords to their ad groups ── */
   const addSearchTermAsKeyword = useCallback(async (terms: { text: string; adGroupResourceName: string; matchType: 'BROAD' | 'PHRASE' | 'EXACT' }[]) => {
@@ -1116,12 +914,12 @@ export default function CampaignEditPanel({ campaignId, onClose, onToast, allCam
       })
       if (!res.ok) {
         const data = await res.json()
-        throw new Error(data.error || 'Anahtar kelime eklenemedi')
+        throw new Error(data.error || t('toasts.keywordAddError'))
       }
     }
     const count = terms.length
-    onToast(`${count} arama terimi anahtar kelime olarak eklendi`, 'success')
-  }, [onToast])
+    onToast(t('toasts.searchTermsAddedAsKeyword', { count }), 'success')
+  }, [onToast, t])
 
   /* ── Add search terms as campaign negative keywords ── */
   const addSearchTermAsNegative = useCallback(async (terms: { text: string; matchType: 'BROAD' | 'PHRASE' | 'EXACT' }[]) => {
@@ -1136,11 +934,11 @@ export default function CampaignEditPanel({ campaignId, onClose, onToast, allCam
     })
     if (!res.ok) {
       const data = await res.json()
-      throw new Error(data.error || 'Negatif anahtar kelime eklenemedi')
+      throw new Error(data.error || t('toasts.negKeywordAddError'))
     }
     const count = terms.length
-    onToast(`${count} arama terimi negatif anahtar kelime olarak eklendi`, 'success')
-  }, [campaign?.resourceName, campaignId, onToast])
+    onToast(t('toasts.searchTermsAddedAsNegative', { count }), 'success')
+  }, [campaign?.resourceName, campaignId, onToast, t])
 
   /* ── Add asset to campaign ── */
   const addAsset = useCallback(async (payload: any) => {
@@ -1151,10 +949,10 @@ export default function CampaignEditPanel({ campaignId, onClose, onToast, allCam
     })
     if (!res.ok) {
       const data = await res.json()
-      throw new Error(data.userMessage || data.error || 'Öğe oluşturulamadı')
+      throw new Error(data.userMessage || data.error || t('toasts.assetCreateError'))
     }
-    onToast('Öğe başarıyla oluşturuldu', 'success')
-  }, [campaignId, onToast])
+    onToast(t('toasts.assetCreated'), 'success')
+  }, [campaignId, onToast, t])
 
   /* ── Remove asset from campaign ── */
   const removeAsset = useCallback(async (assetId: string) => {
@@ -1165,10 +963,10 @@ export default function CampaignEditPanel({ campaignId, onClose, onToast, allCam
     })
     if (!res.ok) {
       const data = await res.json()
-      throw new Error(data.userMessage || data.error || 'Öğe kaldırılamadı')
+      throw new Error(data.userMessage || data.error || t('toasts.assetRemoveError'))
     }
-    onToast('Öğe kampanyadan kaldırıldı', 'success')
-  }, [campaignId, onToast])
+    onToast(t('toasts.assetRemoved'), 'success')
+  }, [campaignId, onToast, t])
 
   /* ── Bulk remove assets ── */
   const bulkRemoveAssets = useCallback(async (resourceNames: string[]) => {
@@ -1182,9 +980,9 @@ export default function CampaignEditPanel({ campaignId, onClose, onToast, allCam
     })
     if (!res.ok) {
       const data = await res.json()
-      throw new Error(data.userMessage || data.error || 'Öğeler kaldırılamadı')
+      throw new Error(data.userMessage || data.error || t('toasts.assetsRemoveError'))
     }
-  }, [campaignId, selected])
+  }, [campaignId, selected, t])
 
   /* ── Update asset status (pause/enable) ── */
   const updateAssetStatus = useCallback(async (resourceNames: string[], status: 'ENABLED' | 'PAUSED') => {
@@ -1198,9 +996,9 @@ export default function CampaignEditPanel({ campaignId, onClose, onToast, allCam
     })
     if (!res.ok) {
       const data = await res.json()
-      throw new Error(data.userMessage || data.error || 'Öğe durumu güncellenemedi')
+      throw new Error(data.userMessage || data.error || t('toasts.assetStatusError'))
     }
-  }, [campaignId, selected])
+  }, [campaignId, selected, t])
 
   const confirmDiscard = useCallback(() => {
     setShowUnsavedDialog(false)
@@ -1239,8 +1037,8 @@ export default function CampaignEditPanel({ campaignId, onClose, onToast, allCam
         body: JSON.stringify(payload),
       })
       const data = await res.json()
-      if (!res.ok) throw new Error(data.message || data.error || 'Kampanya güncellenemedi')
-      onToast('Kampanya güncellendi', 'success')
+      if (!res.ok) throw new Error(data.message || data.error || t('toasts.campaignUpdateError'))
+      onToast(t('toasts.campaignUpdated'), 'success')
       setCampaign((prev) => prev ? { ...prev, name: campName, dailyBudget: b || prev.dailyBudget } : prev)
       setTimeout(() => { snapshotRef.current = currentSnapshot }, 50)
     } catch (e: any) {
@@ -1267,8 +1065,8 @@ export default function CampaignEditPanel({ campaignId, onClose, onToast, allCam
         body: JSON.stringify(payload),
       })
       const data = await res.json()
-      if (!res.ok) throw new Error(data.message || data.error || 'Reklam grubu güncellenemedi')
-      onToast('Reklam grubu güncellendi', 'success')
+      if (!res.ok) throw new Error(data.message || data.error || t('toasts.adGroupUpdateError'))
+      onToast(t('toasts.adGroupUpdated'), 'success')
       setAdGroups((prev) => prev.map((a) => a.id === ag.id ? { ...a, name: agName || a.name, cpcBid: bid || a.cpcBid } : a))
       setTimeout(() => { snapshotRef.current = currentSnapshot }, 50)
     } catch (e: any) {
@@ -1284,8 +1082,8 @@ export default function CampaignEditPanel({ campaignId, onClose, onToast, allCam
     if (!ad) return
     const validH = adHeadlines.filter((h) => h.text.trim())
     const validD = adDescriptions.filter((d) => d.text.trim())
-    if (validH.length < 3) { onToast('En az 3 başlık gerekli', 'error'); return }
-    if (validD.length < 2) { onToast('En az 2 açıklama gerekli', 'error'); return }
+    if (validH.length < 3) { onToast(t('toasts.minHeadlines'), 'error'); return }
+    if (validD.length < 2) { onToast(t('toasts.minDescriptions'), 'error'); return }
     setSaving(true)
     try {
       const res = await fetch(`/api/integrations/google-ads/ads/${ad.id}/update`, {
@@ -1301,8 +1099,8 @@ export default function CampaignEditPanel({ campaignId, onClose, onToast, allCam
         }),
       })
       const data = await res.json()
-      if (!res.ok) throw new Error(data.message || data.error || 'Reklam güncellenemedi')
-      onToast('Reklam güncellendi', 'success')
+      if (!res.ok) throw new Error(data.message || data.error || t('toasts.adUpdateError'))
+      onToast(t('toasts.adUpdated'), 'success')
       setAds((prev) => prev.map((a) =>
         a.id === ad.id && a.adGroupId === ad.adGroupId
           ? { ...a, headlines: validH, descriptions: validD, finalUrls: adFinalUrl ? [adFinalUrl] : a.finalUrls, path1: adPath1, path2: adPath2 }
@@ -1340,8 +1138,8 @@ export default function CampaignEditPanel({ campaignId, onClose, onToast, allCam
           type: newKwNeg ? 'negative' : 'positive',
         }),
       })
-      if (!res.ok) { const d = await res.json(); throw new Error(d.error || 'Eklenemedi') }
-      onToast('Anahtar kelime eklendi', 'success')
+      if (!res.ok) { const d = await res.json(); throw new Error(d.error || t('toasts.addError')) }
+      onToast(t('toasts.keywordAdded'), 'success')
       setNewKwText('')
       const kwRes = await fetch(`/api/integrations/google-ads/adgroups/${ag.id}/keywords`)
       const kwData = await kwRes.json()
@@ -1365,9 +1163,9 @@ export default function CampaignEditPanel({ campaignId, onClose, onToast, allCam
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ resourceName: kw.resourceName }),
       })
-      if (!res.ok) { const d = await res.json(); throw new Error(d.error || 'Silinemedi') }
+      if (!res.ok) { const d = await res.json(); throw new Error(d.error || t('toasts.deleteError')) }
       setKeywords((prev) => prev.filter((k) => k.resourceName !== kw.resourceName))
-      onToast('Anahtar kelime silindi', 'success')
+      onToast(t('toasts.keywordDeleted'), 'success')
     } catch (e: any) {
       onToast(e.message, 'error')
     }
@@ -1387,8 +1185,8 @@ export default function CampaignEditPanel({ campaignId, onClose, onToast, allCam
           keywords: [{ text: newCampNegText.trim(), matchType: newCampNegMatch }],
         }),
       })
-      if (!res.ok) { const d = await res.json(); throw new Error(d.error || 'Eklenemedi') }
-      onToast('Negatif anahtar kelime eklendi', 'success')
+      if (!res.ok) { const d = await res.json(); throw new Error(d.error || t('toasts.addError')) }
+      onToast(t('toasts.negKeywordAdded'), 'success')
       setNewCampNegText('')
       await fetchData()
     } catch (e: any) {
@@ -1405,9 +1203,9 @@ export default function CampaignEditPanel({ campaignId, onClose, onToast, allCam
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ resourceName: nk.resourceName }),
       })
-      if (!res.ok) { const d = await res.json(); throw new Error(d.error || 'Silinemedi') }
+      if (!res.ok) { const d = await res.json(); throw new Error(d.error || t('toasts.deleteError')) }
       setCampNegKws((prev) => prev.filter((k) => k.resourceName !== nk.resourceName))
-      onToast('Negatif anahtar kelime silindi', 'success')
+      onToast(t('toasts.negKeywordDeleted'), 'success')
     } catch (e: any) {
       onToast(e.message, 'error')
     }
@@ -1444,8 +1242,8 @@ export default function CampaignEditPanel({ campaignId, onClose, onToast, allCam
           isNegative,
         }),
       })
-      if (!res.ok) { const d = await res.json(); throw new Error(d.error || 'Lokasyon eklenemedi') }
-      onToast(`${geo.name} ${isNegative ? 'hariç tutuldu' : 'hedeflendi'}`, 'success')
+      if (!res.ok) { const d = await res.json(); throw new Error(d.error || t('toasts.locationAddError')) }
+      onToast(isNegative ? t('toasts.locationExcluded', { name: geo.name }) : t('toasts.locationTargeted', { name: geo.name }), 'success')
       const locRes = await fetch(`/api/integrations/google-ads/campaigns/${campaignId}/locations`)
       const locData = await locRes.json()
       setLocations(locData.locations ?? [])
@@ -1463,9 +1261,9 @@ export default function CampaignEditPanel({ campaignId, onClose, onToast, allCam
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ resourceName: loc.resourceName }),
       })
-      if (!res.ok) { const d = await res.json(); throw new Error(d.error || 'Lokasyon silinemedi') }
+      if (!res.ok) { const d = await res.json(); throw new Error(d.error || t('toasts.locationRemoveError')) }
       setLocations((prev) => prev.filter((l) => l.resourceName !== loc.resourceName))
-      onToast('Lokasyon kaldırıldı', 'success')
+      onToast(t('toasts.locationRemoved'), 'success')
     } catch (e: any) {
       onToast(e.message, 'error')
     }
@@ -1516,8 +1314,8 @@ export default function CampaignEditPanel({ campaignId, onClose, onToast, allCam
           })),
         }),
       })
-      if (!res.ok) { const d = await res.json(); throw new Error(d.error || 'Zamanlama kaydedilemedi') }
-      onToast('Reklam zamanlaması güncellendi', 'success')
+      if (!res.ok) { const d = await res.json(); throw new Error(d.error || t('toasts.scheduleSaveError')) }
+      onToast(t('toasts.scheduleUpdated'), 'success')
       const schedRes = await fetch(`/api/integrations/google-ads/campaigns/${campaignId}/ad-schedule`)
       const schedData = await schedRes.json()
       setAdSchedule(schedData.schedule ?? [])
@@ -1538,9 +1336,7 @@ export default function CampaignEditPanel({ campaignId, onClose, onToast, allCam
     })
   }
 
-  const matchLabel = (mt: string) => {
-    switch (mt) { case 'EXACT': return '[Tam]'; case 'PHRASE': return '"Öbek"'; default: return 'Geniş' }
-  }
+  const matchLabel = (mt: string) => translateEnum(mt, locale as any, 'google')
 
   // Tree search filter
   const q = treeSearch.toLowerCase().trim()
@@ -1593,39 +1389,38 @@ export default function CampaignEditPanel({ campaignId, onClose, onToast, allCam
   /* ═══ SCHEMA DERIVATION ═══ */
 
   const schema = EDIT_SCHEMAS[channelType] || DEFAULT_SCHEMA
-  const channelTypeLabel = CHANNEL_TYPE_LABELS[channelType] || channelType
 
   // Filtered bidding strategies for current campaign type
   const allowedBiddingValues = CAMPAIGN_TYPE_BIDDING[channelType as AdvertisingChannelType] || []
-  const filteredBiddingStrategies = BIDDING_STRATEGIES.filter(
-    (s) => allowedBiddingValues.includes(s.value as any)
-  )
+  const filteredBiddingStrategies = BIDDING_STRATEGY_VALUES
+    .filter((v) => allowedBiddingValues.includes(v as any))
+    .map((v) => ({ value: v, label: translateEnum(v, locale as any, 'google') }))
   const currentStrategyInList = filteredBiddingStrategies.some((s) => s.value === campBidStrategy)
   const biddingOptions = currentStrategyInList
     ? filteredBiddingStrategies
     : [
         ...filteredBiddingStrategies,
-        ...(campBidStrategy ? [{ value: campBidStrategy, label: `${BIDDING_STRATEGIES.find(s => s.value === campBidStrategy)?.label || campBidStrategy} (mevcut)` }] : []),
+        ...(campBidStrategy ? [{ value: campBidStrategy, label: t('biddingCurrentSuffix', { label: translateEnum(campBidStrategy, locale as any, 'google') }) }] : []),
       ]
 
   /* ═══ BREADCRUMB ═══ */
 
   const breadcrumb = useMemo(() => {
     const parts: { label: string; sel: Selection | null }[] = []
-    parts.push({ label: campaign?.name || 'Kampanya', sel: { type: 'campaign', id: campaignId } })
+    parts.push({ label: campaign?.name || t('fallback.campaign'), sel: { type: 'campaign', id: campaignId } })
 
     if (selected.type === 'adGroup') {
       const ag = adGroups.find((a) => a.id === selected.id)
-      parts.push({ label: ag?.name || 'Reklam Grubu', sel: null })
+      parts.push({ label: ag?.name || t('fallback.adGroup'), sel: null })
     } else if (selected.type === 'ad') {
       const ad = ads.find((a) => a.id === selected.id && a.adGroupId === selected.adGroupId)
       const ag = adGroups.find((a) => a.id === selected.adGroupId)
-      parts.push({ label: ag?.name || 'Reklam Grubu', sel: { type: 'adGroup', id: selected.adGroupId } })
-      parts.push({ label: ad?.name || `Reklam #${selected.id}`, sel: null })
+      parts.push({ label: ag?.name || t('fallback.adGroup'), sel: { type: 'adGroup', id: selected.adGroupId } })
+      parts.push({ label: ad?.name || t('fallback.adNumber', { id: selected.id }), sel: null })
     }
 
     return parts
-  }, [selected, campaign, adGroups, ads, campaignId])
+  }, [selected, campaign, adGroups, ads, campaignId, t])
 
   const isFormView = selectedView === 'genel'
   const saveDisabled = saving || loading || !isDirty || !isFormView
@@ -1637,8 +1432,8 @@ export default function CampaignEditPanel({ campaignId, onClose, onToast, allCam
         <div className="flex items-center gap-3">
           <img src="/platform-icons/google-ads.svg" alt="Google Ads" className="w-7 h-7 shrink-0" />
           <div>
-            <h2 className="text-[15px] font-semibold text-gray-900 leading-tight">Kampanya Düzenle</h2>
-            <p className="text-[13px] text-gray-500 truncate max-w-[400px]">Kampanyanızı buradan düzenleyebilirsiniz.</p>
+            <h2 className="text-[15px] font-semibold text-gray-900 leading-tight">{t('header.title')}</h2>
+            <p className="text-[13px] text-gray-500 truncate max-w-[400px]">{t('header.subtitle')}</p>
           </div>
         </div>
         <div className="flex items-center gap-3">
@@ -1649,7 +1444,7 @@ export default function CampaignEditPanel({ campaignId, onClose, onToast, allCam
             }}
             className="px-4 py-2 text-[13px] font-medium text-gray-700 bg-white border border-gray-300 rounded-lg hover:bg-gray-50 transition-colors"
           >
-            Kapat
+            {tc('close')}
           </button>
           <button
             onClick={handleSave}
@@ -1657,7 +1452,7 @@ export default function CampaignEditPanel({ campaignId, onClose, onToast, allCam
             className="px-5 py-2 text-[13px] font-medium text-white bg-[#2BB673] rounded-lg hover:bg-[#249E63] transition-colors disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-2"
           >
             {saving && <Loader2 className="w-4 h-4 animate-spin" />}
-            Kaydet
+            {tc('save')}
           </button>
         </div>
       </div>
@@ -1672,7 +1467,7 @@ export default function CampaignEditPanel({ campaignId, onClose, onToast, allCam
               <Search className="absolute left-2.5 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-gray-400" />
               <input
                 type="text"
-                placeholder="Arama yapınız..."
+                placeholder={t('tree.searchPlaceholder')}
                 value={treeSearch}
                 onChange={(e) => setTreeSearch(e.target.value)}
                 className="w-full pl-8 pr-3 py-2 text-[13px] border border-gray-200 rounded-lg bg-white focus:outline-none focus:ring-1 focus:ring-green-300 focus:border-green-300"
@@ -1740,7 +1535,7 @@ export default function CampaignEditPanel({ campaignId, onClose, onToast, allCam
                 )
               })
             ) : !campaignMatchesSearch ? (
-              <div className="px-4 py-8 text-center text-[13px] text-gray-400">Sonuç bulunamadı</div>
+              <div className="px-4 py-8 text-center text-[13px] text-gray-400">{t('tree.noResults')}</div>
             ) : (
               <>
                 {/* Campaign node */}
@@ -1805,7 +1600,7 @@ export default function CampaignEditPanel({ campaignId, onClose, onToast, allCam
                             }`}
                           >
                             <FileText className={`w-3.5 h-3.5 shrink-0 ${isAdCurrent ? 'text-green-600' : 'text-gray-400'}`} />
-                            <span className="truncate" title={ad.name || `Reklam #${ad.id}`}>{ad.name || `Reklam #${ad.id}`}</span>
+                            <span className="truncate" title={ad.name || t('fallback.adNumber', { id: ad.id })}>{ad.name || t('fallback.adNumber', { id: ad.id })}</span>
                           </div>
                         )
                       })}
@@ -1868,7 +1663,7 @@ export default function CampaignEditPanel({ campaignId, onClose, onToast, allCam
                         className={`h-1 rounded-full transition-all duration-500 ${
                           i === effectiveIndex ? 'w-5 bg-emerald-500' : 'w-1.5 bg-emerald-200'
                         }`}
-                        aria-label={`Kart ${i + 1}`}
+                        aria-label={t('edu.cardAria', { index: i + 1 })}
                       />
                     )
                   })}
@@ -1922,7 +1717,7 @@ export default function CampaignEditPanel({ campaignId, onClose, onToast, allCam
                           : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'
                       }`}
                     >
-                      {VIEW_LABELS[v]}
+                      {t(`viewLabels.${VIEW_LABEL_KEYS[v]}`)}
                     </button>
                   ))}
                 </div>
@@ -1946,14 +1741,14 @@ export default function CampaignEditPanel({ campaignId, onClose, onToast, allCam
                                 <Megaphone className="w-[18px] h-[18px]" />
                               </div>
                               <div>
-                                <h3 className="text-[15px] font-semibold text-gray-900 leading-tight">Kampanya Adı</h3>
-                                <p className="text-[13px] text-gray-500 mt-0.5">Kampanyanıza bir isim verin.</p>
+                                <h3 className="text-[15px] font-semibold text-gray-900 leading-tight">{t('fields.campaignName.title')}</h3>
+                                <p className="text-[13px] text-gray-500 mt-0.5">{t('fields.campaignName.subtitle')}</p>
                               </div>
                             </div>
                           </div>
                           <div className="px-5 pb-5 pt-4">
                             <input type="text" value={campName} onChange={(e) => setCampName(e.target.value)} maxLength={256}
-                              placeholder="Kampanya adı..."
+                              placeholder={t('fields.campaignName.placeholder')}
                               className="w-full px-3.5 py-2.5 border border-gray-200 rounded-lg text-[13px] text-gray-900 bg-gray-50/50 placeholder:text-gray-400 placeholder:text-[11px] transition-all duration-150 focus:outline-none focus:ring-2 focus:ring-green-500/20 focus:border-green-500 focus:bg-white focus:shadow-sm" />
                           </div>
                         </div>
@@ -1968,17 +1763,17 @@ export default function CampaignEditPanel({ campaignId, onClose, onToast, allCam
                                 <Banknote className="w-[18px] h-[18px]" />
                               </div>
                               <div>
-                                <h3 className="text-[15px] font-semibold text-gray-900 leading-tight">Bütçe</h3>
-                                <p className="text-[13px] text-gray-500 mt-0.5">Kampanyanız için günlük bütçe belirleyin.</p>
+                                <h3 className="text-[15px] font-semibold text-gray-900 leading-tight">{t('fields.budget.title')}</h3>
+                                <p className="text-[13px] text-gray-500 mt-0.5">{t('fields.budget.subtitle')}</p>
                               </div>
                             </div>
                           </div>
                           <div className="px-5 pb-5 pt-4">
-                            <label className="block text-[13px] font-medium text-gray-600 mb-1.5">Günlük Bütçe</label>
+                            <label className="block text-[13px] font-medium text-gray-600 mb-1.5">{t('fields.budget.dailyLabel')}</label>
                             <div className="relative max-w-xs">
                               <span className="absolute left-3 top-1/2 -translate-y-1/2 text-[13px] font-medium text-gray-400 select-none pointer-events-none">TRY</span>
                               <input type="number" step="0.01" min="0" value={campBudget} onChange={(e) => setCampBudget(e.target.value)}
-                                placeholder="Orn: 1000.00"
+                                placeholder={t('fields.budget.placeholder')}
                                 className="w-full pl-12 pr-3.5 py-2.5 border border-gray-200 rounded-lg text-[13px] text-gray-900 bg-gray-50/50 placeholder:text-gray-400 placeholder:text-[11px] transition-all duration-150 focus:outline-none focus:ring-2 focus:ring-green-500/20 focus:border-green-500 focus:bg-white focus:shadow-sm" />
                             </div>
                           </div>
@@ -1994,8 +1789,8 @@ export default function CampaignEditPanel({ campaignId, onClose, onToast, allCam
                                 <Settings2 className="w-[18px] h-[18px]" />
                               </div>
                               <div>
-                                <h3 className="text-[15px] font-semibold text-gray-900 leading-tight">Teklif Stratejisi</h3>
-                                <p className="text-[13px] text-gray-500 mt-0.5">Kampanyanız için teklif stratejisi seçin.</p>
+                                <h3 className="text-[15px] font-semibold text-gray-900 leading-tight">{t('fields.bidding.title')}</h3>
+                                <p className="text-[13px] text-gray-500 mt-0.5">{t('fields.bidding.subtitle')}</p>
                               </div>
                             </div>
                           </div>
@@ -2003,27 +1798,27 @@ export default function CampaignEditPanel({ campaignId, onClose, onToast, allCam
                             <div className="relative max-w-md">
                               <select value={campBidStrategy} onChange={(e) => setCampBidStrategy(e.target.value)}
                                 className="w-full px-3.5 py-2.5 pr-10 border border-gray-200 rounded-lg text-[13px] text-gray-900 bg-gray-50/50 appearance-none cursor-pointer transition-all duration-150 focus:outline-none focus:ring-2 focus:ring-green-500/20 focus:border-green-500 focus:bg-white focus:shadow-sm hover:border-gray-300">
-                                <option value="">Seç...</option>
+                                <option value="">{tc('selectPlaceholder')}</option>
                                 {biddingOptions.map((s) => <option key={s.value} value={s.value}>{s.label}</option>)}
                               </select>
                               <ChevronDown className="absolute right-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400 pointer-events-none" />
                             </div>
                             {campBidStrategy === 'TARGET_CPA' && (
                               <div className="mt-4 pl-4 border-l-2 border-green-200">
-                                <label className="block text-[13px] font-medium text-gray-600 mb-1.5">Hedef EBM</label>
+                                <label className="block text-[13px] font-medium text-gray-600 mb-1.5">{t('fields.bidding.targetCpaLabel')}</label>
                                 <div className="relative max-w-xs">
                                   <span className="absolute left-3 top-1/2 -translate-y-1/2 text-[13px] font-medium text-gray-400 select-none pointer-events-none">TRY</span>
                                   <input type="number" step="0.01" min="0" value={campTargetCpa} onChange={(e) => setCampTargetCpa(e.target.value)}
-                                    placeholder="Orn: 25.00"
+                                    placeholder={t('fields.bidding.targetCpaPlaceholder')}
                                     className="w-full pl-12 pr-3.5 py-2.5 border border-gray-200 rounded-lg text-[13px] text-gray-900 bg-gray-50/50 placeholder:text-gray-400 placeholder:text-[11px] transition-all duration-150 focus:outline-none focus:ring-2 focus:ring-green-500/20 focus:border-green-500 focus:bg-white focus:shadow-sm" />
                                 </div>
                               </div>
                             )}
                             {campBidStrategy === 'TARGET_ROAS' && (
                               <div className="mt-4 pl-4 border-l-2 border-green-200">
-                                <label className="block text-[13px] font-medium text-gray-600 mb-1.5">Hedef ROAS</label>
+                                <label className="block text-[13px] font-medium text-gray-600 mb-1.5">{t('fields.bidding.targetRoasLabel')}</label>
                                 <input type="number" step="0.1" min="0" value={campTargetRoas} onChange={(e) => setCampTargetRoas(e.target.value)}
-                                  placeholder="Orn: 4.0"
+                                  placeholder={t('fields.bidding.targetRoasPlaceholder')}
                                   className="w-full max-w-xs px-3.5 py-2.5 border border-gray-200 rounded-lg text-[13px] text-gray-900 bg-gray-50/50 placeholder:text-gray-400 placeholder:text-[11px] transition-all duration-150 focus:outline-none focus:ring-2 focus:ring-green-500/20 focus:border-green-500 focus:bg-white focus:shadow-sm" />
                               </div>
                             )}
@@ -2040,8 +1835,8 @@ export default function CampaignEditPanel({ campaignId, onClose, onToast, allCam
                                 <Globe className="w-[18px] h-[18px]" />
                               </div>
                               <div>
-                                <h3 className="text-[15px] font-semibold text-gray-900 leading-tight">Ağ Ayarları</h3>
-                                <p className="text-[13px] text-gray-500 mt-0.5">Reklamlarınızın gösterileceği ağları belirleyin.</p>
+                                <h3 className="text-[15px] font-semibold text-gray-900 leading-tight">{t('fields.networks.title')}</h3>
+                                <p className="text-[13px] text-gray-500 mt-0.5">{t('fields.networks.subtitle')}</p>
                               </div>
                             </div>
                           </div>
@@ -2051,16 +1846,16 @@ export default function CampaignEditPanel({ campaignId, onClose, onToast, allCam
                                 <input type="checkbox" checked={campSearchNetwork} onChange={(e) => setCampSearchNetwork(e.target.checked)}
                                   className="w-4 h-4 rounded border-gray-300 text-green-600 focus:ring-green-500" />
                                 <div>
-                                  <p className="text-[15px] font-medium text-gray-800">Arama Ağı Ortakları</p>
-                                  <p className="text-[13px] text-gray-500">Arama sonuçlarında ortaklarda gösterim</p>
+                                  <p className="text-[15px] font-medium text-gray-800">{t('fields.networks.searchPartnersLabel')}</p>
+                                  <p className="text-[13px] text-gray-500">{t('fields.networks.searchPartnersDesc')}</p>
                                 </div>
                               </label>
                               <label className="flex items-center gap-3 px-3 py-2.5 rounded-lg border border-gray-200 bg-white cursor-pointer hover:bg-gray-50 transition-colors">
                                 <input type="checkbox" checked={campContentNetwork} onChange={(e) => setCampContentNetwork(e.target.checked)}
                                   className="w-4 h-4 rounded border-gray-300 text-green-600 focus:ring-green-500" />
                                 <div>
-                                  <p className="text-[15px] font-medium text-gray-800">Görüntülü Reklam Ağı</p>
-                                  <p className="text-[13px] text-gray-500">Web siteleri, uygulamalar ve videolarda gösterim</p>
+                                  <p className="text-[15px] font-medium text-gray-800">{t('fields.networks.displayNetworkLabel')}</p>
+                                  <p className="text-[13px] text-gray-500">{t('fields.networks.displayNetworkDesc')}</p>
                                 </div>
                               </label>
                             </div>
@@ -2074,8 +1869,8 @@ export default function CampaignEditPanel({ campaignId, onClose, onToast, allCam
                   {/* ── NEGATİF AK ── */}
                   {selectedView === 'negatif_ak' && (
                     <div className="max-w-2xl">
-                      <h3 className="text-[15px] font-semibold text-gray-900">Negatif Anahtar Kelimeler</h3>
-                      <p className="text-[13px] text-gray-500 mt-1 mb-4">Kampanya düzeyinde negatif anahtar kelimeler ekleyin. ({campNegKws.length} adet)</p>
+                      <h3 className="text-[15px] font-semibold text-gray-900">{t('viewLabels.negatifAk')}</h3>
+                      <p className="text-[13px] text-gray-500 mt-1 mb-4">{t('negKeywords.campaignSubtitle', { count: campNegKws.length })}</p>
                       {campNegKws.length > 0 && (
                         <div className="flex flex-wrap gap-1.5 mb-4">
                           {campNegKws.map((nk) => (
@@ -2089,16 +1884,16 @@ export default function CampaignEditPanel({ campaignId, onClose, onToast, allCam
                       )}
                       <div className="flex items-center gap-2">
                         <input type="text" value={newCampNegText} onChange={(e) => setNewCampNegText(e.target.value)}
-                          placeholder="Negatif kelime ekle..." onKeyDown={(e) => { if (e.key === 'Enter') addCampNegKw() }}
+                          placeholder={t('negKeywords.addPlaceholder')} onKeyDown={(e) => { if (e.key === 'Enter') addCampNegKw() }}
                           className="flex-1 px-4 py-2.5 border border-gray-300 rounded-lg text-[13px] focus:outline-none focus:ring-2 focus:ring-green-500/20" />
                         <select value={newCampNegMatch} onChange={(e) => setNewCampNegMatch(e.target.value as any)}
                           className="px-3 py-2.5 border border-gray-300 rounded-lg text-[13px] bg-white">
-                          {MATCH_TYPES.map((m) => <option key={m.value} value={m.value}>{m.label}</option>)}
+                          {MATCH_TYPE_VALUES.map((m) => <option key={m} value={m}>{translateEnum(m, locale as any, 'google')}</option>)}
                         </select>
                         <button onClick={addCampNegKw} disabled={addingCampNeg || !newCampNegText.trim()}
                           className="px-4 py-2.5 text-[13px] font-medium text-white bg-red-500 rounded-lg hover:bg-red-600 disabled:opacity-50 flex items-center gap-1.5">
                           {addingCampNeg ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <Plus className="w-3.5 h-3.5" />}
-                          Ekle
+                          {tc('add')}
                         </button>
                       </div>
                     </div>
@@ -2108,12 +1903,12 @@ export default function CampaignEditPanel({ campaignId, onClose, onToast, allCam
                   {selectedView === 'yer' && (
                     <div className="max-w-2xl">
                       <h3 className="text-[15px] font-semibold text-gray-900 flex items-center gap-2">
-                        <MapPin className="w-5 h-5" /> Lokasyonlar
+                        <MapPin className="w-5 h-5" /> {t('locations.title')}
                       </h3>
-                      <p className="text-[13px] text-gray-500 mt-1 mb-4">Reklamlarınızın gösterileceği bölgeleri belirleyin.</p>
+                      <p className="text-[13px] text-gray-500 mt-1 mb-4">{t('locations.subtitle')}</p>
                       {targetedLocations.length > 0 && (
                         <div className="mb-3">
-                          <p className="text-[13px] font-medium text-gray-500 mb-2 uppercase tracking-wide">Hedeflenen</p>
+                          <p className="text-[13px] font-medium text-gray-500 mb-2 uppercase tracking-wide">{t('locations.targeted')}</p>
                           <div className="flex flex-wrap gap-1.5">
                             {targetedLocations.map((loc) => (
                               <span key={loc.criterionId} className="inline-flex items-center gap-1 px-2.5 py-1 text-[13px] rounded-full bg-green-50 text-green-700 border border-green-200">
@@ -2126,7 +1921,7 @@ export default function CampaignEditPanel({ campaignId, onClose, onToast, allCam
                       )}
                       {excludedLocations.length > 0 && (
                         <div className="mb-3">
-                          <p className="text-[13px] font-medium text-gray-500 mb-2 uppercase tracking-wide">Hariç Tutulan</p>
+                          <p className="text-[13px] font-medium text-gray-500 mb-2 uppercase tracking-wide">{t('locations.excluded')}</p>
                           <div className="flex flex-wrap gap-1.5">
                             {excludedLocations.map((loc) => (
                               <span key={loc.criterionId} className="inline-flex items-center gap-1 px-2.5 py-1 text-[13px] rounded-full bg-red-50 text-red-600 border border-red-200">
@@ -2143,7 +1938,7 @@ export default function CampaignEditPanel({ campaignId, onClose, onToast, allCam
                             <MapPin className="absolute left-3 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-gray-400" />
                             <input
                               type="text" value={geoQuery} onChange={(e) => setGeoQuery(e.target.value)}
-                              placeholder="Lokasyon ara (ör: İstanbul, Ankara...)"
+                              placeholder={t('locations.searchPlaceholder')}
                               className="w-full pl-9 pr-3 py-2.5 border border-gray-300 rounded-lg text-[13px] focus:outline-none focus:ring-2 focus:ring-green-500/20"
                             />
                             {geoLoading && <Loader2 className="absolute right-3 top-1/2 -translate-y-1/2 w-3.5 h-3.5 animate-spin text-gray-400" />}
@@ -2157,11 +1952,11 @@ export default function CampaignEditPanel({ campaignId, onClose, onToast, allCam
                                 <div className="flex items-center gap-1 shrink-0 ml-2">
                                   <button onClick={() => addLocation(geo, false)}
                                     className="px-2 py-0.5 text-[13px] text-green-700 bg-green-50 border border-green-200 rounded hover:bg-green-100">
-                                    Hedefle
+                                    {t('locations.targetButton')}
                                   </button>
                                   <button onClick={() => addLocation(geo, true)}
                                     className="px-2 py-0.5 text-[13px] text-red-600 bg-red-50 border border-red-200 rounded hover:bg-red-100">
-                                    Hariç Tut
+                                    {t('locations.excludeButton')}
                                   </button>
                                 </div>
                               </div>
@@ -2255,22 +2050,22 @@ export default function CampaignEditPanel({ campaignId, onClose, onToast, allCam
                                 <Clock className="w-[18px] h-[18px]" />
                               </div>
                               <div>
-                                <h3 className="text-[15px] font-semibold text-gray-900 leading-tight">Reklam Zamanlaması</h3>
-                                <p className="text-[13px] text-gray-500 mt-0.5">Reklamlarınızın gösterilme saatlerini belirleyin.</p>
+                                <h3 className="text-[15px] font-semibold text-gray-900 leading-tight">{t('schedule.title')}</h3>
+                                <p className="text-[13px] text-gray-500 mt-0.5">{t('schedule.subtitle')}</p>
                               </div>
                             </div>
                           </div>
                           <div className="px-5 pb-5 pt-4">
                             {/* Presets */}
                             <div className="flex items-center gap-2 mb-5">
-                              <span className="text-[13px] font-medium text-gray-500 mr-1">Hazır Ayarlar:</span>
+                              <span className="text-[13px] font-medium text-gray-500 mr-1">{t('schedule.presetsLabel')}</span>
                               <button onClick={() => applySchedulePreset('business')}
                                 className="px-3.5 py-1.5 text-[13px] font-medium text-gray-700 bg-white border border-gray-200 rounded-full hover:bg-gray-50 hover:border-gray-300 transition-all duration-150 shadow-sm">
-                                İş Saatleri (Pzt-Cum 09:00-18:00)
+                                {t('schedule.presetBusiness')}
                               </button>
                               <button onClick={() => applySchedulePreset('clear')}
                                 className="px-3.5 py-1.5 text-[13px] font-medium text-gray-700 bg-white border border-gray-200 rounded-full hover:bg-gray-50 hover:border-gray-300 transition-all duration-150 shadow-sm">
-                                7/24 (Temizle)
+                                {t('schedule.presetClear')}
                               </button>
                             </div>
 
@@ -2281,7 +2076,7 @@ export default function CampaignEditPanel({ campaignId, onClose, onToast, allCam
                                   {adSchedule.map((entry, idx) => (
                                     <div key={idx} className="flex items-center gap-3 px-4 py-2.5 text-[13px] bg-white hover:bg-gray-50/50 transition-colors group">
                                       <span className="inline-flex items-center justify-center w-20 py-0.5 text-[13px] font-medium text-green-700 bg-green-50 rounded-md shrink-0">
-                                        {DAY_LABELS[entry.dayOfWeek]}
+                                        {t(`daySchedule.${DAY_LABEL_KEYS[entry.dayOfWeek]}`)}
                                       </span>
                                       <span className="text-gray-700 font-mono text-[13px] tracking-wide">
                                         {String(entry.startHour).padStart(2, '0')}:{MINUTE_LABELS[entry.startMinute]}
@@ -2302,20 +2097,20 @@ export default function CampaignEditPanel({ campaignId, onClose, onToast, allCam
 
                             {/* Add new entry */}
                             <div className="bg-gray-50/80 rounded-lg border border-gray-200/60 p-4">
-                              <p className="text-[13px] font-medium text-gray-500 mb-3">Yeni Zamanlama Ekle</p>
+                              <p className="text-[13px] font-medium text-gray-500 mb-3">{t('schedule.addNewTitle')}</p>
                               <div className="flex items-end gap-2.5 flex-wrap">
                                 <div>
-                                  <label className="block text-[11px] font-medium text-gray-500 mb-1 uppercase tracking-wider">Gün</label>
+                                  <label className="block text-[11px] font-medium text-gray-500 mb-1 uppercase tracking-wider">{t('schedule.dayLabel')}</label>
                                   <div className="relative">
                                     <select value={newSchedDay} onChange={(e) => setNewSchedDay(e.target.value as DayOfWeek)}
                                       className="px-3 py-2 pr-8 border border-gray-200 rounded-lg text-[13px] bg-white appearance-none cursor-pointer transition-all duration-150 focus:outline-none focus:ring-2 focus:ring-green-500/20 focus:border-green-500 hover:border-gray-300">
-                                      {DAYS_ORDER.map((d) => <option key={d} value={d}>{DAY_LABELS[d]}</option>)}
+                                      {DAYS_ORDER.map((d) => <option key={d} value={d}>{t(`daySchedule.${DAY_LABEL_KEYS[d]}`)}</option>)}
                                     </select>
                                     <ChevronDown className="absolute right-2 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-gray-400 pointer-events-none" />
                                   </div>
                                 </div>
                                 <div>
-                                  <label className="block text-[11px] font-medium text-gray-500 mb-1 uppercase tracking-wider">Başlangıç</label>
+                                  <label className="block text-[11px] font-medium text-gray-500 mb-1 uppercase tracking-wider">{t('schedule.startLabel')}</label>
                                   <div className="flex items-center gap-1">
                                     <div className="relative">
                                       <select value={newSchedStartH} onChange={(e) => setNewSchedStartH(Number(e.target.value))}
@@ -2335,7 +2130,7 @@ export default function CampaignEditPanel({ campaignId, onClose, onToast, allCam
                                   </div>
                                 </div>
                                 <div>
-                                  <label className="block text-[11px] font-medium text-gray-500 mb-1 uppercase tracking-wider">Bitiş</label>
+                                  <label className="block text-[11px] font-medium text-gray-500 mb-1 uppercase tracking-wider">{t('schedule.endLabel')}</label>
                                   <div className="flex items-center gap-1">
                                     <div className="relative">
                                       <select value={newSchedEndH} onChange={(e) => setNewSchedEndH(Number(e.target.value))}
@@ -2356,7 +2151,7 @@ export default function CampaignEditPanel({ campaignId, onClose, onToast, allCam
                                 </div>
                                 <button onClick={addScheduleEntry}
                                   className="px-3.5 py-2 text-[13px] font-medium text-white bg-blue-500 rounded-lg hover:bg-blue-600 transition-colors shadow-sm flex items-center gap-1.5">
-                                  <Plus className="w-3.5 h-3.5" /> Ekle
+                                  <Plus className="w-3.5 h-3.5" /> {tc('add')}
                                 </button>
                               </div>
                             </div>
@@ -2366,7 +2161,7 @@ export default function CampaignEditPanel({ campaignId, onClose, onToast, allCam
                               <button onClick={saveSchedule} disabled={savingSchedule}
                                 className="px-5 py-2.5 text-[13px] font-medium text-white bg-[#2BB673] rounded-lg hover:bg-[#249E63] disabled:opacity-50 disabled:cursor-not-allowed transition-all duration-150 shadow-sm flex items-center gap-2">
                                 {savingSchedule && <Loader2 className="w-3.5 h-3.5 animate-spin" />}
-                                Zamanlamayı Kaydet
+                                {t('schedule.saveButton')}
                               </button>
                             </div>
                           </div>
@@ -2387,15 +2182,15 @@ export default function CampaignEditPanel({ campaignId, onClose, onToast, allCam
                       {gyzSubView === 'konumlar' && (
                         <div>
                           {locations.length === 0 ? (
-                            <div className="p-6 text-center text-gray-400">Konum hedefleme verisi bulunamadı.</div>
+                            <div className="p-6 text-center text-gray-400">{t('locationsTable.empty')}</div>
                           ) : (
                             <div className="overflow-x-auto">
                               <table className="w-full">
                                 <thead className="bg-gray-50">
                                   <tr>
-                                    <th className="px-4 py-3 text-left text-[12px] font-medium text-gray-500 uppercase">Konum</th>
-                                    <th className="px-4 py-3 text-left text-[12px] font-medium text-gray-500 uppercase">Durum</th>
-                                    <th className="px-4 py-3 text-right text-[12px] font-medium text-gray-500 uppercase">Teklif Çarpanı</th>
+                                    <th className="px-4 py-3 text-left text-[12px] font-medium text-gray-500 uppercase">{t('locationsTable.colLocation')}</th>
+                                    <th className="px-4 py-3 text-left text-[12px] font-medium text-gray-500 uppercase">{t('locationsTable.colStatus')}</th>
+                                    <th className="px-4 py-3 text-right text-[12px] font-medium text-gray-500 uppercase">{t('locationsTable.colBidModifier')}</th>
                                   </tr>
                                 </thead>
                                 <tbody className="divide-y divide-gray-200">
@@ -2404,9 +2199,9 @@ export default function CampaignEditPanel({ campaignId, onClose, onToast, allCam
                                       <td className="px-4 py-3 text-[13px] text-gray-900 font-medium">{loc.locationName}</td>
                                       <td className="px-4 py-3 text-[13px]">
                                         {loc.isNegative ? (
-                                          <span className="px-2 py-0.5 rounded-full text-[13px] bg-red-50 text-red-600">Hariç</span>
+                                          <span className="px-2 py-0.5 rounded-full text-[13px] bg-red-50 text-red-600">{t('locationsTable.excludedBadge')}</span>
                                         ) : (
-                                          <span className="px-2 py-0.5 rounded-full text-[13px] bg-green-50 text-green-700">Hedef</span>
+                                          <span className="px-2 py-0.5 rounded-full text-[13px] bg-green-50 text-green-700">{t('locationsTable.targetBadge')}</span>
                                         )}
                                       </td>
                                       <td className="px-4 py-3 text-[13px] text-gray-900 text-right">
@@ -2456,14 +2251,14 @@ export default function CampaignEditPanel({ campaignId, onClose, onToast, allCam
                                 <FileText className="w-[18px] h-[18px]" />
                               </div>
                               <div>
-                                <h3 className="text-[15px] font-semibold text-gray-900 leading-tight">Reklam Grubu Adı</h3>
-                                <p className="text-[13px] text-gray-500 mt-0.5">Reklam grubunuza bir isim verin.</p>
+                                <h3 className="text-[15px] font-semibold text-gray-900 leading-tight">{t('fields.adGroupName.title')}</h3>
+                                <p className="text-[13px] text-gray-500 mt-0.5">{t('fields.adGroupName.subtitle')}</p>
                               </div>
                             </div>
                           </div>
                           <div className="px-5 pb-5 pt-4">
                             <input type="text" value={agName} onChange={(e) => setAgName(e.target.value)} maxLength={256}
-                              placeholder="Reklam grubu adı..."
+                              placeholder={t('fields.adGroupName.placeholder')}
                               className="w-full px-3.5 py-2.5 border border-gray-200 rounded-lg text-[13px] text-gray-900 bg-gray-50/50 placeholder:text-gray-400 placeholder:text-[11px] transition-all duration-150 focus:outline-none focus:ring-2 focus:ring-green-500/20 focus:border-green-500 focus:bg-white focus:shadow-sm" />
                           </div>
                         </div>
@@ -2478,8 +2273,8 @@ export default function CampaignEditPanel({ campaignId, onClose, onToast, allCam
                                 <Banknote className="w-[18px] h-[18px]" />
                               </div>
                               <div>
-                                <h3 className="text-[15px] font-semibold text-gray-900 leading-tight">Maks. CPC Teklif</h3>
-                                <p className="text-[13px] text-gray-500 mt-0.5">Bu reklam grubu için maksimum tıklama başına maliyet belirleyin.</p>
+                                <h3 className="text-[15px] font-semibold text-gray-900 leading-tight">{t('fields.cpcBid.title')}</h3>
+                                <p className="text-[13px] text-gray-500 mt-0.5">{t('fields.cpcBid.subtitle')}</p>
                               </div>
                             </div>
                           </div>
@@ -2487,7 +2282,7 @@ export default function CampaignEditPanel({ campaignId, onClose, onToast, allCam
                             <div className="relative max-w-xs">
                               <span className="absolute left-3 top-1/2 -translate-y-1/2 text-[13px] font-medium text-gray-400 select-none pointer-events-none">TRY</span>
                               <input type="number" step="0.01" min="0" value={agCpcBid} onChange={(e) => setAgCpcBid(e.target.value)}
-                                placeholder="Orn: 2.50"
+                                placeholder={t('fields.cpcBid.placeholder')}
                                 className="w-full pl-12 pr-3.5 py-2.5 border border-gray-200 rounded-lg text-[13px] text-gray-900 bg-gray-50/50 placeholder:text-gray-400 placeholder:text-[11px] transition-all duration-150 focus:outline-none focus:ring-2 focus:ring-green-500/20 focus:border-green-500 focus:bg-white focus:shadow-sm" />
                             </div>
                           </div>
@@ -2501,10 +2296,10 @@ export default function CampaignEditPanel({ campaignId, onClose, onToast, allCam
                   {selectedView === 'anahtar_kelimeler' && (
                     <div className="max-w-2xl">
                       <h3 className="text-[15px] font-semibold text-gray-900 flex items-center gap-2">
-                        <Key className="w-5 h-5" /> Anahtar Kelimeler
+                        <Key className="w-5 h-5" /> {t('viewLabels.anahtarKelimeler')}
                       </h3>
                       <p className="text-[13px] text-gray-500 mt-1 mb-4">
-                        {agPositiveKws.length} pozitif anahtar kelime.
+                        {t('keywords.positiveCount', { count: agPositiveKws.length })}
                       </p>
                       {agPositiveKws.length > 0 && (
                         <div className="mb-4">
@@ -2513,7 +2308,7 @@ export default function CampaignEditPanel({ campaignId, onClose, onToast, allCam
                               <span key={kw.id} className="inline-flex items-center gap-1 px-2.5 py-1 text-[13px] rounded-full bg-blue-50 text-blue-700 border border-blue-200">
                                 <span className="text-blue-400">{matchLabel(kw.matchType)}</span>
                                 {kw.text}
-                                {kw.qualityScore != null && <span className="text-blue-300 ml-0.5">QS:{kw.qualityScore}/10</span>}
+                                {kw.qualityScore != null && <span className="text-blue-300 ml-0.5">{t('keywords.qualityScore', { score: kw.qualityScore })}</span>}
                                 <button onClick={() => removeKeyword(kw)} className="hover:text-blue-900"><X className="w-3 h-3" /></button>
                               </span>
                             ))}
@@ -2521,19 +2316,19 @@ export default function CampaignEditPanel({ campaignId, onClose, onToast, allCam
                         </div>
                       )}
                       <div className="pt-4 border-t border-gray-100">
-                        <p className="text-[13px] font-medium text-gray-700 mb-2">Anahtar Kelime Ekle</p>
+                        <p className="text-[13px] font-medium text-gray-700 mb-2">{t('keywords.addTitle')}</p>
                         <div className="flex items-center gap-2">
                           <input type="text" value={newKwText} onChange={(e) => setNewKwText(e.target.value)}
-                            placeholder="Anahtar kelime..." onKeyDown={(e) => { if (e.key === 'Enter') addKeyword(selected.id) }}
+                            placeholder={t('keywords.addPlaceholder')} onKeyDown={(e) => { if (e.key === 'Enter') addKeyword(selected.id) }}
                             className="flex-1 px-4 py-2.5 border border-gray-300 rounded-lg text-[13px] focus:outline-none focus:ring-2 focus:ring-green-500/20" />
                           <select value={newKwMatch} onChange={(e) => setNewKwMatch(e.target.value as any)}
                             className="px-3 py-2.5 border border-gray-300 rounded-lg text-[13px] bg-white">
-                            {MATCH_TYPES.map((m) => <option key={m.value} value={m.value}>{m.label}</option>)}
+                            {MATCH_TYPE_VALUES.map((m) => <option key={m} value={m}>{translateEnum(m, locale as any, 'google')}</option>)}
                           </select>
                           <button onClick={() => addKeyword(selected.id)} disabled={addingKw || !newKwText.trim()}
                             className="px-4 py-2.5 text-[13px] font-medium text-white bg-blue-500 rounded-lg hover:bg-blue-600 disabled:opacity-50 flex items-center gap-1.5">
                             {addingKw ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <Plus className="w-3.5 h-3.5" />}
-                            Ekle
+                            {tc('add')}
                           </button>
                         </div>
                       </div>
@@ -2543,9 +2338,9 @@ export default function CampaignEditPanel({ campaignId, onClose, onToast, allCam
                   {/* ── NEGATİF AK (Ad Group) ── */}
                   {selectedView === 'negatif_ak' && (
                     <div className="max-w-2xl">
-                      <h3 className="text-[15px] font-semibold text-gray-900">Negatif Anahtar Kelimeler</h3>
+                      <h3 className="text-[15px] font-semibold text-gray-900">{t('viewLabels.negatifAk')}</h3>
                       <p className="text-[13px] text-gray-500 mt-1 mb-4">
-                        Reklam grubu düzeyinde {agNegativeKws.length} negatif anahtar kelime.
+                        {t('negKeywords.adGroupSubtitle', { count: agNegativeKws.length })}
                       </p>
                       {agNegativeKws.length > 0 && (
                         <div className="flex flex-wrap gap-1.5 mb-4">
@@ -2559,19 +2354,19 @@ export default function CampaignEditPanel({ campaignId, onClose, onToast, allCam
                         </div>
                       )}
                       <div className="pt-4 border-t border-gray-100">
-                        <p className="text-[13px] font-medium text-gray-700 mb-2">Negatif Anahtar Kelime Ekle</p>
+                        <p className="text-[13px] font-medium text-gray-700 mb-2">{t('negKeywords.addTitle')}</p>
                         <div className="flex items-center gap-2">
                           <input type="text" value={newKwText} onChange={(e) => setNewKwText(e.target.value)}
-                            placeholder="Negatif kelime..." onKeyDown={(e) => { if (e.key === 'Enter') { setNewKwNeg(true); addKeyword(selected.id) } }}
+                            placeholder={t('negKeywords.adGroupAddPlaceholder')} onKeyDown={(e) => { if (e.key === 'Enter') { setNewKwNeg(true); addKeyword(selected.id) } }}
                             className="flex-1 px-4 py-2.5 border border-gray-300 rounded-lg text-[13px] focus:outline-none focus:ring-2 focus:ring-green-500/20" />
                           <select value={newKwMatch} onChange={(e) => setNewKwMatch(e.target.value as any)}
                             className="px-3 py-2.5 border border-gray-300 rounded-lg text-[13px] bg-white">
-                            {MATCH_TYPES.map((m) => <option key={m.value} value={m.value}>{m.label}</option>)}
+                            {MATCH_TYPE_VALUES.map((m) => <option key={m} value={m}>{translateEnum(m, locale as any, 'google')}</option>)}
                           </select>
                           <button onClick={() => { setNewKwNeg(true); addKeyword(selected.id) }} disabled={addingKw || !newKwText.trim()}
                             className="px-4 py-2.5 text-[13px] font-medium text-white bg-red-500 rounded-lg hover:bg-red-600 disabled:opacity-50 flex items-center gap-1.5">
                             {addingKw ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <Plus className="w-3.5 h-3.5" />}
-                            Ekle
+                            {tc('add')}
                           </button>
                         </div>
                       </div>
@@ -2653,24 +2448,24 @@ export default function CampaignEditPanel({ campaignId, onClose, onToast, allCam
                     <div className="space-y-6">
                       <div className="flex items-center gap-2 flex-wrap">
                         <span className="inline-flex items-center px-3 py-1 text-[13px] font-medium rounded-full bg-purple-50 text-purple-700 border border-purple-200">
-                          {AD_TYPE_LABELS[selectedAd.type] || selectedAd.type}
+                          {translateEnum(selectedAd.type, locale as any, 'google')}
                         </span>
                         <span className={`inline-flex items-center px-2.5 py-1 text-[13px] font-medium rounded-full ${
                           selectedAd.status === 'ENABLED' ? 'bg-green-50 text-green-700 border border-green-200' :
-                          selectedAd.status === 'PAUSED' ? 'bg-yellow-50 text-yellow-700 border border-yellow-200' :
+                          selectedAd.status === 'PAUSED' ? 'bg-gray-50 text-gray-600 border border-gray-200' :
                           'bg-gray-50 text-gray-500 border border-gray-200'
                         }`}>
-                          {selectedAd.status === 'ENABLED' ? 'Aktif' : selectedAd.status === 'PAUSED' ? 'Duraklatıldı' : selectedAd.status}
+                          {selectedAd.status === 'ENABLED' ? tc('status.active') : selectedAd.status === 'PAUSED' ? t('adStatus.paused') : selectedAd.status}
                         </span>
                       </div>
                       <div>
-                        <h3 className="text-[15px] font-semibold text-gray-900">Reklam Adı</h3>
-                        <input type="text" value={selectedAd.name || `Reklam #${selectedAd.id}`} disabled
+                        <h3 className="text-[15px] font-semibold text-gray-900">{t('adReadonly.adNameLabel')}</h3>
+                        <input type="text" value={selectedAd.name || t('fallback.adNumber', { id: selectedAd.id })} disabled
                           className="mt-2 w-full px-4 py-2.5 border border-gray-200 rounded-lg bg-gray-50 text-gray-500 text-[13px]" />
                       </div>
                       {selectedAd.finalUrls.length > 0 && (
                         <div>
-                          <h3 className="text-[15px] font-semibold text-gray-900">Son URL</h3>
+                          <h3 className="text-[15px] font-semibold text-gray-900">{t('adReadonly.finalUrlLabel')}</h3>
                           <div className="mt-2 space-y-1.5">
                             {selectedAd.finalUrls.map((url, idx) => (
                               <div key={idx} className="px-4 py-2.5 border border-gray-200 rounded-lg bg-gray-50 text-[13px] text-gray-600 truncate">{url}</div>
@@ -2679,46 +2474,46 @@ export default function CampaignEditPanel({ campaignId, onClose, onToast, allCam
                         </div>
                       )}
                       <div>
-                        <h3 className="text-[15px] font-semibold text-gray-900">Reklam Grubu</h3>
+                        <h3 className="text-[15px] font-semibold text-gray-900">{t('adReadonly.adGroupLabel')}</h3>
                         <input type="text" value={selectedAd.adGroupName} disabled
                           className="mt-2 w-full px-4 py-2.5 border border-gray-200 rounded-lg bg-gray-50 text-gray-500 text-[13px]" />
                       </div>
                       <div className="px-4 py-3 bg-blue-50 border border-blue-200 rounded-lg text-[13px] text-blue-700">
-                        {AD_READONLY_MESSAGES[channelType] || 'Bu reklam tipi bu arayüzden düzenlenemez.'}
+                        {AD_READONLY_MESSAGE_KEYS[channelType] ? t(`adReadonly.${AD_READONLY_MESSAGE_KEYS[channelType]}`) : t('adReadonly.default')}
                       </div>
                     </div>
                   )}
                   {schema.ad.includes('rsaEditor') && (
                     <>
                       {selectedAd.type !== 'RESPONSIVE_SEARCH_AD' ? (
-                        <div className="px-4 py-3 bg-amber-50 border border-amber-200 rounded-lg text-[13px] text-amber-700">
-                          Bu reklam tipi ({selectedAd.type}) düzenlenemez. Sadece Responsive Search Ad (RSA) reklamları düzenlenebilir.
+                        <div className="px-4 py-3 bg-gray-50 border border-gray-200 rounded-lg text-[13px] text-gray-700">
+                          {t('rsa.notEditable', { type: translateEnum(selectedAd.type, locale as any, 'google') })}
                         </div>
                       ) : (
                         <div className="space-y-8">
                           <div>
-                            <h3 className="text-[15px] font-semibold text-gray-900">Reklam Adı</h3>
-                            <p className="text-[13px] text-gray-500 mt-1 mb-4">Google Ads API üzerinden reklam adı değiştirilemez.</p>
-                            <input type="text" value={selectedAd.name || `Reklam #${selectedAd.id}`} disabled
+                            <h3 className="text-[15px] font-semibold text-gray-900">{t('rsa.adNameTitle')}</h3>
+                            <p className="text-[13px] text-gray-500 mt-1 mb-4">{t('rsa.adNameSubtitle')}</p>
+                            <input type="text" value={selectedAd.name || t('fallback.adNumber', { id: selectedAd.id })} disabled
                               className="w-full px-4 py-2.5 border border-gray-200 rounded-lg bg-gray-50 text-gray-500 text-[13px]" />
                           </div>
                           <div>
-                            <h3 className="text-[15px] font-semibold text-gray-900">Başlıklar</h3>
-                            <p className="text-[13px] text-gray-500 mt-1 mb-4">En az 3, en fazla 15 başlık. Her biri maks 30 karakter. ({adHeadlines.length}/15)</p>
+                            <h3 className="text-[15px] font-semibold text-gray-900">{t('rsa.headlinesTitle')}</h3>
+                            <p className="text-[13px] text-gray-500 mt-1 mb-4">{t('rsa.headlinesSubtitle', { count: adHeadlines.length })}</p>
                             <div className="space-y-2">
                               {adHeadlines.map((h, idx) => (
                                 <div key={idx} className="flex items-center gap-2">
                                   <span className="text-[13px] text-gray-400 w-5 text-right shrink-0">{idx + 1}</span>
                                   <input type="text" value={h.text}
                                     onChange={(e) => setAdHeadlines(adHeadlines.map((x, i) => i === idx ? { ...x, text: e.target.value } : x))}
-                                    maxLength={30} placeholder="Başlık metni (maks 30)"
+                                    maxLength={30} placeholder={t('rsa.headlinePlaceholder')}
                                     className="flex-1 px-4 py-2 border border-gray-300 rounded-lg text-[13px] focus:outline-none focus:ring-2 focus:ring-green-500/20" />
                                   <select value={h.pinnedField || ''}
                                     onChange={(e) => setAdHeadlines(adHeadlines.map((x, i) => i === idx ? { ...x, pinnedField: e.target.value || null } : x))}
                                     className="w-28 px-2 py-2 border border-gray-300 rounded-lg text-[13px] bg-white">
-                                    {PIN_OPTIONS.map((p) => <option key={p.value} value={p.value}>{p.label}</option>)}
+                                    {PIN_OPTION_VALUES.map((p) => <option key={p.value} value={p.value}>{t(`pinOptions.${p.labelKey}`)}</option>)}
                                   </select>
-                                  <span className={`text-[13px] shrink-0 w-10 text-right ${h.text.length > 25 ? 'text-amber-500' : 'text-gray-400'}`}>
+                                  <span className={`text-[13px] shrink-0 w-10 text-right ${h.text.length > 25 ? 'text-gray-500' : 'text-gray-400'}`}>
                                     {h.text.length}/30
                                   </span>
                                   {adHeadlines.length > 3 && (
@@ -2731,27 +2526,27 @@ export default function CampaignEditPanel({ campaignId, onClose, onToast, allCam
                             {adHeadlines.length < 15 && (
                               <button onClick={() => setAdHeadlines([...adHeadlines, { text: '' }])}
                                 className="mt-3 text-[13px] text-green-600 hover:text-green-700 flex items-center gap-1">
-                                <Plus className="w-3.5 h-3.5" /> Başlık Ekle
+                                <Plus className="w-3.5 h-3.5" /> {t('rsa.addHeadline')}
                               </button>
                             )}
                           </div>
                           <div>
-                            <h3 className="text-[15px] font-semibold text-gray-900">Açıklamalar</h3>
-                            <p className="text-[13px] text-gray-500 mt-1 mb-4">En az 2, en fazla 4 açıklama. Her biri maks 90 karakter. ({adDescriptions.length}/4)</p>
+                            <h3 className="text-[15px] font-semibold text-gray-900">{t('rsa.descriptionsTitle')}</h3>
+                            <p className="text-[13px] text-gray-500 mt-1 mb-4">{t('rsa.descriptionsSubtitle', { count: adDescriptions.length })}</p>
                             <div className="space-y-2">
                               {adDescriptions.map((d, idx) => (
                                 <div key={idx} className="flex items-center gap-2">
                                   <span className="text-[13px] text-gray-400 w-5 text-right shrink-0">{idx + 1}</span>
                                   <input type="text" value={d.text}
                                     onChange={(e) => setAdDescriptions(adDescriptions.map((x, i) => i === idx ? { ...x, text: e.target.value } : x))}
-                                    maxLength={90} placeholder="Açıklama metni (maks 90)"
+                                    maxLength={90} placeholder={t('rsa.descriptionPlaceholder')}
                                     className="flex-1 px-4 py-2 border border-gray-300 rounded-lg text-[13px] focus:outline-none focus:ring-2 focus:ring-green-500/20" />
                                   <select value={d.pinnedField || ''}
                                     onChange={(e) => setAdDescriptions(adDescriptions.map((x, i) => i === idx ? { ...x, pinnedField: e.target.value || null } : x))}
                                     className="w-28 px-2 py-2 border border-gray-300 rounded-lg text-[13px] bg-white">
-                                    {DESC_PIN_OPTIONS.map((p) => <option key={p.value} value={p.value}>{p.label}</option>)}
+                                    {DESC_PIN_OPTION_VALUES.map((p) => <option key={p.value} value={p.value}>{t(`pinOptions.${p.labelKey}`)}</option>)}
                                   </select>
-                                  <span className={`text-[13px] shrink-0 w-10 text-right ${d.text.length > 80 ? 'text-amber-500' : 'text-gray-400'}`}>
+                                  <span className={`text-[13px] shrink-0 w-10 text-right ${d.text.length > 80 ? 'text-gray-500' : 'text-gray-400'}`}>
                                     {d.text.length}/90
                                   </span>
                                   {adDescriptions.length > 2 && (
@@ -2764,49 +2559,49 @@ export default function CampaignEditPanel({ campaignId, onClose, onToast, allCam
                             {adDescriptions.length < 4 && (
                               <button onClick={() => setAdDescriptions([...adDescriptions, { text: '' }])}
                                 className="mt-3 text-[13px] text-green-600 hover:text-green-700 flex items-center gap-1">
-                                <Plus className="w-3.5 h-3.5" /> Açıklama Ekle
+                                <Plus className="w-3.5 h-3.5" /> {t('rsa.addDescription')}
                               </button>
                             )}
                           </div>
                           <div>
-                            <h3 className="text-[15px] font-semibold text-gray-900">URL ve Yollar</h3>
-                            <p className="text-[13px] text-gray-500 mt-1 mb-4">Reklamınızın yönlendireceği URL ve görüntülenen yolları belirleyin.</p>
+                            <h3 className="text-[15px] font-semibold text-gray-900">{t('rsa.urlPathsTitle')}</h3>
+                            <p className="text-[13px] text-gray-500 mt-1 mb-4">{t('rsa.urlPathsSubtitle')}</p>
                             <div className="space-y-3">
                               <div>
-                                <label className="block text-[13px] font-medium text-gray-700 mb-1.5">Son URL</label>
+                                <label className="block text-[13px] font-medium text-gray-700 mb-1.5">{t('rsa.finalUrlLabel')}</label>
                                 <input type="url" value={adFinalUrl} onChange={(e) => setAdFinalUrl(e.target.value)}
                                   placeholder="https://www.example.com/sayfa"
                                   className="w-full px-4 py-2.5 border border-gray-300 rounded-lg text-[13px] focus:outline-none focus:ring-2 focus:ring-green-500/20" />
                               </div>
                               <div className="grid grid-cols-2 gap-3">
                                 <div>
-                                  <label className="block text-[13px] font-medium text-gray-700 mb-1.5">Yol 1 (maks 15)</label>
+                                  <label className="block text-[13px] font-medium text-gray-700 mb-1.5">{t('rsa.path1Label')}</label>
                                   <input type="text" value={adPath1} onChange={(e) => setAdPath1(e.target.value)} maxLength={15}
-                                    placeholder="ornek"
+                                    placeholder={t('rsa.path1Placeholder')}
                                     className="w-full px-4 py-2.5 border border-gray-300 rounded-lg text-[13px] focus:outline-none focus:ring-2 focus:ring-green-500/20" />
                                 </div>
                                 <div>
-                                  <label className="block text-[13px] font-medium text-gray-700 mb-1.5">Yol 2 (maks 15)</label>
+                                  <label className="block text-[13px] font-medium text-gray-700 mb-1.5">{t('rsa.path2Label')}</label>
                                   <input type="text" value={adPath2} onChange={(e) => setAdPath2(e.target.value)} maxLength={15}
-                                    placeholder="sayfa"
+                                    placeholder={t('rsa.path2Placeholder')}
                                     className="w-full px-4 py-2.5 border border-gray-300 rounded-lg text-[13px] focus:outline-none focus:ring-2 focus:ring-green-500/20" />
                                 </div>
                               </div>
                             </div>
                           </div>
                           <div>
-                            <h3 className="text-[15px] font-semibold text-gray-900">Önizleme</h3>
-                            <p className="text-[13px] text-gray-500 mt-1 mb-4">Reklamınızın Google arama sonuçlarında nasıl görüneceği.</p>
+                            <h3 className="text-[15px] font-semibold text-gray-900">{t('rsa.previewTitle')}</h3>
+                            <p className="text-[13px] text-gray-500 mt-1 mb-4">{t('rsa.previewSubtitle')}</p>
                             <div className="border border-gray-200 rounded-xl p-5 bg-white max-w-md">
                               <div className="space-y-1">
                                 <p className="text-[13px] text-green-700 truncate">
                                   {previewUrl}{displayPath ? `/${displayPath}` : ''}
                                 </p>
                                 <p className="text-[15px] text-blue-700 font-medium leading-snug line-clamp-2">
-                                  {previewH || 'Başlık önizlemesi'}
+                                  {previewH || t('rsa.headlinePreview')}
                                 </p>
                                 <p className="text-[13px] text-gray-600 line-clamp-2">
-                                  {previewD || 'Açıklama önizlemesi'}
+                                  {previewD || t('rsa.descriptionPreview')}
                                 </p>
                               </div>
                             </div>
@@ -2847,20 +2642,20 @@ export default function CampaignEditPanel({ campaignId, onClose, onToast, allCam
       {showUnsavedDialog && (
         <div className="fixed inset-0 z-[60] flex items-center justify-center bg-black/40">
           <div className="bg-white rounded-xl shadow-2xl p-6 max-w-sm w-full mx-4">
-            <h3 className="text-[15px] font-semibold text-gray-900 mb-2">Kaydedilmemiş Değişiklikler</h3>
-            <p className="text-[13px] text-gray-600 mb-5">Kaydedilmemiş değişiklikleriniz var. Devam ederseniz bu değişiklikler kaybolacak.</p>
+            <h3 className="text-[15px] font-semibold text-gray-900 mb-2">{t('unsavedDialog.title')}</h3>
+            <p className="text-[13px] text-gray-600 mb-5">{t('unsavedDialog.message')}</p>
             <div className="flex items-center gap-3 justify-end">
               <button
                 onClick={() => { setShowUnsavedDialog(false); setPendingSelection(null) }}
                 className="px-4 py-2 text-[13px] font-medium text-gray-700 bg-white border border-gray-300 rounded-lg hover:bg-gray-50"
               >
-                Geri Dön
+                {t('unsavedDialog.goBack')}
               </button>
               <button
                 onClick={confirmDiscard}
                 className="px-4 py-2 text-[13px] font-medium text-white bg-red-500 rounded-lg hover:bg-red-600"
               >
-                Değişiklikleri At
+                {t('unsavedDialog.discard')}
               </button>
             </div>
           </div>

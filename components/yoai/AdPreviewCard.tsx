@@ -1,54 +1,10 @@
 'use client'
 
 import type { ReactNode } from 'react'
+import { useTranslations, useLocale } from 'next-intl'
 import { Globe } from 'lucide-react'
 import type { FullAdProposal } from '@/lib/yoai/adCreator'
-
-// Kampanya amacı / objective enum'larını kullanıcıya Türkçe humanized göster.
-// Teknik enum (OUTCOME_ENGAGEMENT, MAXIMIZE_CONVERSIONS, vb.) kullanıcıya gösterilmez.
-const CAMPAIGN_TYPE_HUMAN_LABEL: Record<string, string> = {
-  // Meta objectives
-  OUTCOME_TRAFFIC: 'Trafik',
-  OUTCOME_ENGAGEMENT: 'Etkileşim',
-  OUTCOME_LEADS: 'Potansiyel Müşteri',
-  OUTCOME_SALES: 'Satış',
-  OUTCOME_AWARENESS: 'Bilinirlik',
-  OUTCOME_APP_PROMOTION: 'Uygulama Tanıtımı',
-  POST_ENGAGEMENT: 'Gönderi Etkileşimi',
-  TRAFFIC: 'Trafik',
-  CONVERSIONS: 'Dönüşüm',
-  ENGAGEMENT: 'Etkileşim',
-  LEAD_GENERATION: 'Potansiyel Müşteri',
-  VIDEO_VIEWS: 'Video İzlenmesi',
-  BRAND_AWARENESS: 'Marka Bilinirliği',
-  REACH: 'Erişim',
-  MESSAGES: 'Mesajlaşma',
-  CATALOG_SALES: 'Katalog Satışları',
-  MAXIMIZE_CONVERSIONS: 'Dönüşüm Maksimizasyonu',
-  SEND_MESSAGE: 'Mesaj Gönder',
-  // Google campaign types
-  SEARCH: 'Arama',
-  PERFORMANCE_MAX: 'Performance Max',
-  DISPLAY: 'Display',
-  VIDEO: 'Video',
-  SHOPPING: 'Shopping',
-  DISCOVERY: 'Discovery',
-  DEMAND_GEN: 'Demand Gen',
-  LOCAL: 'Local',
-  APP: 'App',
-}
-
-function humanizeCampaignType(value: string | undefined | null): string {
-  if (!value) return '—'
-  const upper = value.toUpperCase()
-  if (CAMPAIGN_TYPE_HUMAN_LABEL[upper]) return CAMPAIGN_TYPE_HUMAN_LABEL[upper]
-  // Bilinmeyen enum'u underscore'dan ayırıp Title Case yap
-  return upper
-    .replace(/^OUTCOME_/, '')
-    .replace(/_/g, ' ')
-    .toLowerCase()
-    .replace(/\b\w/g, (c) => c.toUpperCase())
-}
+import { translateEnum, type Locale } from '@/lib/yoai/translations'
 
 // Platform logo: küçük inline SVG marker — hem Meta hem Google için ayrı.
 function PlatformLogo({ platform }: { platform: string }) {
@@ -91,101 +47,20 @@ interface Props {
   actionFooter?: ReactNode
 }
 
-const CTA_LABELS: Record<string, string> = {
-  SEND_MESSAGE: 'Mesaj Gönder',
-  LEARN_MORE: 'Daha Fazla Bilgi Al',
-  SHOP_NOW: 'Hemen Alışveriş Yap',
-  SIGN_UP: 'Kayıt Ol',
-  SUBSCRIBE: 'Abone Ol',
-  BOOK_TRAVEL: 'Seyahat Rezervasyonu Yap',
-  WATCH_MORE: 'Daha Fazla İzle',
-  APPLY_NOW: 'Hemen Başvur',
-  CONTACT_US: 'Bize Ulaşın',
-  GET_QUOTE: 'Teklif Al',
-  DOWNLOAD: 'İndir',
-  INSTALL_MOBILE_APP: 'Uygulamayı İndir',
-  OPEN_LINK: 'Bağlantıyı Aç',
-  ORDER_NOW: 'Hemen Sipariş Ver',
-  GET_OFFER: 'Teklifi Gör',
-  LISTEN_NOW: 'Hemen Dinle',
-  GET_DIRECTIONS: 'Yol Tarifi Al',
-  CALL_NOW: 'Hemen Ara',
-  SAVE: 'Kaydet',
-  BUY_NOW: 'Hemen Satın Al',
-  FIND_A_GROUP: 'Grup Bul',
-  BUY_TICKETS: 'Bilet Al',
-  SEE_MENU: 'Menüyü Gör',
-  PLAY_GAME: 'Oyunu Oyna',
-  GET_SHOWTIMES: 'Seans Saatlerini Gör',
-  REQUEST_TIME: 'Randevu Al',
-  SEE_ALL_OFFERS: 'Tüm Teklifleri Gör',
-  FOLLOW_PAGE: 'Sayfayı Takip Et',
-}
-
-function humanizeCta(cta: string | undefined | null): string {
-  if (!cta) return 'Daha Fazla'
-  return CTA_LABELS[cta.toUpperCase()] ?? cta.replace(/_/g, ' ')
-}
-
-const OPTIMIZATION_GOAL_LABEL: Record<string, string> = {
-  LINK_CLICKS: 'Bağlantı Tıklamaları',
-  LANDING_PAGE_VIEWS: 'Landing Page Görüntüleme',
-  REACH: 'Erişim',
-  IMPRESSIONS: 'Gösterim',
-  POST_ENGAGEMENT: 'Gönderi Etkileşimi',
-  PAGE_LIKES: 'Sayfa Beğenileri',
-  LEAD_GENERATION: 'Potansiyel Müşteri (Form)',
-  OFFSITE_CONVERSIONS: 'Web Sitesi Dönüşümleri',
-  VALUE: 'Dönüşüm Değeri',
-  THRUPLAY: 'Video İzleme (ThruPlay)',
-  REPLIES: 'Mesaj Yanıtı',
-  CONVERSATIONS: 'Sohbet Başlatma',
-  QUALITY_CALL: 'Kaliteli Arama',
-  MAXIMIZE_CONVERSIONS: 'Dönüşüm Maksimizasyonu',
-  MAXIMIZE_CLICKS: 'Tıklama Maksimizasyonu',
-  TARGET_SPEND: 'Hedef Harcama',
-  TARGET_CPA: 'Hedef CPA',
-  TARGET_ROAS: 'Hedef ROAS',
-}
-
-const DESTINATION_LABEL: Record<string, string> = {
-  WEBSITE: 'Web Sitesi',
-  APP: 'Uygulama',
-  ON_AD: 'Reklam İçi Form',
-  ON_PAGE: 'Sayfa / Gönderi',
-  MESSENGER: 'Messenger',
-  INSTAGRAM_DIRECT: 'Instagram Direct',
-  WHATSAPP: 'WhatsApp',
-  CALL: 'Telefon Araması',
-}
-
-const BIDDING_STRATEGY_LABEL: Record<string, string> = {
-  MAXIMIZE_CONVERSIONS: 'Dönüşümleri Artır',
-  MAXIMIZE_CLICKS: 'Tıklamaları Artır',
-  TARGET_CPA: 'Hedef CPA',
-  TARGET_ROAS: 'Hedef ROAS',
-  TARGET_IMPRESSION_SHARE: 'Hedef Gösterim Payı',
-  MANUAL_CPC: 'Manuel CPC',
-  MANUAL_CPM: 'Manuel CPM',
-  ENHANCED_CPC: 'Gelişmiş CPC',
-  MAXIMIZE_CONVERSION_VALUE: 'Dönüşüm Değerini Artır',
-}
-
-function fmtOptGoal(v?: string): string {
-  if (!v) return '—'
-  return OPTIMIZATION_GOAL_LABEL[v] || v.replace(/_/g, ' ')
-}
-function fmtDest(v?: string): string {
-  if (!v) return '—'
-  return DESTINATION_LABEL[v] || v.replace(/_/g, ' ')
-}
-function fmtBidding(v?: string): string {
-  if (!v) return '—'
-  return BIDDING_STRATEGY_LABEL[v] || v.replace(/_/g, ' ')
-}
-
 export default function AdPreviewCard({ proposal, selected, onSelect, diagnostic, actionFooter }: Props) {
+  const t = useTranslations('dashboard.yoai.adPreview')
+  const locale = useLocale() as Locale
   const isGoogle = proposal.platform === 'Google'
+  const plat: 'meta' | 'google' = isGoogle ? 'google' : 'meta'
+
+  // Meta/Google enum'ları translateEnum üzerinden — ham enum UI'da görünmez.
+  const humanizeCampaignType = (value: string | undefined | null): string =>
+    value ? translateEnum(value, locale, plat) : '—'
+  const humanizeCta = (cta: string | undefined | null): string =>
+    cta ? translateEnum(cta, locale, plat) : t('moreShort')
+  const fmtOptGoal = (v?: string): string => (v ? translateEnum(v, locale, plat) : '—')
+  const fmtDest = (v?: string): string => (v ? translateEnum(v, locale, plat) : '—')
+  const fmtBidding = (v?: string): string => (v ? translateEnum(v, locale, plat) : '—')
 
   return (
     <div
@@ -207,42 +82,42 @@ export default function AdPreviewCard({ proposal, selected, onSelect, diagnostic
             <PlatformLogo platform={proposal.platform} />
             {proposal.isNewObjective && (
               <span data-testid="new-suggestion-badge" className="text-[9px] font-medium px-1.5 py-0.5 rounded bg-emerald-500/20 text-emerald-300">
-                Yeni Öneri
+                {t('newSuggestion')}
               </span>
             )}
           </div>
-          <span className="text-[11px] text-slate-300">%{proposal.confidence} güven</span>
+          <span className="text-[11px] text-slate-300">{t('confidence', { value: proposal.confidence })}</span>
         </div>
 
         {/* Campaign structure */}
         <div className="px-4 pb-3 space-y-0.5 text-[11px]">
           <div className="flex justify-between" data-testid="campaign-type-row">
-            <span className="text-slate-400">Kampanya Türü</span>
+            <span className="text-slate-400">{t('campaignType')}</span>
             <span className="text-white font-medium truncate max-w-[60%] text-right">
               {proposal.objectiveLabel || humanizeCampaignType(proposal.campaignObjective)}
             </span>
           </div>
           <div className="flex justify-between">
-            <span className="text-slate-400">Kampanya</span>
+            <span className="text-slate-400">{t('campaign')}</span>
             <span className="text-white font-medium truncate max-w-[60%] text-right">{proposal.campaignName}</span>
           </div>
           <div className="flex justify-between">
-            <span className="text-slate-400">{isGoogle ? 'Reklam Grubu' : 'Reklam Seti'}</span>
+            <span className="text-slate-400">{isGoogle ? t('adGroup') : t('adSet')}</span>
             <span className="text-white font-medium truncate max-w-[60%] text-right">{proposal.adsetName}</span>
           </div>
           <div className="flex justify-between">
-            <span className="text-slate-400">Bütçe</span>
-            <span className="text-white font-medium">₺{proposal.dailyBudget}/gün</span>
+            <span className="text-slate-400">{t('budget')}</span>
+            <span className="text-white font-medium">{t('budgetPerDay', { amount: proposal.dailyBudget })}</span>
           </div>
           {proposal.targetingDescription && (
             <div className="flex justify-between">
-              <span className="text-slate-400">Hedefleme</span>
+              <span className="text-slate-400">{t('targeting')}</span>
               <span className="text-slate-200 truncate max-w-[60%] text-right">{proposal.targetingDescription}</span>
             </div>
           )}
           {proposal.optimizationGoal && (
             <div className="flex justify-between">
-              <span className="text-slate-400">Opt. Hedef</span>
+              <span className="text-slate-400">{t('optGoal')}</span>
               <span className="text-slate-200 truncate max-w-[60%] text-right" title={proposal.optimizationGoal}>
                 {fmtOptGoal(proposal.optimizationGoal)}
               </span>
@@ -250,13 +125,13 @@ export default function AdPreviewCard({ proposal, selected, onSelect, diagnostic
           )}
           {proposal.biddingStrategy && (
             <div className="flex justify-between">
-              <span className="text-slate-400">Teklif</span>
+              <span className="text-slate-400">{t('bidding')}</span>
               <span className="text-slate-200">{fmtBidding(proposal.biddingStrategy)}</span>
             </div>
           )}
           {proposal.destinationType && (
             <div className="flex justify-between">
-              <span className="text-slate-400">Dönüşüm</span>
+              <span className="text-slate-400">{t('conversion')}</span>
               <span className="text-slate-200 truncate max-w-[60%] text-right" title={proposal.destinationType}>
                 {fmtDest(proposal.destinationType)}
               </span>
@@ -270,7 +145,7 @@ export default function AdPreviewCard({ proposal, selected, onSelect, diagnostic
             <div className="bg-[#151f33] border border-slate-700/60 rounded-xl p-3 space-y-2.5">
               <div className="flex items-center gap-1.5">
                 <span className="text-[9px] font-bold text-slate-200 bg-slate-700/60 px-1.5 py-0.5 rounded">
-                  Reklam
+                  {t('adLabel')}
                 </span>
                 {proposal.finalUrl && (
                   <span className="text-[10px] text-emerald-400 flex items-center gap-0.5">
@@ -282,7 +157,7 @@ export default function AdPreviewCard({ proposal, selected, onSelect, diagnostic
 
               {proposal.headlines && proposal.headlines.length > 0 ? (
                 <div>
-                  <p className="text-[9px] text-slate-400 font-medium uppercase tracking-wider mb-1">Önerilen Başlıklar</p>
+                  <p className="text-[9px] text-slate-400 font-medium uppercase tracking-wider mb-1">{t('suggestedHeadlines')}</p>
                   <div className="flex flex-wrap gap-1">
                     {proposal.headlines.slice(0, 5).map((h, i) => (
                       <span key={i} className="text-[10px] bg-slate-700/50 text-blue-200 px-2 py-0.5 rounded border border-slate-600/40 leading-snug">
@@ -300,7 +175,7 @@ export default function AdPreviewCard({ proposal, selected, onSelect, diagnostic
 
               {proposal.descriptions && proposal.descriptions.length > 0 ? (
                 <div>
-                  <p className="text-[9px] text-slate-400 font-medium uppercase tracking-wider mb-1">Açıklamalar</p>
+                  <p className="text-[9px] text-slate-400 font-medium uppercase tracking-wider mb-1">{t('descriptions')}</p>
                   <div className="space-y-0.5">
                     {proposal.descriptions.slice(0, 2).map((d, i) => (
                       <p key={i} className="text-[11px] text-slate-300 leading-relaxed">{d}</p>
@@ -313,7 +188,7 @@ export default function AdPreviewCard({ proposal, selected, onSelect, diagnostic
 
               {proposal.keywords && proposal.keywords.length > 0 && (
                 <div className="pt-2 border-t border-slate-700/50">
-                  <p className="text-[9px] text-slate-400 font-medium uppercase tracking-wider mb-1">Anahtar Kelimeler</p>
+                  <p className="text-[9px] text-slate-400 font-medium uppercase tracking-wider mb-1">{t('keywords')}</p>
                   <div className="flex flex-wrap gap-1">
                     {proposal.keywords.slice(0, 6).map((k, i) => (
                       <span key={i} className="text-[9px] bg-emerald-950/40 text-emerald-300 px-1.5 py-0.5 rounded border border-emerald-500/20">
@@ -334,8 +209,8 @@ export default function AdPreviewCard({ proposal, selected, onSelect, diagnostic
                   <span className="text-[8px] font-bold text-indigo-300">YO</span>
                 </div>
                 <div>
-                  <p className="text-[10px] font-semibold text-white">İşletmeniz</p>
-                  <p className="text-[8px] text-slate-400">Sponsorlu</p>
+                  <p className="text-[10px] font-semibold text-white">{t('yourBusiness')}</p>
+                  <p className="text-[8px] text-slate-400">{t('sponsored')}</p>
                 </div>
               </div>
               <div className="px-3 py-2">
@@ -360,7 +235,7 @@ export default function AdPreviewCard({ proposal, selected, onSelect, diagnostic
         {/* Competitor insight */}
         {proposal.competitorInsight && (
           <div className="mx-4 mb-3 bg-slate-800/50 border border-slate-700/40 rounded-lg px-3 py-2">
-            <p className="text-[9px] text-slate-400 font-medium mb-0.5">Rakip Karşılaştırma</p>
+            <p className="text-[9px] text-slate-400 font-medium mb-0.5">{t('competitorComparison')}</p>
             <p className="text-[10px] text-slate-200 line-clamp-2">{proposal.competitorInsight}</p>
           </div>
         )}
@@ -368,7 +243,7 @@ export default function AdPreviewCard({ proposal, selected, onSelect, diagnostic
         {/* AI reasoning */}
         {proposal.reasoning && (
           <div className="mx-4 mb-3">
-            <p className="text-[9px] text-indigo-300 uppercase tracking-wider font-medium mb-1">AI Gerekçesi:</p>
+            <p className="text-[9px] text-indigo-300 uppercase tracking-wider font-medium mb-1">{t('aiReasoning')}</p>
             <p className="text-[10px] text-slate-300 leading-relaxed line-clamp-3">{proposal.reasoning}</p>
           </div>
         )}
@@ -390,7 +265,7 @@ export default function AdPreviewCard({ proposal, selected, onSelect, diagnostic
             <p className={`text-[9px] font-semibold uppercase tracking-wider mb-0.5 ${
               diagnostic.isHealthy ? 'text-emerald-400' : 'text-slate-400'
             }`}>
-              AI Kontrol Notu
+              {t('aiCheckNote')}
             </p>
             <p className={`text-[10px] font-medium ${diagnostic.isHealthy ? 'text-emerald-200' : 'text-slate-200'}`}>
               {diagnostic.label}
@@ -399,7 +274,7 @@ export default function AdPreviewCard({ proposal, selected, onSelect, diagnostic
               {diagnostic.summary}
             </p>
             {diagnostic.action && (
-              <p className="text-[10px] mt-1 text-slate-300 line-clamp-1">→ Önerilen: {diagnostic.action}</p>
+              <p className="text-[10px] mt-1 text-slate-300 line-clamp-1">{t('recommended', { action: diagnostic.action })}</p>
             )}
           </div>
         )}
@@ -408,7 +283,7 @@ export default function AdPreviewCard({ proposal, selected, onSelect, diagnostic
         {proposal.policyStatus === 'review_required' && proposal.policySummary && (
           <div className="mx-4 mb-3 rounded-lg px-3 py-2 border bg-primary/5 border-primary/20">
             <p className="text-[9px] font-semibold uppercase tracking-wider mb-0.5 text-primary">
-              Platform Kuralı Uyarısı
+              {t('policyWarning')}
             </p>
             <p className="text-[10px] leading-relaxed line-clamp-3 text-primary/80">
               {proposal.policySummary}

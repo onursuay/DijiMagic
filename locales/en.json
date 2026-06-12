@@ -2338,6 +2338,446 @@
         "searchResult": "Google Search Result",
         "headlinePreview": "Headline preview",
         "descriptionPreview": "Description preview"
+      },
+      "campaignEdit": {
+        "header": {
+          "title": "Edit Campaign",
+          "subtitle": "You can edit your campaign here."
+        },
+        "tree": {
+          "searchPlaceholder": "Search...",
+          "noResults": "No results found"
+        },
+        "fallback": {
+          "campaign": "Campaign",
+          "adGroup": "Ad Group",
+          "adNumber": "Ad #{id}"
+        },
+        "biddingCurrentSuffix": "{label} (current)",
+        "viewLabels": {
+          "genel": "General",
+          "anahtarKelimeler": "Keywords",
+          "negatifAk": "Negative Keywords",
+          "hedefKitleler": "Audiences",
+          "yer": "Location",
+          "ogeler": "Assets",
+          "aramaTerimleri": "Search Terms",
+          "acilisSayfalari": "Landing Pages",
+          "gosterimYeriZamani": "Placements & Schedule"
+        },
+        "daySchedule": {
+          "monday": "Monday",
+          "tuesday": "Tuesday",
+          "wednesday": "Wednesday",
+          "thursday": "Thursday",
+          "friday": "Friday",
+          "saturday": "Saturday",
+          "sunday": "Sunday"
+        },
+        "pinOptions": {
+          "noPin": "No pin",
+          "position1": "Position 1",
+          "position2": "Position 2",
+          "position3": "Position 3"
+        },
+        "fields": {
+          "campaignName": {
+            "title": "Campaign Name",
+            "subtitle": "Give your campaign a name.",
+            "placeholder": "Campaign name..."
+          },
+          "budget": {
+            "title": "Budget",
+            "subtitle": "Set a daily budget for your campaign.",
+            "dailyLabel": "Daily Budget",
+            "placeholder": "e.g. 1000.00"
+          },
+          "bidding": {
+            "title": "Bidding Strategy",
+            "subtitle": "Choose a bidding strategy for your campaign.",
+            "targetCpaLabel": "Target CPA",
+            "targetCpaPlaceholder": "e.g. 25.00",
+            "targetRoasLabel": "Target ROAS",
+            "targetRoasPlaceholder": "e.g. 4.0"
+          },
+          "networks": {
+            "title": "Network Settings",
+            "subtitle": "Choose the networks where your ads will appear.",
+            "searchPartnersLabel": "Search Network Partners",
+            "searchPartnersDesc": "Show on partner sites in search results",
+            "displayNetworkLabel": "Display Network",
+            "displayNetworkDesc": "Show on websites, apps and videos"
+          },
+          "adGroupName": {
+            "title": "Ad Group Name",
+            "subtitle": "Give your ad group a name.",
+            "placeholder": "Ad group name..."
+          },
+          "cpcBid": {
+            "title": "Max. CPC Bid",
+            "subtitle": "Set the maximum cost-per-click for this ad group.",
+            "placeholder": "e.g. 2.50"
+          }
+        },
+        "negKeywords": {
+          "campaignSubtitle": "Add negative keywords at the campaign level. ({count})",
+          "adGroupSubtitle": "{count} negative keywords at the ad group level.",
+          "addPlaceholder": "Add a negative keyword...",
+          "adGroupAddPlaceholder": "Negative keyword...",
+          "addTitle": "Add Negative Keyword"
+        },
+        "keywords": {
+          "positiveCount": "{count} positive keywords.",
+          "qualityScore": "QS:{score}/10",
+          "addTitle": "Add Keyword",
+          "addPlaceholder": "Keyword..."
+        },
+        "locations": {
+          "title": "Locations",
+          "subtitle": "Choose the regions where your ads will appear.",
+          "targeted": "Targeted",
+          "excluded": "Excluded",
+          "searchPlaceholder": "Search location (e.g. Istanbul, Ankara...)",
+          "targetButton": "Target",
+          "excludeButton": "Exclude"
+        },
+        "locationsTable": {
+          "empty": "No location targeting data found.",
+          "colLocation": "Location",
+          "colStatus": "Status",
+          "colBidModifier": "Bid Modifier",
+          "excludedBadge": "Excluded",
+          "targetBadge": "Target"
+        },
+        "gyzSubTabs": {
+          "devices": "Devices",
+          "schedule": "Schedule",
+          "placements": "Placements",
+          "locations": "Locations"
+        },
+        "schedule": {
+          "title": "Ad Schedule",
+          "subtitle": "Set the hours when your ads will run.",
+          "presetsLabel": "Presets:",
+          "presetBusiness": "Business Hours (Mon-Fri 09:00-18:00)",
+          "presetClear": "24/7 (Clear)",
+          "addNewTitle": "Add New Schedule",
+          "dayLabel": "Day",
+          "startLabel": "Start",
+          "endLabel": "End",
+          "saveButton": "Save Schedule"
+        },
+        "adStatus": {
+          "paused": "Paused"
+        },
+        "adReadonly": {
+          "adNameLabel": "Ad Name",
+          "finalUrlLabel": "Final URL",
+          "adGroupLabel": "Ad Group",
+          "video": "Video ad content can be edited from the Google Ads web interface.",
+          "demandGen": "Demand Gen ad content can be edited from the Google Ads web interface.",
+          "performanceMax": "Performance Max asset groups can be edited from the Google Ads web interface.",
+          "shopping": "Shopping ad content is managed through Google Merchant Center.",
+          "default": "This ad type cannot be edited from this interface."
+        },
+        "rsa": {
+          "notEditable": "This ad type ({type}) cannot be edited. Only Responsive Search Ads (RSA) can be edited.",
+          "adNameTitle": "Ad Name",
+          "adNameSubtitle": "The ad name cannot be changed via the Google Ads API.",
+          "headlinesTitle": "Headlines",
+          "headlinesSubtitle": "At least 3, at most 15 headlines. Each up to 30 characters. ({count}/15)",
+          "headlinePlaceholder": "Headline text (max 30)",
+          "addHeadline": "Add Headline",
+          "descriptionsTitle": "Descriptions",
+          "descriptionsSubtitle": "At least 2, at most 4 descriptions. Each up to 90 characters. ({count}/4)",
+          "descriptionPlaceholder": "Description text (max 90)",
+          "addDescription": "Add Description",
+          "urlPathsTitle": "URL and Paths",
+          "urlPathsSubtitle": "Set the destination URL and displayed paths for your ad.",
+          "finalUrlLabel": "Final URL",
+          "path1Label": "Path 1 (max 15)",
+          "path1Placeholder": "example",
+          "path2Label": "Path 2 (max 15)",
+          "path2Placeholder": "page",
+          "previewTitle": "Preview",
+          "previewSubtitle": "How your ad will look in Google search results.",
+          "headlinePreview": "Headline preview",
+          "descriptionPreview": "Description preview"
+        },
+        "unsavedDialog": {
+          "title": "Unsaved Changes",
+          "message": "You have unsaved changes. If you continue, these changes will be lost.",
+          "goBack": "Go Back",
+          "discard": "Discard Changes"
+        },
+        "metrics": {
+          "impressions": "Impressions",
+          "clicks": "Clicks",
+          "ctr": "CTR",
+          "avgCpc": "Avg. CPC",
+          "cost": "Cost",
+          "conversions": "Conversions"
+        },
+        "audience": {
+          "editSegments": "Edit Audience Segments",
+          "editDemographics": "Edit Demographics",
+          "loading": "Loading audience data...",
+          "empty": "No audience data found.",
+          "colAudience": "Audience",
+          "colType": "Type"
+        },
+        "devices": {
+          "loading": "Loading device data...",
+          "empty": "No device data found.",
+          "colDevice": "Device"
+        },
+        "placements": {
+          "loading": "Loading placements...",
+          "empty": "No placement data found.",
+          "title": "Placements",
+          "colPlacement": "Placement",
+          "colType": "Type"
+        },
+        "viewErrors": {
+          "genel": "General information could not be retrieved right now.",
+          "anahtarKelimeler": "Keyword data could not be retrieved right now.",
+          "negatifAk": "Negative keyword data could not be retrieved right now.",
+          "hedefKitleler": "Audience data could not be retrieved right now.",
+          "yer": "Location data could not be retrieved right now.",
+          "ogeler": "Asset data could not be retrieved right now.",
+          "aramaTerimleri": "Search terms data could not be retrieved right now.",
+          "acilisSayfalari": "Landing page data could not be retrieved right now.",
+          "gosterimYeriZamani": "Placements and schedule data could not be retrieved right now."
+        },
+        "toasts": {
+          "loadError": "Failed to load data",
+          "addError": "Could not be added",
+          "deleteError": "Could not be deleted",
+          "excludeError": "Could not be excluded",
+          "keywordAddError": "Failed to add keyword",
+          "negKeywordAddError": "Failed to add negative keyword",
+          "searchTermAddedAsNegative": "\"{term}\" added as a negative keyword",
+          "searchTermsAddedAsKeyword": "{count} search terms added as keywords",
+          "searchTermsAddedAsNegative": "{count} search terms added as negative keywords",
+          "assetCreateError": "Failed to create asset",
+          "assetCreated": "Asset created successfully",
+          "assetRemoveError": "Failed to remove asset",
+          "assetRemoved": "Asset removed from the campaign",
+          "assetsRemoveError": "Failed to remove assets",
+          "assetStatusError": "Failed to update asset status",
+          "campaignUpdateError": "Failed to update campaign",
+          "campaignUpdated": "Campaign updated",
+          "adGroupUpdateError": "Failed to update ad group",
+          "adGroupUpdated": "Ad group updated",
+          "minHeadlines": "At least 3 headlines required",
+          "minDescriptions": "At least 2 descriptions required",
+          "adUpdateError": "Failed to update ad",
+          "adUpdated": "Ad updated",
+          "keywordAdded": "Keyword added",
+          "keywordDeleted": "Keyword deleted",
+          "negKeywordAdded": "Negative keyword added",
+          "negKeywordDeleted": "Negative keyword deleted",
+          "locationAddError": "Failed to add location",
+          "locationTargeted": "{name} targeted",
+          "locationExcluded": "{name} excluded",
+          "locationRemoveError": "Failed to remove location",
+          "locationRemoved": "Location removed",
+          "scheduleSaveError": "Failed to save schedule",
+          "scheduleUpdated": "Ad schedule updated"
+        },
+        "edu": {
+          "cardAria": "Card {index}",
+          "genel": {
+            "0": {
+              "title": "Campaign name and internal management",
+              "body": "The campaign name is not shown to users; it is purely for internal management. Therefore the naming structure should be readable using date, channel, goal and variant logic. Correct naming directly improves reporting, filtering and in-team operational speed."
+            },
+            "1": {
+              "title": "How the daily budget works",
+              "body": "Google Ads handles the daily budget as an average daily spend rather than a hard fixed cap. On some days the system may spend more to capture high-traffic opportunities. Budget evaluation should be based on the period average, not a single day."
+            },
+            "2": {
+              "title": "Choosing a bidding strategy",
+              "body": "The bidding strategy must align with the campaign goal. Click-focused strategies suit traffic-oriented setups, while conversion-focused strategies make more sense for sales or lead-oriented ones. The wrong bidding strategy can make even a good ad inefficient."
+            },
+            "3": {
+              "title": "Impact of Search Network Partners",
+              "body": "The Search Network Partners option can let ads appear not only on Google Search but also on search sites partnered with Google. This setting can increase reach, but traffic quality may vary by campaign. It should not be left on blindly without separate performance checks."
+            },
+            "4": {
+              "title": "Display Network scope",
+              "body": "When the Display Network is enabled, ads can appear across a much wider inventory, including websites, apps and video content. While this expansion increases visibility, it may not bring traffic as warm as search intent. In Search campaigns this setting should be evaluated carefully against the goal."
+            }
+          },
+          "negatif_anahtar_kelimeler": {
+            "0": {
+              "title": "The purpose of negative keywords",
+              "body": "Negative keywords are used to exclude searches where you do not want your ads to appear. This reduces irrelevant traffic, protects the budget and raises conversion quality. It is a critical control layer, especially in campaigns using broad match."
+            },
+            "1": {
+              "title": "It reduces wasted spend",
+              "body": "Users with the wrong search intent rarely convert even when they click. Negative lists filter out such queries so spend is directed toward more targeted searches. The negative structure is therefore a budget defense mechanism rather than a performance booster."
+            },
+            "2": {
+              "title": "Mind the match logic",
+              "body": "Negative keywords do not work with the same logic as positive ones, so broad, phrase and exact match interpretations should not be assumed identical. Overly aggressive negatives can cut valuable traffic too. Before expanding the list, verify which searches genuinely need to be excluded."
+            },
+            "3": {
+              "title": "Campaign or ad group level",
+              "body": "When negatives are added at the campaign level, they affect all ad groups. When finer control is needed, separating them at the ad group level is healthier. For shared and recurring exclusions, a centralized list approach should be preferred."
+            },
+            "4": {
+              "title": "Works together with the search terms report",
+              "body": "The negative structure is not set up once and forgotten. Search terms should be reviewed regularly and new irrelevant queries added to the negative list. The best negatives come from real user queries, not guesses."
+            }
+          },
+          "yer": {
+            "0": {
+              "title": "Location targeting basics",
+              "body": "Location targeting determines in which geographic regions ads are shown. You can target by country, city, district, specific areas or radius. For businesses providing local services, this area directly affects cost efficiency."
+            },
+            "1": {
+              "title": "Presence vs. interest distinction",
+              "body": "In location settings, users being physically in the target region is not the same as showing interest in it. If this distinction is set up incorrectly, ads may also reach users outside the target region. This setting should be chosen carefully, especially in local service campaigns."
+            },
+            "2": {
+              "title": "Excluded regions",
+              "body": "Choosing only the regions to target is not enough; locations where impressions should not be served must also be excluded when needed. Regions you do not serve, low-quality areas or cities that scatter the budget can be added to the exclusion list. This control matters especially in broad geographic setups."
+            },
+            "3": {
+              "title": "Using radius targeting",
+              "body": "Radius targeting is highly functional for stores, clinics, service areas or businesses providing physical services. The user's distance to the business can significantly affect conversion likelihood. However, if the radius is set too wide, the local advantage is lost."
+            },
+            "4": {
+              "title": "Location performance should be read",
+              "body": "Location reports show which cities or regions perform more efficiently. Low-performing regions can be reduced, while bids or budget can be increased in strong ones. Location management is not just targeting but also an optimization area."
+            }
+          },
+          "ogeler": {
+            "0": {
+              "title": "Why assets matter",
+              "body": "Assets don't just make the ad look larger; they also provide extra information to the user. Assets such as sitelinks, callouts, phone, address or price can increase the ad's click potential. A strong asset structure uses the ad space more efficiently."
+            },
+            "1": {
+              "title": "Using sitelinks",
+              "body": "Sitelink assets can direct users straight to relevant subpages. This way a single ad serves multiple intents and the user reaches the right page faster. They are especially valuable for service, category and promotion pages."
+            },
+            "2": {
+              "title": "Callouts and structured snippets",
+              "body": "Callout-type assets are used to quickly highlight brand or service advantages. These fields are ideal for emphasizing differentiators such as price, experience, speed, scope, support or expertise. They should provide complementary information rather than repeat the ad copy."
+            },
+            "3": {
+              "title": "Call and location assets",
+              "body": "Phone- and address-focused assets perform strongly, especially in local and mobile-oriented campaigns. Letting the user call directly or see the business location shortens the decision time. However, these assets must align with the business's actual operations."
+            },
+            "4": {
+              "title": "Asset performance should be tracked",
+              "body": "Not all assets contribute equally. The visibility, engagement and conversion contribution of the assets in use should be reviewed regularly. Unnecessary or low-contribution assets should be cleaned up and strong ones expanded."
+            }
+          },
+          "arama_terimleri": {
+            "0": {
+              "title": "Real user language appears here",
+              "body": "The search terms report shows the real user queries that triggered your ad. The keyword plan is theoretical, while this report shows the real intent in the field. That is why it is one of the most valuable sources for optimization."
+            },
+            "1": {
+              "title": "New keyword opportunities",
+              "body": "High-intent, converting queries can be spotted here and added to the keyword set. This moves the campaign into a more controlled and deliberate structure. Watching successful queries is not enough; they should be turned into structure."
+            },
+            "2": {
+              "title": "A source for negatives",
+              "body": "Irrelevant, weak or unwanted queries should be spotted in this report and converted into negative keywords. This improves traffic quality and reduces unnecessary cost. The search terms report and negative management should be considered together."
+            },
+            "3": {
+              "title": "Match type analysis",
+              "body": "Examining which queries arrive through which keyword logic reveals how controlled the match strategy is. Overly scattered queries can indicate that broad match remains aggressive. In that case the keyword architecture should be narrowed again."
+            },
+            "4": {
+              "title": "Ad copy and landing page insight",
+              "body": "The language users employ can also be used in ad headlines and landing pages. The best terms provide critical data not only for the keyword pool but also for the messaging strategy. This report is a gold mine for content optimization too."
+            }
+          },
+          "hedef_kitleler": {
+            "0": {
+              "title": "Audience logic",
+              "body": "Audience segments group users by interest, intent, behavior and demographic signals. This lets you manage the ad more intelligently based not only on what is searched but also on who is searching. It is especially important for separating higher-quality traffic."
+            },
+            "1": {
+              "title": "Observation vs. targeting",
+              "body": "Observation mode does not restrict the audience; it only lets you monitor performance. Targeting mode limits the ad to the selected segments only. If these two modes are confused, the campaign either narrows unnecessarily or stays broad without producing insight."
+            },
+            "2": {
+              "title": "The power of remarketing",
+              "body": "Website visitors, cart abandoners or users who took certain actions can be re-targeted with remarketing lists. This structure usually carries higher conversion potential than cold traffic. However, list quality and membership duration should be chosen strategically."
+            },
+            "3": {
+              "title": "Segment data is used for optimization",
+              "body": "Audience reports should be read to understand which segments produce business results, not which segments receive clicks. A high CTR does not always mean a good audience. Conversions, cost and quality should be evaluated together."
+            },
+            "4": {
+              "title": "Demographics alone are not enough",
+              "body": "Demographic signals such as age, gender or household income can be useful, but on their own they are often insufficient to build a strategy. They gain meaning when read together with behavior and intent signals. Blind demographic narrowing can cut volume unnecessarily."
+            }
+          },
+          "acilis_sayfalari": {
+            "0": {
+              "title": "The landing page is a continuation of the ad",
+              "body": "After the user clicks the ad, the experience continues on the landing page. Therefore there should be no disconnect between the ad message and the page content. A strong ad can be wasted because of a weak page."
+            },
+            "1": {
+              "title": "Relevance affects quality",
+              "body": "If the landing page does not align with the ad copy and search intent, quality score and conversion rate suffer. If users see one promise and encounter different content, the bounce rate rises. Message match is the key factor here."
+            },
+            "2": {
+              "title": "Speed and mobile experience are critical",
+              "body": "Pages that load slowly or work poorly on mobile directly undermine ad performance. Users do not want to wait after clicking; delay lowers conversion probability. A landing page should not be considered healthy until a mobile-first test is done."
+            },
+            "3": {
+              "title": "One page, one purpose",
+              "body": "The landing page should be designed to move the user to the next step, not to scatter their attention. Too many options, weak hierarchy or cluttered content disrupt the decision process. Whatever the ad's goal is, that should also be the page's main action."
+            },
+            "4": {
+              "title": "Performance signals should be monitored",
+              "body": "On-page behaviors such as bounce, scroll, form completion, call click or WhatsApp click matter for interpreting ad quality. The problem is not always in the traffic; sometimes the page itself is the issue. Ad optimization and page optimization should proceed together."
+            }
+          },
+          "gosterilme_yeri": {
+            "0": {
+              "title": "Scheduling control",
+              "body": "Ad scheduling helps control on which days and hours ads are shown. Not every hour produces the same quality of traffic. This area becomes critical especially in setups tied to sales, phone or operating hours."
+            },
+            "1": {
+              "title": "Serving according to working hours",
+              "body": "A user's likelihood of converting is closely tied to the hours when the business can respond. In sectors requiring calls, WhatsApp or quick replies, off-hours traffic is often weak. Ad scheduling should align with the workflow."
+            },
+            "2": {
+              "title": "Hourly efficiency differences",
+              "body": "Some hours bring high volume while others can produce a higher conversion rate. This difference should be read from reports and the bidding or serving plan adjusted accordingly. Scheduling is not just an on-off setting but an efficiency filter."
+            },
+            "3": {
+              "title": "Device and time should be read together",
+              "body": "The same time slot can perform differently on mobile versus desktop. Therefore scheduling data is more meaningful when interpreted together with device performance. A one-dimensional reading is often misleading."
+            },
+            "4": {
+              "title": "Don't make hard calls on thin data",
+              "body": "Ad-time decisions should not be made on very short data ranges. A few days of data can be misleading, especially in low-volume campaigns. For a healthier decision, act on a meaningful period of data."
+            }
+          },
+          "anahtar_kelimeler": {
+            "0": {
+              "title": "The role of keywords",
+              "body": "Keywords determine on which searches your ad appears. This directly shapes the campaign's traffic character. Broad match provides the widest reach but can trigger on irrelevant searches; phrase and exact match offer more controlled serving."
+            },
+            "1": {
+              "title": "Match types and behavior",
+              "body": "Phrase match preserves the exact order for more targeted serving. Exact match triggers only on the exact search or very close variants. Keywords with a high quality score appear in higher positions at a lower cost. The match strategy should align with the campaign goal."
+            },
+            "2": {
+              "title": "Performance-focused management",
+              "body": "Keyword management is not just adding and removing. Low-performing keywords can be narrowed and bids increased on strong ones. When read together with the search terms report, the keyword set can be continuously optimized."
+            }
+          }
+        }
       }
     },
     "tiktok": {
@@ -3053,6 +3493,281 @@
           "edited": "Edited",
           "regenerated": "Regenerated",
           "manual": "Manual"
+        }
+      },
+      "businessProfile": {
+        "title": "Business Profile",
+        "subtitle": "YoAi uses this information as a reference for ad suggestions, strategy and audience analyses.",
+        "saveProfile": "Save Profile",
+        "steps": {
+          "company": "Company",
+          "sector": "Sector",
+          "goal": "Goal",
+          "sources": "Sources",
+          "competitors": "Competitors",
+          "detail": "Detail"
+        },
+        "fields": {
+          "companyName": "Company Name *",
+          "businessDescription": "Business Description * (What do you do?)",
+          "productsOrServices": "Products / Services You Offer (comma separated)",
+          "sectorMain": "Main Sector *",
+          "sectorSub": "Sub-Sector / Activity Type",
+          "specialization": "Specialization / Special Service (optional)",
+          "mainConversionGoal": "Main Conversion Goal *",
+          "targetLocations": "Target Locations * (comma separated)",
+          "targetAudience": "Target Audience (who buys?)",
+          "keywords": "Keywords (comma separated)",
+          "mostProfitableServices": "Most Profitable Services (comma separated)",
+          "monthlyAdBudget": "Monthly Ad Budget",
+          "brandTone": "Brand Voice / Tone",
+          "forbiddenClaims": "Forbidden Claims (comma separated)",
+          "complianceNotes": "Regulatory / Compliance Notes",
+          "extraNotes": "Additional Notes"
+        },
+        "hints": {
+          "businessDescription": "YoAi will derive your ad language and tone from this description."
+        },
+        "placeholders": {
+          "companyName": "e.g. Boston Bistro",
+          "businessDescription": "e.g. A restaurant in downtown serving traditional cuisine, with a lunch menu and private reservation service.",
+          "productsOrServices": "e.g. Lunch menu, brunch, private events",
+          "specialization": "e.g. Vegan menu, kid-friendly, stone oven",
+          "selectMainSectorFirst": "Select a main sector first",
+          "targetLocations": "e.g. New York, San Francisco Bay Area",
+          "targetAudience": "e.g. Urban professionals aged 25-50, nearby business managers, weekend families",
+          "keywords": "e.g. downtown restaurant, lunch, weekend brunch",
+          "mostProfitableServices": "e.g. private events, corporate catering packages",
+          "forbiddenClaims": "e.g. health claims, 100% guarantee promises",
+          "complianceNotes": "e.g. Regulatory limits for health advertising, permits",
+          "extraNotes": "Any other information YoAi should know"
+        },
+        "sources": {
+          "intro": "At least 1 source is required. Sources are actually scanned.",
+          "website": "Website",
+          "googleBusiness": "Google Business Profile",
+          "marketplace": "Marketplace (Trendyol, Hepsiburada, Amazon)"
+        },
+        "competitors": {
+          "intro": "Add at least {count} competitors. For each competitor, entering at least one piece of information you know is enough: company name, website or social media account.",
+          "validCount": "Valid competitors: {valid} / {required}",
+          "minError": "Add at least {count} competitors to continue. For each competitor, entering at least one of company name, website or social media account is enough.",
+          "itemLabel": "Competitor #{index}",
+          "removeAria": "Delete competitor {index}",
+          "namePlaceholder": "Competitor name",
+          "websitePlaceholder": "Website",
+          "googleBusinessPlaceholder": "Google Business",
+          "otherLinkPlaceholder": "Other link",
+          "add": "Add Competitor"
+        },
+        "conversionGoals": {
+          "phoneCall": "Phone call",
+          "onlineReservation": "Online reservation",
+          "appointment": "Appointment",
+          "leadForm": "Lead form",
+          "whatsappMessage": "WhatsApp message",
+          "sale": "Sale",
+          "storeVisit": "Store visit"
+        },
+        "budgetRanges": {
+          "range0to2k": "0-2,000 TL",
+          "range2kTo5k": "2,000-5,000 TL",
+          "range5kTo15k": "5,000-15,000 TL",
+          "range15kTo50k": "15,000-50,000 TL",
+          "range50kPlus": "Over 50,000 TL"
+        },
+        "brandTones": {
+          "professionalCorporate": "Professional / Corporate",
+          "warmFamilyFriendly": "Warm / Family-Friendly",
+          "youngEnergetic": "Young / Energetic",
+          "luxuryPremium": "Luxury / Premium",
+          "expertTechnical": "Expert / Technical"
+        },
+        "errors": {
+          "saveFailed": "Save failed",
+          "serverUnreachable": "Could not reach the server."
+        }
+      },
+      "adPreview": {
+        "newSuggestion": "New Suggestion",
+        "confidence": "{value}% confidence",
+        "moreShort": "Learn More",
+        "campaignType": "Campaign Type",
+        "campaign": "Campaign",
+        "adGroup": "Ad Group",
+        "adSet": "Ad Set",
+        "budget": "Budget",
+        "budgetPerDay": "₺{amount}/day",
+        "targeting": "Targeting",
+        "optGoal": "Opt. Goal",
+        "bidding": "Bidding",
+        "conversion": "Conversion",
+        "adLabel": "Ad",
+        "suggestedHeadlines": "Suggested Headlines",
+        "descriptions": "Descriptions",
+        "keywords": "Keywords",
+        "yourBusiness": "Your Business",
+        "sponsored": "Sponsored",
+        "competitorComparison": "Competitor Comparison",
+        "aiReasoning": "AI Reasoning:",
+        "aiCheckNote": "AI Check Note",
+        "recommended": "→ Recommended: {action}",
+        "policyWarning": "Platform Policy Warning"
+      },
+      "metaCreative": {
+        "imageAlt": "Ad image",
+        "generatingImage": "Generating AI image…",
+        "noImage": "No image",
+        "regenerate": "Regenerate",
+        "primaryText": "Primary Text",
+        "headline": "Headline",
+        "description": "Description",
+        "ctaLabel": "CTA:",
+        "urlLabel": "URL:",
+        "uploadToMeta": "Upload Image to Meta",
+        "uploadingToMeta": "Uploading to Meta…",
+        "uploadedToMeta": "Image uploaded to Meta, ready.",
+        "createDraftCampaign": "Create Draft Campaign",
+        "errors": {
+          "imageGenerationFailed": "Image could not be generated.",
+          "imageUrlMissing": "Image URL could not be obtained.",
+          "unknown": "Unknown error",
+          "imageDownloadFailed": "Image could not be downloaded.",
+          "metaUploadFailed": "Meta upload failed.",
+          "uploadError": "Upload error"
+        }
+      },
+      "aiSuggestions": {
+        "title": "AI Ad Suggestions",
+        "empty": "No AI campaign suggestion could be generated.",
+        "rejectedByUser": "Rejected by user",
+        "aiPrefix": "AI:",
+        "checksCount": "{count} checks",
+        "checkInAdsManager": "Check in Ads Manager",
+        "activate": "Activate",
+        "confirmRejectQuestion": "Do you want to reject this suggestion?",
+        "lastAttempt": "Last attempt:",
+        "status": {
+          "published": "Published",
+          "rejected": "Rejected",
+          "hold": "On Hold"
+        },
+        "decisionBadge": {
+          "publishReady": "Publish Ready",
+          "needsEdit": "Needs Edit",
+          "reject": "Reject",
+          "hold": "Hold",
+          "needsHumanReview": "Human Review",
+          "disabled": "Disabled"
+        },
+        "rootCause": {
+          "hookProblem": "Hook Problem",
+          "landingPageProblem": "Landing Page Problem",
+          "creativeFatigue": "Creative Fatigue",
+          "audienceMismatch": "Targeting Mismatch",
+          "eventQuality": "Event Quality",
+          "insufficientData": "Insufficient Data",
+          "budgetStarvation": "Budget Starvation",
+          "wrongOptimizationGoal": "Wrong Optimization Goal",
+          "pixelMisfire": "Pixel / Tracking Problem",
+          "healthy": "Healthy"
+        }
+      },
+      "approvalHistory": {
+        "title": "Approval History",
+        "recentCount": "last {count} records",
+        "description": "Track the approval, hold, rejection and publish history of your AI-generated ad suggestions here.",
+        "empty": "No approved, rejected or held suggestions yet.",
+        "untitledProposal": "Untitled Suggestion",
+        "aiPrefix": "AI:",
+        "details": "Details",
+        "hideDetails": "Hide Details",
+        "showDetails": "Show Details",
+        "publishedAt": "· published {time}",
+        "fields": {
+          "objective": "Objective",
+          "dailyBudget": "Daily Budget",
+          "headline": "Headline",
+          "cta": "CTA",
+          "reason": "Reason",
+          "outcomeNote": "Outcome Note",
+          "aiConfidence": "AI Confidence",
+          "createdAt": "Created",
+          "updatedAt": "Updated"
+        },
+        "status": {
+          "pending": "Pending",
+          "approved": "Approved",
+          "published": "Published",
+          "rejected": "Rejected",
+          "hold": "On Hold",
+          "editing": "Editing",
+          "failed": "Publish Error",
+          "expired": "Expired"
+        },
+        "decisionBadge": {
+          "publishReady": "Publish Ready",
+          "needsEdit": "Needs Edit",
+          "reject": "Reject",
+          "hold": "Hold",
+          "needsHumanReview": "Human Review"
+        },
+        "outcome": {
+          "improved": "Improved",
+          "declined": "Declined",
+          "noChange": "No Change",
+          "insufficientData": "Insufficient Data",
+          "pendingResult": "Awaiting Result"
+        },
+        "rejectionCategory": {
+          "wrongCampaignType": "Wrong Campaign Type",
+          "lowQuality": "Low Quality",
+          "budgetUnsuitable": "Budget Unsuitable",
+          "creativeUnsuitable": "Creative Unsuitable",
+          "targetingUnsuitable": "Targeting Unsuitable",
+          "brandToneUnsuitable": "Brand Tone Unsuitable",
+          "policyRisk": "Policy Risk",
+          "other": "Other"
+        },
+        "holdCategory": {
+          "later": "Later",
+          "awaitingClientApproval": "Awaiting Client Approval",
+          "awaitingBudget": "Awaiting Budget",
+          "awaitingCreative": "Awaiting Creative",
+          "insufficientData": "Insufficient Data",
+          "other": "Other"
+        }
+      },
+      "decisionDesk": {
+        "title": "Decision Desk",
+        "loading": "Loading Decision Desk…",
+        "empty": "No Multi-AI decision record yet.",
+        "emptyHint": "(Multi-AI shadow mode is off or hasn't run for this suggestion yet)",
+        "noDecision": "No decision",
+        "confidence": "Confidence: {value}%",
+        "risk": "Risk: {level}",
+        "campaignTypeFidelity": "Campaign Type: {value}",
+        "compatible": "Compatible",
+        "incompatible": "Incompatible",
+        "none": "none",
+        "finalRecommendation": "Final Recommendation",
+        "creativeBrief": "Creative Brief",
+        "payloadNotes": "Payload Notes",
+        "humanChecksRequired": "Human Checks Required ({count})",
+        "unresolvedRisks": "Unresolved Risks",
+        "decision": {
+          "publishReady": "Publish Ready",
+          "needsEdit": "Needs Edit",
+          "reject": "Should Reject",
+          "hold": "Should Hold",
+          "needsHumanReview": "Human Review Required"
+        },
+        "roles": {
+          "strategist": "Strategist",
+          "creative": "Creative",
+          "riskPolicy": "Risk/Policy",
+          "technical": "Technical",
+          "judge": "Judge"
         }
       }
     },
