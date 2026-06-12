@@ -2,6 +2,7 @@ import { scanSocialSource } from './socialSourceScanner'
 import { isFirecrawlReady } from '../firecrawl/client'
 import { scrapeSite } from '../firecrawl/scrapeSite'
 import { cityIncludes } from './turkishText'
+import { assertSafeUrl } from '../seo/assertSafeUrl'
 
 /* ──────────────────────────────────────────────────────────
    YoAi — Business Source Scanner
@@ -336,6 +337,8 @@ async function scanHttp(input: SourceScanInput): Promise<SourceScanOutput> {
   const controller = new AbortController()
   const timeout = setTimeout(() => controller.abort(), FETCH_TIMEOUT_MS)
   try {
+    // SSRF koruması: kullanıcı URL'i iç-ağ/özel-IP/cloud-metadata'ya işaret ediyorsa reddet.
+    await assertSafeUrl(url)
     const res = await fetch(url, {
       signal: controller.signal,
       redirect: 'follow',

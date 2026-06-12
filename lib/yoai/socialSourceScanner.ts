@@ -24,6 +24,7 @@ import {
 } from './apifySocialConfig'
 import { runApifyActor } from './apifySocialRunner'
 import { normalizeSocialProfile, type NormalizedSocialProfile } from './socialProfileNormalizer'
+import { assertSafeUrl } from '../seo/assertSafeUrl'
 
 const FETCH_TIMEOUT_MS = 8_000
 const RAW_EXCERPT_CHARS = 1_500
@@ -245,6 +246,8 @@ async function scanPublicMetadata(
   const controller = new AbortController()
   const timeout = setTimeout(() => controller.abort(), FETCH_TIMEOUT_MS)
   try {
+    // SSRF koruması: iç-ağ/özel-IP/cloud-metadata hedeflerini reddet.
+    await assertSafeUrl(url)
     const res = await fetch(url, {
       signal: controller.signal,
       redirect: 'follow',
