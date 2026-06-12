@@ -1,5 +1,9 @@
 import { NextResponse } from 'next/server'
 import { supabase } from '@/lib/supabase/client'
+import { notifyOwnersOfBooking } from '@/lib/notifications/ownerNotifier'
+
+export const runtime = 'nodejs'
+export const maxDuration = 30
 
 export async function POST(request: Request) {
   try {
@@ -66,6 +70,17 @@ export async function POST(request: Request) {
         booking_date: booking.booking_date,
         booking_time: booking.booking_time,
       })
+    }
+
+    // Owner'ı bilgilendir (await — Vercel'de fire-and-forget güvenilmez). Hata
+    // booking'i geçersiz kılmaz; rezervasyon zaten kaydedildi.
+    try {
+      await notifyOwnersOfBooking({
+        name: booking.name, email: booking.email,
+        date: booking.booking_date, time: booking.booking_time, note: booking.note,
+      })
+    } catch (e) {
+      console.error('[Bookings] owner notify failed (non-fatal):', e instanceof Error ? e.message : 'unknown')
     }
 
     return NextResponse.json({ ok: true })

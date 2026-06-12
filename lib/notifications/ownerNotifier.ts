@@ -27,6 +27,15 @@ export type OwnerNotificationType =
   | 'new_signup'
   | 'premeeting_scheduled'
   | 'premeeting_declined'
+  | 'booking_requested'
+
+export interface BookingSummary {
+  name: string
+  email: string
+  date: string
+  time: string
+  note?: string | null
+}
 
 export interface SignupSummary {
   id: string
@@ -144,60 +153,71 @@ async function logNotification(opts: {
 }
 
 /**
- * Owner bildirimini iki adrese de gönderir. Tek tek logger; gönderim
- * sırasında patlasa bile diğer alıcı denenir.
+ * Hazır subject/html'i iki owner adresine de gönderir + her sonucu loglar.
+ * Bir alıcı patlasa bile diğeri denenir.
+ */
+async function dispatchToOwners(
+  subject: string,
+  html: string,
+  type: OwnerNotificationType,
+  relatedUserId: string | null,
+): Promise<{ sent: number; failed: number }> {
+  let sent = 0
+  let failed = 0
+  for (const recipient of OWNER_NOTIFICATION_RECIPIENTS) {
+    if (!resend) {
+      await logNotification({ recipient, subject, notificationType: type, relatedUserId, status: 'failed', errorMessage: 'RESEND_API_KEY missing' })
+      failed++
+      continue
+    }
+    try {
+      await resend.emails.send({ from: FROM_EMAIL, to: recipient, subject, html })
+      await logNotification({ recipient, subject, notificationType: type, relatedUserId, status: 'sent', errorMessage: null })
+      sent++
+    } catch (e) {
+      const msg = e instanceof Error ? e.message : 'unknown'
+      console.error('[ownerNotifier] send failed:', msg)
+      await logNotification({ recipient, subject, notificationType: type, relatedUserId, status: 'failed', errorMessage: msg })
+      failed++
+    }
+  }
+  return { sent, failed }
+}
+
+/**
+ * Owner bildirimini iki adrese de gönderir (signup olayları).
  */
 export async function notifyOwnersOfSignupEvent(
   type: OwnerNotificationType,
   signup: SignupSummary,
 ): Promise<{ sent: number; failed: number }> {
   const { subject, html } = buildBody(type, signup)
-  let sent = 0
-  let failed = 0
+  return dispatchToOwners(subject, html, type, signup.id || null)
+}
 
-  for (const recipient of OWNER_NOTIFICATION_RECIPIENTS) {
-    if (!resend) {
-      await logNotification({
-        recipient,
-        subject,
-        notificationType: type,
-        relatedUserId: signup.id || null,
-        status: 'failed',
-        errorMessage: 'RESEND_API_KEY missing',
-      })
-      failed++
-      continue
-    }
-    try {
-      await resend.emails.send({
-        from: FROM_EMAIL,
-        to: recipient,
-        subject,
-        html,
-      })
-      await logNotification({
-        recipient,
-        subject,
-        notificationType: type,
-        relatedUserId: signup.id || null,
-        status: 'sent',
-        errorMessage: null,
-      })
-      sent++
-    } catch (e) {
-      const msg = e instanceof Error ? e.message : 'unknown'
-      console.error('[ownerNotifier] send failed:', msg)
-      await logNotification({
-        recipient,
-        subject,
-        notificationType: type,
-        relatedUserId: signup.id || null,
-        status: 'failed',
-        errorMessage: msg,
-      })
-      failed++
-    }
-  }
-
-  return { sent, failed }
+/**
+ * Landing "Görüşme Planla" rezervasyonunda owner'lara bildirim.
+ */
+export async function notifyOwnersOfBooking(
+  booking: BookingSummary,
+): Promise<{ sent: number; failed: number }> {
+  const subject = `Yeni görüşme talebi — ${booking.name || booking.email}`
+  const rows = [
+    ['Ad Soyad', escapeHtml(booking.name)],
+    ['E-posta', escapeHtml(booking.email)],
+    ['Tarih', escapeHtml(booking.date)],
+    ['Saat', escapeHtml(booking.time)],
+    ['Not', escapeHtml(booking.note || null)],
+  ]
+    .map(([k, v]) => `<tr><td style="padding:6px 12px;font-size:13px;color:#6b7280;width:160px;">${k}</td><td style="padding:6px 12px;font-size:13px;color:#111827;">${v}</td></tr>`)
+    .join('')
+  const html = `
+    <div style="font-family:'Inter',Arial,sans-serif;max-width:560px;margin:0 auto;padding:32px 24px;background:#ffffff;color:#111827;">
+      <h2 style="font-size:18px;font-weight:700;margin:0 0 8px;">${escapeHtml(subject)}</h2>
+      <p style="font-size:14px;color:#4b5563;margin:0 0 20px;line-height:1.6;">Landing sayfasından yeni bir görüşme talebi geldi.</p>
+      <table cellspacing="0" cellpadding="0" style="border-collapse:collapse;border:1px solid #e5e7eb;border-radius:8px;overflow:hidden;width:100%;">${rows}</table>
+      <p style="margin-top:24px;font-size:11px;color:#9ca3af;">YoAi · Otomatik bildirim</p>
+    </div>
+  `
+  return dispatchToOwners(subject, html, 'booking_requested', null)
 }

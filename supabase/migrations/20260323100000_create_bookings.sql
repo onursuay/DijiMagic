@@ -11,3 +11,6 @@ CREATE TABLE IF NOT EXISTS bookings (
 
 CREATE INDEX IF NOT EXISTS idx_bookings_status ON bookings (status);
 COMMENT ON TABLE bookings IS 'Meeting booking requests from landing page';
+
+-- RLS: yalnız service-role erişir (uygulama service key kullanır); anon deny-all.
+ALTER TABLE bookings ENABLE ROW LEVEL SECURITY;
