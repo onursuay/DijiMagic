@@ -35,6 +35,8 @@ export default function AbonelikPage() {
   const [paymentBanner, setPaymentBanner] = useState<'success' | 'failed' | null>(null)
   const [starting, setStarting] = useState(false)
   const [cancelling, setCancelling] = useState(false)
+  const [pendingPlan, setPendingPlan] = useState<string | null>(null)
+  const [consentChecked, setConsentChecked] = useState(false)
   const cancelled = !!(subscription as { cancelAtPeriodEnd?: boolean })?.cancelAtPeriodEnd
 
   async function handleCancel() {
@@ -94,6 +96,12 @@ export default function AbonelikPage() {
       window.location.href = `mailto:${SALES_EMAIL}?subject=${subject}&body=${body}`
       return
     }
+    // Yasal onay kapısı: mesafeli satış + ön bilgilendirme onayı alınmadan ödeme başlatılmaz.
+    setConsentChecked(false)
+    setPendingPlan(planId)
+  }
+
+  const proceedCheckout = async (planId: string) => {
     if (starting) return
     setStarting(true)
     try {
@@ -116,6 +124,8 @@ export default function AbonelikPage() {
       setStarting(false)
     }
   }
+
+  const pendingPlanObj = pendingPlan ? SUBSCRIPTION_PLANS.find(p => p.id === pendingPlan) : null
 
   const currentPlan = SUBSCRIPTION_PLANS.find(p => p.id === subscription.planId)
   const statusLabel = trial
@@ -271,6 +281,47 @@ export default function AbonelikPage() {
           </div>
         </div>
       </div>
+
+      {/* Yasal onay modalı — mesafeli satış + ön bilgilendirme onayı alınmadan ödeme başlatılmaz */}
+      {pendingPlan && pendingPlanObj && (
+        <div className="fixed inset-0 z-[120] flex items-center justify-center p-4 bg-black/50 backdrop-blur-sm">
+          <div className="w-full max-w-md rounded-2xl bg-white shadow-[0_20px_60px_rgba(0,0,0,0.25)] p-6 animate-card-enter">
+            <h3 className="text-base font-semibold text-gray-900 mb-1">{t('checkout.confirmTitle')}</h3>
+            <p className="text-sm leading-relaxed text-gray-600 mb-4">
+              {t('checkout.confirmPlan', { plan: pendingPlanObj.name })}
+            </p>
+            <label className="flex items-start gap-3 cursor-pointer mb-5">
+              <input
+                type="checkbox"
+                checked={consentChecked}
+                onChange={(e) => setConsentChecked(e.target.checked)}
+                className="mt-0.5 h-4 w-4 rounded border-gray-300 text-primary focus:ring-primary/30"
+              />
+              <span className="text-sm leading-relaxed text-gray-700">
+                <a href="/mesafeli-satis-sozlesmesi" target="_blank" className="text-primary font-medium hover:underline">{t('checkout.distanceSales')}</a>
+                {' '}{t('checkout.and')}{' '}
+                <a href="/on-bilgilendirme-formu" target="_blank" className="text-primary font-medium hover:underline">{t('checkout.preInfo')}</a>
+                {' '}{t('checkout.consentSuffix')}
+              </span>
+            </label>
+            <div className="flex gap-3">
+              <button
+                onClick={() => setPendingPlan(null)}
+                className="flex-1 py-2.5 text-sm font-medium text-gray-700 bg-gray-100 rounded-lg hover:bg-gray-200 transition-colors active:scale-[0.97]"
+              >
+                {t('checkout.cancel')}
+              </button>
+              <button
+                disabled={!consentChecked || starting}
+                onClick={() => { const p = pendingPlan; setPendingPlan(null); if (p) proceedCheckout(p) }}
+                className="flex-1 py-2.5 text-sm font-semibold text-white bg-primary rounded-lg hover:bg-primary/90 transition-all active:scale-[0.97] disabled:opacity-40 disabled:cursor-not-allowed"
+              >
+                {t('checkout.proceed')}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </>
   )
 }

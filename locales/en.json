@@ -3834,6 +3834,16 @@
       "cancelledBadge": "Cancelled",
       "cancelledNote": "Your subscription will end at the close of the current period and will not auto-renew. You keep full access until then."
     },
+    "checkout": {
+      "confirmTitle": "Confirm Payment",
+      "confirmPlan": "You'll be redirected to the payment page for the {plan} plan.",
+      "distanceSales": "Distance Sales Agreement",
+      "preInfo": "Pre-Information Form",
+      "and": "and",
+      "consentSuffix": ".",
+      "cancel": "Cancel",
+      "proceed": "Proceed to Payment"
+    },
     "credits": {
       "title": "Load Credits",
       "balance": "Your Credits",

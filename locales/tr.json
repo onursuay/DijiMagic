@@ -3834,6 +3834,16 @@
       "cancelledBadge": "İptal edildi",
       "cancelledNote": "Aboneliğiniz mevcut dönem sonunda sona erecek ve otomatik yenilenmeyecek. O tarihe kadar tüm özelliklere erişiminiz devam eder."
     },
+    "checkout": {
+      "confirmTitle": "Ödemeyi Onayla",
+      "confirmPlan": "{plan} planı için ödeme sayfasına yönlendirileceksiniz.",
+      "distanceSales": "Mesafeli Satış Sözleşmesi",
+      "preInfo": "Ön Bilgilendirme Formu",
+      "and": "ve",
+      "consentSuffix": "'nu okudum ve onaylıyorum.",
+      "cancel": "Vazgeç",
+      "proceed": "Ödemeye Geç"
+    },
     "credits": {
       "title": "Kredi Yükle",
       "balance": "Mevcut Krediniz",
