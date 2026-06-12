@@ -2,6 +2,12 @@
 
 ---
 
+## 2026-06-12 — Sahte veri: dashboard'daki uydurma TikTok kartı kaldırıldı (lansmanda TikTok gizli)
+- **Sorun:** Dashboard, her kullanıcıya TikTok'u `tiktokConnected || true` ile "bağlı" gösteriyor ve hardcoded sahte KPI'lar basıyordu (₺18.420,50 harcama, 6.284 tık, 142.680 gösterim + uydurma 30 günlük grafik). Ücretli üründe kullanıcı bunu gerçek sanıyordu — "sahte veri yasak" ilkesi ihlali. (Lansman kararı: TikTok gizlenecek.)
+- **Çözüm:** Dashboard TikTok Ads kartı tamamen kaldırıldı; sahte `tiktokPlaceholder` KPI bloğu silindi; `tiktokConnected || true` sahte-bağlı mantığı gerçek duruma (`tiktokConnected`) dürüstleştirildi. TikTok entegrasyon onayı sonrası gerçek veriyle geri eklenecek.
+- **Dosyalar:** `app/dashboard/HomePage.tsx`
+- **Kalan (TikTok gizleme tamamlama):** `/tiktok-ads` sayfası ve `app/entegrasyon` TikTok bağlama kartı da kapatılacak (sonraki geçiş).
+
 ## 2026-06-12 — Güvenlik: login brute-force throttle + tarayıcı SSRF koruması
 - **Sorun:** (1) Login endpoint'inde hiç rate-limit/brute-force koruması yoktu — sınırsız parola denemesi mümkündü. (2) İşletme/sosyal kaynak tarayıcıları kullanıcının verdiği URL'i iç-ağ/özel-IP koruması olmadan fetch ediyordu (SSRF — iç servis/cloud metadata 169.254.x'e istek atılabilirdi).
 - **Çözüm:** (1) DB-backed throttle: yeni `login_attempts` tablosu (RLS açık, service-role) + atomik `register_login_failure`/`clear_login_attempts` RPC'leri; 15 dk içinde 8 başarısız deneme → 15 dk kilit (429). bcrypt'ten önce kontrol, e-posta enumeration sızdırmaz, başarıda sıfırlanır. Canlı omddq'ya kontrollü uygulandı + RPC fonksiyonel test edildi. UI'da `too_many_attempts` mesajı (TR+EN). (2) `businessSourceScanner`/`socialSourceScanner` artık mevcut `lib/seo/assertSafeUrl` (DNS çözer, özel aralık reddeder, fail-closed) ile korunuyor; throw mevcut catch ile `failed()` olarak yutuluyor.

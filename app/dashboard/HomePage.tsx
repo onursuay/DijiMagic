@@ -131,9 +131,9 @@ export default function HomePage() {
     const metaConnected = metaStat?.connected === true
     setMetaStatus({ connected: metaConnected, accountName: metaStat?.adAccountName || '' })
 
-    // TikTok status (show as connected with placeholder until real API is approved)
+    // TikTok: gerçek bağlantı durumu (sahte 'her zaman bağlı' mantığı kaldırıldı; kart lansmanda gizli)
     const tiktokConnected = tiktokStat?.connected === true
-    setTiktokStatus({ connected: tiktokConnected || true, accountName: tiktokStat?.advertiserName || 'TikTok Ads' })
+    setTiktokStatus({ connected: tiktokConnected, accountName: tiktokStat?.advertiserName || 'TikTok Ads' })
 
     // Google Analytics status
     const gaConnected = gaStat?.connected === true && gaStat?.hasSelectedProperty === true
@@ -267,24 +267,7 @@ export default function HomePage() {
     return kpi.changePercent >= 0 ? 'green' : 'red'
   }
 
-  // TikTok placeholder data (replaced with real data after TikTok API approval)
-  const tiktokPlaceholder = !tiktokKpis ? {
-    spend: {
-      label: t('spend'), value: `₺${fmtCurrency(18420.50)}`, delta: fmtDelta(22.4),
-      chart: [380, 310, 420, 360, 450, 340, 470, 390, 510, 430, 380, 460, 520, 410, 490, 370, 530, 440, 480, 350, 510, 420, 470, 390, 540, 460, 500, 410, 550, 480],
-      color: 'red' as const,
-    },
-    clicks: {
-      label: t('clicks'), value: fmtInt(6284), delta: fmtDelta(18.7),
-      chart: [180, 220, 195, 250, 210, 270, 230, 190, 260, 240, 200, 280, 215, 255, 235, 290, 205, 275, 245, 310, 225, 265, 300, 240, 285, 260, 320, 250, 295, 280],
-      color: 'green' as const,
-    },
-    impressions: {
-      label: t('impressions'), value: fmtInt(142680), delta: fmtDelta(25.3),
-      chart: [3800, 4200, 3600, 4500, 3900, 4800, 4100, 3700, 4600, 4300, 3500, 4900, 4000, 4400, 3800, 5100, 4200, 3900, 4700, 5300, 4500, 4100, 5000, 4600, 4300, 5200, 4800, 4400, 5100, 4700],
-      color: 'green' as const,
-    },
-  } : undefined
+  // TikTok kartı lansmanda gizli — sahte placeholder KPI'lar kaldırıldı.
 
   // Meta series helpers (period-over-period from daily series)
   const metaSeriesDelta = (series?: number[]): string => {
@@ -363,22 +346,7 @@ export default function HomePage() {
                 periodLabel={periodLabel}
               />
 
-              {/* TikTok Ads Card */}
-              <PlatformCard
-                platformName="TikTok Ads"
-                iconSrc="/platform-icons/tiktok.svg"
-                status={tiktokStatus}
-                loading={tiktokLoading}
-                panelHref={ROUTES.TIKTOK_ADS}
-                connectHref="/entegrasyon"
-                t={t}
-                metrics={tiktokKpis ? {
-                  spend: { label: t('spend'), value: `₺${fmtCurrency(tiktokKpis.totals.cost)}`, delta: fmtDelta(tiktokKpis.changes.cost), chart: tiktokKpis.series.cost, color: tiktokKpis.changes.cost >= 0 ? 'red' as const : 'green' as const },
-                  clicks: { label: t('clicks'), value: fmtInt(tiktokKpis.totals.clicks), delta: fmtDelta(tiktokKpis.changes.clicks), chart: tiktokKpis.series.clicks, color: tiktokKpis.changes.clicks >= 0 ? 'green' as const : 'red' as const },
-                  impressions: { label: t('impressions'), value: fmtInt(tiktokKpis.totals.impressions), delta: fmtDelta(tiktokKpis.changes.impressions), chart: tiktokKpis.series.impressions, color: tiktokKpis.changes.impressions >= 0 ? 'green' as const : 'red' as const },
-                } : tiktokPlaceholder}
-                periodLabel={periodLabel}
-              />
+              {/* TikTok Ads — lansmanda gizli (entegrasyon onayı sonrası açılacak) */}
             </div>
           </div>
 
