@@ -3,7 +3,9 @@ import { checkEmailAccess } from '@/lib/email/guard'
 import { sendCampaign } from '@/lib/email/sender'
 
 export const dynamic = 'force-dynamic'
-export const maxDuration = 60
+// Pro plan: 300s headroom. Kesilse bile sendCampaign artımlı yazıp resume
+// edebildiği için kalıcı kilit/çift gönderim olmaz.
+export const maxDuration = 300
 
 /** POST /api/email/campaigns/[id]/send — kampanyayı şimdi gönder. */
 export async function POST(_r: Request, { params }: { params: Promise<{ id: string }> }) {

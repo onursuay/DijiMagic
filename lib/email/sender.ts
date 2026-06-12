@@ -154,8 +154,18 @@ export async function buildDispatch(userId: string): Promise<BuiltDispatch | nul
 export async function sendCampaign(userId: string, campaignId: string): Promise<SendResult> {
   const campaign = await getCampaign(campaignId, userId)
   if (!campaign) return { ok: false, reason: 'not_found', sent: 0, total: 0 }
-  if (campaign.status === 'sent' || campaign.status === 'sending') {
+  if (campaign.status === 'sent') {
     return { ok: false, reason: 'already', sent: 0, total: 0 }
+  }
+  // 'sending' kilidi: gerçekten süren bir gönderimi engelle, AMA önceki deneme
+  // 60s maxDuration'da kesilip kilitli kaldıysa (stuck) kurtar — yoksa kampanya
+  // sonsuza dek 'sending'de takılır. Eşik: 10 dk.
+  if (campaign.status === 'sending') {
+    const sinceMs = campaign.updated_at ? Date.now() - new Date(campaign.updated_at).getTime() : Infinity
+    if (sinceMs < 10 * 60 * 1000) {
+      return { ok: false, reason: 'already', sent: 0, total: 0 }
+    }
+    console.warn(`[EmailSend] STUCK_SENDING_RECOVER campaign=${campaignId} since=${campaign.updated_at}`)
   }
 
   const built = await buildDispatch(userId)
@@ -170,27 +180,42 @@ export async function sendCampaign(userId: string, campaignId: string): Promise<
     return { ok: false, reason: 'no_recipients', sent: 0, total: 0 }
   }
 
+  // Resume/idempotency: zaten gönderilmiş alıcıları atla → kesinti sonrası
+  // yeniden çalıştırmada ÇİFT gönderim olmaz (kaldığı yerden devam eder).
+  const alreadySent = new Set<string>()
+  if (supabase) {
+    const { data: prior } = await supabase.from('email_sends')
+      .select('email').eq('campaign_id', campaignId).eq('status', 'sent')
+    for (const row of (prior ?? [])) alreadySent.add((row as { email: string }).email)
+  }
+
   const subject = campaign.subject || '(konusuz)'
-  let sent = 0
-  const sendRows: Record<string, unknown>[] = []
+  let sent = alreadySent.size
+  let buffer: Record<string, unknown>[] = []
+
+  // Progress ARTIMLI yazılır: 60s limitinde kesilse bile gönderilenler kalıcı
+  // olur, yeniden çalıştırma kaldığı yerden devam eder (çift gönderim yok).
+  const flush = async () => {
+    if (supabase && buffer.length) {
+      await supabase.from('email_sends').upsert(buffer, { onConflict: 'campaign_id,email' })
+      buffer = []
+    }
+  }
 
   for (const r of recipients) {
+    if (alreadySent.has(r.email)) continue
     const pixelUrl = `${APP_URL}/api/email/track/open?c=${encodeURIComponent(campaignId)}&e=${encodeURIComponent(r.email)}`
     const clickBase = `${APP_URL}/api/email/track/click?c=${encodeURIComponent(campaignId)}&e=${encodeURIComponent(r.email)}`
     const html = buildHtml(campaign.html, unsubscribeUrl(APP_URL, campaignId, r.email), pixelUrl, clickBase)
     const id = await dispatch(r.email, subject, html)
-    sendRows.push({
+    buffer.push({
       campaign_id: campaignId, user_id: userId, contact_id: r.contactId, email: r.email,
       resend_id: id, status: id ? 'sent' : 'failed', sent_at: new Date().toISOString(),
     })
     if (id) sent++
+    if (buffer.length >= 25) await flush()
   }
-
-  if (supabase && sendRows.length) {
-    for (let i = 0; i < sendRows.length; i += 500) {
-      await supabase.from('email_sends').upsert(sendRows.slice(i, i + 500), { onConflict: 'campaign_id,email' })
-    }
-  }
+  await flush()
 
   // Hiç mail gitmediyse kampanyayı "Gönderildi" işaretleme — gerçek hatayı yüzeye çıkar.
   if (sent === 0) {
