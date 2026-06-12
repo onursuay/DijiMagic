@@ -33,7 +33,7 @@ export default async function RootPage() {
       { title: 'Auto Reporting', desc: 'Scheduled reports, custom KPI dashboards and proactive insights delivered automatically.', svg: 'file' },
     ],
     perfTitle: 'Results That Speak',
-    perfSub: 'Real metrics. Real impact. Powered by AI that never sleeps.',
+    perfSub: 'See what AI-driven optimization is built to deliver. Powered by AI that never sleeps.',
     perfs: [
       { metric: '4.2x', label: 'Average ROAS', desc: 'AI-optimized campaigns consistently outperform manual management.' },
       { metric: '+38%', label: 'Conversion Lift', desc: 'Smart audience targeting and bid optimization drive measurable results.' },
@@ -50,7 +50,7 @@ export default async function RootPage() {
     ctaBottom: 'Ready to transform your ad operations?',
     ctaBottomSub: 'Start your 7-day free trial. No credit card required.',
     panelTitle: 'Campaign Command',
-    panelPeriod: 'Last 30 days',
+    panelPeriod: 'Sample · Last 30 days',
     panelStatus: 'All systems operational',
     kpis: [
       { label: 'Ad Spend', value: '$5,840', delta: '+12%' },
@@ -81,7 +81,7 @@ export default async function RootPage() {
       { title: 'Oto Raporlama', desc: 'Zamanlanmış raporlar, özel KPI panoları ve otomatik teslim edilen proaktif içgörüler.', svg: 'file' },
     ],
     perfTitle: 'Sonuçlar Kendini Gösteriyor',
-    perfSub: 'Gerçek metrikler. Gerçek etki. Hiç uyumayan yapay zeka ile.',
+    perfSub: 'AI destekli optimizasyonun hedeflediği etkiyi görün. Hiç uyumayan yapay zeka ile.',
     perfs: [
       { metric: '4.2x', label: 'Ortalama ROAS', desc: 'AI optimizeli kampanyalar sürekli olarak manuel yönetimi geride bırakır.' },
       { metric: '+%38', label: 'Dönüşüm Artışı', desc: 'Akıllı hedef kitle ve teklif optimizasyonu ölçülebilir sonuçlar üretir.' },
@@ -98,7 +98,7 @@ export default async function RootPage() {
     ctaBottom: 'Reklam operasyonlarınızı dönüştürmeye hazır mısınız?',
     ctaBottomSub: '7 günlük ücretsiz denemenizi başlatın. Kredi kartı gerekmez.',
     panelTitle: 'Kampanya Performansı',
-    panelPeriod: 'Son 30 gün',
+    panelPeriod: 'Örnek · Son 30 gün',
     panelStatus: 'Tüm sistemler aktif',
     kpis: [
       { label: 'Harcama', value: '₺24,850', delta: '+%12' },
