@@ -1,6 +1,7 @@
 'use client'
 
 import { useState, useRef, useEffect } from 'react'
+import { useTranslations } from 'next-intl'
 import { Search, X, Target } from 'lucide-react'
 import type { SavedAudienceState, InterestItem } from '../types'
 
@@ -18,6 +19,7 @@ interface InterestResult {
 }
 
 export default function StepInterests({ state, onChange }: StepInterestsProps) {
+  const t = useTranslations('dashboard.hedefKitle.wizard.saved.interests')
   const [search, setSearch] = useState('')
   const [results, setResults] = useState<InterestResult[]>([])
   const [loading, setLoading] = useState(false)
@@ -83,9 +85,9 @@ export default function StepInterests({ state, onChange }: StepInterestsProps) {
 
   return (
     <div>
-      <h3 className="text-section-title text-gray-900 mb-1">İlgi Alanları ve Davranışlar</h3>
+      <h3 className="text-section-title text-gray-900 mb-1">{t('title')}</h3>
       <p className="text-sm text-gray-500 mb-6">
-        Meta&apos;nın detaylı hedefleme taksonomisinden ilgi alanları ve davranışlar ekleyin.
+        {t('description')}
       </p>
 
       {/* Seçilenler */}
@@ -114,16 +116,16 @@ export default function StepInterests({ state, onChange }: StepInterestsProps) {
             doSearch(e.target.value)
           }}
           onFocus={() => { if (results.length > 0) setShowDropdown(true) }}
-          placeholder="İlgi alanı veya davranış ara..."
+          placeholder={t('searchPlaceholder')}
           className="w-full pl-10 pr-3 py-2.5 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary"
         />
 
         {showDropdown && (
           <div className="absolute z-50 mt-1 w-full bg-white border border-gray-200 rounded-lg shadow-lg max-h-60 overflow-y-auto">
             {loading ? (
-              <div className="p-3 text-sm text-gray-400 text-center">Aranıyor...</div>
+              <div className="p-3 text-sm text-gray-400 text-center">{t('searching')}</div>
             ) : results.length === 0 ? (
-              <div className="p-3 text-sm text-gray-400 text-center">Sonuç bulunamadı</div>
+              <div className="p-3 text-sm text-gray-400 text-center">{t('noResults')}</div>
             ) : (
               results.map((r) => {
                 const already = state.interests.some((i) => i.id === r.id)
@@ -161,8 +163,8 @@ export default function StepInterests({ state, onChange }: StepInterestsProps) {
       {/* Advantage+ toggle */}
       <div className="mt-6 flex items-center justify-between p-4 bg-gray-50 rounded-xl border border-gray-200">
         <div>
-          <p className="text-sm font-medium text-gray-900">Advantage+ Hedef Kitle</p>
-          <p className="text-caption text-gray-500">Meta AI, kitlenizi otomatik olarak genişletebilir.</p>
+          <p className="text-sm font-medium text-gray-900">{t('advantageTitle')}</p>
+          <p className="text-caption text-gray-500">{t('advantageDesc')}</p>
         </div>
         <button
           type="button"

@@ -1,8 +1,8 @@
 'use client'
 
+import { useTranslations } from 'next-intl'
 import { Monitor, Instagram, FileText, Video, ClipboardList, Package, Smartphone, Wifi, Users } from 'lucide-react'
 import type { AudienceSource, CustomAudienceState } from '../types'
-import { SOURCE_LABELS } from '../types'
 
 interface StepSourceProps {
   state: CustomAudienceState
@@ -28,37 +28,40 @@ const SOURCE_OPTIONS: { id: AudienceSource; icon: React.ComponentType<{ classNam
 
 const UNSUPPORTED_SOURCES: AudienceSource[] = ['CATALOG', 'APP', 'OFFLINE', 'CUSTOMER_LIST']
 
-function isSourceAvailable(source: AudienceSource, assets: StepSourceProps['assets']): { available: boolean; reason?: string } {
+type ReasonKey = 'unsupported' | 'noPixel' | 'noIg' | 'noPage'
+
+function isSourceAvailable(source: AudienceSource, assets: StepSourceProps['assets']): { available: boolean; reasonKey?: ReasonKey } {
   if (UNSUPPORTED_SOURCES.includes(source)) {
-    return { available: false, reason: 'Bu kaynak türü henüz desteklenmiyor.' }
+    return { available: false, reasonKey: 'unsupported' }
   }
   switch (source) {
     case 'PIXEL':
       return assets.pixels.length > 0
         ? { available: true }
-        : { available: false, reason: 'Pixel bulunamadı. Entegrasyon sayfasından bağlayın.' }
+        : { available: false, reasonKey: 'noPixel' }
     case 'IG':
       return assets.instagramAccounts.length > 0
         ? { available: true }
-        : { available: false, reason: 'Instagram hesabı bağlı değil.' }
+        : { available: false, reasonKey: 'noIg' }
     case 'PAGE':
       return assets.pages.length > 0
         ? { available: true }
-        : { available: false, reason: 'Facebook sayfası bulunamadı.' }
+        : { available: false, reasonKey: 'noPage' }
     default:
       return { available: true }
   }
 }
 
 export default function StepSource({ state, onChange, assets }: StepSourceProps) {
+  const t = useTranslations('dashboard.hedefKitle.wizard.custom.source')
   return (
     <div>
-      <h3 className="text-section-title text-gray-900 mb-1">Kaynak Seçimi</h3>
-      <p className="text-sm text-gray-500 mb-6">Retargeting kitleniz için veri kaynağını seçin.</p>
+      <h3 className="text-section-title text-gray-900 mb-1">{t('title')}</h3>
+      <p className="text-sm text-gray-500 mb-6">{t('description')}</p>
 
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
         {SOURCE_OPTIONS.map(({ id, icon: Icon }) => {
-          const { available, reason } = isSourceAvailable(id, assets)
+          const { available, reasonKey } = isSourceAvailable(id, assets)
           const isSelected = state.source === id
 
           return (
@@ -82,10 +85,10 @@ export default function StepSource({ state, onChange, assets }: StepSourceProps)
               </div>
               <div className="flex-1 min-w-0">
                 <p className={`text-sm font-medium ${isSelected ? 'text-primary' : 'text-gray-900'}`}>
-                  {SOURCE_LABELS[id].tr}
+                  {t(`sourceLabel.${id}`)}
                 </p>
-                {!available && reason && (
-                  <p className="text-caption text-red-500 mt-0.5">{reason}</p>
+                {!available && reasonKey && (
+                  <p className="text-caption text-red-500 mt-0.5">{t(`reason.${reasonKey}`)}</p>
                 )}
               </div>
               {isSelected && (

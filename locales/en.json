@@ -3368,7 +3368,532 @@
       "newAudience": "New Audience",
       "card": {
         "field": {
-          "source": "Source"
+          "source": "Source",
+          "subtype": "Subtype",
+          "estimatedSize": "Estimated Size",
+          "metaId": "Meta ID",
+          "createdAt": "Created"
+        },
+        "peopleCount": "~{count} people",
+        "confirmDelete": "Are you sure?",
+        "action": {
+          "sendToMeta": "Send to Meta",
+          "sync": "Synchronize",
+          "adsManager": "Ads Manager"
+        },
+        "targeting": {
+          "location": "Location",
+          "age": "Age",
+          "gender": "Gender",
+          "interests": "Interests",
+          "male": "Male",
+          "female": "Female"
+        }
+      },
+      "list": {
+        "toast": {
+          "deleted": "Audience deleted",
+          "deleteFailed": "Deletion failed",
+          "sentToMeta": "Successfully sent to Meta",
+          "sendToMetaFailed": "Failed to send to Meta",
+          "sendError": "An error occurred while sending",
+          "syncDone": "Synchronization complete",
+          "syncFailed": "Synchronization failed",
+          "syncError": "Synchronization error"
+        },
+        "searchPlaceholder": "Search audiences...",
+        "empty": {
+          "noMatch": "No audience matched your search.",
+          "none": "No audience created yet.",
+          "hint": "Start with the \"+ New Audience\" button."
+        }
+      },
+      "wizard": {
+        "header": {
+          "selectType": "New Audience",
+          "newCustom": "New Retargeting Audience",
+          "editCustom": "Edit Retargeting Audience",
+          "newLookalike": "New Lookalike Audience",
+          "editLookalike": "Edit Lookalike Audience",
+          "newSaved": "New Saved Audience",
+          "editSaved": "Edit Saved Audience",
+          "confirm": "Confirm Audience Creation"
+        },
+        "typeSelect": {
+          "intro": "Choose the type of audience you want to create.",
+          "custom": {
+            "label": "Retargeting",
+            "desc": "Create a custom audience from sources like Pixel, Instagram engagement or page visits."
+          },
+          "lookalike": {
+            "label": "Lookalike Audience",
+            "desc": "Target new users similar to one of your existing audiences."
+          },
+          "saved": {
+            "label": "Saved Audience",
+            "desc": "Create a saved audience using criteria like location, age and interests."
+          }
+        },
+        "custom": {
+          "step": {
+            "source": "Source",
+            "rule": "Rule",
+            "exclude": "Exclude",
+            "summary": "Summary"
+          },
+          "source": {
+            "title": "Source Selection",
+            "description": "Choose the data source for your retargeting audience.",
+            "reason": {
+              "unsupported": "This source type is not supported yet.",
+              "noPixel": "No Pixel found. Connect one from the integrations page.",
+              "noIg": "No Instagram account connected.",
+              "noPage": "No Facebook page found."
+            },
+            "sourceLabel": {
+              "PIXEL": "Website (Pixel)",
+              "IG": "Instagram Account",
+              "PAGE": "Facebook Page",
+              "VIDEO": "Video Views",
+              "LEADFORM": "Lead Form",
+              "CATALOG": "Catalog",
+              "APP": "App Events",
+              "OFFLINE": "Offline Events",
+              "CUSTOMER_LIST": "Customer List"
+            }
+          },
+          "rule": {
+            "title": "Rule Definition",
+            "description": "Define the targeting rules for the selected source.",
+            "retentionLabel": "Lookback window:",
+            "days": "{count} days",
+            "pixel": "Pixel",
+            "pixelPlaceholder": "Select a Pixel",
+            "ruleType": "Rule Type",
+            "pixelRule": {
+              "ALL_VISITORS": "All website visitors",
+              "SPECIFIC_PAGES": "People who visited specific pages",
+              "EVENTS": "People who triggered specific events"
+            },
+            "urlContains": "URL contains",
+            "urlEquals": "URL equals",
+            "urlPlaceholder": "e.g. /products or /cart",
+            "event": "Event",
+            "eventPlaceholder": "Select an event",
+            "igAccount": "Instagram Account",
+            "accountPlaceholder": "Select an account",
+            "engagementType": "Engagement Type",
+            "igEngagement": {
+              "ig_business_profile_all": "Everyone who engaged with the profile",
+              "ig_business_profile_engaged": "People who visited your profile",
+              "ig_user_messaged": "People who sent a message",
+              "ig_user_saved": "People who saved a post or reel",
+              "ig_user_call_to_action": "People who tapped a call-to-action button",
+              "ig_user_shared": "People who shared a post or reel"
+            },
+            "facebookPage": "Facebook Page",
+            "pagePlaceholder": "Select a page",
+            "pageEngagement": {
+              "page_engaged": "Everyone who engaged with the page",
+              "page_visited": "People who visited the page",
+              "page_messaged": "People who sent a message",
+              "page_cta_clicked": "People who tapped a call-to-action button",
+              "page_saved": "People who saved the page or a post"
+            },
+            "watchType": "Watch Type",
+            "videoRetention": {
+              "video_watched_3s": "Watched 3 seconds",
+              "video_watched_10s": "Watched 10 seconds",
+              "video_watched_25p": "Watched 25%",
+              "video_watched_50p": "Watched 50%",
+              "video_watched_75p": "Watched 75%",
+              "video_watched_95p": "Watched 95%"
+            },
+            "genericSourceLabel": {
+              "LEADFORM": "Lead Form",
+              "CATALOG": "Catalog",
+              "APP": "App",
+              "OFFLINE": "Offline Event Set",
+              "CUSTOMER_LIST": "Customer List"
+            },
+            "unsupportedTitle": "{source} — Not supported",
+            "unsupportedDesc": "This source type is not supported in the current flow. Please go back and choose a supported source (Pixel, Instagram, Facebook Page or Video).",
+            "selectSourceFirst": "Please select a source first."
+          },
+          "exclude": {
+            "title": "Exclude (Optional)",
+            "description": "Add the user groups you want to exclude from this audience.",
+            "conflictWarning": "Warning: You added an exclusion from the same source as your inclusion rule. This may narrow your audience.",
+            "emptyState": "No exclusion rules added yet.",
+            "addExclude": "Add Exclusion",
+            "addAnotherExclude": "Add Another Exclusion",
+            "excludeItem": "Exclusion #{index}",
+            "source": "Source",
+            "retentionLabel": "Lookback window:",
+            "days": "{count} days",
+            "sourceLabel": {
+              "PIXEL": "Website (Pixel)",
+              "IG": "Instagram Account",
+              "PAGE": "Facebook Page",
+              "VIDEO": "Video Views",
+              "LEADFORM": "Lead Form"
+            }
+          },
+          "summary": {
+            "title": "Summary",
+            "description": "Review the audience details and name it.",
+            "nameLabel": "Audience Name",
+            "namePlaceholder": "e.g. Site visitors in the last 30 days",
+            "descriptionLabel": "Description (Optional)",
+            "descriptionPlaceholder": "A short note about the audience...",
+            "typeLabel": "Type",
+            "typeValue": "Custom Audience",
+            "sourceLabel": "Source",
+            "source": {
+              "PIXEL": "Website (Pixel)",
+              "IG": "Instagram Account",
+              "PAGE": "Facebook Page",
+              "VIDEO": "Video Views",
+              "LEADFORM": "Lead Form"
+            },
+            "retentionLabel": "Lookback Window",
+            "days": "{count} days",
+            "ruleTypeLabel": "Rule Type",
+            "igEngagementLabel": "IG Engagement",
+            "excludeLabel": "Exclusion",
+            "ruleCount": "{count} rules",
+            "willCreateTitle": "Will Be Created in Your Meta Ad Account",
+            "willCreateDesc": "Once you confirm, this audience will actually be created in your connected Meta ad account."
+          }
+        },
+        "lookalike": {
+          "step": {
+            "seed": "Seed",
+            "country": "Country",
+            "size": "Size",
+            "summary": "Summary"
+          },
+          "seed": {
+            "title": "Seed Audience Selection",
+            "description": "To create a lookalike audience, choose one of your existing custom audiences as the seed.",
+            "searchPlaceholder": "Search audiences...",
+            "loading": "Loading...",
+            "emptyNoSeed": "No custom audience available to use as a seed yet. Create a Retargeting audience first.",
+            "emptyNoMatch": "No audience matches your search.",
+            "sourceUnspecified": "Source unspecified",
+            "status": {
+              "READY": "Ready",
+              "DRAFT": "Draft"
+            }
+          },
+          "country": {
+            "title": "Country Selection",
+            "description": "Choose the countries your lookalike audience will target. You can select more than one.",
+            "searchPlaceholder": "Search countries...",
+            "names": {
+              "TR": "Turkey",
+              "US": "United States",
+              "DE": "Germany",
+              "GB": "United Kingdom",
+              "FR": "France",
+              "NL": "Netherlands",
+              "IT": "Italy",
+              "ES": "Spain",
+              "SA": "Saudi Arabia",
+              "AE": "United Arab Emirates",
+              "CA": "Canada",
+              "AU": "Australia",
+              "BR": "Brazil",
+              "JP": "Japan",
+              "KR": "South Korea",
+              "IN": "India",
+              "MX": "Mexico",
+              "PL": "Poland",
+              "SE": "Sweden",
+              "NO": "Norway",
+              "AT": "Austria",
+              "BE": "Belgium",
+              "CH": "Switzerland",
+              "DK": "Denmark",
+              "GR": "Greece",
+              "PT": "Portugal",
+              "RO": "Romania",
+              "BG": "Bulgaria",
+              "AZ": "Azerbaijan",
+              "GE": "Georgia"
+            }
+          },
+          "size": {
+            "title": "Audience Size",
+            "description": "Choose what percentage of the total population in your selected countries will be targeted. Lower percentage = more similar, higher percentage = broader audience.",
+            "similarityFallback": "{percent}% similarity ratio",
+            "descriptions": {
+              "1": "Top 1% most similar — High quality, small audience",
+              "2": "Top 2% most similar — Good quality, small-to-medium audience",
+              "3": "Top 3% most similar — Quality, medium audience",
+              "4": "4% — Balance of quality and scale",
+              "5": "5% — Balanced scale",
+              "6": "6% — Broad scale, medium similarity",
+              "7": "7% — Broad audience",
+              "8": "8% — Very broad audience, low similarity",
+              "9": "9% — Very broad audience",
+              "10": "10% — Maximum reach, lowest similarity"
+            },
+            "moreSimilar": "More Similar",
+            "broader": "Broader",
+            "preset": {
+              "highQuality": "High Quality",
+              "balanced": "Balanced",
+              "wideReach": "Wide Reach"
+            }
+          },
+          "summary": {
+            "title": "Summary",
+            "description": "Review the lookalike audience details and name it.",
+            "nameLabel": "Audience Name",
+            "namePlaceholder": "e.g. TR 1% Lookalike - Site Visitors",
+            "descriptionLabel": "Description (Optional)",
+            "descriptionPlaceholder": "A short note about the audience...",
+            "typeLabel": "Type",
+            "typeValue": "Lookalike Audience",
+            "seedLabel": "Seed Audience",
+            "countriesLabel": "Countries",
+            "sizeLabel": "Size",
+            "willCreateTitle": "Will Be Created in Your Meta Ad Account",
+            "willCreateDesc": "Once you confirm, this audience will actually be created in your connected Meta ad account."
+          }
+        },
+        "saved": {
+          "step": {
+            "location": "Location",
+            "demography": "Demographics",
+            "language": "Language",
+            "interests": "Interests",
+            "exclude": "Exclude",
+            "summary": "Summary"
+          },
+          "location": {
+            "title": "Location",
+            "description": "Set your audience's location. You can add a country, city or region.",
+            "searchPlaceholder": "Search country, city or region...",
+            "searching": "Searching...",
+            "noResults": "No results found",
+            "locationType": {
+              "country": "Country",
+              "city": "City",
+              "region": "Region"
+            },
+            "defaultHint": "If no location is added, Turkey is targeted by default."
+          },
+          "demography": {
+            "title": "Demographics",
+            "description": "Set the age range and gender.",
+            "ageRangeLabel": "Age Range:",
+            "min": "Min",
+            "max": "Max",
+            "minAgeAria": "Minimum age",
+            "maxAgeAria": "Maximum age",
+            "gender": "Gender",
+            "genderOption": {
+              "all": "All",
+              "male": "Male",
+              "female": "Female"
+            }
+          },
+          "language": {
+            "title": "Language",
+            "description": "Choose the languages your audience uses. If left empty, all languages are targeted.",
+            "allDefault": "All languages (default)",
+            "selectedCount": "{count} languages selected",
+            "searchPlaceholder": "Search languages...",
+            "names": {
+              "1": "Turkish",
+              "2": "English",
+              "6": "German",
+              "7": "Czech",
+              "8": "Greek",
+              "9": "French",
+              "10": "Danish",
+              "11": "Finnish",
+              "12": "Dutch",
+              "13": "Swedish",
+              "14": "Italian",
+              "15": "Spanish",
+              "16": "Hungarian",
+              "17": "Norwegian",
+              "19": "Russian",
+              "20": "Polish",
+              "21": "Portuguese",
+              "23": "Hebrew",
+              "24": "Malay",
+              "25": "Indonesian",
+              "26": "Japanese",
+              "27": "Korean",
+              "28": "Arabic",
+              "29": "Chinese (Simplified)",
+              "30": "Chinese (Traditional)",
+              "31": "Albanian",
+              "32": "Romanian",
+              "35": "Ukrainian",
+              "40": "Bulgarian",
+              "42": "Bengali",
+              "45": "Hindi",
+              "48": "Thai",
+              "67": "Vietnamese"
+            }
+          },
+          "interests": {
+            "title": "Interests and Behaviors",
+            "description": "Add interests and behaviors from Meta's detailed targeting taxonomy.",
+            "searchPlaceholder": "Search interests or behaviors...",
+            "searching": "Searching...",
+            "noResults": "No results found",
+            "advantageTitle": "Advantage+ Audience",
+            "advantageDesc": "Meta AI can automatically expand your audience."
+          },
+          "exclude": {
+            "title": "Exclude (Optional)",
+            "description": "Add the interests or behaviors you want to exclude from your audience.",
+            "searchPlaceholder": "Search interests or behaviors to exclude...",
+            "searching": "Searching...",
+            "noResults": "No results found",
+            "alreadyIncluded": "(already included)",
+            "optionalHint": "This step is optional. You can continue without adding any exclusions."
+          },
+          "summary": {
+            "title": "Summary",
+            "description": "Review the saved audience details and name it.",
+            "nameLabel": "Audience Name",
+            "namePlaceholder": "e.g. TR 25-45 Male Tech-Interested",
+            "descriptionLabel": "Description (Optional)",
+            "descriptionPlaceholder": "A short note about the audience...",
+            "typeLabel": "Type",
+            "typeValue": "Saved Audience",
+            "locationLabel": "Location",
+            "locationDefault": "Turkey (default)",
+            "ageRangeLabel": "Age Range",
+            "genderLabel": "Gender",
+            "genderAll": "All",
+            "genderMale": "Male",
+            "genderFemale": "Female",
+            "languagesLabel": "Languages",
+            "languageCount": "{count} languages",
+            "interestsLabel": "Interests",
+            "interestCount": "{count} interests",
+            "excludedLabel": "Excluded",
+            "on": "On",
+            "off": "Off",
+            "willCreateTitle": "Will Be Created in Your Meta Ad Account",
+            "willCreateDesc": "Once you confirm, this audience will actually be created in your connected Meta ad account."
+          }
+        },
+        "confirmStep": {
+          "editTitle": "Draft Will Be Updated",
+          "editDesc": "Your changes will be saved. To send the audience to Meta, use the \"Send to Meta\" button on the list screen.",
+          "createTitle": "Will Be Created in Your Real Meta Account",
+          "createDesc": "The audience below will actually be created in your connected Meta ad account. This action cannot be undone.",
+          "audienceName": "Audience Name",
+          "type": "Type",
+          "typeCustom": "Custom Audience (Retargeting)",
+          "typeLookalike": "Lookalike Audience",
+          "typeSaved": "Saved Audience",
+          "target": "Destination",
+          "targetValue": "Meta Ad Account",
+          "creating": "Creating...",
+          "createAndSend": "Create and Send to Meta"
+        },
+        "toast": {
+          "updated": "Audience updated",
+          "updateFailed": "Could not update",
+          "unexpected": "Unexpected error",
+          "createFailed": "Could not create record",
+          "savedSendingToMeta": "Audience saved, sending to Meta...",
+          "sentToMeta": "Audience successfully sent to Meta",
+          "sendToMetaFailedRetry": "Failed to send to Meta — you can try again from the list screen",
+          "sendToMetaErrorRetry": "An error occurred while sending to Meta — you can try again from the list screen",
+          "saved": "Audience saved"
+        }
+      },
+      "google": {
+        "contextNote": {
+          "saved": "Google's ready-made catalog of <b>audience segments</b>. You can add these segments as targeting when setting up a campaign; Google does not keep a separate \"saved audience\" object like Meta does.",
+          "custom": "The real <b>user lists</b> in your Google Ads account (remarketing, customer match, combined). Because a new list requires a web tag/rule, it is defined directly in Google Ads."
+        },
+        "segmentSearchPlaceholder": "Search Google audience segments...",
+        "searching": "Searching...",
+        "noSegmentMatch": "No matching segment found.",
+        "userListSearchPlaceholder": "Search user lists...",
+        "userListEmpty": {
+          "noMatch": "No list matched your search.",
+          "none": "There are no user lists in your Google Ads account yet.",
+          "hint": "Remarketing lists populate automatically once a Google tag is added to your website."
+        },
+        "userListCard": {
+          "size": "Size:",
+          "membership": "Membership duration:",
+          "days": "{count} days",
+          "eligible": "Eligible:",
+          "eligibleSearch": "Search",
+          "eligibleDisplay": "Display"
+        },
+        "notConnected": {
+          "title": "Google Ads is not connected",
+          "desc": "To view Google audience data, you need to connect your Google Ads account.",
+          "cta": "Go to Integration"
+        },
+        "category": {
+          "affinity": "Affinity",
+          "inMarket": "In-Market",
+          "detailedDemographic": "Detailed Demographics",
+          "lifeEvent": "Life Event",
+          "userList": "User List",
+          "customSegment": "Custom Segment",
+          "combinedAudience": "Combined Audience"
+        },
+        "userListType": {
+          "remarketing": "Remarketing",
+          "externalRemarketing": "External Remarketing",
+          "ruleBased": "Rule Based",
+          "logical": "Combined List",
+          "crmBased": "Customer Match (CRM)",
+          "similar": "Similar (deprecated)",
+          "unknown": "User List"
+        },
+        "browse": {
+          "inMarket": {
+            "label": "In-Market",
+            "desc": "Users actively researching a specific product or service"
+          },
+          "affinity": {
+            "label": "Affinity",
+            "desc": "Users based on interests and lifestyle"
+          },
+          "detailedDemographics": {
+            "label": "Detailed Demographics",
+            "desc": "Attributes such as education, marital status and home ownership"
+          },
+          "lifeEvents": {
+            "label": "Life Event",
+            "desc": "Major milestones like graduation, moving or marriage"
+          }
+        },
+        "sizeRange": {
+          "lt500": "Fewer than 500",
+          "lt1k": "Fewer than 1,000",
+          "1kTo10k": "1,000 – 10,000",
+          "10kTo50k": "10,000 – 50,000",
+          "50kTo100k": "50,000 – 100,000",
+          "100kTo300k": "100,000 – 300,000",
+          "300kTo500k": "300,000 – 500,000",
+          "500kTo1m": "500,000 – 1 million",
+          "1mTo2m": "1 – 2 million",
+          "2mTo3m": "2 – 3 million",
+          "3mTo5m": "3 – 5 million",
+          "5mTo10m": "5 – 10 million",
+          "10mTo20m": "10 – 20 million",
+          "20mTo30m": "20 – 30 million",
+          "30mTo50m": "30 – 50 million",
+          "over50m": "50 million+"
         }
       }
     },

@@ -1,6 +1,7 @@
 'use client'
 
 import { useState, useEffect } from 'react'
+import { useTranslations } from 'next-intl'
 import { Search, Users } from 'lucide-react'
 import type { LookalikeState, AudienceRow } from '../types'
 
@@ -10,6 +11,7 @@ interface StepSeedProps {
 }
 
 export default function StepSeed({ state, onChange }: StepSeedProps) {
+  const t = useTranslations('dashboard.hedefKitle.wizard.lookalike.seed')
   const [audiences, setAudiences] = useState<AudienceRow[]>([])
   const [loading, setLoading] = useState(true)
   const [search, setSearch] = useState('')
@@ -44,9 +46,9 @@ export default function StepSeed({ state, onChange }: StepSeedProps) {
 
   return (
     <div>
-      <h3 className="text-section-title text-gray-900 mb-1">Tohum Kitle Seçimi</h3>
+      <h3 className="text-section-title text-gray-900 mb-1">{t('title')}</h3>
       <p className="text-sm text-gray-500 mb-6">
-        Lookalike (benzer) kitle oluşturmak için mevcut özel hedef kitlelerinizden birini tohum olarak seçin.
+        {t('description')}
       </p>
 
       {/* Arama */}
@@ -56,20 +58,20 @@ export default function StepSeed({ state, onChange }: StepSeedProps) {
           type="text"
           value={search}
           onChange={(e) => setSearch(e.target.value)}
-          placeholder="Kitle ara..."
+          placeholder={t('searchPlaceholder')}
           className="w-full pl-10 pr-3 py-2.5 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary"
         />
       </div>
 
       {loading ? (
-        <div className="text-center py-8 text-sm text-gray-400">Yükleniyor...</div>
+        <div className="text-center py-8 text-sm text-gray-400">{t('loading')}</div>
       ) : filtered.length === 0 ? (
         <div className="text-center py-8 border-2 border-dashed border-gray-200 rounded-xl">
           <Users className="w-10 h-10 text-gray-300 mx-auto mb-2" />
           <p className="text-sm text-gray-400">
             {audiences.length === 0
-              ? 'Henüz tohum olarak kullanılabilecek özel kitle yok. Önce bir Isınmış Kitle oluşturun.'
-              : 'Aramanıza uygun kitle bulunamadı.'}
+              ? t('emptyNoSeed')
+              : t('emptyNoMatch')}
           </p>
         </div>
       ) : (
@@ -93,7 +95,7 @@ export default function StepSeed({ state, onChange }: StepSeedProps) {
                       {a.name}
                     </p>
                     <p className="text-caption text-gray-400 mt-0.5">
-                      {a.source ?? 'Kaynak belirtilmemiş'} &middot; {a.status}
+                      {a.source ?? t('sourceUnspecified')} &middot; {t(`status.${a.status}`)}
                     </p>
                   </div>
                   {isSelected && (

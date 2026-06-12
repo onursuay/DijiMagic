@@ -1,6 +1,7 @@
 'use client'
 
 import { useState } from 'react'
+import { useTranslations } from 'next-intl'
 import { Search, RefreshCw } from 'lucide-react'
 import type { UnifiedAudience, AudienceType } from './wizard/types'
 import AudienceCard from './AudienceCard'
@@ -24,6 +25,8 @@ export default function AudienceList({
   onToast,
   filter = 'ALL',
 }: AudienceListProps) {
+  const t = useTranslations('dashboard.hedefKitle.list')
+  const tc = useTranslations('common')
   const [searchQuery, setSearchQuery] = useState('')
   const [expandedId, setExpandedId] = useState<string | null>(null)
   const [actionLoadingIds, setActionLoadingIds] = useState<Set<string>>(new Set())
@@ -55,13 +58,13 @@ export default function AudienceList({
       const res = await fetch(`/api/audiences/${id}/create`, { method: 'POST' })
       const json = await res.json()
       if (res.ok && json.ok) {
-        onToast?.('Meta\'ya başarıyla gönderildi', 'success')
+        onToast?.(t('toast.sentToMeta'), 'success')
       } else {
-        onToast?.(json.message ?? 'Meta\'ya gönderim başarısız', 'error')
+        onToast?.(json.message ?? t('toast.sendToMetaFailed'), 'error')
       }
       onRefresh()
     } catch {
-      onToast?.('Gönderim sırasında hata oluştu', 'error')
+      onToast?.(t('toast.sendError'), 'error')
     } finally {
       setActionLoading(id, false)
     }
@@ -77,13 +80,13 @@ export default function AudienceList({
       })
       const json = await res.json()
       if (res.ok && json.ok) {
-        onToast?.('Senkronizasyon tamamlandı', 'success')
+        onToast?.(t('toast.syncDone'), 'success')
       } else {
-        onToast?.(json.message ?? 'Senkronizasyon başarısız', 'error')
+        onToast?.(json.message ?? t('toast.syncFailed'), 'error')
       }
       onRefresh()
     } catch {
-      onToast?.('Senkronizasyon hatası', 'error')
+      onToast?.(t('toast.syncError'), 'error')
     } finally {
       setActionLoading(id, false)
     }
@@ -98,7 +101,7 @@ export default function AudienceList({
         <div className="bg-white rounded-2xl border border-gray-200 p-12">
           <div className="flex items-center justify-center gap-3 text-gray-400">
             <RefreshCw className="w-5 h-5 animate-spin" />
-            <span className="text-sm">Yükleniyor...</span>
+            <span className="text-sm">{tc('loading')}</span>
           </div>
         </div>
       </div>
@@ -115,11 +118,11 @@ export default function AudienceList({
         <div className="bg-white rounded-2xl border border-gray-200 p-12 text-center">
           <p className="text-sm text-gray-400">
             {searchQuery.trim()
-              ? 'Aramanızla eşleşen hedef kitle bulunamadı.'
-              : 'Henüz hedef kitle oluşturulmadı.'}
+              ? t('empty.noMatch')
+              : t('empty.none')}
           </p>
           {!searchQuery.trim() && (
-            <p className="text-xs text-gray-500 mt-1">&quot;+ Yeni Kitle&quot; butonuyla başlayın.</p>
+            <p className="text-xs text-gray-500 mt-1">{t('empty.hint')}</p>
           )}
         </div>
       ) : (
@@ -146,12 +149,13 @@ export default function AudienceList({
 }
 
 function SearchBar({ value, onChange }: { value: string; onChange: (v: string) => void }) {
+  const t = useTranslations('dashboard.hedefKitle.list')
   return (
     <div className="relative">
       <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" />
       <input
         type="text"
-        placeholder="Hedef kitle arayın..."
+        placeholder={t('searchPlaceholder')}
         value={value}
         onChange={(e) => onChange(e.target.value)}
         className="w-full pl-10 pr-4 py-2.5 border border-gray-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary bg-white"

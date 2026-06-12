@@ -227,10 +227,10 @@ export default function HedefKitlePage() {
     try {
       const res = await fetch(`/api/audiences/${id}`, { method: 'DELETE' })
       if (!res.ok) throw new Error()
-      addToast('Kitle silindi', 'success')
+      addToast(t('list.toast.deleted'), 'success')
       fetchAudiences()
     } catch {
-      addToast('Silme başarısız', 'error')
+      addToast(t('list.toast.deleteFailed'), 'error')
     }
   }
 
@@ -259,7 +259,7 @@ export default function HedefKitlePage() {
                 className="inline-flex items-center gap-2 px-4 py-2.5 bg-primary text-white rounded-lg text-sm font-medium hover:bg-primary/90 transition-colors shrink-0"
               >
                 <Plus className="w-4 h-4" />
-                Yeni Kitle
+                {t('newAudience')}
               </button>
             )}
           </div>

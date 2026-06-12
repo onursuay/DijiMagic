@@ -1,6 +1,7 @@
 'use client'
 
 import { useState, useRef, useEffect } from 'react'
+import { useTranslations } from 'next-intl'
 import { Search, X, MapPin } from 'lucide-react'
 import type { SavedAudienceState, LocationItem } from '../types'
 
@@ -18,6 +19,7 @@ interface LocationResult {
 }
 
 export default function StepLocation({ state, onChange }: StepLocationProps) {
+  const t = useTranslations('dashboard.hedefKitle.wizard.saved.location')
   const [search, setSearch] = useState('')
   const [results, setResults] = useState<LocationResult[]>([])
   const [loading, setLoading] = useState(false)
@@ -84,9 +86,9 @@ export default function StepLocation({ state, onChange }: StepLocationProps) {
 
   return (
     <div>
-      <h3 className="text-section-title text-gray-900 mb-1">Konum</h3>
+      <h3 className="text-section-title text-gray-900 mb-1">{t('title')}</h3>
       <p className="text-sm text-gray-500 mb-6">
-        Hedef kitlenizin konumunu belirleyin. Ülke, şehir veya bölge ekleyebilirsiniz.
+        {t('description')}
       </p>
 
       {/* Seçilenler */}
@@ -115,16 +117,16 @@ export default function StepLocation({ state, onChange }: StepLocationProps) {
             doSearch(e.target.value)
           }}
           onFocus={() => { if (results.length > 0) setShowDropdown(true) }}
-          placeholder="Ülke, şehir veya bölge ara..."
+          placeholder={t('searchPlaceholder')}
           className="w-full pl-10 pr-3 py-2.5 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary"
         />
 
         {showDropdown && (
           <div className="absolute z-50 mt-1 w-full bg-white border border-gray-200 rounded-lg shadow-lg max-h-60 overflow-y-auto">
             {loading ? (
-              <div className="p-3 text-sm text-gray-400 text-center">Aranıyor...</div>
+              <div className="p-3 text-sm text-gray-400 text-center">{t('searching')}</div>
             ) : results.length === 0 ? (
-              <div className="p-3 text-sm text-gray-400 text-center">Sonuç bulunamadı</div>
+              <div className="p-3 text-sm text-gray-400 text-center">{t('noResults')}</div>
             ) : (
               results.map((r) => {
                 const already = state.locations.some((l) => l.key === r.key)
@@ -144,7 +146,7 @@ export default function StepLocation({ state, onChange }: StepLocationProps) {
                       {r.country_name && (
                         <span className="text-gray-400 ml-1">({r.country_name})</span>
                       )}
-                      <span className="text-caption text-gray-400 ml-2">{r.type}</span>
+                      <span className="text-caption text-gray-400 ml-2">{t(`locationType.${r.type}`)}</span>
                     </div>
                   </button>
                 )
@@ -156,7 +158,7 @@ export default function StepLocation({ state, onChange }: StepLocationProps) {
 
       {state.locations.length === 0 && (
         <p className="text-caption text-gray-400 mt-3">
-          Konum eklenmezse varsayılan olarak Türkiye hedeflenir.
+          {t('defaultHint')}
         </p>
       )}
     </div>

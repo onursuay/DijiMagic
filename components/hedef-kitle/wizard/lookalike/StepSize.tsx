@@ -1,5 +1,6 @@
 'use client'
 
+import { useTranslations } from 'next-intl'
 import type { LookalikeState } from '../types'
 
 interface StepSizeProps {
@@ -7,26 +8,17 @@ interface StepSizeProps {
   onChange: (updates: Partial<LookalikeState>) => void
 }
 
-const SIZE_DESCRIPTIONS: Record<number, string> = {
-  1: 'En benzer %1 — Yüksek kalite, küçük kitle',
-  2: 'En benzer %2 — İyi kalite, küçük-orta kitle',
-  3: 'En benzer %3 — Kaliteli, orta kitle',
-  4: '%4 — Kalite ve ölçek dengesi',
-  5: '%5 — Dengeli ölçek',
-  6: '%6 — Geniş ölçek, orta benzerlik',
-  7: '%7 — Geniş kitle',
-  8: '%8 — Çok geniş kitle, düşük benzerlik',
-  9: '%9 — Çok geniş kitle',
-  10: '%10 — Maksimum erişim, en düşük benzerlik',
-}
-
 export default function StepSize({ state, onChange }: StepSizeProps) {
+  const t = useTranslations('dashboard.hedefKitle.wizard.lookalike.size')
+  const sizeDescription = state.sizePercent >= 1 && state.sizePercent <= 10
+    ? t(`descriptions.${state.sizePercent}`)
+    : t('similarityFallback', { percent: state.sizePercent })
+
   return (
     <div>
-      <h3 className="text-section-title text-gray-900 mb-1">Kitle Boyutu</h3>
+      <h3 className="text-section-title text-gray-900 mb-1">{t('title')}</h3>
       <p className="text-sm text-gray-500 mb-6">
-        Seçtiğiniz ülkelerdeki toplam nüfusun yüzde kaçının hedefleneceğini belirleyin.
-        Düşük yüzde = daha benzer, yüksek yüzde = daha geniş kitle.
+        {t('description')}
       </p>
 
       <div className="bg-white rounded-xl border border-gray-200 p-6">
@@ -34,7 +26,7 @@ export default function StepSize({ state, onChange }: StepSizeProps) {
         <div className="text-center mb-6">
           <span className="text-5xl font-bold text-primary">%{state.sizePercent}</span>
           <p className="text-sm text-gray-500 mt-2">
-            {SIZE_DESCRIPTIONS[state.sizePercent] ?? `%${state.sizePercent} benzerlik oranı`}
+            {sizeDescription}
           </p>
         </div>
 
@@ -68,8 +60,8 @@ export default function StepSize({ state, onChange }: StepSizeProps) {
             ))}
           </div>
           <div className="flex justify-between text-caption text-gray-400 mt-3">
-            <span>Daha Benzer</span>
-            <span>Daha Geniş</span>
+            <span>{t('moreSimilar')}</span>
+            <span>{t('broader')}</span>
           </div>
         </div>
 
@@ -83,7 +75,7 @@ export default function StepSize({ state, onChange }: StepSizeProps) {
             }`}
           >
             <p className="text-sm font-medium text-gray-900">%1</p>
-            <p className="text-caption text-gray-500">Yüksek Kalite</p>
+            <p className="text-caption text-gray-500">{t('preset.highQuality')}</p>
           </button>
           <button
             type="button"
@@ -93,7 +85,7 @@ export default function StepSize({ state, onChange }: StepSizeProps) {
             }`}
           >
             <p className="text-sm font-medium text-gray-900">%3</p>
-            <p className="text-caption text-gray-500">Dengeli</p>
+            <p className="text-caption text-gray-500">{t('preset.balanced')}</p>
           </button>
           <button
             type="button"
@@ -103,7 +95,7 @@ export default function StepSize({ state, onChange }: StepSizeProps) {
             }`}
           >
             <p className="text-sm font-medium text-gray-900">%5</p>
-            <p className="text-caption text-gray-500">Geniş Erişim</p>
+            <p className="text-caption text-gray-500">{t('preset.wideReach')}</p>
           </button>
         </div>
       </div>

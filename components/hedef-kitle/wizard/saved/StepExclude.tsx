@@ -1,6 +1,7 @@
 'use client'
 
 import { useState, useRef, useEffect } from 'react'
+import { useTranslations } from 'next-intl'
 import { Search, X, ShieldOff } from 'lucide-react'
 import type { SavedAudienceState, InterestItem } from '../types'
 
@@ -16,6 +17,7 @@ interface InterestResult {
 }
 
 export default function StepExclude({ state, onChange }: StepExcludeProps) {
+  const t = useTranslations('dashboard.hedefKitle.wizard.saved.exclude')
   const [search, setSearch] = useState('')
   const [results, setResults] = useState<InterestResult[]>([])
   const [loading, setLoading] = useState(false)
@@ -73,9 +75,9 @@ export default function StepExclude({ state, onChange }: StepExcludeProps) {
 
   return (
     <div>
-      <h3 className="text-section-title text-gray-900 mb-1">Hariç Tut (Opsiyonel)</h3>
+      <h3 className="text-section-title text-gray-900 mb-1">{t('title')}</h3>
       <p className="text-sm text-gray-500 mb-6">
-        Hedef kitlenizden hariç tutmak istediğiniz ilgi alanlarını veya davranışları ekleyin.
+        {t('description')}
       </p>
 
       {/* Seçilenler */}
@@ -104,16 +106,16 @@ export default function StepExclude({ state, onChange }: StepExcludeProps) {
             doSearch(e.target.value)
           }}
           onFocus={() => { if (results.length > 0) setShowDropdown(true) }}
-          placeholder="Hariç tutulacak ilgi alanı veya davranış ara..."
+          placeholder={t('searchPlaceholder')}
           className="w-full pl-10 pr-3 py-2.5 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary"
         />
 
         {showDropdown && (
           <div className="absolute z-50 mt-1 w-full bg-white border border-gray-200 rounded-lg shadow-lg max-h-60 overflow-y-auto">
             {loading ? (
-              <div className="p-3 text-sm text-gray-400 text-center">Aranıyor...</div>
+              <div className="p-3 text-sm text-gray-400 text-center">{t('searching')}</div>
             ) : results.length === 0 ? (
-              <div className="p-3 text-sm text-gray-400 text-center">Sonuç bulunamadı</div>
+              <div className="p-3 text-sm text-gray-400 text-center">{t('noResults')}</div>
             ) : (
               results.map((r) => {
                 const alreadyExcluded = state.excludeInterests.some((i) => i.id === r.id)
@@ -130,7 +132,7 @@ export default function StepExclude({ state, onChange }: StepExcludeProps) {
                   >
                     <span className="text-gray-900">{r.name}</span>
                     {alreadyIncluded && (
-                      <span className="text-caption text-gray-500 ml-2">(zaten dahil edilmiş)</span>
+                      <span className="text-caption text-gray-500 ml-2">{t('alreadyIncluded')}</span>
                     )}
                   </button>
                 )
@@ -142,7 +144,7 @@ export default function StepExclude({ state, onChange }: StepExcludeProps) {
 
       {state.excludeInterests.length === 0 && (
         <p className="text-caption text-gray-400 mt-3">
-          Bu adım opsiyoneldir. Hariç tutma eklemeden devam edebilirsiniz.
+          {t('optionalHint')}
         </p>
       )}
     </div>

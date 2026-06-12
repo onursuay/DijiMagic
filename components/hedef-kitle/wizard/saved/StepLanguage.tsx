@@ -1,6 +1,7 @@
 'use client'
 
 import { useState, useRef, useEffect } from 'react'
+import { useTranslations } from 'next-intl'
 import { X } from 'lucide-react'
 import type { SavedAudienceState } from '../types'
 
@@ -9,24 +10,18 @@ interface StepLanguageProps {
   onChange: (updates: Partial<SavedAudienceState>) => void
 }
 
-const LANGUAGE_OPTIONS: { id: number; name: string }[] = [
-  { id: 1, name: 'Türkçe' }, { id: 2, name: 'İngilizce' }, { id: 6, name: 'Almanca' },
-  { id: 28, name: 'Arapça' }, { id: 31, name: 'Arnavutça' }, { id: 42, name: 'Bengalce' },
-  { id: 40, name: 'Bulgarca' }, { id: 7, name: 'Çekçe' }, { id: 29, name: 'Çince (Basit)' },
-  { id: 30, name: 'Çince (Geleneksel)' }, { id: 10, name: 'Danca' }, { id: 11, name: 'Fince' },
-  { id: 9, name: 'Fransızca' }, { id: 45, name: 'Hintçe' }, { id: 12, name: 'Hollandaca' },
-  { id: 23, name: 'İbranice' }, { id: 15, name: 'İspanyolca' }, { id: 13, name: 'İsveççe' },
-  { id: 14, name: 'İtalyanca' }, { id: 26, name: 'Japonca' }, { id: 27, name: 'Korece' },
-  { id: 16, name: 'Macarca' }, { id: 24, name: 'Malayca' }, { id: 17, name: 'Norveççe' },
-  { id: 20, name: 'Lehçe' }, { id: 21, name: 'Portekizce' }, { id: 32, name: 'Romence' },
-  { id: 19, name: 'Rusça' }, { id: 48, name: 'Tayca' }, { id: 35, name: 'Ukraynaca' },
-  { id: 8, name: 'Yunanca' }, { id: 67, name: 'Vietnamca' }, { id: 25, name: 'Endonezce' },
+const LANGUAGE_IDS: number[] = [
+  1, 2, 6, 28, 31, 42, 40, 7, 29, 30, 10, 11, 9, 45, 12, 23, 15, 13,
+  14, 26, 27, 16, 24, 17, 20, 21, 32, 19, 48, 35, 8, 67, 25,
 ]
 
 export default function StepLanguage({ state, onChange }: StepLanguageProps) {
+  const t = useTranslations('dashboard.hedefKitle.wizard.saved.language')
   const [open, setOpen] = useState(false)
   const [search, setSearch] = useState('')
   const ref = useRef<HTMLDivElement>(null)
+
+  const LANGUAGE_OPTIONS = LANGUAGE_IDS.map((id) => ({ id, name: t(`names.${id}`) }))
 
   useEffect(() => {
     const handler = (e: MouseEvent) => {
@@ -51,9 +46,9 @@ export default function StepLanguage({ state, onChange }: StepLanguageProps) {
 
   return (
     <div>
-      <h3 className="text-section-title text-gray-900 mb-1">Dil</h3>
+      <h3 className="text-section-title text-gray-900 mb-1">{t('title')}</h3>
       <p className="text-sm text-gray-500 mb-6">
-        Hedef kitlenizin kullandığı dilleri seçin. Boş bırakırsanız tüm diller hedeflenir.
+        {t('description')}
       </p>
 
       {/* Seçilenler */}
@@ -77,9 +72,9 @@ export default function StepLanguage({ state, onChange }: StepLanguageProps) {
           onClick={() => setOpen((v) => !v)}
         >
           {selectedNames.length === 0 ? (
-            <span className="text-gray-400 text-sm">Tüm diller (varsayılan)</span>
+            <span className="text-gray-400 text-sm">{t('allDefault')}</span>
           ) : (
-            <span className="text-sm text-gray-700">{selectedNames.length} dil seçildi</span>
+            <span className="text-sm text-gray-700">{t('selectedCount', { count: selectedNames.length })}</span>
           )}
         </div>
 
@@ -91,7 +86,7 @@ export default function StepLanguage({ state, onChange }: StepLanguageProps) {
                 type="text"
                 value={search}
                 onChange={(e) => setSearch(e.target.value)}
-                placeholder="Dil ara..."
+                placeholder={t('searchPlaceholder')}
                 className="w-full px-2 py-1.5 border border-gray-300 rounded text-sm focus:outline-none focus:ring-1 focus:ring-primary"
               />
             </div>

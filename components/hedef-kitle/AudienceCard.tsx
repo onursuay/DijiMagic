@@ -1,6 +1,7 @@
 'use client'
 
 import { useState, useEffect } from 'react'
+import { useTranslations, useLocale } from 'next-intl'
 import {
   ChevronDown,
   ExternalLink,
@@ -36,10 +37,11 @@ const TYPE_ICONS: Record<AudienceType, { icon: typeof Globe; color: string }> = 
 }
 
 function StatusBadge({ status }: { status: AudienceStatus }) {
+  const locale = useLocale()
   const config = STATUS_CONFIG[status]
   return (
     <span className={`inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium ${config.color}`}>
-      {config.tr}
+      {locale === 'en' ? config.en : config.tr}
     </span>
   )
 }
@@ -59,28 +61,47 @@ function formatCount(count: { lower: number; upper: number }): string {
   return `${format(count.lower)} – ${format(count.upper)}`
 }
 
-/** Meta custom/lookalike alt tür enum'unu sade Türkçe'ye çevirir (ham enum gösterilmez). */
-const SUBTYPE_LABELS: Record<string, string> = {
-  WEBSITE: 'Web Sitesi', APP: 'Uygulama', CUSTOMER_LIST: 'Müşteri Listesi',
-  ENGAGEMENT: 'Etkileşim', VIDEO: 'Video İzleyenler', IG_BUSINESS: 'Instagram',
-  PAGE: 'Sayfa Etkileşimi', LEAD: 'Form Dolduranlar', OFFLINE_CONVERSION: 'Çevrimdışı',
-  LOOKALIKE: 'Benzer Kitle', CUSTOM: 'Özel Kitle', SAVED: 'Kayıtlı Kitle',
+/** Meta custom/lookalike alt tür enum'unu sade etikete çevirir (ham enum gösterilmez). */
+const SUBTYPE_LABELS: Record<string, { tr: string; en: string }> = {
+  WEBSITE: { tr: 'Web Sitesi', en: 'Website' },
+  APP: { tr: 'Uygulama', en: 'App' },
+  CUSTOMER_LIST: { tr: 'Müşteri Listesi', en: 'Customer List' },
+  ENGAGEMENT: { tr: 'Etkileşim', en: 'Engagement' },
+  VIDEO: { tr: 'Video İzleyenler', en: 'Video Viewers' },
+  IG_BUSINESS: { tr: 'Instagram', en: 'Instagram' },
+  PAGE: { tr: 'Sayfa Etkileşimi', en: 'Page Engagement' },
+  LEAD: { tr: 'Form Dolduranlar', en: 'Lead Form' },
+  OFFLINE_CONVERSION: { tr: 'Çevrimdışı', en: 'Offline' },
+  LOOKALIKE: { tr: 'Benzer Kitle', en: 'Lookalike Audience' },
+  CUSTOM: { tr: 'Özel Kitle', en: 'Custom Audience' },
+  SAVED: { tr: 'Kayıtlı Kitle', en: 'Saved Audience' },
 }
-function subtypeLabel(s?: string | null): string {
+function subtypeLabel(s: string | null | undefined, locale: string): string {
   if (!s) return ''
-  return SUBTYPE_LABELS[s] ?? s.replace(/_/g, ' ').toLowerCase().replace(/^\w/, (c) => c.toUpperCase())
+  const entry = SUBTYPE_LABELS[s]
+  if (entry) return locale === 'en' ? entry.en : entry.tr
+  return s.replace(/_/g, ' ').toLowerCase().replace(/^\w/, (c) => c.toUpperCase())
 }
 
 /** Tarihi güvenle çözer; çözemezse null (UI alanı gizler). Meta unix(saniye) + ISO destekli. */
-function formatCreatedAt(v?: string | null): string | null {
+function formatCreatedAt(v: string | null | undefined, locale: string): string | null {
   if (!v) return null
   const d = /^\d{9,}$/.test(v.trim()) ? new Date(Number(v) * 1000) : new Date(v)
-  return isNaN(d.getTime()) ? null : d.toLocaleDateString('tr-TR')
+  return isNaN(d.getTime()) ? null : d.toLocaleDateString(locale === 'en' ? 'en-US' : 'tr-TR')
+}
+
+interface TargetingLabels {
+  location: string
+  age: string
+  gender: string
+  interests: string
+  male: string
+  female: string
 }
 
 /** Meta saved audience targeting'ini okunur özet satırlarına çevirir (konum/yaş/cinsiyet/ilgi).
     SAVED kitlelerde subtype/boyut/tarih gelmeyince kartın anlamlı dolması için kullanılır. */
-function targetingSummary(t?: Record<string, unknown>): { label: string; value: string }[] {
+function targetingSummary(t: Record<string, unknown> | undefined, labels: TargetingLabels): { label: string; value: string }[] {
   if (!t || typeof t !== 'object') return []
   const rows: { label: string; value: string }[] = []
   const geo = t.geo_locations as Record<string, unknown> | undefined
@@ -91,14 +112,14 @@ function targetingSummary(t?: Record<string, unknown>): { label: string; value: 
       const arr = geo[k]
       if (Array.isArray(arr)) locs.push(...arr.map((x: any) => x?.name ?? x?.key).filter(Boolean))
     }
-    if (locs.length) rows.push({ label: 'Konum', value: locs.join(', ') })
+    if (locs.length) rows.push({ label: labels.location, value: locs.join(', ') })
   }
   const ageMin = t.age_min as number | undefined
   const ageMax = t.age_max as number | undefined
-  if (ageMin != null || ageMax != null) rows.push({ label: 'Yaş', value: `${ageMin ?? 13}–${ageMax ?? 65}` })
+  if (ageMin != null || ageMax != null) rows.push({ label: labels.age, value: `${ageMin ?? 13}–${ageMax ?? 65}` })
   if (Array.isArray(t.genders) && (t.genders as number[]).length) {
-    const g = (t.genders as number[]).map((x) => (x === 1 ? 'Erkek' : x === 2 ? 'Kadın' : '')).filter(Boolean).join(', ')
-    if (g) rows.push({ label: 'Cinsiyet', value: g })
+    const g = (t.genders as number[]).map((x) => (x === 1 ? labels.male : x === 2 ? labels.female : '')).filter(Boolean).join(', ')
+    if (g) rows.push({ label: labels.gender, value: g })
   }
   const interests: string[] = []
   if (Array.isArray(t.interests)) interests.push(...(t.interests as any[]).map((i) => i?.name).filter(Boolean))
@@ -107,7 +128,7 @@ function targetingSummary(t?: Record<string, unknown>): { label: string; value: 
       if (fs && Array.isArray(fs.interests)) interests.push(...fs.interests.map((i: any) => i?.name).filter(Boolean))
     }
   }
-  if (interests.length) rows.push({ label: 'İlgi Alanları', value: interests.slice(0, 10).join(', ') })
+  if (interests.length) rows.push({ label: labels.interests, value: interests.slice(0, 10).join(', ') })
   return rows
 }
 
@@ -121,10 +142,20 @@ export default function AudienceCard({
   onSync,
   actionLoading,
 }: AudienceCardProps) {
+  const t = useTranslations('dashboard.hedefKitle.card')
+  const tc = useTranslations('common')
+  const locale = useLocale()
   const typeConfig = TYPE_ICONS[audience.type]
   const TypeIcon = typeConfig.icon
   const [pendingDelete, setPendingDelete] = useState(false)
-  const tSummary = targetingSummary(audience.targeting)
+  const tSummary = targetingSummary(audience.targeting, {
+    location: t('targeting.location'),
+    age: t('targeting.age'),
+    gender: t('targeting.gender'),
+    interests: t('targeting.interests'),
+    male: t('targeting.male'),
+    female: t('targeting.female'),
+  })
 
   // Auto-cancel confirm after 4s, or when card collapses
   useEffect(() => {
@@ -166,7 +197,7 @@ export default function AudienceCard({
             </span>
           </div>
           <div className="flex items-center gap-2 mt-0.5">
-            <span className="text-xs text-gray-500">{TYPE_LABELS[audience.type].tr}</span>
+            <span className="text-xs text-gray-500">{locale === 'en' ? TYPE_LABELS[audience.type].en : TYPE_LABELS[audience.type].tr}</span>
             {audience.origin === 'local' && audience.status && (
               <>
                 <span className="text-gray-300">·</span>
@@ -177,7 +208,7 @@ export default function AudienceCard({
               <>
                 <span className="text-gray-300">·</span>
                 <span className="text-xs text-gray-500">
-                  ~{formatCount(audience.approximateCount!)} kişi
+                  {t('peopleCount', { count: formatCount(audience.approximateCount!) })}
                 </span>
               </>
             )}
@@ -210,30 +241,30 @@ export default function AudienceCard({
           <div className="grid grid-cols-2 gap-x-6 gap-y-3">
             {audience.origin === 'local' && audience.source && (
               <div className="space-y-0.5">
-                <p className="text-[11px] uppercase tracking-wide text-gray-400 font-medium">Kaynak</p>
-                <p className="text-sm text-gray-800 font-medium">{SOURCE_LABELS[audience.source]?.tr ?? audience.source}</p>
+                <p className="text-[11px] uppercase tracking-wide text-gray-400 font-medium">{t('field.source')}</p>
+                <p className="text-sm text-gray-800 font-medium">{SOURCE_LABELS[audience.source] ? (locale === 'en' ? SOURCE_LABELS[audience.source].en : SOURCE_LABELS[audience.source].tr) : audience.source}</p>
               </div>
             )}
             <div className="space-y-0.5">
-              <p className="text-[11px] uppercase tracking-wide text-gray-400 font-medium">Alt Tür</p>
-              <p className="text-sm text-gray-800 font-medium">{audience.subtype ? subtypeLabel(audience.subtype) : TYPE_LABELS[audience.type].tr}</p>
+              <p className="text-[11px] uppercase tracking-wide text-gray-400 font-medium">{t('field.subtype')}</p>
+              <p className="text-sm text-gray-800 font-medium">{audience.subtype ? subtypeLabel(audience.subtype, locale) : (locale === 'en' ? TYPE_LABELS[audience.type].en : TYPE_LABELS[audience.type].tr)}</p>
             </div>
             {hasValidCount(audience.approximateCount) && (
               <div className="space-y-0.5">
-                <p className="text-[11px] uppercase tracking-wide text-gray-400 font-medium">Tahmini Boyut</p>
-                <p className="text-sm text-gray-800 font-medium">{formatCount(audience.approximateCount!)} kişi</p>
+                <p className="text-[11px] uppercase tracking-wide text-gray-400 font-medium">{t('field.estimatedSize')}</p>
+                <p className="text-sm text-gray-800 font-medium">{t('peopleCount', { count: formatCount(audience.approximateCount!) })}</p>
               </div>
             )}
             {audience.origin === 'local' && audience.metaAudienceId && (
               <div className="space-y-0.5">
-                <p className="text-[11px] uppercase tracking-wide text-gray-400 font-medium">Meta ID</p>
+                <p className="text-[11px] uppercase tracking-wide text-gray-400 font-medium">{t('field.metaId')}</p>
                 <p className="text-sm text-gray-700 font-mono truncate">{audience.metaAudienceId}</p>
               </div>
             )}
-            {formatCreatedAt(audience.createdAt) && (
+            {formatCreatedAt(audience.createdAt, locale) && (
               <div className="space-y-0.5">
-                <p className="text-[11px] uppercase tracking-wide text-gray-400 font-medium">Oluşturulma</p>
-                <p className="text-sm text-gray-800 font-medium">{formatCreatedAt(audience.createdAt)}</p>
+                <p className="text-[11px] uppercase tracking-wide text-gray-400 font-medium">{t('field.createdAt')}</p>
+                <p className="text-sm text-gray-800 font-medium">{formatCreatedAt(audience.createdAt, locale)}</p>
               </div>
             )}
           </div>
@@ -262,7 +293,7 @@ export default function AudienceCard({
                     className="inline-flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium text-gray-600 bg-gray-100 hover:bg-gray-200 rounded-lg transition-colors"
                   >
                     <Pencil className="w-3.5 h-3.5" />
-                    Düzenle
+                    {tc('edit')}
                   </button>
                 )}
                 {audience.type !== 'SAVED' && (audience.status === 'DRAFT' || audience.status === 'ERROR') && onSendToMeta && (
@@ -279,7 +310,7 @@ export default function AudienceCard({
                     ) : (
                       <Send className="w-3.5 h-3.5" />
                     )}
-                    {audience.status === 'ERROR' ? 'Tekrar Dene' : 'Meta\'ya Gönder'}
+                    {audience.status === 'ERROR' ? tc('retry') : t('action.sendToMeta')}
                   </button>
                 )}
                 {(audience.status === 'POPULATING' || audience.status === 'READY') && onSync && (
@@ -290,26 +321,26 @@ export default function AudienceCard({
                     className="inline-flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium text-blue-600 bg-blue-50 hover:bg-blue-100 rounded-lg transition-colors disabled:opacity-50"
                   >
                     <RefreshCw className={`w-3.5 h-3.5 ${actionLoading ? 'animate-spin' : ''}`} />
-                    Senkronize Et
+                    {t('action.sync')}
                   </button>
                 )}
                 {audience.status !== 'DELETED' && onDelete && (
                   pendingDelete ? (
                     <div className="inline-flex items-center gap-1 rounded-lg border border-red-200 bg-red-50 px-2 py-1">
-                      <span className="text-xs text-red-600 font-medium mr-1">Emin misin?</span>
+                      <span className="text-xs text-red-600 font-medium mr-1">{t('confirmDelete')}</span>
                       <button
                         type="button"
                         onClick={(e) => { e.stopPropagation(); onDelete(audience.id) }}
                         className="text-xs font-semibold text-red-600 hover:text-red-700 px-1.5 py-0.5 rounded hover:bg-red-100 transition-colors"
                       >
-                        Evet
+                        {tc('yes')}
                       </button>
                       <button
                         type="button"
                         onClick={(e) => { e.stopPropagation(); setPendingDelete(false) }}
                         className="text-xs text-gray-500 hover:text-gray-700 px-1.5 py-0.5 rounded hover:bg-gray-100 transition-colors"
                       >
-                        İptal
+                        {tc('cancel')}
                       </button>
                     </div>
                   ) : (
@@ -319,7 +350,7 @@ export default function AudienceCard({
                       className="inline-flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium text-gray-500 hover:text-red-600 hover:bg-red-50 rounded-lg transition-colors"
                     >
                       <Trash2 className="w-3.5 h-3.5" />
-                      Sil
+                      {tc('delete')}
                     </button>
                   )
                 )}
@@ -336,7 +367,7 @@ export default function AudienceCard({
                 className="inline-flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium text-gray-500 hover:text-gray-700 hover:bg-gray-100 rounded-lg transition-colors ml-auto"
               >
                 <ExternalLink className="w-3.5 h-3.5" />
-                Ads Manager
+                {t('action.adsManager')}
               </a>
             )}
           </div>

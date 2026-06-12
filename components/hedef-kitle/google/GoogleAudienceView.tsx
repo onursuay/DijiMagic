@@ -20,6 +20,7 @@
    ────────────────────────────────────────────────────────────── */
 
 import { useState, useEffect, useCallback, useRef } from 'react'
+import { useTranslations } from 'next-intl'
 import {
   Search,
   RefreshCw,
@@ -78,55 +79,59 @@ interface GoogleUserList {
   eligibleForDisplay?: boolean
 }
 
-const CATEGORY_LABELS: Record<SegmentCategory, string> = {
-  AFFINITY: 'İlgi Alanı',
-  IN_MARKET: 'Satın Alma Niyeti',
-  DETAILED_DEMOGRAPHIC: 'Detaylı Demografi',
-  LIFE_EVENT: 'Yaşam Olayı',
-  USER_LIST: 'Kullanıcı Listesi',
-  CUSTOM_AUDIENCE: 'Özel Segment',
-  COMBINED_AUDIENCE: 'Kombine Kitle',
+// Ham Google enum'u UI'da asla görünmez — i18n anahtarına çevrilir.
+const CATEGORY_LABEL_KEYS: Record<SegmentCategory, string> = {
+  AFFINITY: 'category.affinity',
+  IN_MARKET: 'category.inMarket',
+  DETAILED_DEMOGRAPHIC: 'category.detailedDemographic',
+  LIFE_EVENT: 'category.lifeEvent',
+  USER_LIST: 'category.userList',
+  CUSTOM_AUDIENCE: 'category.customSegment',
+  COMBINED_AUDIENCE: 'category.combinedAudience',
 }
 
-// Ham Google enum'u UI'da asla görünmez — TR karşılığına çevrilir.
-const USER_LIST_TYPE_LABELS: Record<string, string> = {
-  REMARKETING: 'Yeniden Pazarlama',
-  EXTERNAL_REMARKETING: 'Harici Yeniden Pazarlama',
-  RULE_BASED: 'Kural Tabanlı',
-  LOGICAL: 'Kombine Liste',
-  CRM_BASED: 'Müşteri Eşleştirme (CRM)',
-  SIMILAR: 'Benzer (devre dışı)',
-  UNKNOWN: 'Kullanıcı Listesi',
+// Ham Google enum'u UI'da asla görünmez — i18n anahtarına çevrilir.
+const USER_LIST_TYPE_KEYS: Record<string, string> = {
+  REMARKETING: 'userListType.remarketing',
+  EXTERNAL_REMARKETING: 'userListType.externalRemarketing',
+  RULE_BASED: 'userListType.ruleBased',
+  LOGICAL: 'userListType.logical',
+  CRM_BASED: 'userListType.crmBased',
+  SIMILAR: 'userListType.similar',
+  UNKNOWN: 'userListType.unknown',
 }
 
-function userListTypeLabel(type: string): string {
-  return USER_LIST_TYPE_LABELS[type] ?? 'Kullanıcı Listesi'
+// Google UserListSizeRange enum'u UI'da asla ham görünmez — i18n aralık anahtarına çevrilir.
+const SIZE_RANGE_KEYS: Record<string, string> = {
+  LESS_THAN_FIVE_HUNDRED: 'sizeRange.lt500',
+  LESS_THAN_ONE_THOUSAND: 'sizeRange.lt1k',
+  ONE_THOUSAND_TO_TEN_THOUSAND: 'sizeRange.1kTo10k',
+  TEN_THOUSAND_TO_FIFTY_THOUSAND: 'sizeRange.10kTo50k',
+  FIFTY_THOUSAND_TO_ONE_HUNDRED_THOUSAND: 'sizeRange.50kTo100k',
+  ONE_HUNDRED_THOUSAND_TO_THREE_HUNDRED_THOUSAND: 'sizeRange.100kTo300k',
+  THREE_HUNDRED_THOUSAND_TO_FIVE_HUNDRED_THOUSAND: 'sizeRange.300kTo500k',
+  FIVE_HUNDRED_THOUSAND_TO_ONE_MILLION: 'sizeRange.500kTo1m',
+  ONE_MILLION_TO_TWO_MILLION: 'sizeRange.1mTo2m',
+  TWO_MILLION_TO_THREE_MILLION: 'sizeRange.2mTo3m',
+  THREE_MILLION_TO_FIVE_MILLION: 'sizeRange.3mTo5m',
+  FIVE_MILLION_TO_TEN_MILLION: 'sizeRange.5mTo10m',
+  TEN_MILLION_TO_TWENTY_MILLION: 'sizeRange.10mTo20m',
+  TWENTY_MILLION_TO_THIRTY_MILLION: 'sizeRange.20mTo30m',
+  THIRTY_MILLION_TO_FIFTY_MILLION: 'sizeRange.30mTo50m',
+  OVER_FIFTY_MILLION: 'sizeRange.over50m',
 }
 
-// Google UserListSizeRange enum'u UI'da asla ham görünmez — sade TR aralığa çevrilir.
-const SIZE_RANGE_LABELS: Record<string, string> = {
-  LESS_THAN_FIVE_HUNDRED: "500'den az",
-  LESS_THAN_ONE_THOUSAND: "1.000'den az",
-  ONE_THOUSAND_TO_TEN_THOUSAND: '1.000 – 10.000',
-  TEN_THOUSAND_TO_FIFTY_THOUSAND: '10.000 – 50.000',
-  FIFTY_THOUSAND_TO_ONE_HUNDRED_THOUSAND: '50.000 – 100.000',
-  ONE_HUNDRED_THOUSAND_TO_THREE_HUNDRED_THOUSAND: '100.000 – 300.000',
-  THREE_HUNDRED_THOUSAND_TO_FIVE_HUNDRED_THOUSAND: '300.000 – 500.000',
-  FIVE_HUNDRED_THOUSAND_TO_ONE_MILLION: '500.000 – 1 milyon',
-  ONE_MILLION_TO_TWO_MILLION: '1 – 2 milyon',
-  TWO_MILLION_TO_THREE_MILLION: '2 – 3 milyon',
-  THREE_MILLION_TO_FIVE_MILLION: '3 – 5 milyon',
-  FIVE_MILLION_TO_TEN_MILLION: '5 – 10 milyon',
-  TEN_MILLION_TO_TWENTY_MILLION: '10 – 20 milyon',
-  TWENTY_MILLION_TO_THIRTY_MILLION: '20 – 30 milyon',
-  THIRTY_MILLION_TO_FIFTY_MILLION: '30 – 50 milyon',
-  OVER_FIFTY_MILLION: '50 milyon+',
+type GoogleTranslator = ReturnType<typeof useTranslations>
+
+function userListTypeLabel(type: string, t: GoogleTranslator): string {
+  return t(USER_LIST_TYPE_KEYS[type] ?? 'userListType.unknown')
 }
 
 // Bilinmeyen / UNKNOWN / UNSPECIFIED → boş döner (ham enum hiç gösterilmez).
-function sizeRangeLabel(raw?: string): string {
+function sizeRangeLabel(raw: string | undefined, t: GoogleTranslator): string {
   if (!raw) return ''
-  return SIZE_RANGE_LABELS[raw] ?? ''
+  const key = SIZE_RANGE_KEYS[raw]
+  return key ? t(key) : ''
 }
 
 type BrowseSectionKey = 'inMarket' | 'affinity' | 'detailedDemographics' | 'lifeEvents'
@@ -134,13 +139,13 @@ const BROWSE_SECTIONS: Array<{
   key: BrowseSectionKey
   icon: typeof Heart
   category: SegmentCategory
-  label: string
-  desc: string
+  labelKey: string
+  descKey: string
 }> = [
-  { key: 'inMarket', icon: ShoppingBag, category: 'IN_MARKET', label: 'Satın Alma Niyeti', desc: 'Belirli ürün/hizmeti aktif olarak araştıran kullanıcılar' },
-  { key: 'affinity', icon: Heart, category: 'AFFINITY', label: 'İlgi Alanı', desc: 'İlgi alanlarına ve yaşam tarzına göre kullanıcılar' },
-  { key: 'detailedDemographics', icon: Users, category: 'DETAILED_DEMOGRAPHIC', label: 'Detaylı Demografi', desc: 'Eğitim, medeni durum, ev sahipliği gibi nitelikler' },
-  { key: 'lifeEvents', icon: CalendarHeart, category: 'LIFE_EVENT', label: 'Yaşam Olayı', desc: 'Mezuniyet, taşınma, evlilik gibi önemli dönemeçler' },
+  { key: 'inMarket', icon: ShoppingBag, category: 'IN_MARKET', labelKey: 'browse.inMarket.label', descKey: 'browse.inMarket.desc' },
+  { key: 'affinity', icon: Heart, category: 'AFFINITY', labelKey: 'browse.affinity.label', descKey: 'browse.affinity.desc' },
+  { key: 'detailedDemographics', icon: Users, category: 'DETAILED_DEMOGRAPHIC', labelKey: 'browse.detailedDemographics.label', descKey: 'browse.detailedDemographics.desc' },
+  { key: 'lifeEvents', icon: CalendarHeart, category: 'LIFE_EVENT', labelKey: 'browse.lifeEvents.label', descKey: 'browse.lifeEvents.desc' },
 ]
 
 /* ────────────────────────────────────────────────────────────── */
@@ -156,19 +161,20 @@ export default function GoogleAudienceView({ activeTab }: { activeTab: 'SAVED' |
 
 /* ── Bağlam notu (sahte değil, gerçek davranışı anlatır) ── */
 function GoogleContextNote({ tab }: { tab: 'SAVED' | 'CUSTOM' }) {
+  const t = useTranslations('dashboard.hedefKitle.google')
   return (
     <div className="rounded-xl border border-gray-200 bg-gray-50 px-4 py-3 text-sm text-gray-700">
       {tab === 'SAVED' ? (
         <>
-          Google&apos;ın hazır <span className="font-medium text-gray-900">kitle segmentleri</span> kataloğu.
-          Bu segmentleri kampanya kurarken hedefleme olarak ekleyebilirsiniz; Google&apos;da Meta&apos;daki gibi ayrı
-          &quot;kayıtlı kitle&quot; nesnesi tutulmaz.
+          {t.rich('contextNote.saved', {
+            b: (chunks) => <span className="font-medium text-gray-900">{chunks}</span>,
+          })}
         </>
       ) : (
         <>
-          Google Ads hesabınızdaki gerçek <span className="font-medium text-gray-900">kullanıcı listeleri</span>
-          {' '}(yeniden pazarlama, müşteri eşleştirme, kombine). Yeni liste, web etiketi/kuralı gerektirdiği için
-          Google Ads üzerinden tanımlanır.
+          {t.rich('contextNote.custom', {
+            b: (chunks) => <span className="font-medium text-gray-900">{chunks}</span>,
+          })}
         </>
       )}
     </div>
@@ -179,6 +185,8 @@ function GoogleContextNote({ tab }: { tab: 'SAVED' | 'CUSTOM' }) {
    Detaylı Kitle → Google segment kataloğu (browse + search)
    ════════════════════════════════════════════════════════════════ */
 function SegmentBrowser() {
+  const t = useTranslations('dashboard.hedefKitle.google')
+  const tc = useTranslations('common')
   const [browseData, setBrowseData] = useState<BrowseData | null>(null)
   const [loading, setLoading] = useState(true)
   const [notReady, setNotReady] = useState(false)
@@ -267,7 +275,7 @@ function SegmentBrowser() {
           type="text"
           value={searchQuery}
           onChange={(e) => handleSearchInput(e.target.value)}
-          placeholder="Google kitle segmentlerinde arayın..."
+          placeholder={t('segmentSearchPlaceholder')}
           className="w-full pl-10 pr-4 py-2.5 border border-gray-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary bg-white"
         />
       </div>
@@ -278,10 +286,10 @@ function SegmentBrowser() {
           {searching ? (
             <div className="flex items-center justify-center gap-2 py-10 text-gray-400">
               <RefreshCw className="w-4 h-4 animate-spin" />
-              <span className="text-sm">Aranıyor...</span>
+              <span className="text-sm">{t('searching')}</span>
             </div>
           ) : searchResults.length === 0 ? (
-            <p className="text-sm text-gray-400 text-center py-10">Eşleşen segment bulunamadı.</p>
+            <p className="text-sm text-gray-400 text-center py-10">{t('noSegmentMatch')}</p>
           ) : (
             <div className="divide-y divide-gray-100 max-h-[28rem] overflow-y-auto">
               {searchResults.map((item) => (
@@ -322,8 +330,8 @@ function SegmentBrowser() {
                     <Icon className="w-[18px] h-[18px] text-emerald-600" />
                   </div>
                   <div className="flex-1 min-w-0">
-                    <p className="text-sm font-semibold text-gray-900">{section.label}</p>
-                    <p className="text-xs text-gray-500 truncate">{section.desc}</p>
+                    <p className="text-sm font-semibold text-gray-900">{t(section.labelKey)}</p>
+                    <p className="text-xs text-gray-500 truncate">{t(section.descKey)}</p>
                   </div>
                   <span className="text-xs text-gray-400 shrink-0">{items.length}</span>
                 </button>
@@ -380,16 +388,18 @@ function SegmentBrowser() {
 }
 
 function SegmentRow({ item }: { item: SegmentItem }) {
+  const t = useTranslations('dashboard.hedefKitle.google')
+  const sizeLabel = sizeRangeLabel(item.sizeRange, t)
   return (
     <div className="flex items-center gap-3 px-4 py-2.5 hover:bg-gray-50">
       <div className="flex-1 min-w-0">
         <p className="text-sm text-gray-900 truncate">{item.name}</p>
         <div className="flex items-center gap-2 mt-0.5">
           <span className="text-[10px] px-1.5 py-0.5 rounded-full bg-emerald-50 text-emerald-700">
-            {CATEGORY_LABELS[item.category]}
+            {t(CATEGORY_LABEL_KEYS[item.category])}
           </span>
-          {sizeRangeLabel(item.sizeRange) && (
-            <span className="text-[10px] text-gray-400">{sizeRangeLabel(item.sizeRange)}</span>
+          {sizeLabel && (
+            <span className="text-[10px] text-gray-400">{sizeLabel}</span>
           )}
         </div>
       </div>
@@ -401,6 +411,7 @@ function SegmentRow({ item }: { item: SegmentItem }) {
    Retargeting → Google user list'leri (salt-okunur)
    ════════════════════════════════════════════════════════════════ */
 function UserListView() {
+  const t = useTranslations('dashboard.hedefKitle.google')
   const [lists, setLists] = useState<GoogleUserList[]>([])
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState(false)
@@ -445,7 +456,7 @@ function UserListView() {
           type="text"
           value={searchQuery}
           onChange={(e) => setSearchQuery(e.target.value)}
-          placeholder="Kullanıcı listesi arayın..."
+          placeholder={t('userListSearchPlaceholder')}
           className="w-full pl-10 pr-4 py-2.5 border border-gray-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary bg-white"
         />
       </div>
@@ -454,12 +465,12 @@ function UserListView() {
         <div className="bg-white rounded-2xl border border-gray-200 p-12 text-center">
           <p className="text-sm text-gray-400">
             {searchQuery.trim()
-              ? 'Aramanızla eşleşen liste bulunamadı.'
-              : 'Google Ads hesabınızda henüz kullanıcı listesi yok.'}
+              ? t('userListEmpty.noMatch')
+              : t('userListEmpty.none')}
           </p>
           {!searchQuery.trim() && (
             <p className="text-xs text-gray-500 mt-1">
-              Yeniden pazarlama listeleri web sitenize Google etiketi eklendiğinde otomatik dolar.
+              {t('userListEmpty.hint')}
             </p>
           )}
         </div>
@@ -475,6 +486,8 @@ function UserListView() {
 }
 
 function UserListCard({ list }: { list: GoogleUserList }) {
+  const t = useTranslations('dashboard.hedefKitle.google')
+  const sizeLabel = sizeRangeLabel(list.sizeRangeForDisplay, t)
   return (
     <div className="bg-white rounded-2xl border border-gray-200 p-4 hover:shadow-sm transition-shadow">
       <div className="flex items-start gap-3">
@@ -485,26 +498,26 @@ function UserListCard({ list }: { list: GoogleUserList }) {
           <div className="flex items-center gap-2 flex-wrap">
             <p className="text-sm font-semibold text-gray-900 truncate">{list.name}</p>
             <span className="shrink-0 text-[10px] px-1.5 py-0.5 rounded-full bg-emerald-50 text-emerald-700">
-              {userListTypeLabel(list.type)}
+              {userListTypeLabel(list.type, t)}
             </span>
           </div>
           {list.description && (
             <p className="text-xs text-gray-500 mt-0.5 line-clamp-2">{list.description}</p>
           )}
           <div className="flex items-center gap-x-4 gap-y-1 mt-2 flex-wrap text-xs text-gray-500">
-            {sizeRangeLabel(list.sizeRangeForDisplay) && (
+            {sizeLabel && (
               <span>
-                Boyut: <span className="text-gray-700 font-medium">{sizeRangeLabel(list.sizeRangeForDisplay)}</span>
+                {t('userListCard.size')} <span className="text-gray-700 font-medium">{sizeLabel}</span>
               </span>
             )}
             <span>
-              Üyelik süresi: <span className="text-gray-700 font-medium">{list.membershipLifeSpan} gün</span>
+              {t('userListCard.membership')} <span className="text-gray-700 font-medium">{t('userListCard.days', { count: list.membershipLifeSpan })}</span>
             </span>
             {(list.eligibleForSearch || list.eligibleForDisplay) && (
               <span className="inline-flex items-center gap-1">
-                Uygun:
+                {t('userListCard.eligible')}
                 <span className="text-gray-700 font-medium">
-                  {[list.eligibleForSearch && 'Arama', list.eligibleForDisplay && 'Görüntülü']
+                  {[list.eligibleForSearch && t('userListCard.eligibleSearch'), list.eligibleForDisplay && t('userListCard.eligibleDisplay')]
                     .filter(Boolean)
                     .join(' · ')}
                 </span>
@@ -519,31 +532,33 @@ function UserListCard({ list }: { list: GoogleUserList }) {
 
 /* ── Ortak durum kutuları ── */
 function LoadingBox() {
+  const tc = useTranslations('common')
   return (
     <div className="bg-white rounded-2xl border border-gray-200 p-12">
       <div className="flex items-center justify-center gap-3 text-gray-400">
         <RefreshCw className="w-5 h-5 animate-spin" />
-        <span className="text-sm">Yükleniyor...</span>
+        <span className="text-sm">{tc('loading')}</span>
       </div>
     </div>
   )
 }
 
 function NotConnectedBox() {
+  const t = useTranslations('dashboard.hedefKitle.google')
   return (
     <div className="bg-white rounded-2xl border border-gray-200 p-12 text-center">
       <div className="w-14 h-14 rounded-2xl bg-gray-100 flex items-center justify-center mx-auto mb-4">
         <Link2Off className="w-7 h-7 text-gray-400" />
       </div>
-      <h3 className="text-base font-semibold text-gray-700">Google Ads bağlı değil</h3>
+      <h3 className="text-base font-semibold text-gray-700">{t('notConnected.title')}</h3>
       <p className="text-sm text-gray-500 mt-1.5 max-w-md mx-auto">
-        Google kitle verilerini görmek için Google Ads hesabınızı bağlamanız gerekir.
+        {t('notConnected.desc')}
       </p>
       <a
         href="/entegrasyon"
         className="inline-flex items-center gap-2 mt-4 px-4 py-2.5 bg-primary text-white rounded-lg text-sm font-medium hover:bg-primary/90 transition-colors"
       >
-        Entegrasyona Git
+        {t('notConnected.cta')}
       </a>
     </div>
   )

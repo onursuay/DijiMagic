@@ -1,6 +1,7 @@
 'use client'
 
 import { useState, useCallback, useEffect, useRef } from 'react'
+import { useTranslations } from 'next-intl'
 import { X, Shield, Copy, Compass } from 'lucide-react'
 import type {
   AudienceType,
@@ -89,51 +90,51 @@ function buildSeedDescription(h: BizSeedHints | null): string {
   return parts.join(' — ')
 }
 
-const TYPE_OPTIONS: { type: AudienceType; phase: WizardPhase; label: string; description: string; icon: React.ComponentType<{ className?: string }> }[] = [
+const TYPE_OPTIONS: { type: AudienceType; phase: WizardPhase; labelKey: string; descKey: string; icon: React.ComponentType<{ className?: string }> }[] = [
   {
     type: 'CUSTOM',
     phase: 'custom',
-    label: 'Retargeting',
-    description: 'Pixel, IG etkileşim, sayfa ziyareti gibi kaynaklardan özel kitle oluşturun.',
+    labelKey: 'typeSelect.custom.label',
+    descKey: 'typeSelect.custom.desc',
     icon: Shield,
   },
   {
     type: 'LOOKALIKE',
     phase: 'lookalike',
-    label: 'Benzer Kitle',
-    description: 'Mevcut bir kitlenize benzer yeni kullanıcıları hedefleyin.',
+    labelKey: 'typeSelect.lookalike.label',
+    descKey: 'typeSelect.lookalike.desc',
     icon: Copy,
   },
   {
     type: 'SAVED',
     phase: 'saved',
-    label: 'Detaylı Kitle',
-    description: 'Konum, yaş, ilgi alanları gibi kriterlerle kayıtlı kitle oluşturun.',
+    labelKey: 'typeSelect.saved.label',
+    descKey: 'typeSelect.saved.desc',
     icon: Compass,
   },
 ]
 
-const CUSTOM_STEPS = [
-  { step: 1, label: 'Kaynak' },
-  { step: 2, label: 'Kural' },
-  { step: 3, label: 'Hariç Tut' },
-  { step: 4, label: 'Özet' },
+const CUSTOM_STEP_KEYS = [
+  { step: 1, key: 'custom.step.source' },
+  { step: 2, key: 'custom.step.rule' },
+  { step: 3, key: 'custom.step.exclude' },
+  { step: 4, key: 'custom.step.summary' },
 ]
 
-const LOOKALIKE_STEPS = [
-  { step: 1, label: 'Tohum' },
-  { step: 2, label: 'Ülke' },
-  { step: 3, label: 'Boyut' },
-  { step: 4, label: 'Özet' },
+const LOOKALIKE_STEP_KEYS = [
+  { step: 1, key: 'lookalike.step.seed' },
+  { step: 2, key: 'lookalike.step.country' },
+  { step: 3, key: 'lookalike.step.size' },
+  { step: 4, key: 'lookalike.step.summary' },
 ]
 
-const SAVED_STEPS = [
-  { step: 1, label: 'Konum' },
-  { step: 2, label: 'Demografi' },
-  { step: 3, label: 'Dil' },
-  { step: 4, label: 'İlgi' },
-  { step: 5, label: 'Hariç Tut' },
-  { step: 6, label: 'Özet' },
+const SAVED_STEP_KEYS = [
+  { step: 1, key: 'saved.step.location' },
+  { step: 2, key: 'saved.step.demography' },
+  { step: 3, key: 'saved.step.language' },
+  { step: 4, key: 'saved.step.interests' },
+  { step: 5, key: 'saved.step.exclude' },
+  { step: 6, key: 'saved.step.summary' },
 ]
 
 function typeToPhase(type?: AudienceType): WizardPhase {
@@ -144,7 +145,12 @@ function typeToPhase(type?: AudienceType): WizardPhase {
 }
 
 export default function AudienceWizardModal({ isOpen, onClose, onSuccess, onToast, assets, initialType, editAudience }: AudienceWizardModalProps) {
+  const t = useTranslations('dashboard.hedefKitle.wizard')
+  const tc = useTranslations('common')
   const isEditMode = !!editAudience
+  const CUSTOM_STEPS = CUSTOM_STEP_KEYS.map((s) => ({ step: s.step, label: t(s.key) }))
+  const LOOKALIKE_STEPS = LOOKALIKE_STEP_KEYS.map((s) => ({ step: s.step, label: t(s.key) }))
+  const SAVED_STEPS = SAVED_STEP_KEYS.map((s) => ({ step: s.step, label: t(s.key) }))
   const [phase, setPhase] = useState<WizardPhase>(typeToPhase(initialType))
   const [customState, setCustomState] = useState<CustomAudienceState>(initialCustomAudienceState)
   const [lookalikeState, setLookalikeState] = useState<LookalikeState>(initialLookalikeState)
@@ -353,12 +359,12 @@ export default function AudienceWizardModal({ isOpen, onClose, onSuccess, onToas
           body: JSON.stringify(patchBody),
         })
         const json = await res.json()
-        if (!res.ok || !json.ok) throw new Error(json.message ?? 'Güncellenemedi')
-        onToast?.('Kitle güncellendi', 'success')
+        if (!res.ok || !json.ok) throw new Error(json.message ?? t('toast.updateFailed'))
+        onToast?.(t('toast.updated'), 'success')
         onSuccess?.()
         handleClose()
       } catch (err) {
-        onToast?.(err instanceof Error ? err.message : 'Beklenmeyen hata', 'error')
+        onToast?.(err instanceof Error ? err.message : t('toast.unexpected'), 'error')
       } finally {
         setIsSubmitting(false)
       }
@@ -417,33 +423,33 @@ export default function AudienceWizardModal({ isOpen, onClose, onSuccess, onToas
 
       const json = await res.json()
       if (!res.ok || !json.ok) {
-        throw new Error(json.message ?? 'Kayıt oluşturulamadı')
+        throw new Error(json.message ?? t('toast.createFailed'))
       }
 
       // Custom/Lookalike → Meta'ya gönder. SAVED (Detaylı Kitle) Meta API ile
       // oluşturulamadığından otomatik gönderme YAPILMAZ; yalnız kaydedilir.
       const audienceId = json.audience?.id
       if (audienceId && body.type !== 'SAVED') {
-        onToast?.('Kitle kaydedildi, Meta\'ya gönderiliyor...', 'info')
+        onToast?.(t('toast.savedSendingToMeta'), 'info')
         try {
           const createRes = await fetch(`/api/audiences/${audienceId}/create`, { method: 'POST' })
           const createJson = await createRes.json()
           if (createRes.ok && createJson.ok) {
-            onToast?.('Kitle Meta\'ya başarıyla gönderildi', 'success')
+            onToast?.(t('toast.sentToMeta'), 'success')
           } else {
-            onToast?.(createJson.message ?? 'Meta\'ya gönderim başarısız — liste ekranından tekrar deneyebilirsiniz', 'error')
+            onToast?.(createJson.message ?? t('toast.sendToMetaFailedRetry'), 'error')
           }
         } catch {
-          onToast?.('Meta\'ya gönderim sırasında hata — liste ekranından tekrar deneyebilirsiniz', 'error')
+          onToast?.(t('toast.sendToMetaErrorRetry'), 'error')
         }
       } else {
-        onToast?.('Kitle kaydedildi', 'success')
+        onToast?.(t('toast.saved'), 'success')
       }
 
       onSuccess?.()
       handleClose()
     } catch (err) {
-      const msg = err instanceof Error ? err.message : 'Beklenmeyen hata'
+      const msg = err instanceof Error ? err.message : t('toast.unexpected')
       onToast?.(msg, 'error')
     } finally {
       setIsSubmitting(false)
@@ -493,11 +499,11 @@ export default function AudienceWizardModal({ isOpen, onClose, onSuccess, onToas
         {/* Header */}
         <div className="flex items-center justify-between px-6 py-4 border-b border-gray-200">
           <h2 className="text-page-title font-semibold text-gray-900">
-            {phase === 'select-type' && 'Yeni Hedef Kitle'}
-            {phase === 'custom' && (isEditMode ? 'Retargeting Kitlesini Düzenle' : 'Yeni Retargeting Kitlesi')}
-            {phase === 'lookalike' && (isEditMode ? 'Benzer Kitleyi Düzenle' : 'Yeni Benzer Kitle')}
-            {phase === 'saved' && (isEditMode ? 'Detaylı Kitleyi Düzenle' : 'Yeni Detaylı Kitle')}
-            {phase === 'confirm' && (isEditMode ? 'Değişiklikleri Kaydet' : 'Hedef Kitle Oluşturma Onayı')}
+            {phase === 'select-type' && t('header.selectType')}
+            {phase === 'custom' && (isEditMode ? t('header.editCustom') : t('header.newCustom'))}
+            {phase === 'lookalike' && (isEditMode ? t('header.editLookalike') : t('header.newLookalike'))}
+            {phase === 'saved' && (isEditMode ? t('header.editSaved') : t('header.newSaved'))}
+            {phase === 'confirm' && (isEditMode ? tc('saveChanges') : t('header.confirm'))}
           </h2>
           <button
             type="button"
@@ -514,10 +520,10 @@ export default function AudienceWizardModal({ isOpen, onClose, onSuccess, onToas
           {phase === 'select-type' && (
             <div>
               <p className="text-sm text-gray-500 mb-6">
-                Oluşturmak istediğiniz kitle tipini seçin.
+                {t('typeSelect.intro')}
               </p>
               <div className="space-y-3">
-                {TYPE_OPTIONS.map(({ type, phase: p, label, description, icon: Icon }) => (
+                {TYPE_OPTIONS.map(({ type, phase: p, labelKey, descKey, icon: Icon }) => (
                   <button
                     key={type}
                     type="button"
@@ -530,9 +536,9 @@ export default function AudienceWizardModal({ isOpen, onClose, onSuccess, onToas
                       </div>
                       <div>
                         <p className="text-sm font-semibold text-gray-900 group-hover:text-primary transition-colors">
-                          {label}
+                          {t(labelKey)}
                         </p>
-                        <p className="text-sm text-gray-500 mt-0.5">{description}</p>
+                        <p className="text-sm text-gray-500 mt-0.5">{t(descKey)}</p>
                       </div>
                     </div>
                   </button>
@@ -606,16 +612,16 @@ export default function AudienceWizardModal({ isOpen, onClose, onSuccess, onToas
               <div className="bg-primary/5 border border-primary/20 rounded-xl p-5">
                 {isEditMode ? (
                   <>
-                    <p className="text-sm font-semibold text-primary mb-1">Taslak Güncellenecek</p>
+                    <p className="text-sm font-semibold text-primary mb-1">{t('confirmStep.editTitle')}</p>
                     <p className="text-sm text-primary/80">
-                      Değişiklikler kaydedilecek. Kitleyi Meta'ya göndermek için liste ekranındaki "Meta'ya Gönder" butonunu kullanın.
+                      {t('confirmStep.editDesc')}
                     </p>
                   </>
                 ) : (
                   <>
-                    <p className="text-sm font-semibold text-primary mb-1">Gerçek Meta Hesabında Oluşturulacak</p>
+                    <p className="text-sm font-semibold text-primary mb-1">{t('confirmStep.createTitle')}</p>
                     <p className="text-sm text-primary/80">
-                      Aşağıdaki hedef kitle, bağlı Meta reklam hesabınızda gerçekten oluşturulacaktır. Bu işlem geri alınamaz.
+                      {t('confirmStep.createDesc')}
                     </p>
                   </>
                 )}
@@ -623,7 +629,7 @@ export default function AudienceWizardModal({ isOpen, onClose, onSuccess, onToas
 
               <div className="bg-gray-50 rounded-xl border border-gray-200 divide-y divide-gray-200">
                 <div className="flex justify-between px-4 py-3">
-                  <span className="text-sm text-gray-500">Kitle Adı</span>
+                  <span className="text-sm text-gray-500">{t('confirmStep.audienceName')}</span>
                   <span className="text-sm font-medium text-gray-900">
                     {pendingSubmitType === 'CUSTOM'
                       ? customState.name
@@ -633,18 +639,18 @@ export default function AudienceWizardModal({ isOpen, onClose, onSuccess, onToas
                   </span>
                 </div>
                 <div className="flex justify-between px-4 py-3">
-                  <span className="text-sm text-gray-500">Tip</span>
+                  <span className="text-sm text-gray-500">{t('confirmStep.type')}</span>
                   <span className="text-sm font-medium text-gray-900">
                     {pendingSubmitType === 'CUSTOM'
-                      ? 'Özel Kitle (Retargeting)'
+                      ? t('confirmStep.typeCustom')
                       : pendingSubmitType === 'LOOKALIKE'
-                      ? 'Benzer Kitle (Lookalike)'
-                      : 'Kayıtlı Kitle (Saved)'}
+                      ? t('confirmStep.typeLookalike')
+                      : t('confirmStep.typeSaved')}
                   </span>
                 </div>
                 <div className="flex justify-between px-4 py-3">
-                  <span className="text-sm text-gray-500">Hedef</span>
-                  <span className="text-sm font-medium text-gray-900">Meta Reklam Hesabı</span>
+                  <span className="text-sm text-gray-500">{t('confirmStep.target')}</span>
+                  <span className="text-sm font-medium text-gray-900">{t('confirmStep.targetValue')}</span>
                 </div>
               </div>
 
@@ -658,7 +664,7 @@ export default function AudienceWizardModal({ isOpen, onClose, onSuccess, onToas
                   disabled={isSubmitting}
                   className="px-5 py-2.5 rounded-lg text-sm font-medium text-gray-700 border border-gray-300 hover:bg-gray-50 transition-colors disabled:opacity-50"
                 >
-                  Geri Dön
+                  {tc('back')}
                 </button>
                 <button
                   type="button"
@@ -667,8 +673,8 @@ export default function AudienceWizardModal({ isOpen, onClose, onSuccess, onToas
                   className="px-5 py-2.5 bg-primary text-white rounded-lg text-sm font-medium hover:bg-primary/90 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
                 >
                   {isSubmitting
-                    ? (isEditMode ? 'Kaydediliyor...' : 'Oluşturuluyor...')
-                    : (isEditMode ? 'Kaydet' : 'Oluştur ve Meta\'ya Gönder')}
+                    ? (isEditMode ? tc('saving') : t('confirmStep.creating'))
+                    : (isEditMode ? tc('save') : t('confirmStep.createAndSend'))}
                 </button>
               </div>
             </div>

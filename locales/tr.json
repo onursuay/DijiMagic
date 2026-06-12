@@ -3368,7 +3368,532 @@
       "newAudience": "Yeni Kitle",
       "card": {
         "field": {
-          "source": "Kaynak"
+          "source": "Kaynak",
+          "subtype": "Alt Tür",
+          "estimatedSize": "Tahmini Boyut",
+          "metaId": "Meta ID",
+          "createdAt": "Oluşturulma"
+        },
+        "peopleCount": "~{count} kişi",
+        "confirmDelete": "Emin misin?",
+        "action": {
+          "sendToMeta": "Meta'ya Gönder",
+          "sync": "Senkronize Et",
+          "adsManager": "Ads Manager"
+        },
+        "targeting": {
+          "location": "Konum",
+          "age": "Yaş",
+          "gender": "Cinsiyet",
+          "interests": "İlgi Alanları",
+          "male": "Erkek",
+          "female": "Kadın"
+        }
+      },
+      "list": {
+        "toast": {
+          "deleted": "Kitle silindi",
+          "deleteFailed": "Silme başarısız",
+          "sentToMeta": "Meta'ya başarıyla gönderildi",
+          "sendToMetaFailed": "Meta'ya gönderim başarısız",
+          "sendError": "Gönderim sırasında hata oluştu",
+          "syncDone": "Senkronizasyon tamamlandı",
+          "syncFailed": "Senkronizasyon başarısız",
+          "syncError": "Senkronizasyon hatası"
+        },
+        "searchPlaceholder": "Hedef kitle arayın...",
+        "empty": {
+          "noMatch": "Aramanızla eşleşen hedef kitle bulunamadı.",
+          "none": "Henüz hedef kitle oluşturulmadı.",
+          "hint": "\"+ Yeni Kitle\" butonuyla başlayın."
+        }
+      },
+      "wizard": {
+        "header": {
+          "selectType": "Yeni Hedef Kitle",
+          "newCustom": "Yeni Retargeting Kitlesi",
+          "editCustom": "Retargeting Kitlesini Düzenle",
+          "newLookalike": "Yeni Benzer Kitle",
+          "editLookalike": "Benzer Kitleyi Düzenle",
+          "newSaved": "Yeni Detaylı Kitle",
+          "editSaved": "Detaylı Kitleyi Düzenle",
+          "confirm": "Hedef Kitle Oluşturma Onayı"
+        },
+        "typeSelect": {
+          "intro": "Oluşturmak istediğiniz kitle tipini seçin.",
+          "custom": {
+            "label": "Retargeting",
+            "desc": "Pixel, IG etkileşim, sayfa ziyareti gibi kaynaklardan özel kitle oluşturun."
+          },
+          "lookalike": {
+            "label": "Benzer Kitle",
+            "desc": "Mevcut bir kitlenize benzer yeni kullanıcıları hedefleyin."
+          },
+          "saved": {
+            "label": "Detaylı Kitle",
+            "desc": "Konum, yaş, ilgi alanları gibi kriterlerle kayıtlı kitle oluşturun."
+          }
+        },
+        "custom": {
+          "step": {
+            "source": "Kaynak",
+            "rule": "Kural",
+            "exclude": "Hariç Tut",
+            "summary": "Özet"
+          },
+          "source": {
+            "title": "Kaynak Seçimi",
+            "description": "Retargeting kitleniz için veri kaynağını seçin.",
+            "reason": {
+              "unsupported": "Bu kaynak türü henüz desteklenmiyor.",
+              "noPixel": "Pixel bulunamadı. Entegrasyon sayfasından bağlayın.",
+              "noIg": "Instagram hesabı bağlı değil.",
+              "noPage": "Facebook sayfası bulunamadı."
+            },
+            "sourceLabel": {
+              "PIXEL": "Web Sitesi (Pixel)",
+              "IG": "Instagram Hesabı",
+              "PAGE": "Facebook Sayfası",
+              "VIDEO": "Video İzleme",
+              "LEADFORM": "Lead Formu",
+              "CATALOG": "Katalog",
+              "APP": "Uygulama Olayları",
+              "OFFLINE": "Çevrimdışı Olaylar",
+              "CUSTOMER_LIST": "Müşteri Listesi"
+            }
+          },
+          "rule": {
+            "title": "Kural Tanımı",
+            "description": "Seçilen kaynak için hedefleme kurallarını belirleyin.",
+            "retentionLabel": "Geri Bakış Süresi:",
+            "days": "{count} gün",
+            "pixel": "Pixel",
+            "pixelPlaceholder": "Pixel seçin",
+            "ruleType": "Kural Tipi",
+            "pixelRule": {
+              "ALL_VISITORS": "Tüm web sitesi ziyaretçileri",
+              "SPECIFIC_PAGES": "Belirli sayfaları ziyaret edenler",
+              "EVENTS": "Belirli olayları gerçekleştirenler"
+            },
+            "urlContains": "URL içerir",
+            "urlEquals": "URL eşittir",
+            "urlPlaceholder": "örn: /urunler veya /sepet",
+            "event": "Olay",
+            "eventPlaceholder": "Olay seçin",
+            "igAccount": "Instagram Hesabı",
+            "accountPlaceholder": "Hesap seçin",
+            "engagementType": "Etkileşim Türü",
+            "igEngagement": {
+              "ig_business_profile_all": "Profille etkileşime geçen herkes",
+              "ig_business_profile_engaged": "Profilinizi ziyaret edenler",
+              "ig_user_messaged": "Mesaj gönderenler",
+              "ig_user_saved": "Gönderi/reel kaydedenler",
+              "ig_user_call_to_action": "CTA butonuna tıklayanlar",
+              "ig_user_shared": "Gönderi/reel paylaşanlar"
+            },
+            "facebookPage": "Facebook Sayfası",
+            "pagePlaceholder": "Sayfa seçin",
+            "pageEngagement": {
+              "page_engaged": "Sayfayla etkileşime geçen herkes",
+              "page_visited": "Sayfayı ziyaret edenler",
+              "page_messaged": "Mesaj gönderenler",
+              "page_cta_clicked": "CTA butonuna tıklayanlar",
+              "page_saved": "Sayfayı veya gönderi kaydedenler"
+            },
+            "watchType": "İzleme Tipi",
+            "videoRetention": {
+              "video_watched_3s": "3 saniye izleyenler",
+              "video_watched_10s": "10 saniye izleyenler",
+              "video_watched_25p": "%25 izleyenler",
+              "video_watched_50p": "%50 izleyenler",
+              "video_watched_75p": "%75 izleyenler",
+              "video_watched_95p": "%95 izleyenler"
+            },
+            "genericSourceLabel": {
+              "LEADFORM": "Lead Formu",
+              "CATALOG": "Katalog",
+              "APP": "Uygulama",
+              "OFFLINE": "Çevrimdışı Olay Seti",
+              "CUSTOMER_LIST": "Müşteri Listesi"
+            },
+            "unsupportedTitle": "{source} — Desteklenmiyor",
+            "unsupportedDesc": "Bu kaynak türü mevcut akışta desteklenmiyor. Lütfen geri dönüp desteklenen bir kaynak seçin (Pixel, Instagram, Facebook Sayfası veya Video).",
+            "selectSourceFirst": "Lütfen önce bir kaynak seçin."
+          },
+          "exclude": {
+            "title": "Hariç Tut (Opsiyonel)",
+            "description": "Bu kitleden hariç tutmak istediğiniz kullanıcı gruplarını ekleyin.",
+            "conflictWarning": "Uyarı: Dahil etme kuralıyla aynı kaynaktan hariç tutma eklediniz. Bu, kitlenizi daraltabilir.",
+            "emptyState": "Henüz hariç tutma kuralı eklenmedi.",
+            "addExclude": "Hariç Tut Ekle",
+            "addAnotherExclude": "Başka Hariç Tutma Ekle",
+            "excludeItem": "Hariç Tutma #{index}",
+            "source": "Kaynak",
+            "retentionLabel": "Geri Bakış Süresi:",
+            "days": "{count} gün",
+            "sourceLabel": {
+              "PIXEL": "Web Sitesi (Pixel)",
+              "IG": "Instagram Hesabı",
+              "PAGE": "Facebook Sayfası",
+              "VIDEO": "Video İzleme",
+              "LEADFORM": "Lead Formu"
+            }
+          },
+          "summary": {
+            "title": "Özet",
+            "description": "Kitle bilgilerini gözden geçirin ve adlandırın.",
+            "nameLabel": "Kitle Adı",
+            "namePlaceholder": "Ör: Son 30 gün site ziyaretçileri",
+            "descriptionLabel": "Açıklama (Opsiyonel)",
+            "descriptionPlaceholder": "Kitle hakkında kısa bir not...",
+            "typeLabel": "Tip",
+            "typeValue": "Özel Hedef Kitle (Custom Audience)",
+            "sourceLabel": "Kaynak",
+            "source": {
+              "PIXEL": "Web Sitesi (Pixel)",
+              "IG": "Instagram Hesabı",
+              "PAGE": "Facebook Sayfası",
+              "VIDEO": "Video İzleme",
+              "LEADFORM": "Lead Formu"
+            },
+            "retentionLabel": "Geri Bakış Süresi",
+            "days": "{count} gün",
+            "ruleTypeLabel": "Kural Tipi",
+            "igEngagementLabel": "IG Etkileşim",
+            "excludeLabel": "Hariç Tutma",
+            "ruleCount": "{count} kural",
+            "willCreateTitle": "Meta Reklam Hesabında Oluşturulacak",
+            "willCreateDesc": "Onay verdikten sonra bu hedef kitle bağlı Meta reklam hesabınızda gerçekten oluşturulacaktır."
+          }
+        },
+        "lookalike": {
+          "step": {
+            "seed": "Tohum",
+            "country": "Ülke",
+            "size": "Boyut",
+            "summary": "Özet"
+          },
+          "seed": {
+            "title": "Tohum Kitle Seçimi",
+            "description": "Lookalike (benzer) kitle oluşturmak için mevcut özel hedef kitlelerinizden birini tohum olarak seçin.",
+            "searchPlaceholder": "Kitle ara...",
+            "loading": "Yükleniyor...",
+            "emptyNoSeed": "Henüz tohum olarak kullanılabilecek özel kitle yok. Önce bir Isınmış Kitle oluşturun.",
+            "emptyNoMatch": "Aramanıza uygun kitle bulunamadı.",
+            "sourceUnspecified": "Kaynak belirtilmemiş",
+            "status": {
+              "READY": "Hazır",
+              "DRAFT": "Taslak"
+            }
+          },
+          "country": {
+            "title": "Ülke Seçimi",
+            "description": "Lookalike kitlenin hedefleyeceği ülkeleri seçin. Birden fazla ülke seçebilirsiniz.",
+            "searchPlaceholder": "Ülke ara...",
+            "names": {
+              "TR": "Türkiye",
+              "US": "Amerika Birleşik Devletleri",
+              "DE": "Almanya",
+              "GB": "Birleşik Krallık",
+              "FR": "Fransa",
+              "NL": "Hollanda",
+              "IT": "İtalya",
+              "ES": "İspanya",
+              "SA": "Suudi Arabistan",
+              "AE": "Birleşik Arap Emirlikleri",
+              "CA": "Kanada",
+              "AU": "Avustralya",
+              "BR": "Brezilya",
+              "JP": "Japonya",
+              "KR": "Güney Kore",
+              "IN": "Hindistan",
+              "MX": "Meksika",
+              "PL": "Polonya",
+              "SE": "İsveç",
+              "NO": "Norveç",
+              "AT": "Avusturya",
+              "BE": "Belçika",
+              "CH": "İsviçre",
+              "DK": "Danimarka",
+              "GR": "Yunanistan",
+              "PT": "Portekiz",
+              "RO": "Romanya",
+              "BG": "Bulgaristan",
+              "AZ": "Azerbaycan",
+              "GE": "Gürcistan"
+            }
+          },
+          "size": {
+            "title": "Kitle Boyutu",
+            "description": "Seçtiğiniz ülkelerdeki toplam nüfusun yüzde kaçının hedefleneceğini belirleyin. Düşük yüzde = daha benzer, yüksek yüzde = daha geniş kitle.",
+            "similarityFallback": "%{percent} benzerlik oranı",
+            "descriptions": {
+              "1": "En benzer %1 — Yüksek kalite, küçük kitle",
+              "2": "En benzer %2 — İyi kalite, küçük-orta kitle",
+              "3": "En benzer %3 — Kaliteli, orta kitle",
+              "4": "%4 — Kalite ve ölçek dengesi",
+              "5": "%5 — Dengeli ölçek",
+              "6": "%6 — Geniş ölçek, orta benzerlik",
+              "7": "%7 — Geniş kitle",
+              "8": "%8 — Çok geniş kitle, düşük benzerlik",
+              "9": "%9 — Çok geniş kitle",
+              "10": "%10 — Maksimum erişim, en düşük benzerlik"
+            },
+            "moreSimilar": "Daha Benzer",
+            "broader": "Daha Geniş",
+            "preset": {
+              "highQuality": "Yüksek Kalite",
+              "balanced": "Dengeli",
+              "wideReach": "Geniş Erişim"
+            }
+          },
+          "summary": {
+            "title": "Özet",
+            "description": "Lookalike kitle bilgilerini gözden geçirin ve adlandırın.",
+            "nameLabel": "Kitle Adı",
+            "namePlaceholder": "Ör: TR %1 Lookalike - Site Ziyaretçileri",
+            "descriptionLabel": "Açıklama (Opsiyonel)",
+            "descriptionPlaceholder": "Kitle hakkında kısa bir not...",
+            "typeLabel": "Tip",
+            "typeValue": "Benzer Hedef Kitle (Lookalike)",
+            "seedLabel": "Tohum Kitle",
+            "countriesLabel": "Ülkeler",
+            "sizeLabel": "Boyut",
+            "willCreateTitle": "Meta Reklam Hesabında Oluşturulacak",
+            "willCreateDesc": "Onay verdikten sonra bu hedef kitle bağlı Meta reklam hesabınızda gerçekten oluşturulacaktır."
+          }
+        },
+        "saved": {
+          "step": {
+            "location": "Konum",
+            "demography": "Demografi",
+            "language": "Dil",
+            "interests": "İlgi",
+            "exclude": "Hariç Tut",
+            "summary": "Özet"
+          },
+          "location": {
+            "title": "Konum",
+            "description": "Hedef kitlenizin konumunu belirleyin. Ülke, şehir veya bölge ekleyebilirsiniz.",
+            "searchPlaceholder": "Ülke, şehir veya bölge ara...",
+            "searching": "Aranıyor...",
+            "noResults": "Sonuç bulunamadı",
+            "locationType": {
+              "country": "Ülke",
+              "city": "Şehir",
+              "region": "Bölge"
+            },
+            "defaultHint": "Konum eklenmezse varsayılan olarak Türkiye hedeflenir."
+          },
+          "demography": {
+            "title": "Demografi",
+            "description": "Yaş aralığını ve cinsiyeti belirleyin.",
+            "ageRangeLabel": "Yaş Aralığı:",
+            "min": "Min",
+            "max": "Max",
+            "minAgeAria": "Minimum yaş",
+            "maxAgeAria": "Maksimum yaş",
+            "gender": "Cinsiyet",
+            "genderOption": {
+              "all": "Tümü",
+              "male": "Erkek",
+              "female": "Kadın"
+            }
+          },
+          "language": {
+            "title": "Dil",
+            "description": "Hedef kitlenizin kullandığı dilleri seçin. Boş bırakırsanız tüm diller hedeflenir.",
+            "allDefault": "Tüm diller (varsayılan)",
+            "selectedCount": "{count} dil seçildi",
+            "searchPlaceholder": "Dil ara...",
+            "names": {
+              "1": "Türkçe",
+              "2": "İngilizce",
+              "6": "Almanca",
+              "7": "Çekçe",
+              "8": "Yunanca",
+              "9": "Fransızca",
+              "10": "Danca",
+              "11": "Fince",
+              "12": "Hollandaca",
+              "13": "İsveççe",
+              "14": "İtalyanca",
+              "15": "İspanyolca",
+              "16": "Macarca",
+              "17": "Norveççe",
+              "19": "Rusça",
+              "20": "Lehçe",
+              "21": "Portekizce",
+              "23": "İbranice",
+              "24": "Malayca",
+              "25": "Endonezce",
+              "26": "Japonca",
+              "27": "Korece",
+              "28": "Arapça",
+              "29": "Çince (Basit)",
+              "30": "Çince (Geleneksel)",
+              "31": "Arnavutça",
+              "32": "Romence",
+              "35": "Ukraynaca",
+              "40": "Bulgarca",
+              "42": "Bengalce",
+              "45": "Hintçe",
+              "48": "Tayca",
+              "67": "Vietnamca"
+            }
+          },
+          "interests": {
+            "title": "İlgi Alanları ve Davranışlar",
+            "description": "Meta'nın detaylı hedefleme taksonomisinden ilgi alanları ve davranışlar ekleyin.",
+            "searchPlaceholder": "İlgi alanı veya davranış ara...",
+            "searching": "Aranıyor...",
+            "noResults": "Sonuç bulunamadı",
+            "advantageTitle": "Advantage+ Hedef Kitle",
+            "advantageDesc": "Meta AI, kitlenizi otomatik olarak genişletebilir."
+          },
+          "exclude": {
+            "title": "Hariç Tut (Opsiyonel)",
+            "description": "Hedef kitlenizden hariç tutmak istediğiniz ilgi alanlarını veya davranışları ekleyin.",
+            "searchPlaceholder": "Hariç tutulacak ilgi alanı veya davranış ara...",
+            "searching": "Aranıyor...",
+            "noResults": "Sonuç bulunamadı",
+            "alreadyIncluded": "(zaten dahil edilmiş)",
+            "optionalHint": "Bu adım opsiyoneldir. Hariç tutma eklemeden devam edebilirsiniz."
+          },
+          "summary": {
+            "title": "Özet",
+            "description": "Kayıtlı kitle bilgilerini gözden geçirin ve adlandırın.",
+            "nameLabel": "Kitle Adı",
+            "namePlaceholder": "Ör: TR 25-45 Erkek Teknoloji İlgili",
+            "descriptionLabel": "Açıklama (Opsiyonel)",
+            "descriptionPlaceholder": "Kitle hakkında kısa bir not...",
+            "typeLabel": "Tip",
+            "typeValue": "Kayıtlı Hedef Kitle (Saved Audience)",
+            "locationLabel": "Konum",
+            "locationDefault": "Türkiye (varsayılan)",
+            "ageRangeLabel": "Yaş Aralığı",
+            "genderLabel": "Cinsiyet",
+            "genderAll": "Tümü",
+            "genderMale": "Erkek",
+            "genderFemale": "Kadın",
+            "languagesLabel": "Diller",
+            "languageCount": "{count} dil",
+            "interestsLabel": "İlgi Alanları",
+            "interestCount": "{count} ilgi",
+            "excludedLabel": "Hariç Tutulan",
+            "on": "Açık",
+            "off": "Kapalı",
+            "willCreateTitle": "Meta Reklam Hesabında Oluşturulacak",
+            "willCreateDesc": "Onay verdikten sonra bu hedef kitle bağlı Meta reklam hesabınızda gerçekten oluşturulacaktır."
+          }
+        },
+        "confirmStep": {
+          "editTitle": "Taslak Güncellenecek",
+          "editDesc": "Değişiklikler kaydedilecek. Kitleyi Meta'ya göndermek için liste ekranındaki \"Meta'ya Gönder\" butonunu kullanın.",
+          "createTitle": "Gerçek Meta Hesabında Oluşturulacak",
+          "createDesc": "Aşağıdaki hedef kitle, bağlı Meta reklam hesabınızda gerçekten oluşturulacaktır. Bu işlem geri alınamaz.",
+          "audienceName": "Kitle Adı",
+          "type": "Tip",
+          "typeCustom": "Özel Kitle (Retargeting)",
+          "typeLookalike": "Benzer Kitle (Lookalike)",
+          "typeSaved": "Kayıtlı Kitle (Saved)",
+          "target": "Hedef",
+          "targetValue": "Meta Reklam Hesabı",
+          "creating": "Oluşturuluyor...",
+          "createAndSend": "Oluştur ve Meta'ya Gönder"
+        },
+        "toast": {
+          "updated": "Kitle güncellendi",
+          "updateFailed": "Güncellenemedi",
+          "unexpected": "Beklenmeyen hata",
+          "createFailed": "Kayıt oluşturulamadı",
+          "savedSendingToMeta": "Kitle kaydedildi, Meta'ya gönderiliyor...",
+          "sentToMeta": "Kitle Meta'ya başarıyla gönderildi",
+          "sendToMetaFailedRetry": "Meta'ya gönderim başarısız — liste ekranından tekrar deneyebilirsiniz",
+          "sendToMetaErrorRetry": "Meta'ya gönderim sırasında hata — liste ekranından tekrar deneyebilirsiniz",
+          "saved": "Kitle kaydedildi"
+        }
+      },
+      "google": {
+        "contextNote": {
+          "saved": "Google'ın hazır <b>kitle segmentleri</b> kataloğu. Bu segmentleri kampanya kurarken hedefleme olarak ekleyebilirsiniz; Google'da Meta'daki gibi ayrı \"kayıtlı kitle\" nesnesi tutulmaz.",
+          "custom": "Google Ads hesabınızdaki gerçek <b>kullanıcı listeleri</b> (yeniden pazarlama, müşteri eşleştirme, kombine). Yeni liste, web etiketi/kuralı gerektirdiği için Google Ads üzerinden tanımlanır."
+        },
+        "segmentSearchPlaceholder": "Google kitle segmentlerinde arayın...",
+        "searching": "Aranıyor...",
+        "noSegmentMatch": "Eşleşen segment bulunamadı.",
+        "userListSearchPlaceholder": "Kullanıcı listesi arayın...",
+        "userListEmpty": {
+          "noMatch": "Aramanızla eşleşen liste bulunamadı.",
+          "none": "Google Ads hesabınızda henüz kullanıcı listesi yok.",
+          "hint": "Yeniden pazarlama listeleri web sitenize Google etiketi eklendiğinde otomatik dolar."
+        },
+        "userListCard": {
+          "size": "Boyut:",
+          "membership": "Üyelik süresi:",
+          "days": "{count} gün",
+          "eligible": "Uygun:",
+          "eligibleSearch": "Arama",
+          "eligibleDisplay": "Görüntülü"
+        },
+        "notConnected": {
+          "title": "Google Ads bağlı değil",
+          "desc": "Google kitle verilerini görmek için Google Ads hesabınızı bağlamanız gerekir.",
+          "cta": "Entegrasyona Git"
+        },
+        "category": {
+          "affinity": "İlgi Alanı",
+          "inMarket": "Satın Alma Niyeti",
+          "detailedDemographic": "Detaylı Demografi",
+          "lifeEvent": "Yaşam Olayı",
+          "userList": "Kullanıcı Listesi",
+          "customSegment": "Özel Segment",
+          "combinedAudience": "Kombine Kitle"
+        },
+        "userListType": {
+          "remarketing": "Yeniden Pazarlama",
+          "externalRemarketing": "Harici Yeniden Pazarlama",
+          "ruleBased": "Kural Tabanlı",
+          "logical": "Kombine Liste",
+          "crmBased": "Müşteri Eşleştirme (CRM)",
+          "similar": "Benzer (devre dışı)",
+          "unknown": "Kullanıcı Listesi"
+        },
+        "browse": {
+          "inMarket": {
+            "label": "Satın Alma Niyeti",
+            "desc": "Belirli ürün/hizmeti aktif olarak araştıran kullanıcılar"
+          },
+          "affinity": {
+            "label": "İlgi Alanı",
+            "desc": "İlgi alanlarına ve yaşam tarzına göre kullanıcılar"
+          },
+          "detailedDemographics": {
+            "label": "Detaylı Demografi",
+            "desc": "Eğitim, medeni durum, ev sahipliği gibi nitelikler"
+          },
+          "lifeEvents": {
+            "label": "Yaşam Olayı",
+            "desc": "Mezuniyet, taşınma, evlilik gibi önemli dönemeçler"
+          }
+        },
+        "sizeRange": {
+          "lt500": "500'den az",
+          "lt1k": "1.000'den az",
+          "1kTo10k": "1.000 – 10.000",
+          "10kTo50k": "10.000 – 50.000",
+          "50kTo100k": "50.000 – 100.000",
+          "100kTo300k": "100.000 – 300.000",
+          "300kTo500k": "300.000 – 500.000",
+          "500kTo1m": "500.000 – 1 milyon",
+          "1mTo2m": "1 – 2 milyon",
+          "2mTo3m": "2 – 3 milyon",
+          "3mTo5m": "3 – 5 milyon",
+          "5mTo10m": "5 – 10 milyon",
+          "10mTo20m": "10 – 20 milyon",
+          "20mTo30m": "20 – 30 milyon",
+          "30mTo50m": "30 – 50 milyon",
+          "over50m": "50 milyon+"
         }
       }
     },
