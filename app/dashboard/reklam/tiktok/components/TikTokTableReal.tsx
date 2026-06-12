@@ -1,5 +1,6 @@
 'use client'
 
+import { useTranslations } from 'next-intl'
 import type { TikTokCampaign } from '@/hooks/tiktok/useTikTokAdsCampaigns'
 
 interface TikTokTableRealProps {
@@ -7,21 +8,16 @@ interface TikTokTableRealProps {
   locale: string
 }
 
-const objectiveLabels: Record<string, string> = {
-  TRAFFIC: 'Trafik',
-  CONVERSIONS: 'Dönüşüm',
-  APP_INSTALL: 'Uygulama Yükleme',
-  REACH: 'Erişim',
-  VIDEO_VIEWS: 'Video Görüntüleme',
-  LEAD_GENERATION: 'Potansiyel Müşteri',
-  ENGAGEMENT: 'Etkileşim',
-  CATALOG_SALES: 'Katalog Satışları',
-  APP_PROMOTION: 'Uygulama Tanıtımı',
-  WEB_CONVERSIONS: 'Web Dönüşüm',
-  PRODUCT_SALES: 'Ürün Satışı',
-}
+const KNOWN_OBJECTIVES = new Set([
+  'TRAFFIC', 'CONVERSIONS', 'APP_INSTALL', 'REACH', 'VIDEO_VIEWS',
+  'LEAD_GENERATION', 'ENGAGEMENT', 'CATALOG_SALES', 'APP_PROMOTION',
+  'WEB_CONVERSIONS', 'PRODUCT_SALES',
+])
 
 export default function TikTokTableReal({ campaigns, locale }: TikTokTableRealProps) {
+  const t = useTranslations('dashboard.meta')
+  const objectiveLabel = (objective: string) =>
+    KNOWN_OBJECTIVES.has(objective) ? t(`tiktokObjectives.${objective}`) : objective
   const fmtCurrency = (v: number) =>
     v.toLocaleString(locale, { minimumFractionDigits: 2, maximumFractionDigits: 2 })
   const fmtInt = (v: number) => v.toLocaleString(locale)
@@ -33,17 +29,17 @@ export default function TikTokTableReal({ campaigns, locale }: TikTokTableRealPr
       <table className="w-full">
         <thead>
           <tr className="bg-rose-50/60">
-            <th className="px-4 py-3 text-xs font-semibold text-rose-800/70 uppercase text-left whitespace-nowrap">Durum</th>
-            <th className="px-4 py-3 text-xs font-semibold text-rose-800/70 uppercase text-left whitespace-nowrap">Kampanya</th>
-            <th className="px-4 py-3 text-xs font-semibold text-rose-800/70 uppercase text-left whitespace-nowrap">Amaç</th>
-            <th className="px-4 py-3 text-xs font-semibold text-rose-800/70 uppercase text-right whitespace-nowrap">Bütçe</th>
-            <th className="px-4 py-3 text-xs font-semibold text-rose-800/70 uppercase text-right whitespace-nowrap">Harcama</th>
-            <th className="px-4 py-3 text-xs font-semibold text-rose-800/70 uppercase text-right whitespace-nowrap">Gösterim</th>
-            <th className="px-4 py-3 text-xs font-semibold text-rose-800/70 uppercase text-right whitespace-nowrap">Tıklama</th>
-            <th className="px-4 py-3 text-xs font-semibold text-rose-800/70 uppercase text-right whitespace-nowrap">CTR</th>
-            <th className="px-4 py-3 text-xs font-semibold text-rose-800/70 uppercase text-right whitespace-nowrap">CPC</th>
-            <th className="px-4 py-3 text-xs font-semibold text-rose-800/70 uppercase text-right whitespace-nowrap">Dönüşüm</th>
-            <th className="px-4 py-3 text-xs font-semibold text-rose-800/70 uppercase text-right whitespace-nowrap">Erişim</th>
+            <th className="px-4 py-3 text-xs font-semibold text-rose-800/70 uppercase text-left whitespace-nowrap">{t('table.status')}</th>
+            <th className="px-4 py-3 text-xs font-semibold text-rose-800/70 uppercase text-left whitespace-nowrap">{t('table.campaign')}</th>
+            <th className="px-4 py-3 text-xs font-semibold text-rose-800/70 uppercase text-left whitespace-nowrap">{t('table.objective')}</th>
+            <th className="px-4 py-3 text-xs font-semibold text-rose-800/70 uppercase text-right whitespace-nowrap">{t('table.budget')}</th>
+            <th className="px-4 py-3 text-xs font-semibold text-rose-800/70 uppercase text-right whitespace-nowrap">{t('kpi.spend')}</th>
+            <th className="px-4 py-3 text-xs font-semibold text-rose-800/70 uppercase text-right whitespace-nowrap">{t('kpi.impressions')}</th>
+            <th className="px-4 py-3 text-xs font-semibold text-rose-800/70 uppercase text-right whitespace-nowrap">{t('table.clicks')}</th>
+            <th className="px-4 py-3 text-xs font-semibold text-rose-800/70 uppercase text-right whitespace-nowrap">{t('kpi.ctr')}</th>
+            <th className="px-4 py-3 text-xs font-semibold text-rose-800/70 uppercase text-right whitespace-nowrap">{t('table.cpc')}</th>
+            <th className="px-4 py-3 text-xs font-semibold text-rose-800/70 uppercase text-right whitespace-nowrap">{t('table.conversions')}</th>
+            <th className="px-4 py-3 text-xs font-semibold text-rose-800/70 uppercase text-right whitespace-nowrap">{t('table.reach')}</th>
           </tr>
         </thead>
         <tbody className="divide-y divide-gray-100">
@@ -61,14 +57,14 @@ export default function TikTokTableReal({ campaigns, locale }: TikTokTableRealPr
                   }`}
                 >
                   <span className={`w-1.5 h-1.5 rounded-full ${c.publishEnabled ? 'bg-green-500' : 'bg-gray-400'}`} />
-                  {c.publishEnabled ? 'Aktif' : 'Duraklatıldı'}
+                  {c.publishEnabled ? t('table.statusActive') : t('table.paused')}
                 </span>
               </td>
               <td className="px-4 py-3 text-sm font-medium text-gray-900 max-w-[200px] truncate" title={c.campaignName}>
                 {c.campaignName}
               </td>
               <td className="px-4 py-3 text-xs text-gray-500">
-                {objectiveLabels[c.objective] || c.objective}
+                {objectiveLabel(c.objective)}
               </td>
               <td className="px-4 py-3 text-sm text-right text-gray-700 tabular-nums">
                 {c.budget > 0 ? fmtCurrency(c.budget) : '—'}

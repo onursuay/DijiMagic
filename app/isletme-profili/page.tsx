@@ -7,6 +7,7 @@ import {
   MapPin, Phone, ExternalLink, TrendingUp, Shield,
   Clock, RefreshCcw,
 } from 'lucide-react'
+import { useTranslations } from 'next-intl'
 import BusinessProfileOnboarding from '@/components/yoai/BusinessProfileOnboarding'
 
 // DB'de alt çizgili ve küçük harfli gelen sektör etiketlerini okunabilir yapar
@@ -60,7 +61,7 @@ interface Competitor {
   extra_url: string | null
 }
 
-function ConfidenceRing({ value }: { value: number }) {
+function ConfidenceRing({ value, label }: { value: number; label: string }) {
   const cx = 40
   const cy = 40
   const radius = 28
@@ -100,46 +101,46 @@ function ConfidenceRing({ value }: { value: number }) {
           letterSpacing="1"
           style={{ fontFamily: 'inherit', textTransform: 'uppercase' }}
         >
-          GÜVEN
+          {label}
         </text>
       </svg>
     </div>
   )
 }
 
-function ScanBadge({ status }: { status: string }) {
+function ScanBadge({ status, t }: { status: string; t: (k: string) => string }) {
   if (status === 'completed') {
     return (
       <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-emerald-500/20 text-emerald-300 text-xs font-medium border border-emerald-400/30">
-        <CheckCircle2 className="w-3 h-3" /> Tarandı
+        <CheckCircle2 className="w-3 h-3" /> {t('scan.completed')}
       </span>
     )
   }
   if (status === 'running') {
     return (
       <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-blue-500/20 text-blue-300 text-xs font-medium border border-blue-400/30">
-        <Loader2 className="w-3 h-3 animate-spin" /> Taranıyor…
+        <Loader2 className="w-3 h-3 animate-spin" /> {t('scan.running')}
       </span>
     )
   }
   if (status === 'partial') {
     return (
       <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-white/10 text-white/60 text-xs font-medium border border-white/20">
-        <AlertCircle className="w-3 h-3" /> Kısmi
+        <AlertCircle className="w-3 h-3" /> {t('scan.partial')}
       </span>
     )
   }
   if (status === 'failed') {
     return (
       <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-red-500/20 text-red-300 text-xs font-medium border border-red-400/30">
-        <AlertCircle className="w-3 h-3" /> Tarama başarısız
+        <AlertCircle className="w-3 h-3" /> {t('scan.failed')}
       </span>
     )
   }
   // pending
   return (
     <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-white/10 text-white/50 text-xs font-medium border border-white/20">
-      <Clock className="w-3 h-3" /> Tarama bekleniyor
+      <Clock className="w-3 h-3" /> {t('scan.pending')}
     </span>
   )
 }
@@ -203,6 +204,7 @@ function SourceLink({ label, url }: { label: string; url: string | null | undefi
 }
 
 export default function IsletmeProfilPage() {
+  const t = useTranslations('isletmeProfili')
   const [profile, setProfile] = useState<Profile | null>(null)
   const [competitors, setCompetitors] = useState<Competitor[]>([])
   const [loading, setLoading] = useState(true)
@@ -217,13 +219,13 @@ export default function IsletmeProfilPage() {
     try {
       const res = await fetch('/api/yoai/business-profile/brand-refresh', { method: 'POST', credentials: 'include' })
       const json = await res.json()
-      setBrandRefreshMsg(json?.message || 'Marka bilgileri yenileniyor.')
+      setBrandRefreshMsg(json?.message || t('brandRefreshDefaultMsg'))
     } catch {
-      setBrandRefreshMsg('Yenileme başlatılamadı, tekrar deneyin.')
+      setBrandRefreshMsg(t('brandRefreshError'))
     } finally {
       setBrandRefreshing(false)
     }
-  }, [])
+  }, [t])
 
   const load = useCallback(async () => {
     setLoading(true)
@@ -252,20 +254,20 @@ export default function IsletmeProfilPage() {
   if (!profile) {
     return (
       <div className="max-w-2xl mx-auto px-6 py-16 text-center">
-        <p className="text-gray-500 text-sm">Henüz bir işletme profili bulunamadı.</p>
+        <p className="text-gray-500 text-sm">{t('noProfile')}</p>
       </div>
     )
   }
 
   const allSources = [
-    { label: 'Web Sitesi', url: profile.website_url },
+    { label: t('sources.website'), url: profile.website_url },
     { label: 'Instagram', url: profile.instagram_url },
     { label: 'Facebook', url: profile.facebook_url },
     { label: 'LinkedIn', url: profile.linkedin_url },
     { label: 'YouTube', url: profile.youtube_url },
     { label: 'TikTok', url: profile.tiktok_url },
-    { label: 'Google Business', url: profile.google_business_profile_url },
-    { label: 'Marketplace', url: profile.marketplace_url },
+    { label: t('sources.googleBusiness'), url: profile.google_business_profile_url },
+    { label: t('sources.marketplace'), url: profile.marketplace_url },
   ].filter((s) => s.url)
 
   return (
@@ -286,7 +288,7 @@ export default function IsletmeProfilPage() {
           {/* Content */}
           <div className="relative z-10 px-7 py-6 flex items-center justify-between gap-6">
             <div className="flex items-center gap-5 flex-1 min-w-0">
-              <ConfidenceRing value={profile.profile_confidence} />
+              <ConfidenceRing value={profile.profile_confidence} label={t('confidenceLabel')} />
               <div className="min-w-0">
                 <h1 className="text-2xl font-bold text-white drop-shadow-sm truncate">{profile.company_name}</h1>
                 {profile.sector_main && (
@@ -295,7 +297,7 @@ export default function IsletmeProfilPage() {
                   </p>
                 )}
                 <div className="flex items-center gap-2 mt-2.5 flex-wrap">
-                  <ScanBadge status={profile.scan_status} />
+                  <ScanBadge status={profile.scan_status} t={t} />
                   {profile.last_scan_completed_at && (
                     <span className="inline-flex items-center gap-1 text-[11px] text-white/55 font-medium">
                       <Clock className="w-3 h-3" />
@@ -311,16 +313,16 @@ export default function IsletmeProfilPage() {
                   onClick={handleBrandRefresh}
                   disabled={brandRefreshing}
                   className="inline-flex items-center gap-2 px-4 py-2.5 bg-white/15 hover:bg-white/25 border border-white/25 text-white rounded-xl text-sm font-semibold transition-all backdrop-blur-sm disabled:opacity-60"
-                  title="Kendi website + sosyal hesaplarını yeniden tarayıp marka zekânı günceller"
+                  title={t('brandRefreshTitle')}
                 >
                   {brandRefreshing ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <RefreshCcw className="w-3.5 h-3.5" />}
-                  Marka Bilgilerini Yenile
+                  {t('brandRefresh')}
                 </button>
                 <button
                   onClick={() => setShowEdit(true)}
                   className="inline-flex items-center gap-2 px-4 py-2.5 bg-white/20 hover:bg-white/30 border border-white/30 text-white rounded-xl text-sm font-semibold transition-all backdrop-blur-sm"
                 >
-                  <Pencil className="w-3.5 h-3.5" /> Düzenle
+                  <Pencil className="w-3.5 h-3.5" /> {t('edit')}
                 </button>
               </div>
               {brandRefreshMsg && (
@@ -333,12 +335,12 @@ export default function IsletmeProfilPage() {
         {/* ── STAT CHIPS ── */}
         <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
           {[
-            { icon: TrendingUp, label: 'Hizmet', value: profile.products_or_services.length || '—', sub: 'ürün/hizmet' },
-            { icon: MapPin, label: 'Lokasyon', value: profile.target_locations.length || '—', sub: 'hedef bölge' },
-            { icon: Users, label: 'Rakip', value: competitors.length || '—', sub: 'takip edilen' },
-            { icon: Shield, label: 'Anahtar', value: profile.keywords.length || '—', sub: 'keyword' },
-          ].map(({ icon: Icon, label, value, sub }) => (
-            <div key={label} className="bg-white border border-gray-100 rounded-xl px-4 py-3.5 flex items-center gap-3 shadow-[0_1px_4px_rgba(0,0,0,0.05)]">
+            { id: 'service', icon: TrendingUp, value: profile.products_or_services.length || '—', sub: t('stats.serviceSub') },
+            { id: 'location', icon: MapPin, value: profile.target_locations.length || '—', sub: t('stats.locationSub') },
+            { id: 'competitor', icon: Users, value: competitors.length || '—', sub: t('stats.competitorSub') },
+            { id: 'keyword', icon: Shield, value: profile.keywords.length || '—', sub: t('stats.keywordSub') },
+          ].map(({ id, icon: Icon, value, sub }) => (
+            <div key={id} className="bg-white border border-gray-100 rounded-xl px-4 py-3.5 flex items-center gap-3 shadow-[0_1px_4px_rgba(0,0,0,0.05)]">
               <div className="w-8 h-8 rounded-lg bg-primary/10 flex items-center justify-center shrink-0">
                 <Icon className="w-4 h-4 text-primary" />
               </div>
@@ -351,11 +353,11 @@ export default function IsletmeProfilPage() {
         </div>
 
         {/* ── FİRMA BİLGİLERİ — tam genişlik ── */}
-        <Card icon={Building2} title="Firma Bilgileri">
+        <Card icon={Building2} title={t('companyInfo')}>
           <div className="space-y-4">
-            <Field label="İşletme Açıklaması" value={profile.business_description} />
-            {profile.specialization && <Field label="Uzmanlık / Özel Hizmet" value={profile.specialization} />}
-            <Tags label="Ürünler / Hizmetler" items={profile.products_or_services} />
+            <Field label={t('businessDescription')} value={profile.business_description} />
+            {profile.specialization && <Field label={t('specialization')} value={profile.specialization} />}
+            <Tags label={t('productsServices')} items={profile.products_or_services} />
           </div>
         </Card>
 
@@ -365,7 +367,7 @@ export default function IsletmeProfilPage() {
 
             {/* Ana Hedef */}
             <div className="p-5">
-              <p className="text-[10px] font-semibold text-gray-400 uppercase tracking-widest mb-3">Ana Hedef</p>
+              <p className="text-[10px] font-semibold text-gray-400 uppercase tracking-widest mb-3">{t('mainGoal')}</p>
               {profile.main_conversion_goal ? (
                 <span className="inline-flex items-center gap-1 px-2.5 py-1.5 rounded-lg bg-gray-50 border border-gray-200 text-xs font-medium text-gray-700">
                   <Phone className="w-3 h-3 text-gray-400 shrink-0" />{profile.main_conversion_goal}
@@ -377,7 +379,7 @@ export default function IsletmeProfilPage() {
 
             {/* Hedef Lokasyonlar */}
             <div className="p-5">
-              <p className="text-[10px] font-semibold text-gray-400 uppercase tracking-widest mb-3">Hedef Lokasyonlar</p>
+              <p className="text-[10px] font-semibold text-gray-400 uppercase tracking-widest mb-3">{t('targetLocations')}</p>
               {profile.target_locations.length > 0 ? (
                 <div className="flex flex-wrap gap-1.5">
                   {profile.target_locations.map((loc) => (
@@ -393,7 +395,7 @@ export default function IsletmeProfilPage() {
 
             {/* Hedef Kitle */}
             <div className="p-5">
-              <p className="text-[10px] font-semibold text-gray-400 uppercase tracking-widest mb-3">Hedef Kitle</p>
+              <p className="text-[10px] font-semibold text-gray-400 uppercase tracking-widest mb-3">{t('targetAudience')}</p>
               {profile.target_audience ? (
                 <p className="text-sm text-gray-800 leading-relaxed">{profile.target_audience}</p>
               ) : (
@@ -403,7 +405,7 @@ export default function IsletmeProfilPage() {
 
             {/* Marka Kaynakları — 2-col grid, taşma yok */}
             <div className="p-5">
-              <p className="text-[10px] font-semibold text-gray-400 uppercase tracking-widest mb-3">Marka Kaynakları</p>
+              <p className="text-[10px] font-semibold text-gray-400 uppercase tracking-widest mb-3">{t('brandSources')}</p>
               {allSources.length > 0 ? (
                 <div className="grid grid-cols-2 gap-1.5">
                   {allSources.map((s) => (
@@ -423,40 +425,40 @@ export default function IsletmeProfilPage() {
         </div>
 
         {/* Pazarlama Detayları */}
-        <Card icon={BarChart2} title="Pazarlama Detayları">
+        <Card icon={BarChart2} title={t('marketingDetails')}>
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-5">
             <div className="space-y-4">
-              <Field label="Aylık Reklam Bütçesi" value={profile.monthly_ad_budget_range} />
-              <Field label="Marka Dili / Tonu" value={profile.brand_tone} />
-              {profile.compliance_notes && <Field label="Mevzuat / Uyumluluk Notları" value={profile.compliance_notes} />}
+              <Field label={t('monthlyAdBudget')} value={profile.monthly_ad_budget_range} />
+              <Field label={t('brandTone')} value={profile.brand_tone} />
+              {profile.compliance_notes && <Field label={t('complianceNotes')} value={profile.compliance_notes} />}
             </div>
             <div className="space-y-4">
-              <Tags label="Anahtar Kelimeler" items={profile.keywords} />
-              <Tags label="En Karlı Hizmetler" items={profile.most_profitable_services} />
-              {profile.forbidden_claims.length > 0 && <Tags label="Yasak İddialar" items={profile.forbidden_claims} />}
+              <Tags label={t('keywords')} items={profile.keywords} />
+              <Tags label={t('mostProfitableServices')} items={profile.most_profitable_services} />
+              {profile.forbidden_claims.length > 0 && <Tags label={t('forbiddenClaims')} items={profile.forbidden_claims} />}
             </div>
           </div>
           {profile.extra_notes && (
             <div className="mt-4 pt-4 border-t border-gray-50">
-              <Field label="Ek Notlar" value={profile.extra_notes} />
+              <Field label={t('extraNotes')} value={profile.extra_notes} />
             </div>
           )}
         </Card>
 
         {/* Rakipler */}
         {competitors.length > 0 && (
-          <Card icon={Users} title={`Rakipler (${competitors.length})`}>
+          <Card icon={Users} title={t('competitors', { count: competitors.length })}>
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
               {competitors.map((c, i) => {
                 const links = [
-                  { label: 'Web', url: c.website_url },
+                  { label: t('sources.web'), url: c.website_url },
                   { label: 'Instagram', url: c.instagram_url },
                   { label: 'Facebook', url: c.facebook_url },
                   { label: 'LinkedIn', url: c.linkedin_url },
                   { label: 'YouTube', url: c.youtube_url },
                   { label: 'TikTok', url: c.tiktok_url },
-                  { label: 'Google Business', url: c.google_business_url },
-                  { label: 'Diğer', url: c.extra_url },
+                  { label: t('sources.googleBusiness'), url: c.google_business_url },
+                  { label: t('sources.other'), url: c.extra_url },
                 ].filter((l) => l.url)
                 return (
                   <div key={i} className="flex items-start gap-3 p-3 rounded-xl bg-gray-50 border border-gray-100">

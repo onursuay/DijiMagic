@@ -2,11 +2,13 @@
 
 import { Suspense, useEffect, useState } from 'react'
 import { useSearchParams } from 'next/navigation'
+import { useTranslations } from 'next-intl'
 import Topbar from '@/components/Topbar'
 import MetaConnectWizard from '@/components/MetaConnectWizard'
 import { Puzzle, Facebook, Search, MessageSquare, AlertCircle, ArrowRight } from 'lucide-react'
 
 function EntegrasyonContent() {
+  const t = useTranslations('legacyIntegrations')
   const searchParams = useSearchParams()
   const [selectedAccountName, setSelectedAccountName] = useState<string | null>(null)
 
@@ -34,9 +36,9 @@ function EntegrasyonContent() {
   }, [searchParams])
   return (
     <>
-      <Topbar 
-        title="Entegrasyon" 
-        description="Reklam ve raporlama platformlarınızı bağlayın"
+      <Topbar
+        title={t('title')}
+        description={t('description')}
       />
       <div className="flex-1 overflow-y-auto bg-gray-50 p-6">
         <div className="max-w-6xl mx-auto">
@@ -47,10 +49,10 @@ function EntegrasyonContent() {
               </div>
               <div>
                 <h2 className="text-2xl font-semibold text-gray-900 mb-2">
-                  Entegrasyon
+                  {t('title')}
                 </h2>
                 <p className="text-gray-600">
-                  Reklam ve raporlama platformlarınızı bağlayarak kampanyalarınızı tek bir yerden yönetin.
+                  {t('intro')}
                 </p>
               </div>
             </div>
@@ -58,7 +60,7 @@ function EntegrasyonContent() {
 
           <div className="mb-8">
             <h3 className="text-lg font-semibold text-gray-900 mb-4">
-              Reklam Platformları
+              {t('adPlatforms')}
             </h3>
             <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
               <div className="bg-white rounded-xl border-2 border-primary p-6 hover:shadow-lg transition-shadow">
@@ -70,9 +72,9 @@ function EntegrasyonContent() {
                     <div>
                       <h4 className="font-semibold text-gray-900">Meta Ads</h4>
                       {selectedAccountName ? (
-                        <p className="text-sm text-gray-600">Hesap: {selectedAccountName}</p>
+                        <p className="text-sm text-gray-600">{t('account', { name: selectedAccountName })}</p>
                       ) : (
-                        <p className="text-sm text-gray-500">Bağlan</p>
+                        <p className="text-sm text-gray-500">{t('connect')}</p>
                       )}
                     </div>
                   </div>
@@ -88,12 +90,12 @@ function EntegrasyonContent() {
                     </div>
                     <div>
                       <h4 className="font-semibold text-gray-900">Google Ads</h4>
-                      <p className="text-sm text-gray-500">Bağlanmadı</p>
+                      <p className="text-sm text-gray-500">{t('notConnected')}</p>
                     </div>
                   </div>
                 </div>
                 <button className="w-full flex items-center justify-center gap-2 text-primary text-sm font-medium hover:text-primary/80 transition-colors">
-                  Hesap bağla <ArrowRight className="w-4 h-4" />
+                  {t('connectAccount')} <ArrowRight className="w-4 h-4" />
                 </button>
               </div>
 
@@ -105,13 +107,13 @@ function EntegrasyonContent() {
                     </div>
                     <div>
                       <h4 className="font-semibold text-gray-900">TikTok Ads</h4>
-                      <p className="text-sm text-gray-500">Yakında</p>
+                      <p className="text-sm text-gray-500">{t('comingSoon')}</p>
                     </div>
                   </div>
                 </div>
                 <div className="w-full flex items-center justify-center gap-2 text-gray-400 text-sm font-medium">
                   <AlertCircle className="w-4 h-4" />
-                  <span>Yakında</span>
+                  <span>{t('comingSoon')}</span>
                 </div>
               </div>
             </div>
@@ -119,7 +121,7 @@ function EntegrasyonContent() {
 
           <div>
             <h3 className="text-lg font-semibold text-gray-900 mb-4">
-              Raporlama Platformları
+              {t('reportingPlatforms')}
             </h3>
             <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
               <div className="bg-white rounded-xl border border-gray-200 p-6 hover:shadow-lg transition-shadow">
@@ -130,12 +132,12 @@ function EntegrasyonContent() {
                     </div>
                     <div>
                       <h4 className="font-semibold text-gray-900">Google Analytics</h4>
-                      <p className="text-sm text-gray-500">Bağlanmadı</p>
+                      <p className="text-sm text-gray-500">{t('notConnected')}</p>
                     </div>
                   </div>
                 </div>
                 <button className="w-full flex items-center justify-center gap-2 text-primary text-sm font-medium hover:text-primary/80 transition-colors">
-                  Hesap bağla <ArrowRight className="w-4 h-4" />
+                  {t('connectAccount')} <ArrowRight className="w-4 h-4" />
                 </button>
               </div>
 
@@ -147,13 +149,13 @@ function EntegrasyonContent() {
                     </div>
                     <div>
                       <h4 className="font-semibold text-gray-900">Slack</h4>
-                      <p className="text-sm text-gray-500">Yakında</p>
+                      <p className="text-sm text-gray-500">{t('comingSoon')}</p>
                     </div>
                   </div>
                 </div>
                 <div className="w-full flex items-center justify-center gap-2 text-gray-400 text-sm font-medium">
                   <AlertCircle className="w-4 h-4" />
-                  <span>Yakında</span>
+                  <span>{t('comingSoon')}</span>
                 </div>
               </div>
             </div>
@@ -164,23 +166,28 @@ function EntegrasyonContent() {
   )
 }
 
-export default function EntegrasyonPage() {
+function EntegrasyonFallback() {
+  const t = useTranslations('legacyIntegrations')
   return (
-    <Suspense fallback={
-      <>
-        <Topbar 
-          title="Entegrasyon" 
-          description="Reklam ve raporlama platformlarınızı bağlayın"
-        />
-        <div className="flex-1 overflow-y-auto bg-gray-50 p-6">
-          <div className="max-w-6xl mx-auto">
-            <div className="text-center py-12">
-              <p className="text-gray-600">Yükleniyor...</p>
-            </div>
+    <>
+      <Topbar
+        title={t('title')}
+        description={t('description')}
+      />
+      <div className="flex-1 overflow-y-auto bg-gray-50 p-6">
+        <div className="max-w-6xl mx-auto">
+          <div className="text-center py-12">
+            <p className="text-gray-600">{t('loading')}</p>
           </div>
         </div>
-      </>
-    }>
+      </div>
+    </>
+  )
+}
+
+export default function EntegrasyonPage() {
+  return (
+    <Suspense fallback={<EntegrasyonFallback />}>
       <EntegrasyonContent />
     </Suspense>
   )

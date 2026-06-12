@@ -238,6 +238,70 @@
       "section8Body": "These terms may be updated. The current version is published on this page."
     }
   },
+  "isletmeProfili": {
+    "loading": "Loading…",
+    "noProfile": "No business profile found yet.",
+    "confidenceLabel": "CONFIDENCE",
+    "scan": {
+      "completed": "Scanned",
+      "running": "Scanning…",
+      "partial": "Partial",
+      "failed": "Scan failed",
+      "pending": "Scan pending"
+    },
+    "brandRefresh": "Refresh Brand Info",
+    "brandRefreshTitle": "Re-scans your own website + social accounts and updates your brand intelligence",
+    "brandRefreshDefaultMsg": "Brand info is being refreshed.",
+    "brandRefreshError": "Could not start refresh, please try again.",
+    "edit": "Edit",
+    "stats": {
+      "service": "Service",
+      "serviceSub": "product/service",
+      "location": "Location",
+      "locationSub": "target region",
+      "competitor": "Competitor",
+      "competitorSub": "tracked",
+      "keyword": "Keyword",
+      "keywordSub": "keyword"
+    },
+    "companyInfo": "Company Info",
+    "businessDescription": "Business Description",
+    "specialization": "Expertise / Special Service",
+    "productsServices": "Products / Services",
+    "mainGoal": "Main Goal",
+    "targetLocations": "Target Locations",
+    "targetAudience": "Target Audience",
+    "brandSources": "Brand Sources",
+    "sources": {
+      "website": "Website",
+      "googleBusiness": "Google Business",
+      "marketplace": "Marketplace",
+      "other": "Other",
+      "web": "Web"
+    },
+    "marketingDetails": "Marketing Details",
+    "monthlyAdBudget": "Monthly Ad Budget",
+    "brandTone": "Brand Voice / Tone",
+    "complianceNotes": "Legal / Compliance Notes",
+    "keywords": "Keywords",
+    "mostProfitableServices": "Most Profitable Services",
+    "forbiddenClaims": "Forbidden Claims",
+    "extraNotes": "Extra Notes",
+    "competitors": "Competitors ({count})"
+  },
+  "legacyIntegrations": {
+    "title": "Integration",
+    "description": "Connect your advertising and reporting platforms",
+    "intro": "Connect your advertising and reporting platforms to manage your campaigns from a single place.",
+    "adPlatforms": "Advertising Platforms",
+    "reportingPlatforms": "Reporting Platforms",
+    "account": "Account: {name}",
+    "connect": "Connect",
+    "notConnected": "Not connected",
+    "connectAccount": "Connect account",
+    "comingSoon": "Coming soon",
+    "loading": "Loading…"
+  },
   "dashboard": {
     "homepage": {
       "title": "Overview",
@@ -293,6 +357,7 @@
         "campaign": "Campaign",
         "adset": "Ad Set",
         "ad": "Ad",
+        "objective": "Objective",
         "budget": "Budget",
         "spent": "Amount Spent",
         "impressions": "Impressions",
@@ -380,6 +445,19 @@
         "spend": "Spend",
         "impressions": "Impressions",
         "ctr": "CTR"
+      },
+      "tiktokObjectives": {
+        "TRAFFIC": "Traffic",
+        "CONVERSIONS": "Conversions",
+        "APP_INSTALL": "App Install",
+        "REACH": "Reach",
+        "VIDEO_VIEWS": "Video Views",
+        "LEAD_GENERATION": "Lead Generation",
+        "ENGAGEMENT": "Engagement",
+        "CATALOG_SALES": "Catalog Sales",
+        "APP_PROMOTION": "App Promotion",
+        "WEB_CONVERSIONS": "Web Conversions",
+        "PRODUCT_SALES": "Product Sales"
       },
       "dateRange": {
         "allTime": "All Time",
@@ -681,6 +759,15 @@
       },
       "last30Days": "Last 30 Days",
       "comingSoon": "Coming Soon",
+      "networkSettings": {
+        "title": "Network Settings",
+        "googleSearch": "Google Search",
+        "alwaysOn": "(always on)",
+        "searchPartners": "Search Network Partners",
+        "displayNetwork": "Display Network"
+      },
+      "budgetMinWarning": "Google recommends a minimum of <strong>{amount}</strong> for this strategy.",
+      "budgetMinWarningUnit": "TRY/day",
       "wizard": {
         "title": "Create Google Search Campaign",
         "steps": {

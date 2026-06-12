@@ -238,6 +238,70 @@
       "section8Body": "Şartlar güncellenebilir. Güncel sürüm bu sayfada yayımlanır."
     }
   },
+  "isletmeProfili": {
+    "loading": "Yükleniyor…",
+    "noProfile": "Henüz bir işletme profili bulunamadı.",
+    "confidenceLabel": "GÜVEN",
+    "scan": {
+      "completed": "Tarandı",
+      "running": "Taranıyor…",
+      "partial": "Kısmi",
+      "failed": "Tarama başarısız",
+      "pending": "Tarama bekleniyor"
+    },
+    "brandRefresh": "Marka Bilgilerini Yenile",
+    "brandRefreshTitle": "Kendi website + sosyal hesaplarını yeniden tarayıp marka zekânı günceller",
+    "brandRefreshDefaultMsg": "Marka bilgileri yenileniyor.",
+    "brandRefreshError": "Yenileme başlatılamadı, tekrar deneyin.",
+    "edit": "Düzenle",
+    "stats": {
+      "service": "Hizmet",
+      "serviceSub": "ürün/hizmet",
+      "location": "Lokasyon",
+      "locationSub": "hedef bölge",
+      "competitor": "Rakip",
+      "competitorSub": "takip edilen",
+      "keyword": "Anahtar",
+      "keywordSub": "keyword"
+    },
+    "companyInfo": "Firma Bilgileri",
+    "businessDescription": "İşletme Açıklaması",
+    "specialization": "Uzmanlık / Özel Hizmet",
+    "productsServices": "Ürünler / Hizmetler",
+    "mainGoal": "Ana Hedef",
+    "targetLocations": "Hedef Lokasyonlar",
+    "targetAudience": "Hedef Kitle",
+    "brandSources": "Marka Kaynakları",
+    "sources": {
+      "website": "Web Sitesi",
+      "googleBusiness": "Google Business",
+      "marketplace": "Marketplace",
+      "other": "Diğer",
+      "web": "Web"
+    },
+    "marketingDetails": "Pazarlama Detayları",
+    "monthlyAdBudget": "Aylık Reklam Bütçesi",
+    "brandTone": "Marka Dili / Tonu",
+    "complianceNotes": "Mevzuat / Uyumluluk Notları",
+    "keywords": "Anahtar Kelimeler",
+    "mostProfitableServices": "En Karlı Hizmetler",
+    "forbiddenClaims": "Yasak İddialar",
+    "extraNotes": "Ek Notlar",
+    "competitors": "Rakipler ({count})"
+  },
+  "legacyIntegrations": {
+    "title": "Entegrasyon",
+    "description": "Reklam ve raporlama platformlarınızı bağlayın",
+    "intro": "Reklam ve raporlama platformlarınızı bağlayarak kampanyalarınızı tek bir yerden yönetin.",
+    "adPlatforms": "Reklam Platformları",
+    "reportingPlatforms": "Raporlama Platformları",
+    "account": "Hesap: {name}",
+    "connect": "Bağlan",
+    "notConnected": "Bağlanmadı",
+    "connectAccount": "Hesap bağla",
+    "comingSoon": "Yakında",
+    "loading": "Yükleniyor…"
+  },
   "dashboard": {
     "homepage": {
       "title": "Genel Bakış",
@@ -293,6 +357,7 @@
         "campaign": "Kampanya",
         "adset": "Reklam Seti",
         "ad": "Reklam",
+        "objective": "Amaç",
         "budget": "Bütçe",
         "spent": "Harcanan tutar",
         "impressions": "Gösterimler",
@@ -380,6 +445,19 @@
         "spend": "Harcama",
         "impressions": "Gösterim",
         "ctr": "TO"
+      },
+      "tiktokObjectives": {
+        "TRAFFIC": "Trafik",
+        "CONVERSIONS": "Dönüşüm",
+        "APP_INSTALL": "Uygulama Yükleme",
+        "REACH": "Erişim",
+        "VIDEO_VIEWS": "Video Görüntüleme",
+        "LEAD_GENERATION": "Potansiyel Müşteri",
+        "ENGAGEMENT": "Etkileşim",
+        "CATALOG_SALES": "Katalog Satışları",
+        "APP_PROMOTION": "Uygulama Tanıtımı",
+        "WEB_CONVERSIONS": "Web Dönüşüm",
+        "PRODUCT_SALES": "Ürün Satışı"
       },
       "dateRange": {
         "allTime": "Tüm Zamanlar",
@@ -681,6 +759,15 @@
       },
       "last30Days": "Son 30 Gün",
       "comingSoon": "Yakında",
+      "networkSettings": {
+        "title": "Ağ Ayarları",
+        "googleSearch": "Google Arama",
+        "alwaysOn": "(her zaman aktif)",
+        "searchPartners": "Arama Ağı Ortakları",
+        "displayNetwork": "Görüntülü Reklam Ağı"
+      },
+      "budgetMinWarning": "Google bu strateji için minimum <strong>{amount}</strong> önermektedir.",
+      "budgetMinWarningUnit": "TRY/gün",
       "wizard": {
         "title": "Google Arama Kampanyası Oluştur",
         "steps": {

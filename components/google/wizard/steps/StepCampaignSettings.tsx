@@ -19,22 +19,13 @@ import {
   CreditCard,
   type LucideIcon,
 } from 'lucide-react'
-import { useLocale } from 'next-intl'
+import { useLocale, useTranslations } from 'next-intl'
 import type { StepProps, BiddingStrategy } from '../shared/WizardTypes'
 import type { ConversionActionForWizard } from '../shared/WizardTypes'
 import { inputCls, CAMPAIGN_TYPE_BIDDING } from '../shared/WizardTypes'
 import { getBudgetRecommendation } from '../shared/WizardValidation'
 import WizardSelect from '@/components/meta/wizard/WizardSelect'
-
-const BIDDING_LABELS: Record<BiddingStrategy, string> = {
-  MAXIMIZE_CLICKS: 'Tıklama Sayısını Artır',
-  MAXIMIZE_CONVERSIONS: 'Dönüşümleri Artır',
-  TARGET_CPA: 'Hedef EBM (CPA)',
-  TARGET_ROAS: 'Hedef ROAS',
-  MANUAL_CPC: 'Manuel TBM (CPC)',
-  MANUAL_CPM: 'Manuel BGBM (CPM)',
-  TARGET_IMPRESSION_SHARE: 'Hedef Gösterim Payı',
-}
+import { translateEnum } from '@/lib/yoai/translations'
 
 const EU_POLICY_URL = 'https://support.google.com/adspolicy/answer/6014595'
 
@@ -64,6 +55,8 @@ export default function StepCampaignSettings({ state, update, t }: StepProps) {
   const recommended = getBudgetRecommendation(state.biddingStrategy)
   const showBudgetWarning = budgetNum > 0 && budgetNum < recommended
   const locale = useLocale()
+  const tg = useTranslations('dashboard.google')
+  const enumLocale = locale === 'en' ? 'en' : 'tr'
   const euPolicyUrl = `${EU_POLICY_URL}?hl=${locale === 'tr' ? 'tr' : 'en'}`
   const availableBidding = CAMPAIGN_TYPE_BIDDING[state.campaignType] ?? ['MAXIMIZE_CLICKS']
   const isSearch = state.campaignType === 'SEARCH'
@@ -135,7 +128,12 @@ export default function StepCampaignSettings({ state, update, t }: StepProps) {
       {showBudgetWarning && (
         <div className="flex items-start gap-2 p-3 rounded-lg bg-gray-50 border border-gray-200 text-sm text-gray-800">
           <AlertCircle className="w-4 h-4 shrink-0 mt-0.5" />
-          <span>Google bu strateji için minimum <strong>{recommended} TRY/gün</strong> önermektedir.</span>
+          <span>
+            {tg.rich('budgetMinWarning', {
+              amount: `${recommended} ${tg('budgetMinWarningUnit')}`,
+              strong: (chunks) => <strong>{chunks}</strong>,
+            })}
+          </span>
         </div>
       )}
 
@@ -143,7 +141,7 @@ export default function StepCampaignSettings({ state, update, t }: StepProps) {
         <WizardSelect
           value={state.biddingStrategy}
           onChange={(v) => update({ biddingStrategy: v as BiddingStrategy })}
-          options={availableBidding.map(bs => ({ value: bs, label: BIDDING_LABELS[bs] ?? bs }))}
+          options={availableBidding.map(bs => ({ value: bs, label: translateEnum(bs, enumLocale, 'google') }))}
         />
       </Field>
 
@@ -170,19 +168,19 @@ export default function StepCampaignSettings({ state, update, t }: StepProps) {
       {/* Network Settings — only shown for SEARCH campaigns */}
       {isSearch && (
         <div>
-          <label className="block text-sm font-medium text-gray-700 mb-2">Ağ Ayarları</label>
+          <label className="block text-sm font-medium text-gray-700 mb-2">{tg('networkSettings.title')}</label>
           <div className="space-y-2">
             <label className="flex items-center gap-2 text-sm">
               <input type="checkbox" checked disabled className="rounded border-gray-300" />
-              <span className="text-gray-500">Google Arama <span className="text-xs text-gray-400">(her zaman aktif)</span></span>
+              <span className="text-gray-500">{tg('networkSettings.googleSearch')} <span className="text-xs text-gray-400">{tg('networkSettings.alwaysOn')}</span></span>
             </label>
             <label className="flex items-center gap-2 text-sm cursor-pointer">
               <input type="checkbox" checked={state.networkSettings.targetSearchNetwork} onChange={e => update({ networkSettings: { ...state.networkSettings, targetSearchNetwork: e.target.checked } })} className="rounded border-gray-300 text-primary focus:ring-primary/20" />
-              <span className="text-gray-700">Arama Ağı Ortakları</span>
+              <span className="text-gray-700">{tg('networkSettings.searchPartners')}</span>
             </label>
             <label className="flex items-center gap-2 text-sm cursor-pointer">
               <input type="checkbox" checked={state.networkSettings.targetContentNetwork} onChange={e => update({ networkSettings: { ...state.networkSettings, targetContentNetwork: e.target.checked } })} className="rounded border-gray-300 text-primary focus:ring-primary/20" />
-              <span className="text-gray-700">Görüntülü Reklam Ağı</span>
+              <span className="text-gray-700">{tg('networkSettings.displayNetwork')}</span>
             </label>
           </div>
         </div>
