@@ -216,6 +216,9 @@ export interface PerCampaignContext {
   includeAccountAlerts: boolean
   /** account_alerts için hesap geneli kampanya özeti (includeAccountAlerts ise). */
   accountCampaignsSummary?: AccountCampaignSummary[]
+  /** Deterministik yapısal sinyaller (doctrine fit + StructuralIssue'lar) — kural motoru çıktısı.
+   *  type_mismatch ve yapısal öneriler artık LLM yargısına ek olarak buna dayanır. */
+  structuralSignals?: string
 }
 
 const trPlatform = (p: AiPlatform): 'meta' | 'google' => (p === 'Meta' ? 'meta' : 'google')
@@ -290,6 +293,13 @@ export function buildPerCampaignUserBrief(ctx: PerCampaignContext): string {
   lines.push(JSON.stringify(tree, null, 2))
   lines.push('```')
   lines.push('')
+
+  if (ctx.structuralSignals) {
+    lines.push('## Deterministik Yapısal Sinyaller (kural motoru — gerçek veriye dayanır, GÜVENİLİR)')
+    lines.push('Aşağıdaki bulgular YoAlgoritma kural motoru tarafından üretildi (LLM tahmini değil). Kampanya türü uyumu (type_mismatch) ve yapısal önerilerinde bunları BİRİNCİL kanıt kabul et; metriklerle çelişmiyorsa bunlara uy.')
+    lines.push(ctx.structuralSignals)
+    lines.push('')
+  }
 
   lines.push('## benchmarks (sektör eşikleri)')
   lines.push('```json')

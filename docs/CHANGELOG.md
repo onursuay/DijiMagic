@@ -2,6 +2,11 @@
 
 ---
 
+## 2026-06-13 — YoAlgoritma Faz 3.1: deterministik yapısal motor per-campaign akışına bağlandı
+- **Sorun:** Projede güçlü deterministik yapısal motorlar (`campaignTypeIntelligence` + `platformKnowledge` + `platformDoctrineStore`) vardı ama yeni per-campaign hiyerarşik akışa hiç bağlanmamıştı; `type_mismatch` ve yapısal öneriler %100 LLM yargısına bırakılmıştı (hazır altyapı israf + tutarsız sonuç riski).
+- **Çözüm:** `perCampaignImprovements` artık doctrine map'i bir kez çeker (fallback-güvenli), her kampanya için `buildCampaignTypeContext` (doctrine fit + failure signals) + `runStructuralAnalysis` (objective/destination/single-adset gibi StructuralIssue'lar) üretir ve bunları `PerCampaignContext.structuralSignals` ile prompt brief'ine "Deterministik Yapısal Sinyaller (GÜVENİLİR)" bloğu olarak enjekte eder. AI artık kampanya türü uyumunu kural motoru kanıtına dayandırıyor. Hata/eksik tablo → boş, akış kırılmaz.
+- **Dosyalar:** inngest/functions/perCampaignImprovements.ts, lib/yoai/ai/perCampaignPrompt.ts
+
 ## 2026-06-13 — YoAlgoritma Faz 2: karar yüzeyi + yayın akışı bütünlüğü
 - **Sorun:** (1) Kampanya kartındaki "UYGULA" butonu hiçbir şey uygulamıyordu — sadece drill-down açıyordu (yanıltıcı). (2) Kampanya ve ad set seviyesinde Onayla/Reddet yoktu; en değerli uyarı (kampanya türü uyumsuzluğu) salt-bilgiydi, karar lifecycle'ı (freeze-on-decision) hiç beslenmiyordu. (3) `finalUrl` proposal'a hiç aktarılmıyordu → Google `https://example.com`'a düşüyor, Meta preflight/RSA bloklanıyordu; Google keyword'leri de aktarılmıyordu (anahtar kelimesiz Arama kampanyası). (4) Karar/düzenleme hataları sessizce yutuluyor (`console.warn`), başarısız yayında kart `approved`'da takılıp hata göstermiyor, gerçek kampanya ID'si karta bağlanmıyordu.
 - **Çözüm:**

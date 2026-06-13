@@ -180,6 +180,44 @@ export const yoalgoritmaPerCampaignImprovements = inngest.createFunction(
       })
     }
 
+    // 2b) Deterministik yapısal sinyaller (doctrine fit + StructuralIssue) — kural motoru.
+    //     type_mismatch ve yapısal öneriler artık saf LLM yargısı değil; bu sinyaller prompt'a girer.
+    //     Fallback-güvenli (doctrine tablosu yoksa hardcoded'a düşer); hata → boş, akış kırılmaz.
+    const structuralByCampaign = await step.run('structural-signals', async () => {
+      const map: Record<string, string> = {}
+      try {
+        const { getDoctrineMap } = await import('@/lib/yoai/platformDoctrineStore')
+        const { normalizeCampaignType, buildCampaignTypeContext } = await import('@/lib/yoai/campaignTypeIntelligence')
+        const { runStructuralAnalysis } = await import('@/lib/yoai/platformKnowledge')
+        const doctrineMap = await getDoctrineMap()
+        const insights = allCampaigns.map((c) => c.campaign)
+        const structural = runStructuralAnalysis(insights)
+        const issuesByCampaign = new Map<string, typeof structural.issues>()
+        for (const iss of structural.issues) {
+          if (!issuesByCampaign.has(iss.campaignId)) issuesByCampaign.set(iss.campaignId, [])
+          issuesByCampaign.get(iss.campaignId)!.push(iss)
+        }
+        for (const insight of insights) {
+          const normalized = normalizeCampaignType(insight)
+          const doctrine = doctrineMap[normalized.campaignType] || null
+          const typeCtx = buildCampaignTypeContext(insight, doctrine)
+          const lines: string[] = []
+          if (typeCtx.promptSummary) lines.push(typeCtx.promptSummary)
+          const issues = issuesByCampaign.get(insight.id) ?? []
+          if (issues.length) {
+            lines.push('Tespit edilen yapısal sorunlar:')
+            for (const iss of issues) {
+              lines.push(`- [${iss.severity}] ${iss.title}: mevcut "${iss.currentValue}" → önerilen "${iss.recommendedValue}". ${iss.reasoning}`)
+            }
+          }
+          if (lines.length) map[insight.id] = lines.join('\n')
+        }
+      } catch (e) {
+        logger.warn(`[campaign-improvements] structural signals skipped: ${e instanceof Error ? e.message : e}`)
+      }
+      return map
+    })
+
     const customToCampaign = new Map<string, ActiveCampaign>()
     const firstPerPlatform = new Set<'meta' | 'google'>()
     const batchRequests: Array<{ custom_id: string; params: ReturnType<typeof buildPerCampaignBatchRequestParams> }> = []
@@ -203,6 +241,7 @@ export const yoalgoritmaPerCampaignImprovements = inngest.createFunction(
         industry: scanInputs.industry,
         includeAccountAlerts,
         accountCampaignsSummary: includeAccountAlerts ? summaryByPlatform[c.platform] : undefined,
+        structuralSignals: structuralByCampaign[c.campaign.id],
       }
       const competitorContext = c.aiPlatform === 'Meta' ? scanInputs.competitorContext.meta : scanInputs.competitorContext.google
       const extraBlocks = await getKb(c.aiPlatform)
