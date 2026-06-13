@@ -542,12 +542,16 @@ export async function POST(request: Request) {
     // Not: bid_strategy zaten WhatsApp için gönderilmiyor (subcode 1487246 kaynağıydı)
     const validGoals = VALID_OPTIMIZATION_GOALS[campaignObjective] || []
     const defaultGoal = getDefaultOptimizationGoal(campaignObjective, destinationType)
+    const userGoalValid = !!(optimizationGoal && validGoals.includes(optimizationGoal))
+    // WhatsApp yalnız mesajlaşmaya uygun hedefleri kabul eder; kullanıcı geçerli birini seçtiyse ona saygı göster
+    // (ör. Leads+WhatsApp → LEAD_GENERATION), aksi halde güvenli mesajlaşma default'una düş.
+    const WA_SAFE_GOALS = ['CONVERSATIONS', 'REPLIES', 'LEAD_GENERATION', 'LINK_CLICKS']
     const finalOptimizationGoal =
       destinationType === 'WHATSAPP'
-        ? (campaignObjective === 'OUTCOME_ENGAGEMENT' ? 'CONVERSATIONS' : 'REPLIES')
-        : (optimizationGoal && validGoals.includes(optimizationGoal))
-          ? optimizationGoal
-          : defaultGoal
+        ? (userGoalValid && WA_SAFE_GOALS.includes(String(optimizationGoal))
+            ? optimizationGoal
+            : (campaignObjective === 'OUTCOME_ENGAGEMENT' ? 'CONVERSATIONS' : 'REPLIES'))
+        : (userGoalValid ? optimizationGoal : defaultGoal)
 
     // ── [DIAG] Route içinde hesaplanan final payload değerleri ─────────────────
     console.log(`[DIAG][${requestId}] finalOptimizationGoal:`, finalOptimizationGoal,

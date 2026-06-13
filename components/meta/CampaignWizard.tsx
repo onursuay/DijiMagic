@@ -1552,11 +1552,15 @@ export default function CampaignWizard({ isOpen, onClose, onSuccess, onToast, ca
         ? { saved_audience_id: state.adset.savedAudienceId }
         : { targeting }),
       placements: state.adset.placements,
-      optimizationGoal: isSales
-        ? 'OFFSITE_CONVERSIONS'
-        : isAppPromotion
-            ? 'APP_INSTALLS'
-            : state.adset.optimizationGoal,
+      // Kullanıcının seçtiği performans hedefine saygı göster (objective+konum için geçerliyse);
+      // değilse spec default'u. Sales/App Promotion'da artık sessiz hard-override yok.
+      optimizationGoal: (() => {
+        const allowed = getAllowedOptimizationGoals(objective, state.adset.conversionLocation)
+        const chosen = state.adset.optimizationGoal
+        return chosen && allowed.includes(chosen)
+          ? chosen
+          : getDefaultOptimizationGoal(objective, state.adset.conversionLocation)
+      })(),
       billingEvent: 'IMPRESSIONS',
       destination_type: state.adset.conversionLocation,
       dailyBudget: isCBO ? undefined : (state.adset.budgetType === 'daily' && state.adset.budget != null ? tryToAd(state.adset.budget) : undefined),
