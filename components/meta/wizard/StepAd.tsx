@@ -9,6 +9,8 @@ import AdTextFields from './AdTextFields'
 import AdPreview from './AdPreview'
 import ExistingPostSelector from './ExistingPostSelector'
 import { getWizardTranslations, getLocaleFromCookie } from '@/lib/i18n/wizardTranslations'
+import { getAllowedCTAs } from '@/lib/meta/spec/objectiveSpec'
+import { CTA_LABEL_TR } from '@/lib/meta/ctaLabels'
 
 interface DiscoveryPatch {
   requiredFieldsAdded: string[]
@@ -196,16 +198,13 @@ export default function StepAd({ state, campaignObjective = 'OUTCOME_TRAFFIC', c
                 onChange={(v) => onChange({ callToAction: v, websiteUrl: v ? state.websiteUrl : '' })}
                 options={[
                   { value: '', label: locale === 'tr' ? 'Seçim Yapılmadı' : 'No Selection' },
-                  { value: 'LEARN_MORE', label: locale === 'tr' ? 'Daha Fazla Bilgi' : 'Learn More' },
-                  { value: 'SHOP_NOW', label: locale === 'tr' ? 'Hemen Alışveriş Yap' : 'Shop Now' },
-                  { value: 'SIGN_UP', label: locale === 'tr' ? 'Kaydol' : 'Sign Up' },
-                  { value: 'DOWNLOAD', label: locale === 'tr' ? 'İndir' : 'Download' },
-                  { value: 'WATCH_MORE', label: locale === 'tr' ? 'Daha Fazla İzle' : 'Watch More' },
-                  { value: 'CONTACT_US', label: locale === 'tr' ? 'Bize Ulaşın' : 'Contact Us' },
-                  { value: 'APPLY_NOW', label: locale === 'tr' ? 'Hemen Başvur' : 'Apply Now' },
-                  { value: 'BOOK_NOW', label: locale === 'tr' ? 'Rezervasyon Yap' : 'Book Now' },
-                  { value: 'GET_QUOTE', label: locale === 'tr' ? 'Teklif Al' : 'Get Quote' },
-                  { value: 'SUBSCRIBE', label: locale === 'tr' ? 'Abone Ol' : 'Subscribe' },
+                  // Objective + konum + hedefe göre Meta'nın izin verdiği CTA seti (yeni-reklam akışıyla tutarlı)
+                  ...getAllowedCTAs(campaignObjective, conversionLocation, optimizationGoal)
+                    .filter((v) => v !== 'NO_BUTTON')
+                    .map((value) => ({
+                      value,
+                      label: locale === 'en' ? ((t[value as keyof typeof t] as string) ?? CTA_LABEL_TR[value] ?? value) : (CTA_LABEL_TR[value] ?? value),
+                    })),
                 ]}
               />
             </div>
