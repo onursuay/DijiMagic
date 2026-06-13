@@ -75,6 +75,7 @@ export type BiddingFocus =
   | 'CONVERSION_VALUE'
   | 'TOP_OF_PAGE'
   | 'ABSOLUTE_TOP_OF_PAGE'
+  | 'ANYWHERE_ON_PAGE'
   | 'CLICKS'
 
 // Focus options available per bidding strategy (labels resolved via t() in components)
@@ -89,8 +90,9 @@ export const BIDDING_FOCUS_BY_STRATEGY: Record<BiddingStrategy, { value: Bidding
   MANUAL_CPC: [{ value: 'CLICKS', labelKey: 'CLICKS' }],
   MANUAL_CPM: [],
   TARGET_IMPRESSION_SHARE: [
-    { value: 'TOP_OF_PAGE', labelKey: 'TOP_OF_PAGE' },
     { value: 'ABSOLUTE_TOP_OF_PAGE', labelKey: 'ABSOLUTE_TOP_OF_PAGE' },
+    { value: 'TOP_OF_PAGE', labelKey: 'TOP_OF_PAGE' },
+    { value: 'ANYWHERE_ON_PAGE', labelKey: 'ANYWHERE_ON_PAGE' },
   ],
 }
 
@@ -218,6 +220,9 @@ export interface WizardState {
   bidOnlyForNewCustomers: boolean
   targetCpa: string
   targetRoas: string
+  // Target Impression Share: hedef gösterim payı yüzdesi (1-100) + zorunlu maks. TBM tavanı (TL)
+  targetImpressionShare: string
+  maxCpcBidLimit: string
   startDate: string
   endDate: string
   networkSettings: NetworkSettings
@@ -356,6 +361,8 @@ export const defaultState: WizardState = {
   bidOnlyForNewCustomers: false,
   targetCpa: '',
   targetRoas: '',
+  targetImpressionShare: '',
+  maxCpcBidLimit: '',
   startDate: '',
   endDate: '',
   networkSettings: { targetGoogleSearch: true, targetSearchNetwork: true, targetContentNetwork: false },

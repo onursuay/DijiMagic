@@ -77,7 +77,8 @@ export interface CreateCampaignParams {
   /** Konum hedefleme modu: PRESENCE_OR_INTEREST (varsayılan) veya PRESENCE_ONLY -> geoTargetTypeSetting.positiveGeoTargetType */
   locationTargetingMode?: 'PRESENCE_OR_INTEREST' | 'PRESENCE_ONLY'
   /** Hedef metrik – sadece MAXIMIZE_CONVERSIONS ve TARGET_IMPRESSION_SHARE için backend kullanır. */
-  biddingFocus?: 'CONVERSION_COUNT' | 'CONVERSION_VALUE' | 'TOP_OF_PAGE' | 'ABSOLUTE_TOP_OF_PAGE' | 'CLICKS'
+  biddingFocus?: 'CONVERSION_COUNT' | 'CONVERSION_VALUE' | 'TOP_OF_PAGE' | 'ABSOLUTE_TOP_OF_PAGE' | 'ANYWHERE_ON_PAGE' | 'CLICKS'
+  targetImpressionShareLocationFractionMicros?: number // hedef gösterim payı (100% = 1.000.000)
   /** Dönüşüm hedefleri — conversion_action resource_name. Post-create CustomConversionGoal + ConversionGoalCampaignConfig ile uygulanır. */
   selectedConversionGoalIds?: string[]
   /** Birincil dönüşüm — tek action optimize edilir. primaryConversionGoalId varsa sadece o kullanılır. */
@@ -181,10 +182,15 @@ export async function createFullCampaign(ctx: Ctx, params: CreateCampaignParams)
     biddingField.manualCpm = {}
   } else if (params.biddingStrategy === 'TARGET_IMPRESSION_SHARE') {
     const impressionLocation =
-      params.biddingFocus === 'ABSOLUTE_TOP_OF_PAGE' ? 'ABSOLUTE_TOP_OF_PAGE' : 'TOP_OF_PAGE'
+      params.biddingFocus === 'ABSOLUTE_TOP_OF_PAGE' ? 'ABSOLUTE_TOP_OF_PAGE'
+        : params.biddingFocus === 'ANYWHERE_ON_PAGE' ? 'ANYWHERE_ON_PAGE'
+          : 'TOP_OF_PAGE'
     biddingField.targetImpressionShare = {
       location: impressionLocation,
-      locationFractionMicros: '700000',
+      // Kullanıcının girdiği hedef gösterim payı yüzdesi (varsayılan %70); zorunlu maks. TBM tavanı.
+      locationFractionMicros: params.targetImpressionShareLocationFractionMicros
+        ? String(params.targetImpressionShareLocationFractionMicros)
+        : '700000',
       cpcBidCeilingMicros: params.cpcBidCeilingMicros ? String(params.cpcBidCeilingMicros) : '5000000',
     }
   }

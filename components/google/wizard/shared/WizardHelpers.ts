@@ -32,6 +32,11 @@ export function buildCreatePayload(state: WizardState, defaultAdGroupName: strin
     ...(state.biddingFocus && { biddingFocus: state.biddingFocus }),
     ...(state.targetCpa && { targetCpaMicros: Math.round(parseFloat(state.targetCpa) * 1_000_000) }),
     ...(state.targetRoas && { targetRoas: parseFloat(state.targetRoas) }),
+    // Maks. TBM teklif sınırı (Maximize Clicks opsiyonel / TIS zorunlu)
+    ...(state.maxCpcBidLimit && { cpcBidCeilingMicros: Math.round(parseFloat(state.maxCpcBidLimit) * 1_000_000) }),
+    // Target Impression Share: hedef gösterim payı yüzdesi → micros (100% = 1.000.000)
+    ...(state.biddingStrategy === 'TARGET_IMPRESSION_SHARE' && state.targetImpressionShare
+      && { targetImpressionShareLocationFractionMicros: Math.round(parseFloat(state.targetImpressionShare) * 10_000) }),
     ...(state.startDate && { startDate: state.startDate }),
     ...(state.endDate && { endDate: state.endDate }),
     networkSettings: state.networkSettings,

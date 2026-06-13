@@ -1185,7 +1185,11 @@
           "acquisitionDescription": "Option to bid for new customer acquisition.",
           "newCustomersOnly": "Bid only for new customers",
           "newCustomersOnlyHint": "Ads will be shown primarily to users who have not transacted with you before.",
-          "newCustomersOnlyUiNote": "This option is not yet applied to Google Ads. Planning phase."
+          "newCustomersOnlyUiNote": "This option is not yet applied to Google Ads. Planning phase.",
+          "targetImpressionShareLabel": "Target impression share (%)",
+          "maxCpcBidLimitLabel": "Maximum CPC bid limit (₺)",
+          "maxCpcBidLimitOptionalLabel": "Maximum CPC bid limit (₺, optional)",
+          "maxCpcBidLimitPlaceholder": "e.g. 5.00"
         },
         "campaign": {
           "name": "Campaign Name",
@@ -1538,6 +1542,7 @@
             "CONVERSION_VALUE_ROAS": "Conversion value (ROAS)",
             "TOP_OF_PAGE": "Top of page",
             "ABSOLUTE_TOP_OF_PAGE": "Absolute top of page",
+            "ANYWHERE_ON_PAGE": "Anywhere on results page",
             "CLICKS": "Clicks"
           },
           "dayLabelsShort": {

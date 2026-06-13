@@ -1185,7 +1185,11 @@
           "acquisitionDescription": "Yeni müşteri hedefli teklif verme seçeneği.",
           "newCustomersOnly": "Yalnızca yeni müşteriler için teklif ver",
           "newCustomersOnlyHint": "Reklamlar öncelikle daha önce sizinle işlem yapmamış kullanıcılara gösterilir.",
-          "newCustomersOnlyUiNote": "Bu seçenek henüz Google Ads'e uygulanmaz. Planlama aşamasındadır."
+          "newCustomersOnlyUiNote": "Bu seçenek henüz Google Ads'e uygulanmaz. Planlama aşamasındadır.",
+          "targetImpressionShareLabel": "Hedef gösterim payı (%)",
+          "maxCpcBidLimitLabel": "Maksimum TBM teklif sınırı (TL)",
+          "maxCpcBidLimitOptionalLabel": "Maksimum TBM teklif sınırı (TL, opsiyonel)",
+          "maxCpcBidLimitPlaceholder": "Örn. 5.00"
         },
         "campaign": {
           "name": "Kampanya Adı",
@@ -1538,6 +1542,7 @@
             "CONVERSION_VALUE_ROAS": "Dönüşüm değeri (ROAS)",
             "TOP_OF_PAGE": "Sayfa üstü",
             "ABSOLUTE_TOP_OF_PAGE": "Mutlak sayfa üstü",
+            "ANYWHERE_ON_PAGE": "Sayfanın herhangi bir yeri",
             "CLICKS": "Tıklamalar"
           },
           "dayLabelsShort": {

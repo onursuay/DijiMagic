@@ -113,6 +113,50 @@ export default function StepBiddingAcquisition({ state, update, t }: StepProps) 
             </Field>
           </div>
         )}
+
+        {state.biddingStrategy === 'TARGET_IMPRESSION_SHARE' && (
+          <div className="mt-5 space-y-4">
+            <Field label={t('bidding.targetImpressionShareLabel')} required>
+              <input
+                className={inputCls}
+                type="number"
+                min="1"
+                max="100"
+                step="1"
+                value={state.targetImpressionShare}
+                onChange={e => update({ targetImpressionShare: e.target.value })}
+                placeholder="65"
+              />
+            </Field>
+            <Field label={t('bidding.maxCpcBidLimitLabel')} required>
+              <input
+                className={inputCls}
+                type="number"
+                min="0"
+                step="0.01"
+                value={state.maxCpcBidLimit}
+                onChange={e => update({ maxCpcBidLimit: e.target.value })}
+                placeholder={t('bidding.maxCpcBidLimitPlaceholder')}
+              />
+            </Field>
+          </div>
+        )}
+
+        {state.biddingStrategy === 'MAXIMIZE_CLICKS' && (
+          <div className="mt-5">
+            <Field label={t('bidding.maxCpcBidLimitOptionalLabel')}>
+              <input
+                className={inputCls}
+                type="number"
+                min="0"
+                step="0.01"
+                value={state.maxCpcBidLimit}
+                onChange={e => update({ maxCpcBidLimit: e.target.value })}
+                placeholder={t('bidding.maxCpcBidLimitPlaceholder')}
+              />
+            </Field>
+          </div>
+        )}
       </GoogleWizardSection>
 
       <GoogleWizardSection
