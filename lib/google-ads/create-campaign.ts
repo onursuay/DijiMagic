@@ -60,6 +60,7 @@ export interface CreateCampaignParams {
   path2?: string
   locationIds?: string[]
   negativeLocationIds?: string[]
+  proximityTargets?: { lat: number; lng: number; radiusMeters: number; label?: string }[]
   languageIds?: string[]
   networkSettings?: { targetGoogleSearch: boolean; targetSearchNetwork: boolean; targetContentNetwork: boolean }
   audienceIds?: string[]                 // deprecated: use audienceResourceNames
@@ -130,10 +131,11 @@ export interface CreateCampaignResult {
 export async function createFullCampaign(ctx: Ctx, params: CreateCampaignParams): Promise<CreateCampaignResult> {
   const channelType: AdvertisingChannelType = params.advertisingChannelType ?? 'SEARCH'
 
-  // 0. Create CustomConversionGoal FIRST (SEARCH only) — fail fast, no campaign created yet
+  // 0. Create CustomConversionGoal FIRST (SEARCH + DISPLAY) — fail fast, no campaign created yet
+  // Dönüşüm hedefleri tüm kampanya türlerinde geçerlidir; Display'de de Smart Bidding'i yönlendirir.
   let customGoalResourceName: string | null = null
   if (
-    channelType === 'SEARCH' &&
+    (channelType === 'SEARCH' || channelType === 'DISPLAY') &&
     params.selectedConversionGoalIds?.length
   ) {
     const { createCustomConversionGoal } = await import('./apply-conversion-goals')
@@ -211,6 +213,18 @@ export async function createFullCampaign(ctx: Ctx, params: CreateCampaignParams)
     targetPartnerSearchNetwork: false,
   } : undefined
 
+  // Observation vs Targeting — campaign.targeting_setting.target_restrictions (AUDIENCE, bid_only).
+  // Observation (bid_only=true) erişimi daraltmaz; Targeting (false) yalnız seçilen kitlelere daraltır.
+  // API varsayılanı Targeting olduğundan, kullanıcının "Gözlem" seçimi açıkça yazılmazsa erişim sessizce daralır.
+  const hasAudienceSegments = !!(
+    params.audienceResourceNames?.length || params.audienceIds?.length ||
+    params.userInterestIds?.length || params.detailedDemographicIds?.length ||
+    params.lifeEventIds?.length || params.customAudienceIds?.length || params.combinedAudienceIds?.length
+  )
+  const audienceTargetingSetting = (params.audienceMode && hasAudienceSegments)
+    ? { targetRestrictions: [{ targetingDimension: 'AUDIENCE', bidOnly: params.audienceMode === 'OBSERVATION' }] }
+    : undefined
+
   const campaignData = await postMutate(ctx, 'campaigns', [{
     create: {
       name: params.campaignName,
@@ -220,6 +234,7 @@ export async function createFullCampaign(ctx: Ctx, params: CreateCampaignParams)
       containsEuPoliticalAdvertising,
       ...(geoTargetTypeSetting && { geoTargetTypeSetting }),
       ...(networkSettings && { networkSettings }),
+      ...(audienceTargetingSetting && { targetingSetting: audienceTargetingSetting }),
       startDateTime: params.startDate ? params.startDate.replace(/-/g, '-') + ' 00:00:00' : fmt(tomorrow),
       ...(params.endDate && { endDateTime: params.endDate + ' 23:59:59' }),
       ...biddingField,
@@ -244,6 +259,23 @@ export async function createFullCampaign(ctx: Ctx, params: CreateCampaignParams)
         campaign: campaignResourceName,
         negative: true,
         location: { geoTargetConstant: `geoTargetConstants/${id}` },
+      },
+    })))
+  }
+
+  // 3c. Proximity (yarıçap) hedefleme — pin + radius. Daha önce UI'da görünüp API'ye hiç gitmiyordu.
+  if (params.proximityTargets?.length) {
+    await postMutate(ctx, 'campaignCriteria', params.proximityTargets.map(p => ({
+      create: {
+        campaign: campaignResourceName,
+        proximity: {
+          geoPoint: {
+            latitudeInMicroDegrees: Math.round(p.lat * 1_000_000),
+            longitudeInMicroDegrees: Math.round(p.lng * 1_000_000),
+          },
+          radius: p.radiusMeters / 1000,
+          radiusUnits: 'KILOMETERS',
+        },
       },
     })))
   }

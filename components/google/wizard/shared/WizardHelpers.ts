@@ -14,8 +14,9 @@ export function parseKeywords(raw: string, matchType: MatchType) {
 /** @param defaultAdGroupName — locale-aware fallback when adGroupName is empty (e.g. t('adgroup.defaultNameFallback')) */
 export function buildCreatePayload(state: WizardState, defaultAdGroupName: string = 'Ad Group 1') {
   const keywords = parseKeywords(state.keywordsRaw, state.defaultMatchType)
+  // Negatiflerde düz metin varsayılanı BROAD (Google panel davranışı); [exact]/"phrase" sözdizimi korunur.
   const negativeKeywords = state.negativeKeywordsRaw.trim()
-    ? parseKeywords(state.negativeKeywordsRaw, 'EXACT')
+    ? parseKeywords(state.negativeKeywordsRaw, 'BROAD')
     : []
 
   const positiveLocations = state.locations.filter(l => !l.isNegative).map(l => l.id)
@@ -45,6 +46,8 @@ export function buildCreatePayload(state: WizardState, defaultAdGroupName: strin
     ...(state.path2 && { path2: state.path2 }),
     locationIds: positiveLocations.length > 0 ? positiveLocations : undefined,
     negativeLocationIds: negativeLocations.length > 0 ? negativeLocations : undefined,
+    // Yarıçap (proximity) hedefleri — daha önce UI'da görünüp API'ye gönderilmiyordu
+    ...(state.proximityTargets.length > 0 && { proximityTargets: state.proximityTargets }),
     locationTargetingMode: state.locationTargetingMode,
     languageIds: state.languageIds.length > 0 ? state.languageIds : undefined,
     // Audience targeting — split by category for backend

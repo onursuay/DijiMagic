@@ -27,8 +27,6 @@ export default function PMaxStepBudget({ state, update, t }: PMaxStepProps) {
   const showRecommendationWarning = state.budgetType === 'DAILY' && budgetNum > 0 && budgetNum < recommended
   const showLowBudgetWarning = state.budgetType === 'DAILY' && budgetNum > 0 && budgetNum < LOW_BUDGET_THRESHOLD
   const hasInvalidDailyBudget = state.budgetType === 'DAILY' && state.dailyBudget.length > 0 && (isNaN(budgetNum) || budgetNum < 1)
-  const totalNum = parseFloat(state.totalBudget) || 0
-  const hasInvalidTotalBudget = state.budgetType === 'TOTAL' && state.totalBudget.length > 0 && (isNaN(totalNum) || totalNum < 1)
 
   return (
     <div className="space-y-4 pt-2">
@@ -74,51 +72,14 @@ export default function PMaxStepBudget({ state, update, t }: PMaxStepProps) {
             </div>
           </label>
 
-          {/* Total campaign budget option (BETA) */}
-          <label className={`flex items-start gap-3 p-4 rounded-lg border cursor-pointer transition-colors ${
-            state.budgetType === 'TOTAL' ? 'border-primary bg-primary/5' : 'border-gray-200 hover:border-gray-300'
-          }`}>
-            <input
-              type="radio"
-              name="pmaxBudgetType"
-              checked={state.budgetType === 'TOTAL'}
-              onChange={() => update({ budgetType: 'TOTAL' as PMaxBudgetType })}
-              className="mt-0.5 text-primary"
-            />
-            <div className="flex-1">
-              <div className="flex items-center gap-2">
-                <p className="text-[13px] font-medium text-gray-900">{t('budget.totalBudgetOption')}</p>
-                <span className="px-1.5 py-0.5 text-[10px] font-bold text-primary bg-primary/10 rounded">BETA</span>
-              </div>
-              <p className="text-[12px] text-gray-500 mt-0.5">{t('budget.totalBudgetDesc')}</p>
-              {state.budgetType === 'TOTAL' && (
-                <div className="mt-3 relative max-w-[240px]">
-                  <span className="absolute left-3 top-1/2 -translate-y-1/2 text-sm text-gray-400">&#8378;</span>
-                  <input
-                    className={`${inputCls} pl-7 ${hasInvalidTotalBudget ? 'border-gray-400' : ''}`}
-                    type="number"
-                    min="1"
-                    step="1"
-                    value={state.totalBudget}
-                    onChange={e => update({ totalBudget: e.target.value })}
-                    placeholder={t('budget.totalPlaceholder')}
-                  />
-                </div>
-              )}
-            </div>
-          </label>
+          {/* NOT: PMax resmi akışında yalnız günlük ortalama bütçe vardır; "Toplam bütçe" seçeneği
+              Google Ads backend'inde uygulanmadığından (sessiz para kaybı riski) kaldırıldı. */}
 
           {/* Validation warnings */}
           {hasInvalidDailyBudget && (
             <div className="flex items-center gap-2 text-xs text-gray-700 bg-gray-50 border border-gray-200 rounded px-2 py-1.5">
               <AlertCircle className="w-3.5 h-3.5 shrink-0" />
               {t('validation.minBudget')}
-            </div>
-          )}
-          {hasInvalidTotalBudget && (
-            <div className="flex items-center gap-2 text-xs text-gray-700 bg-gray-50 border border-gray-200 rounded px-2 py-1.5">
-              <AlertCircle className="w-3.5 h-3.5 shrink-0" />
-              {t('validation.minTotalBudget')}
             </div>
           )}
         </div>

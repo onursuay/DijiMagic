@@ -1029,7 +1029,10 @@ export default function CampaignEditPanel({ campaignId, onClose, onToast, allCam
           payload.targetRoas = parseFloat(campTargetRoas)
         }
       }
-      payload.networkSettings = { targetSearchNetwork: campSearchNetwork, targetContentNetwork: campContentNetwork }
+      // networkSettings yalnız SEARCH'te geçerli; PMax/Display/Video'da göndermek update'i tümden reddettirebilir.
+      if (channelType === 'SEARCH') {
+        payload.networkSettings = { targetSearchNetwork: campSearchNetwork, targetContentNetwork: campContentNetwork }
+      }
 
       const res = await fetch(`/api/integrations/google-ads/campaigns/${campaignId}/update`, {
         method: 'POST',

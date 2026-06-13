@@ -97,11 +97,12 @@ function buildBiddingField(params: CreatePerformanceMaxPayload): Record<string, 
         : {},
     }
   }
+  // PMax standalone TargetCpa/TargetRoas DESTEKLEMEZ — uygun Max* stratejisine eşle (aksi halde create reddedilir).
   if (params.biddingStrategy === 'TARGET_CPA') {
-    return { targetCpa: { targetCpaMicros: params.targetCpaMicros ?? 0 } }
+    return { maximizeConversions: params.targetCpaMicros ? { targetCpaMicros: String(params.targetCpaMicros) } : {} }
   }
   if (params.biddingStrategy === 'TARGET_ROAS') {
-    return { targetRoas: { targetRoas: params.targetRoas ?? 1 } }
+    return { maximizeConversionValue: params.targetRoas ? { targetRoas: params.targetRoas } : {} }
   }
   return { maximizeConversions: {} }
 }
@@ -171,6 +172,8 @@ async function createCampaignWithBrandAssets(
           status: 'ENABLED',
           containsEuPoliticalAdvertising: params.containsEuPoliticalAdvertising,
           geoTargetTypeSetting,
+          // Final URL expansion PMax'te varsayılan AÇIK; UI "kapalı" gösteriyorsa opt_out=true ile gerçekten kapat.
+          urlExpansionOptOut: !params.finalUrlExpansionEnabled,
           ...buildBiddingField(params),
           startDateTime,
           ...(endDateTime && { endDateTime }),
