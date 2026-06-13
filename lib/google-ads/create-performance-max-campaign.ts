@@ -9,6 +9,7 @@ import { buildGoogleAdsHeaders, GOOGLE_ADS_BASE } from '@/lib/googleAdsAuth'
 import type { GoogleAdsRequestContext as Ctx } from '@/lib/googleAdsAuth'
 import type { CreatePerformanceMaxPayload } from '@/components/google/wizard/pmax/shared/PMaxCreatePayload'
 import { postMutate } from './create-campaign'
+import { buildPMaxAudienceSegment } from './pmaxAudienceSegment'
 
 export interface CreatePerformanceMaxResult {
   campaignResourceName: string
@@ -105,27 +106,6 @@ function buildBiddingField(params: CreatePerformanceMaxPayload): Record<string, 
     return { maximizeConversionValue: params.targetRoas ? { targetRoas: params.targetRoas } : {} }
   }
   return { maximizeConversions: {} }
-}
-
-/** Seçilen PMax kitle segmentini Audience resource için AudienceSegment'e eşler.
- *  Audience dimension'da desteklenmeyen tür (ör. COMBINED_AUDIENCE) için null döner. */
-function buildPMaxAudienceSegment(s: { category: string; id: string; resourceName: string }): Record<string, unknown> | null {
-  if (!s.resourceName) return null
-  switch (s.category) {
-    case 'USER_LIST':
-      return { userList: { userList: s.resourceName } }
-    case 'AFFINITY':
-    case 'IN_MARKET':
-      return { userInterest: { userInterestCategory: s.resourceName } }
-    case 'DETAILED_DEMOGRAPHIC':
-      return { detailedDemographic: { detailedDemographic: s.resourceName } }
-    case 'LIFE_EVENT':
-      return { lifeEvent: { lifeEvent: s.resourceName } }
-    case 'CUSTOM_AUDIENCE':
-      return { customAudience: { customAudience: s.resourceName } }
-    default:
-      return null
-  }
 }
 
 /** Create PMax campaign + BUSINESS_NAME + LOGO campaign assets in one atomic batch (googleAds:mutate).
