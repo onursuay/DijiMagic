@@ -2,6 +2,14 @@
 
 ---
 
+## 2026-06-13 — YoAlgoritma Faz 2: karar yüzeyi + yayın akışı bütünlüğü
+- **Sorun:** (1) Kampanya kartındaki "UYGULA" butonu hiçbir şey uygulamıyordu — sadece drill-down açıyordu (yanıltıcı). (2) Kampanya ve ad set seviyesinde Onayla/Reddet yoktu; en değerli uyarı (kampanya türü uyumsuzluğu) salt-bilgiydi, karar lifecycle'ı (freeze-on-decision) hiç beslenmiyordu. (3) `finalUrl` proposal'a hiç aktarılmıyordu → Google `https://example.com`'a düşüyor, Meta preflight/RSA bloklanıyordu; Google keyword'leri de aktarılmıyordu (anahtar kelimesiz Arama kampanyası). (4) Karar/düzenleme hataları sessizce yutuluyor (`console.warn`), başarısız yayında kart `approved`'da takılıp hata göstermiyor, gerçek kampanya ID'si karta bağlanmıyordu.
+- **Çözüm:**
+  - **Karar yüzeyi:** `HierCardActions`'a `flush` prop'u; kampanya kartına (advisory) ve ad set kartına Onayla/Reddet/Geri Al/Uygulandı eklendi. "UYGULA" → gerçek "Ad Set'leri Gör (N)". Artık her seviye (CLAUDE.md Faz 3 tasarımı) durum bazlı butonlara sahip ve kararlar freeze-on-decision'ı besliyor.
+  - **finalUrl + keyword:** karar route'u finalUrl'i işletme profili `website_url`'inden çözümler (boşsa); `improvementToProposal` Google RSA için AI keyword'lerini yayına aktarır.
+  - **Yayın bütünlüğü:** `onPublished(success, publishAuditId, errorMsg)` — başarıda gerçek platform kampanya ID'si karta `applied` + audit olarak bağlanır; başarısızlıkta yeni `publish_error` action'ı ile kart approved'da kalıp hata + "Tekrar Dene" gösterir. Karar/düzenleme hataları artık kullanıcıya kırmızı bant ile bildirilir (yeni `actionError` çevirisi, TR+EN).
+- **Dosyalar:** components/yoai/hierarchy/{HierCardActions,CampaignCard,AdsetCard,DrilldownModal,HierarchicalImprovements}.tsx, components/yoai/AdCreationWizard.tsx, app/yoalgoritma/page.tsx, app/api/yoai/improvements/hierarchy/decision/route.ts, lib/yoai/ai/improvementToProposal.ts, locales/{tr,en}.json
+
 ## 2026-06-13 — YoAlgoritma Faz 1: yayın güvenliği + derin hedefleme verisi (3 kritik)
 - **Sorun:** YoAlgoritma derin analizinde üç kritik açık: (1) Google reklamları "PAUSED" denip aslında `ENABLED` (canlı) yayınlanıyor → anında harcama + yanlış mesaj; (2) Meta'da aktif kampanya içindeki PAUSED ad set/reklamlar da analiz ediliyordu ("sadece aktif" ihlali); (3) hedefleme/lokasyon/dil verisi fetcher'larda hiç çekilmediği halde prompt AI'dan bunları analiz etmesini istiyordu → halüsinasyon riski.
 - **Çözüm:**

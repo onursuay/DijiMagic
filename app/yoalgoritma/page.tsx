@@ -604,14 +604,22 @@ export default function YoAiPage() {
           onClose={() => { setShowAdWizard(false); setWizardProposal(null); setApprovingImprovementId(null) }}
           connectedPlatforms={ccData?.connectedPlatforms ?? []}
           initialProposal={wizardProposal}
-          onPublished={(success) => {
+          onPublished={(success, publishAuditId, errorMsg) => {
             if (approvingImprovementId && success) {
-              // Faz 3: yayın başarılı → ad improvement kartını applied işaretle
+              // Faz 3: yayın başarılı → kartı applied + gerçek kampanya ID'sini bağla (izlenebilirlik)
               fetch('/api/yoai/improvements/hierarchy/decision', {
                 method: 'POST',
                 credentials: 'include',
                 headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ level: 'ad', id: approvingImprovementId, action: 'applied' }),
+                body: JSON.stringify({ level: 'ad', id: approvingImprovementId, action: 'applied', publishAuditId: publishAuditId ?? null }),
+              }).catch(() => {}).finally(() => setImprovementRefreshKey((k) => k + 1))
+            } else if (approvingImprovementId && !success) {
+              // Yayın başarısız → kart approved'da kalır + hata karta yazılır (Tekrar Dene görünür)
+              fetch('/api/yoai/improvements/hierarchy/decision', {
+                method: 'POST',
+                credentials: 'include',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ level: 'ad', id: approvingImprovementId, action: 'publish_error', error: errorMsg ?? 'Yayın başarısız' }),
               }).catch(() => {}).finally(() => setImprovementRefreshKey((k) => k + 1))
             } else {
               setImprovementRefreshKey((k) => k + 1)

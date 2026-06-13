@@ -6,6 +6,7 @@ import {
   rejectImprovement,
   unrejectImprovement,
   markImprovementApplied,
+  markImprovementPublishError,
   updateAdImprovementSpec,
   getImprovementRow,
   type HierLevel,
@@ -51,7 +52,7 @@ export async function POST(request: Request) {
     if (!userId) return NextResponse.json({ ok: false, error: 'Oturum gerekli' }, { status: 401 })
 
     const body = (await request.json().catch(() => ({}))) as {
-      level?: string; id?: string; action?: string; reason?: string; publishAuditId?: string
+      level?: string; id?: string; action?: string; reason?: string; publishAuditId?: string; error?: string
       edit?: { headlines?: string[]; descriptions?: string[]; primary_text?: string; cta?: string; daily_budget?: number | null }
     }
     const level = body.level as HierLevel
@@ -68,6 +69,18 @@ export async function POST(request: Request) {
           return NextResponse.json({ ok: false, code: 'NOT_FOUND', message: 'Kart bulunamadı veya yayınlanamaz durumda.' }, { status: 404 })
         }
         const proposal = adRowToProposal(row)
+        // finalUrl yoksa işletme web sitesini kullan — aksi halde Google create-ad
+        // 'https://example.com'a düşer (bozuk hedef) ve Meta preflight/RSA bloklanır.
+        if (proposal && !proposal.finalUrl) {
+          try {
+            const { getProfileByUserId } = await import('@/lib/yoai/businessProfileStore')
+            const profile = await getProfileByUserId(userId)
+            const site = profile?.website_url?.trim()
+            if (site) proposal.finalUrl = site.startsWith('http') ? site : `https://${site}`
+          } catch (e) {
+            console.warn('[hierarchy decision] finalUrl resolve skipped:', e instanceof Error ? e.message : e)
+          }
+        }
         return NextResponse.json({ ok: true, data: { proposal, row } })
       }
       return NextResponse.json({ ok: true })
@@ -83,6 +96,11 @@ export async function POST(request: Request) {
     }
     if (action === 'applied') {
       await markImprovementApplied(level, id, body.publishAuditId ?? null)
+      return NextResponse.json({ ok: true })
+    }
+    if (action === 'publish_error') {
+      // Yayın başarısız → kart approved'da kalır, hata kaydedilir ("Tekrar Dene" görünür)
+      await markImprovementPublishError(level, id, body.error ?? 'Yayın başarısız')
       return NextResponse.json({ ok: true })
     }
     if (action === 'edit') {

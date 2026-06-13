@@ -2,13 +2,15 @@
 
 /* SEVİYE 1 — Kampanya kartı (Faz 3) — simetrik yatay mimari.
    Üst: hafif kutu içinde tek satır → logo+durum | Kampanya: … | Kampanya Türü: …
-   | Güven Skoru: %… | UYGULA (küçük).
+   | Güven Skoru: %… | Ad Set'leri Gör (drill-down).
    Gövde: AI Gerekçesi tam genişlik üstte, altında Öneriler yan yana kart grid'i.
-   Onayla/Reddet YOK — karar/yayın UYGULA → popup (drill-down) içinde. */
+   Footer: kampanya düzeyi advisory karar (Onayla/Reddet/Geri Al) — kampanya türü
+   uyumsuzluğu gibi öneriler manuel uygulanır; karar freeze-on-decision'ı besler. */
 
 import { useTranslations, useLocale } from 'next-intl'
 import { ChevronRight, AlertOctagon } from 'lucide-react'
 import { PlatformBadge, StatusBadge, SuggestionList, titleCaseTr, fixObjectiveTerm } from './shared'
+import HierCardActions from './HierCardActions'
 import { translateEnum } from '@/lib/yoai/translations'
 import type { CampaignWithChildren } from '@/lib/yoai/ai/hierarchicalStore'
 
@@ -22,14 +24,19 @@ interface CampaignPayload {
 
 interface Props {
   campaign: CampaignWithChildren
+  busy?: boolean
   onDrillDown: () => void
+  onApprove: () => void
+  onReject: () => void
+  onUndo: () => void
+  onMarkApplied: () => void
 }
 
 function Sep() {
   return <span className="text-slate-600 select-none">|</span>
 }
 
-export default function CampaignCard({ campaign, onDrillDown }: Props) {
+export default function CampaignCard({ campaign, busy, onDrillDown, onApprove, onReject, onUndo, onMarkApplied }: Props) {
   const t = useTranslations('dashboard.yoai.hierarchy')
   const locale = useLocale() as 'tr' | 'en'
   const payload = (campaign.improvement_payload ?? {}) as CampaignPayload
@@ -54,9 +61,9 @@ export default function CampaignCard({ campaign, onDrillDown }: Props) {
           <span className="text-[12px] text-slate-400">{t('confidence')}: <span className="text-slate-100">%{confidence}</span></span>
           <button
             onClick={onDrillDown}
-            className="ml-auto inline-flex items-center gap-1.5 rounded-md bg-emerald-600 hover:bg-emerald-500 active:bg-emerald-700 px-4 py-1.5 text-[12px] text-white font-bold uppercase tracking-wide transition-colors"
+            className="ml-auto inline-flex items-center gap-1.5 rounded-md bg-emerald-600 hover:bg-emerald-500 active:bg-emerald-700 px-4 py-1.5 text-[12px] text-white font-semibold transition-colors"
           >
-            {t('apply')}
+            {t('viewAdsets', { count: campaign.adsets.length })}
             <ChevronRight className="w-3.5 h-3.5" />
           </button>
         </div>
@@ -90,6 +97,19 @@ export default function CampaignCard({ campaign, onDrillDown }: Props) {
 
         {/* Öneriler — altında yan yana kart grid'i */}
         {suggestions.length ? <SuggestionList label={t('suggestions')} suggestions={suggestions} columns={3} /> : null}
+      </div>
+
+      {/* Kampanya düzeyi karar (advisory) — manuel uygulanan öneri; karar lifecycle'ı dondurur */}
+      <div className="relative">
+        <HierCardActions
+          kind="advisory"
+          status={campaign.status}
+          busy={busy}
+          onApprove={onApprove}
+          onPublishOrApply={onMarkApplied}
+          onReject={onReject}
+          onUndo={onUndo}
+        />
       </div>
     </div>
   )

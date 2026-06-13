@@ -79,8 +79,13 @@ export default function DrilldownModal({ campaign, busyId, onDecide, onEditAd, o
                       key={as.id}
                       adset={as}
                       horizontal
+                      busy={busyId === as.id}
                       onDrillDown={() => setAdsetId(as.id)}
                       onBack={onClose}
+                      onApprove={() => onDecide('adset', as.id, 'approve')}
+                      onReject={() => onDecide('adset', as.id, 'reject')}
+                      onUndo={() => onDecide('adset', as.id, 'unreject')}
+                      onMarkApplied={() => onDecide('adset', as.id, 'applied')}
                     />
                   ))}
                 </div>

@@ -3131,6 +3131,7 @@
         "rejectYes": "REDDET",
         "rejectCancel": "VAZGEÇ",
         "publishFailed": "Yayınlama başarısız oldu",
+        "actionError": "İşlem başarısız oldu. Lütfen tekrar deneyin.",
         "loading": "Kartlar yükleniyor…",
         "empty": "Henüz geliştirme kartı yok.",
         "preparing": "İlk analiziniz hazırlanıyor… birkaç dakika içinde kartlar görünecek.",

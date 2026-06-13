@@ -14,8 +14,10 @@ interface Props {
   onClose: () => void
   connectedPlatforms: Platform[]
   initialProposal?: FullAdProposal | null
-  /** Yayın denemesi tamamlanınca çağrılır (per-ad improvement kartını "Yayında" yapmak için). */
-  onPublished?: (success: boolean) => void
+  /** Yayın denemesi tamamlanınca çağrılır (per-ad improvement kartını "Yayında" yapmak için).
+   *  publishAuditId: başarıda gerçek platform kampanya ID'si (izlenebilirlik).
+   *  errorMsg: başarısızlıkta kullanıcıya/karta yazılacak hata. */
+  onPublished?: (success: boolean, publishAuditId?: string | null, errorMsg?: string | null) => void
 }
 
 type Step = 'platform' | 'generating' | 'preview' | 'preflight' | 'creative' | 'confirm' | 'publishing' | 'done'
@@ -139,12 +141,15 @@ export default function AdCreationWizard({ onClose, connectedPlatforms, initialP
       const cleanMsg = rawMsg.replace(/\bPAUSED\b/g, t('statusPaused')).replace(/\bENABLED\b/g, t('statusEnabled'))
       setPublishResult({ ok: json.ok, message: cleanMsg })
       setStep('done')
-      onPublished?.(!!json.ok)
+      // İzlenebilirlik: başarıda gerçek platform kampanya ID'si; başarısızlıkta hata mesajı
+      const auditId = (json.campaignId || json.campaignResourceName || json.adId || null) as string | null
+      onPublished?.(!!json.ok, json.ok ? auditId : null, json.ok ? null : cleanMsg)
     } catch (e) {
       const msg = e instanceof Error ? e.message : String(e)
-      setPublishResult({ ok: false, message: t('publishConnError', { detail: msg }) })
+      const connMsg = t('publishConnError', { detail: msg })
+      setPublishResult({ ok: false, message: connMsg })
       setStep('done')
-      onPublished?.(false)
+      onPublished?.(false, null, connMsg)
     }
   }
 

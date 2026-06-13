@@ -6,7 +6,7 @@
 
 import { useState, useEffect, useCallback, useRef } from 'react'
 import { useTranslations } from 'next-intl'
-import { Loader2, Inbox, Sparkles } from 'lucide-react'
+import { Loader2, Inbox, Sparkles, X } from 'lucide-react'
 import AccountAlertsBanner from './AccountAlertsBanner'
 import CampaignCard from './CampaignCard'
 import DrilldownModal from './DrilldownModal'
@@ -32,6 +32,7 @@ export default function HierarchicalImprovements({ onApprovePublish, refreshKey,
   // İşletme scope'u: seçili işletmenin analizi henüz hazır değil → "hazırlanıyor" göster
   const [pending, setPending] = useState(false)
   const [busyId, setBusyId] = useState<string | null>(null)
+  const [actionError, setActionError] = useState<string | null>(null)
   const [modalCampaignId, setModalCampaignId] = useState<string | null>(null)
   // Otomatik ilk tarama (bootstrap): haftalık cron'u beklemeden ilk kartları üret
   const [bootstrapping, setBootstrapping] = useState(false)
@@ -122,6 +123,7 @@ export default function HierarchicalImprovements({ onApprovePublish, refreshKey,
 
   const decide = useCallback(async (level: HierLevel, id: string, action: 'approve' | 'reject' | 'unreject' | 'applied', reason?: string) => {
     setBusyId(id)
+    setActionError(null)
     try {
       const res = await fetch('/api/yoai/improvements/hierarchy/decision', {
         method: 'POST',
@@ -130,34 +132,46 @@ export default function HierarchicalImprovements({ onApprovePublish, refreshKey,
         body: JSON.stringify({ level, id, action, reason }),
       })
       const json = await res.json()
-      if (action === 'approve' && level === 'ad' && json.ok && json.data?.proposal) {
+      if (!res.ok || json.ok === false) {
+        setActionError(json.message || json.error || t('actionError'))
+        return
+      }
+      if (action === 'approve' && level === 'ad' && json.data?.proposal) {
         setModalCampaignId(null) // sihirbaz açılırken drill-down popup'ı kapat
         onApprovePublish(json.data.proposal as FullAdProposal, id)
       }
       await fetchData()
     } catch (e) {
       console.warn('[HierarchicalImprovements] decision failed:', e)
+      setActionError(t('actionError'))
     } finally {
       setBusyId(null)
     }
-  }, [fetchData, onApprovePublish])
+  }, [fetchData, onApprovePublish, t])
 
   const editAd = useCallback(async (id: string, edit: AdSpecEdit) => {
     setBusyId(id)
+    setActionError(null)
     try {
-      await fetch('/api/yoai/improvements/hierarchy/decision', {
+      const res = await fetch('/api/yoai/improvements/hierarchy/decision', {
         method: 'POST',
         credentials: 'include',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ level: 'ad', id, action: 'edit', edit }),
       })
+      const json = await res.json().catch(() => ({ ok: false }))
+      if (!res.ok || json.ok === false) {
+        setActionError(json.error || t('actionError'))
+        return
+      }
       await fetchData()
     } catch (e) {
       console.warn('[HierarchicalImprovements] edit failed:', e)
+      setActionError(t('actionError'))
     } finally {
       setBusyId(null)
     }
-  }, [fetchData])
+  }, [fetchData, t])
 
   const modalCampaign = modalCampaignId ? data.campaigns.find((c) => c.id === modalCampaignId) : undefined
 
@@ -181,6 +195,15 @@ export default function HierarchicalImprovements({ onApprovePublish, refreshKey,
         <h2 className="text-lg font-semibold text-gray-900">{t('title')}</h2>
       </div>
 
+      {actionError && (
+        <div className="mb-4 flex items-start justify-between gap-3 rounded-xl border border-red-200 bg-red-50 px-4 py-3">
+          <p className="text-sm text-red-700 leading-relaxed">{actionError}</p>
+          <button onClick={() => setActionError(null)} className="text-red-400 hover:text-red-600 transition-colors shrink-0" aria-label="×">
+            <X className="w-4 h-4" />
+          </button>
+        </div>
+      )}
+
       {(loading || pending || showPreparing) ? (
         <div className="bg-white rounded-2xl border border-gray-100 p-8 text-center">
           <Loader2 className="w-6 h-6 text-gray-300 mx-auto mb-2 animate-spin" />
@@ -197,7 +220,12 @@ export default function HierarchicalImprovements({ onApprovePublish, refreshKey,
             <CampaignCard
               key={c.id}
               campaign={c}
+              busy={busyId === c.id}
               onDrillDown={() => setModalCampaignId(c.id)}
+              onApprove={() => decide('campaign', c.id, 'approve')}
+              onReject={() => decide('campaign', c.id, 'reject')}
+              onUndo={() => decide('campaign', c.id, 'unreject')}
+              onMarkApplied={() => decide('campaign', c.id, 'applied')}
             />
           ))}
         </div>

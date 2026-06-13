@@ -1,13 +1,15 @@
 'use client'
 
 /* SEVİYE 2 — Ad set / ad group kartı (Faz 3). Popup içinde YATAY.
-   Onayla/Reddet YOK — yayın/karar FİNALDE reklam (ad) kartında.
+   Ad set düzeyi advisory karar (Onayla/Reddet/Geri Al) — hedefleme/bütçe önerileri
+   manuel uygulanır; karar freeze-on-decision lifecycle'ını besler.
    Kart altı navigasyon: sol "Geri" (popup'ı kapat → kampanya), sağ "İleri"
    (bu ad set'in reklamları). Tüm detaylar AÇIK. */
 
 import { useTranslations } from 'next-intl'
 import { ChevronLeft, ChevronRight } from 'lucide-react'
 import { PlatformBadge, StatusBadge, SuggestionList, titleCaseTr } from './shared'
+import HierCardActions from './HierCardActions'
 import type { AdsetWithAds } from '@/lib/yoai/ai/hierarchicalStore'
 
 interface Suggestion { title: string; detail: string }
@@ -15,11 +17,16 @@ interface Suggestion { title: string; detail: string }
 interface Props {
   adset: AdsetWithAds
   horizontal?: boolean
+  busy?: boolean
   onDrillDown: () => void
   onBack: () => void
+  onApprove: () => void
+  onReject: () => void
+  onUndo: () => void
+  onMarkApplied: () => void
 }
 
-export default function AdsetCard({ adset, horizontal, onDrillDown, onBack }: Props) {
+export default function AdsetCard({ adset, horizontal, busy, onDrillDown, onBack, onApprove, onReject, onUndo, onMarkApplied }: Props) {
   const t = useTranslations('dashboard.yoai.hierarchy')
   const payload = (adset.improvement_payload ?? {}) as { suggestions?: Suggestion[] }
   const confidence = adset.confidence ?? 0
@@ -53,20 +60,33 @@ export default function AdsetCard({ adset, horizontal, onDrillDown, onBack }: Pr
         <SuggestionList label={t('suggestions')} suggestions={payload.suggestions ?? []} columns={horizontal ? 2 : 1} />
       </div>
 
-      {/* Kart altı navigasyon: sol Geri · sağ İleri (reklamlar) */}
-      <div className="grid grid-cols-2 gap-px border-t border-slate-700/40 mt-auto rounded-b-2xl overflow-hidden">
-        <button
-          onClick={onBack}
-          className="py-3 bg-slate-800 hover:bg-slate-700 text-slate-200 font-semibold text-[12px] uppercase tracking-wide flex items-center justify-center gap-1.5 transition-colors"
-        >
-          <ChevronLeft className="w-4 h-4" /> {t('back')}
-        </button>
-        <button
-          onClick={onDrillDown}
-          className="py-3 bg-emerald-600 hover:bg-emerald-500 active:bg-emerald-700 text-white font-semibold text-[12px] uppercase tracking-wide flex items-center justify-center gap-1.5 transition-colors"
-        >
-          {t('next')}{adCount > 0 ? ` (${adCount})` : ''} <ChevronRight className="w-4 h-4" />
-        </button>
+      {/* Footer: advisory karar (flush) + altında Geri/İleri navigasyon */}
+      <div className="mt-auto relative">
+        <HierCardActions
+          kind="advisory"
+          status={adset.status}
+          busy={busy}
+          flush
+          onApprove={onApprove}
+          onPublishOrApply={onMarkApplied}
+          onReject={onReject}
+          onUndo={onUndo}
+        />
+        {/* Kart altı navigasyon: sol Geri · sağ İleri (reklamlar) */}
+        <div className="grid grid-cols-2 gap-px border-t border-slate-700/40 rounded-b-2xl overflow-hidden">
+          <button
+            onClick={onBack}
+            className="py-3 bg-slate-800 hover:bg-slate-700 text-slate-200 font-semibold text-[12px] uppercase tracking-wide flex items-center justify-center gap-1.5 transition-colors"
+          >
+            <ChevronLeft className="w-4 h-4" /> {t('back')}
+          </button>
+          <button
+            onClick={onDrillDown}
+            className="py-3 bg-emerald-600 hover:bg-emerald-500 active:bg-emerald-700 text-white font-semibold text-[12px] uppercase tracking-wide flex items-center justify-center gap-1.5 transition-colors"
+          >
+            {t('next')}{adCount > 0 ? ` (${adCount})` : ''} <ChevronRight className="w-4 h-4" />
+          </button>
+        </div>
       </div>
     </div>
   )

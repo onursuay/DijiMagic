@@ -3131,6 +3131,7 @@
         "rejectYes": "REJECT",
         "rejectCancel": "CANCEL",
         "publishFailed": "Publishing failed",
+        "actionError": "Action failed. Please try again.",
         "loading": "Loading cards…",
         "empty": "No improvement cards yet.",
         "preparing": "Preparing your first analysis… cards will appear in a few minutes.",

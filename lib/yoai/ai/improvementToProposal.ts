@@ -98,6 +98,9 @@ export function improvementToProposal(row: AdImprovementRow): FullAdProposal | n
     callToAction: spec.cta || '',
     headlines: headlines.length ? headlines : undefined,
     descriptions: descriptions.length ? descriptions : undefined,
+    // Google Arama Ağı: AI'nın önerdiği anahtar kelimeler yayına aktarılır
+    // (boşsa create-ad keyword'süz kampanya kurar → serve etmez).
+    keywords: !isMeta && spec.targeting?.keywords?.length ? spec.targeting.keywords : undefined,
     reasoning: payload?.reasoning || '',
     competitorInsight: payload?.competitor_comparison || '',
     expectedPerformance: '',
