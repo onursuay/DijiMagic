@@ -69,10 +69,10 @@ Her yeni `app/*/page.tsx` veya büyük bileşen yazılırken şu soruları yanı
 
 ---
 
-## Meta & Google Ads API / Altyapı Koruması (KRİTİK — Proje Geneli)
-Bu projede yapılan **HİÇBİR değişiklik** (UI, layout, stil, sütun, refactor dahil) Meta Ads ve Google Ads **API entegrasyonunu veya altyapısını bozmamalı / sorun yaşatmamalı.** Reklam Yöneticisi, kampanya çekme / oluşturma / yayınlama akışları her zaman çalışır kalır.
-- Bir tablo/stil/sütun/arka plan değişikliği yaparken bile veri çeken API çağrıları, fetcher'lar (`lib/meta/*`, `lib/google/*`) ve publish akışları **KORUNUR** — yalnız sunum (presentation) katmanı değişir.
-- Şüphe varsa entegrasyon koduna **dokunma**; sadece görünüm katmanını düzenle.
+## Meta & Google Ads API / Hata Düzeltme Politikası (Proje Geneli)
+**Gerçek bir hata varsa düzeltilir — Meta/Google entegrasyon kodu (`lib/meta/*`, `lib/google/*`, route'lar, publish akışları) dahil.** Önceki "entegrasyona hiç dokunma" yasağı **KALDIRILDI** (kullanıcı kararı, 2026-06-13).
+- Düzeltirken tek şart: **çalışan yayın akışını dikkatsizce bozmamak.** Değişiklikten önce ve sonra ilgili akışı (kampanya çekme / oluşturma / yayınlama) doğrula; mümkünse gerçek bir test isteğiyle teyit et.
+- Kozmetik/alakasız refactor için hâlâ gereksiz yere entegrasyon koduna girme; ama bir bug, eksik/yanlış parametre veya parite açığı tespit edildiyse **çekirdek dahil düzeltilir.**
 - İlgili: [feedback_no_touch_meta_google](memory).
 
 ## Reklam Metni Dil & İmla Kuralı (ZORUNLU — Meta + Google, Sıfırdan Üretilen Tüm Reklamlar)
