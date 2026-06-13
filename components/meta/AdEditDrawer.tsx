@@ -71,6 +71,7 @@ export default function AdEditDrawer({ adId, adName, relatedCampaignId, open, on
   const [editCapabilities, setEditCapabilities] = useState<EditCapabilities>({ canEditName: true, canEditCreative: true })
 
   const [previewMode, setPreviewMode] = useState('mobile_feed')
+  const [realPreviewSrc, setRealPreviewSrc] = useState<string | null>(null)
 
   // Fetch ad details
   useEffect(() => {
@@ -111,6 +112,25 @@ export default function AdEditDrawer({ adId, adName, relatedCampaignId, open, on
     return () => { cancelled = true }
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [adId, open])
+
+  // Gerçek Meta önizlemesi (/generatepreviews). Alınamazsa hand-drawn önizleme gösterilir.
+  useEffect(() => {
+    if (!open || !adId) { setRealPreviewSrc(null); return }
+    const fmtMap: Record<string, string> = {
+      mobile_feed: 'MOBILE_FEED_STANDARD',
+      desktop_feed: 'DESKTOP_FEED_STANDARD',
+      story: 'FACEBOOK_STORY_MOBILE',
+      reels: 'INSTAGRAM_REELS',
+    }
+    const format = fmtMap[previewMode] ?? 'MOBILE_FEED_STANDARD'
+    let cancelled = false
+    setRealPreviewSrc(null)
+    fetch(`/api/meta/ads/preview?adId=${adId}&format=${format}`)
+      .then(r => r.json())
+      .then(j => { if (!cancelled && j?.ok && typeof j.src === 'string') setRealPreviewSrc(j.src) })
+      .catch(() => {})
+    return () => { cancelled = true }
+  }, [adId, open, previewMode])
 
   const handleSave = async () => {
     setSaving(true)
@@ -307,28 +327,40 @@ export default function AdEditDrawer({ adId, adName, relatedCampaignId, open, on
                   </select>
                 </div>
                 <div className="px-5 pb-5">
-                  <div className="border border-gray-200 rounded-lg bg-gray-50 p-4 min-h-[280px] flex flex-col">
-                    <div className="flex items-center gap-2 mb-3">
-                      <div className="w-8 h-8 rounded-full bg-gray-300" />
-                      <div>
-                        <div className="text-xs font-medium text-gray-700">{t('ad.previewPageName')}</div>
-                        <div className="text-[10px] text-gray-400">{t('ad.previewSponsored')}</div>
-                      </div>
+                  {realPreviewSrc ? (
+                    // Gerçek Meta önizlemesi — kontrollü iframe (WYSIWYG); src yalnız facebook/instagram.com
+                    <div className="border border-gray-200 rounded-lg bg-white overflow-hidden flex justify-center">
+                      <iframe
+                        src={realPreviewSrc}
+                        title={t('ad.previewHeading')}
+                        className="w-full min-h-[320px] border-0"
+                        sandbox="allow-scripts allow-same-origin allow-popups"
+                      />
                     </div>
-                    {primaryText && (
-                      <p className="text-xs text-gray-700 mb-3 line-clamp-3">{primaryText}</p>
-                    )}
-                    <div className="flex-1 bg-gray-200 rounded-lg mb-3 min-h-[120px] flex items-center justify-center">
-                      <span className="text-xs text-gray-400">{t('ad.previewMediaPlaceholder')}</span>
-                    </div>
-                    {(headline || websiteUrl) && (
-                      <div className="bg-gray-100 rounded-lg p-2.5">
-                        {websiteUrl && <p className="text-[10px] text-gray-400 uppercase truncate">{websiteUrl.replace(/^https?:\/\//, '').split('/')[0]}</p>}
-                        {headline && <p className="text-xs font-medium text-gray-800 truncate">{headline}</p>}
-                        {description && <p className="text-[10px] text-gray-500 truncate">{description}</p>}
+                  ) : (
+                    <div className="border border-gray-200 rounded-lg bg-gray-50 p-4 min-h-[280px] flex flex-col">
+                      <div className="flex items-center gap-2 mb-3">
+                        <div className="w-8 h-8 rounded-full bg-gray-300" />
+                        <div>
+                          <div className="text-xs font-medium text-gray-700">{t('ad.previewPageName')}</div>
+                          <div className="text-[10px] text-gray-400">{t('ad.previewSponsored')}</div>
+                        </div>
                       </div>
-                    )}
-                  </div>
+                      {primaryText && (
+                        <p className="text-xs text-gray-700 mb-3 line-clamp-3">{primaryText}</p>
+                      )}
+                      <div className="flex-1 bg-gray-200 rounded-lg mb-3 min-h-[120px] flex items-center justify-center">
+                        <span className="text-xs text-gray-400">{t('ad.previewMediaPlaceholder')}</span>
+                      </div>
+                      {(headline || websiteUrl) && (
+                        <div className="bg-gray-100 rounded-lg p-2.5">
+                          {websiteUrl && <p className="text-[10px] text-gray-400 uppercase truncate">{websiteUrl.replace(/^https?:\/\//, '').split('/')[0]}</p>}
+                          {headline && <p className="text-xs font-medium text-gray-800 truncate">{headline}</p>}
+                          {description && <p className="text-[10px] text-gray-500 truncate">{description}</p>}
+                        </div>
+                      )}
+                    </div>
+                  )}
                 </div>
               </div>
             </div>
