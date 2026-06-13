@@ -12,6 +12,22 @@ export function getMinDailyBudgetTRY(opts: { usdTryRate: number }): number {
 }
 
 /**
+ * Gösterilen/dayatılan minimum günlük bütçe (TRY).
+ * Meta'nın GERÇEK per-optimization-goal değeri (serverVal, /minimum_budgets) baz alınır.
+ * Yalnız $1 tabanının (floorTry) ÜZERİNDEKİ yükseltilmiş minimumlara (mesajlaşma/dönüşüm: ~76)
+ * ufak bir güvenlik tamponu eklenir → ~78 (FX kayması + kuruş yuvarlamasına karşı).
+ * Taban seviyesindeki minimumlar (trafik/erişim ≈ $1 ≈ 44) DEĞİŞMEZ.
+ * Uyarı metni ile "İleri" kilidi bu AYNI değeri kullanmalı (tutarlılık).
+ */
+export const MIN_BUDGET_SAFETY_TRY = 2
+export function bufferedMinTry(serverVal: number | null | undefined, floorTry: number | null): number | null {
+  if (serverVal == null || !Number.isFinite(serverVal)) return null
+  const ceilRaw = Math.ceil(serverVal)
+  const floorCeil = floorTry != null && Number.isFinite(floorTry) ? Math.ceil(floorTry) : null
+  return floorCeil != null && ceilRaw > floorCeil ? ceilRaw + MIN_BUDGET_SAFETY_TRY : ceilRaw
+}
+
+/**
  * Reads NEXT_PUBLIC_USD_TRY_RATE from env with robust parsing.
  * Parsing: trim, replace comma with dot, keep only numeric chars.
  * Returns null (and console.warn) when missing or invalid — callers should suppress the warning.

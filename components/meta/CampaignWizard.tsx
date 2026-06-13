@@ -30,7 +30,7 @@ import { getSpecByApiObjective } from './wizard/spec/objectives'
 import { validateStepsUpTo, numberToStepKey } from './wizard/runtime/validate'
 import { emptyCapabilities as wizardEmptyCapabilities } from './wizard/capabilities/types'
 import { t as specT, getSpecLocale } from './wizard/spec/i18n'
-import { getMinDailyBudgetTRY, getUsdTryRate } from '@/lib/budget/minBudget'
+import { getMinDailyBudgetTRY, getUsdTryRate, bufferedMinTry } from '@/lib/budget/minBudget'
 
 export interface DiscoverySpecPatch {
   requiredFieldsAdded: string[]
@@ -194,6 +194,7 @@ function getMinBudgetError(
   const msg = type === 'lifetime' ? lifetimeMsg : dailyMsg
   return msg.replace('{min}', String(Math.ceil(minDailyBudget)))
 }
+
 
 export default function CampaignWizard({ isOpen, onClose, onSuccess, onToast, capabilities, initialObjective }: CampaignWizardProps) {
   const t = getWizardTranslations(getLocaleFromCookie())
@@ -979,7 +980,10 @@ export default function CampaignWizard({ isOpen, onClose, onSuccess, onToast, ca
   ])
 
   useEffect(() => {
-    const minDaily = (state.adset.budgetType === 'lifetime' || minDailyTry == null) ? undefined : minDailyTry
+    // Uyarı, İleri kilidiyle AYNI gerçek per-optimization-goal minimumu kullanır (sabit $1 tabanı DEĞİL).
+    // Mesajlaşma → ~78 (tamponlu), trafik/erişim → ~44 (taban, değişmez). Yükleniyorsa uyarı gösterme.
+    const serverMin = minDailyBudgetTry.status === 'ready' ? bufferedMinTry(minDailyBudgetTry.value, minDailyTry) : null
+    const minDaily = (state.adset.budgetType === 'lifetime' || serverMin == null) ? undefined : serverMin
     setAdSetMinBudgetError(
       getMinBudgetError(
         state.adset.budget,
@@ -993,6 +997,7 @@ export default function CampaignWizard({ isOpen, onClose, onSuccess, onToast, ca
     state.adset.budget,
     state.adset.budgetType,
     state.campaign.budgetOptimization,
+    minDailyBudgetTry,
     minDailyTry,
   ])
 
@@ -2003,8 +2008,9 @@ export default function CampaignWizard({ isOpen, onClose, onSuccess, onToast, ca
         state.campaign.campaignBudget != null &&
         state.campaign.campaignBudget > 0 &&
         state.campaign.campaignBudget < campaignMinForStep1))
-  // Block next/publish if adset budget < min daily budget (TRY) — only for non-CBO; use ceil for same threshold as campaign
-  const adSetMinTry = minDailyBudgetTry.value != null ? Math.ceil(minDailyBudgetTry.value) : null
+  // Block next/publish if adset budget < min daily budget (TRY) — only for non-CBO.
+  // Uyarı metniyle AYNI tamponlu değer (mesajlaşma ~78, trafik 44) → gösterilen ile dayatılan birebir aynı.
+  const adSetMinTry = bufferedMinTry(minDailyBudgetTry.value, minDailyTry)
   const budgetBelowMin =
     !isCBO &&
     minDailyBudgetTry.status === 'ready' &&
