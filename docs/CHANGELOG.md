@@ -2,6 +2,21 @@
 
 ---
 
+## 2026-06-13 — Meta & Google Ads parite: ertelenen tüm işlerin tamamlanması (Faz E–G, `fix/ads-parity-bugs`)
+- **Sorun:** Faz A–D'de ertelenen (regresyon/yeni-UI riski taşıyan) parite kalemlerinin tamamının bitirilmesi istendi — geriye iş bırakılmayacak.
+- **Çözüm:** 11 commit, çalışan akış korunarak (tsc + tam `next build`, 0 hata):
+  - **E1:** Meta detaylı hedefleme `metaType` korunarak doğru `flexible_spec` alanına yazılıyor (interests/behaviors/life_events…); geçersiz `demographics` anahtarı + "her şey interests altına" giderildi (`buildFlexibleSpec`).
+  - **E2:** Advantage+ Hedef Kitle aç/kapa toggle (TabAudience); KAPALIYKEN `age_max` 65'e zorlanmıyor, kullanıcının yaş/cinsiyeti kesin sınır.
+  - **E3:** Performans hedefi sessiz-ezme kaldırıldı (Sales/App Promotion kullanıcı seçimine, WhatsApp geçerli mesajlaşma hedefine saygı).
+  - **F1:** Mevcut-gönderi CTA objective-aware (`getAllowedCTAs`).
+  - **F3:** `conversion_domain` + kanonik `url_tags` (makro-uyumlu) + App Promotion `app_link_spec` (deep link) gönderiliyor.
+  - **G2:** Google TIS UI parametreleri (hedef gösterim payı % + zorunlu maks. TBM tavanı + "Sayfanın herhangi bir yeri") + Maximize Clicks TBM tavanı.
+  - **G1:** PMax kitle sinyalleri AudienceService ile gerçek Audience resource olarak oluşturulup asset group sinyaline bağlanıyor (graceful).
+  - **G3:** Google gerçek Ad Strength (GAQL `ad_group_ad.ad_strength`) reklam tablosunda rozet + RSA pinning (sabitleme) hem oluşturma hem düzenleme arayüzünde.
+  - **F2:** Meta gerçek önizleme (`/generatepreviews`) — yeni `/api/meta/ads/preview` route + AdEditDrawer'da kontrollü `<iframe>` (XSS yüzeyi yok); alınamazsa hand-drawn'a düşer.
+- **Not (merge öncesi):** Build + tsc temiz; entegrasyon-ağırlıklı düzeltmeler (saved audience, pixel, PMax signals, AudienceService, generatepreviews, RSA pinning) merge öncesi gerçek hesapta küçük bütçeli test reklamıyla doğrulanmalı.
+- **Dosyalar:** lib/google-ads/{create-campaign,create-performance-max-campaign}.ts, components/google/{GoogleAdTable,GoogleAdEditOverlay,wizard/shared/{WizardTypes,WizardHelpers},wizard/steps/{StepBiddingAcquisition,StepKeywordsAndAds}}.tsx, components/meta/{CampaignWizard,AdEditDrawer,wizard/{TabAudience,StepAd,flexibleSpec}}.tsx, app/api/meta/{ads/create,ads/details,ads/preview,adsets/create,targeting/detailed,traffic-wizard/publish}/route.ts, app/api/integrations/google-ads/{ads,ads/[adId]/update}/route.ts, hooks/google/useGoogleAdsCampaigns.ts, locales/{tr,en}.json
+
 ## 2026-06-13 — Meta & Google Ads parite denetimi düzeltmeleri (Faz A–D, `fix/ads-parity-bugs`)
 - **Sorun:** 9 alanlık birebir-panel parite denetiminde tespit edilen publish-kıran ve sessiz-yanlış-yayın bugları (kullanıcının seçtiğinden farklı yayın / kampanya hiç oluşmama / yetim kampanya).
 - **Çözüm:** 4 fazda, çalışan yayın akışı korunarak (her fazdan sonra `tsc` + sonda tam `next build`, 0 hata) düzeltildi:
