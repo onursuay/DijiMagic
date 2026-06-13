@@ -84,6 +84,7 @@ export async function GET(request: Request) {
           id: int.id,
           name: int.name,
           type: 'interest' as const,
+          metaType: 'interests',
           audience_size_lower_bound: int.audience_size_lower_bound,
           audience_size_upper_bound: int.audience_size_upper_bound,
           path: int.path,
@@ -102,6 +103,8 @@ export async function GET(request: Request) {
       id: item.id,
       name: item.name,
       type: normalizeType(item.type || 'interests'),
+      // metaType: ham Meta type'ı (flexible_spec alan adı) — behaviors/life_events/family_statuses... doğru anahtara yazmak için korunur
+      metaType: String(item.type || 'interests').toLowerCase(),
       audience_size_lower_bound: item.audience_size_lower_bound,
       audience_size_upper_bound: item.audience_size_upper_bound,
       path: item.path,

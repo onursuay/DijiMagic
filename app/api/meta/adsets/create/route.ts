@@ -667,6 +667,11 @@ export async function POST(request: Request) {
       }
     }
 
+    // Advantage+ Audience (varsayılan AÇIK). AÇIKKEN Meta yaş üst sınırını 65'e genişletir;
+    // KAPALIYKEN kullanıcının seçtiği üst yaş sınırına saygı gösterilir.
+    const advantageAudience = body.advantage_audience ?? body.advantageAudience ?? 1
+    const advantageOn = !!advantageAudience
+
     // Targeting: JSON.stringify; custom_locations.distance_unit mile -> kilometer
     let targetingToSend: Record<string, unknown>
     if (effectiveTargeting != null && typeof effectiveTargeting === 'object') {
@@ -676,14 +681,14 @@ export async function POST(request: Request) {
       if (typeof targetingToSend.age_min === 'number' && targetingToSend.age_min < 18) {
         targetingToSend = { ...targetingToSend, age_min: 18 }
       }
-      // Safety clamp: Meta API requires age_max >= 65 (error_subcode: 1870189 if less)
-      if (typeof targetingToSend.age_max === 'number' && targetingToSend.age_max < 65) {
+      // age_max: yalnız Advantage+ Audience AÇIKKEN 65'e genişlet (subcode 1870189); kapalıyken kullanıcı değeri korunur.
+      if (advantageOn && typeof targetingToSend.age_max === 'number' && targetingToSend.age_max < 65) {
         targetingToSend = { ...targetingToSend, age_max: 65 }
       }
       // Safety clamp: ensure age_max >= age_min (prevent invalid range)
       if (typeof targetingToSend.age_min === 'number' && typeof targetingToSend.age_max === 'number') {
         if (targetingToSend.age_max < targetingToSend.age_min) {
-          targetingToSend = { ...targetingToSend, age_max: Math.max(65, targetingToSend.age_min) }
+          targetingToSend = { ...targetingToSend, age_max: advantageOn ? Math.max(65, targetingToSend.age_min) : targetingToSend.age_min }
         }
       }
     } else {
@@ -693,8 +698,6 @@ export async function POST(request: Request) {
         age_max: 65,
       }
     }
-    // Advantage+ Audience: from body (default ON); under-18 is impossible at this point
-    const advantageAudience = body.advantage_audience ?? body.advantageAudience ?? 1
     targetingToSend.targeting_automation = { advantage_audience: advantageAudience ? 1 : 0 }
     if (DEBUG) console.log(`[AdSet Create][${requestId}] advantage_audience:`, advantageAudience ? 'ON' : 'OFF')
     formData.append('targeting', JSON.stringify(targetingToSend))

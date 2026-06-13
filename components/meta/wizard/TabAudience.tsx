@@ -2,6 +2,7 @@
 
 import { useState, useEffect, useRef } from 'react'
 import type { WizardState } from './types'
+import { buildFlexibleSpec } from './flexibleSpec'
 import { X, Search, ChevronDown, Plus, Users, UserPlus, UserMinus, Target, MapPin } from 'lucide-react'
 import { getLocaleFromCookie } from '@/lib/i18n/wizardTranslations'
 import { useMetaTargetingSearch, useMetaDetailedTargetingSearch, useMetaAudiences } from '../traffic-wizard/useAudienceSearch'
@@ -35,6 +36,9 @@ const LABELS = {
     audienceGenderMale: 'Erkek',
     audienceGenderFemale: 'Kadın',
     audienceAdvantageDetailed: 'Advantage+ detaylı hedefleme',
+    audienceAdvantageAudience: 'Advantage+ Hedef Kitle',
+    audienceAdvantageAudienceOnHint: 'Açık: Meta yaş, cinsiyet ve ilgi alanlarını öneri olarak alır ve kitleyi otomatik genişletebilir.',
+    audienceAdvantageAudienceOffHint: 'Kapalı: Yalnız seçtiğin yaş, cinsiyet ve detaylı hedefleme uygulanır (kesin sınır).',
     audienceIncludeMatching: 'Şunlarla eşleşen kişileri dahil et:',
     audienceDetailedSearchPlaceholder: 'Demografik bilgiler, ilgi alanları veya davranışlar ekleyin',
     audienceDetailedNoResults: 'Sonuç bulunamadı.',
@@ -77,6 +81,9 @@ const LABELS = {
     audienceGenderMale: 'Male',
     audienceGenderFemale: 'Female',
     audienceAdvantageDetailed: 'Advantage+ detailed targeting',
+    audienceAdvantageAudience: 'Advantage+ Audience',
+    audienceAdvantageAudienceOnHint: 'On: Meta treats age, gender and interests as suggestions and may expand your audience automatically.',
+    audienceAdvantageAudienceOffHint: 'Off: Only your selected age, gender and detailed targeting are applied (hard limits).',
     audienceIncludeMatching: 'Include people who match:',
     audienceDetailedSearchPlaceholder: 'Add demographics, interests or behaviors',
     audienceDetailedNoResults: 'No results found.',
@@ -251,10 +258,8 @@ export default function TabAudience({ state, onChange }: TabAudienceProps) {
       if (targeting.genders.length > 0) tgt.genders = targeting.genders
       if (localeObjects.length > 0) tgt.locales = localeObjects.map(l => l.id)
       if (targeting.interests.length > 0) {
-        const interests = targeting.interests.map(d => ({ id: d.id, name: d.name }))
-        if (interests.length > 0) {
-          tgt.flexible_spec = [{ interests }]
-        }
+        const fs = buildFlexibleSpec(targeting.interests)
+        if (fs) tgt.flexible_spec = fs
       }
       if (targeting.custom_audiences.length > 0) {
         tgt.custom_audiences = targeting.custom_audiences.map(c => ({ id: c.id }))
@@ -798,6 +803,25 @@ export default function TabAudience({ state, onChange }: TabAudienceProps) {
         </div>
       </div>
 
+      {/* Advantage+ Hedef Kitle aç/kapa — kapalıyken yaş/cinsiyet/detaylı hedefleme kesin sınır olur */}
+      <div className="mt-4 flex items-start justify-between gap-3 p-3 rounded-xl border border-gray-200 bg-white">
+        <div className="flex-1">
+          <p className="text-sm font-semibold text-gray-800">{t.audienceAdvantageAudience} <span className="text-primary font-bold">+</span></p>
+          <p className="text-xs text-gray-500 mt-0.5 leading-relaxed">
+            {state.advantageAudience !== false ? t.audienceAdvantageAudienceOnHint : t.audienceAdvantageAudienceOffHint}
+          </p>
+        </div>
+        <button
+          type="button"
+          role="switch"
+          aria-checked={state.advantageAudience !== false}
+          onClick={() => onChange({ advantageAudience: !(state.advantageAudience !== false) })}
+          className={`relative inline-flex h-6 w-11 shrink-0 items-center rounded-full transition-colors ${state.advantageAudience !== false ? 'bg-primary' : 'bg-gray-300'}`}
+        >
+          <span className={`inline-block h-5 w-5 transform rounded-full bg-white shadow transition-transform ${state.advantageAudience !== false ? 'translate-x-5' : 'translate-x-0.5'}`} />
+        </button>
+      </div>
+
       {/* ── Advantage+ detaylı hedefleme ── */}
       <div>
         <label className="text-sm font-semibold text-gray-800 mb-1 block">
@@ -815,7 +839,7 @@ export default function TabAudience({ state, onChange }: TabAudienceProps) {
               loading={detailedLoading}
               onSelect={(item) => {
                 if (!targeting.interests.find(x => x.id === item.id)) {
-                  onChange({ targeting: { ...targeting, interests: [...targeting.interests, { id: item.id, name: item.name }] } })
+                  onChange({ targeting: { ...targeting, interests: [...targeting.interests, { id: item.id, name: item.name, metaType: (item as { metaType?: string }).metaType }] } })
                 }
                 setInterestSearch('')
               }}

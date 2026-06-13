@@ -393,33 +393,18 @@ export async function POST(request: Request) {
         )
     }
 
-    // Detailed targeting (interests + behaviors + demographics)
+    // Detaylı hedefleme: her segment KENDİ flexible_spec alanına (interests/behaviors/life_events...).
+    // Ham Meta metaType varsa o kullanılır; yoksa normalize type'tan türetilir. Geçersiz 'demographics' anahtarı KULLANILMAZ.
     if (adset.detailedTargeting && adset.detailedTargeting.length > 0) {
-      const interests: { id: string; name: string }[] = []
-      const behaviors: { id: string; name: string }[] = []
-      const demographics: { id: string; name: string }[] = []
+      const FLEX_KEYS = new Set<string>(['interests','behaviors','life_events','family_statuses','industries','income','education_statuses','education_majors','education_schools','work_positions','work_employers','relationship_statuses','college_years','user_adclusters','politics','interested_in'])
+      const block: Record<string, { id: string; name: string }[]> = {}
       for (const dt of adset.detailedTargeting) {
-        const item = { id: dt.id, name: dt.name }
-        if (dt.type === 'behavior') behaviors.push(item)
-        else if (dt.type === 'demographic') demographics.push(item)
-        else interests.push(item)
+        const raw = ((dt as { metaType?: string }).metaType || '').toLowerCase().trim()
+        const key = FLEX_KEYS.has(raw) ? raw : (dt.type === 'behavior' ? 'behaviors' : 'interests')
+        if (!block[key]) block[key] = []
+        block[key].push({ id: dt.id, name: dt.name })
       }
-      if (interests.length > 0)
-        targeting.flexible_spec = [{ interests }]
-      if (behaviors.length > 0) {
-        if (targeting.flexible_spec) {
-          ;(targeting.flexible_spec as Record<string, unknown>[])[0].behaviors = behaviors
-        } else {
-          targeting.flexible_spec = [{ behaviors }]
-        }
-      }
-      if (demographics.length > 0) {
-        if (targeting.flexible_spec) {
-          ;(targeting.flexible_spec as Record<string, unknown>[])[0].demographics = demographics
-        } else {
-          targeting.flexible_spec = [{ demographics }]
-        }
-      }
+      if (Object.keys(block).length > 0) targeting.flexible_spec = [block]
     }
 
     // Advantage+ audience

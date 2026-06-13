@@ -4,6 +4,7 @@
 import { useState, useCallback, useEffect, useRef } from 'react'
 import type { WizardState } from './wizard/types'
 import { initialWizardState } from './wizard/types'
+import { buildFlexibleSpec } from './wizard/flexibleSpec'
 import WizardProgress from './wizard/WizardProgress'
 import WizardNavigation from './wizard/WizardNavigation'
 import StepCampaign from './wizard/StepCampaign'
@@ -109,10 +110,13 @@ function buildTargeting(state: WizardState['adset']) {
   if (excludedCities.length) excludedGeo.cities = excludedCities
   if (excludedRegions.length) excludedGeo.regions = excludedRegions
 
-  // Ensure valid age range (age_min >= 18, age_max >= 65 per Meta API requirement)
+  // Ensure valid age range (age_min >= 18)
   const ageMin = Math.max(18, t.ageMin || 18)
-  // Meta API requires age_max to be at least 65 (error_subcode: 1870189 if less)
-  const ageMax = Math.max(65, Math.max(ageMin, t.ageMax || 65))
+  // Advantage+ Audience AÇIKKEN Meta yaş üst sınırını 65'e genişletir (subcode 1870189);
+  // KAPALIYKEN kullanıcının seçtiği üst sınıra saygı gösterilir (18-65 arası).
+  const wantAdvantageAudience = state.advantageAudience !== false
+  const rawAgeMax = Math.max(ageMin, t.ageMax || 65)
+  const ageMax = wantAdvantageAudience ? Math.max(65, rawAgeMax) : Math.min(65, rawAgeMax)
 
   const targeting: Record<string, unknown> = {
     geo_locations: geo,
@@ -124,9 +128,10 @@ function buildTargeting(state: WizardState['adset']) {
     targeting.excluded_geo_locations = excludedGeo
   }
   if (t.genders.length) targeting.genders = t.genders
-  // Interests must be in flexible_spec, not as a top-level field
+  // Detaylı hedefleme flexible_spec içinde, her segment KENDİ alanı altında (interests/behaviors/life_events...)
   if (t.interests.length) {
-    targeting.flexible_spec = [{ interests: t.interests.map((i) => ({ id: i.id, name: i.name })) }]
+    const fs = buildFlexibleSpec(t.interests)
+    if (fs) targeting.flexible_spec = fs
   }
   if (t.locales.length) targeting.locales = t.locales
   if (t.custom_audiences.length) {

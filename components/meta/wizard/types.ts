@@ -36,7 +36,7 @@ export interface WizardState {
       ageMin: number
       ageMax: number
       locations: { type: string; key: string; name: string }[]
-      interests: { id: string; name: string }[]
+      interests: { id: string; name: string; metaType?: string }[]
       locales: number[]
       custom_audiences: { id: string; name: string }[]
       excluded_custom_audiences: { id: string; name: string }[]
