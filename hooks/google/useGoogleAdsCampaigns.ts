@@ -51,6 +51,7 @@ export interface GoogleAd {
   ctr: number
   cpc: number
   roas: number | null
+  adStrength?: string
 }
 
 type ToastFn = (message: string, type: 'info' | 'success' | 'error') => void

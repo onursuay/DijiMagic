@@ -10,6 +10,7 @@ function buildAdsQuery(from: string, to: string, showInactive: boolean): string 
     ad_group_ad.ad.id,
     ad_group_ad.ad.name,
     ad_group_ad.status,
+    ad_group_ad.ad_strength,
     campaign.id,
     campaign.name,
     ad_group.id,
@@ -43,6 +44,7 @@ export interface GoogleAdRow {
   ctr: number
   cpc: number
   roas: number | null
+  adStrength: string
 }
 
 /**
@@ -66,6 +68,8 @@ export async function GET(request: Request) {
       adGroupAd?: {
         ad?: { id?: string; name?: string }
         status?: string
+        ad_strength?: string
+        adStrength?: string
       }
       campaign?: { id?: string; name?: string }
       adGroup?: { id?: string; name?: string }
@@ -94,6 +98,7 @@ export async function GET(request: Request) {
         campaignName: string
         adGroupId: string
         adGroupName: string
+        adStrength: string
         impressions: number
         clicks: number
         costMicros: number
@@ -133,6 +138,7 @@ export async function GET(request: Request) {
           campaignName: camp?.name ?? '',
           adGroupId,
           adGroupName: ag?.name ?? '',
+          adStrength: aga?.ad_strength ?? aga?.adStrength ?? 'UNSPECIFIED',
           impressions,
           clicks,
           costMicros,
@@ -158,6 +164,7 @@ export async function GET(request: Request) {
         ctr,
         cpc,
         roas,
+        adStrength: agg.adStrength,
       }
     })
 
