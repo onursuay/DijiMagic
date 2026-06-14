@@ -14,6 +14,7 @@ import {
   type WebsitePageInput,
   type WebsiteSnapshot,
   type VersionReason,
+  type WebsiteVersionMeta,
   type PublishedSite,
 } from './types'
 
@@ -181,6 +182,57 @@ export async function createVersion(
     .single()
   if (error) throw error
   return (data as { id: string }).id
+}
+
+/** Sahibinin sitesinin sürüm geçmişi (snapshot olmadan, yeni → eski, son 20). */
+export async function listVersions(userId: string, websiteId: string): Promise<WebsiteVersionMeta[]> {
+  const db = requireClient()
+  const site = await getWebsite(userId, websiteId)
+  if (!site) return []
+  const { data, error } = await db
+    .from('website_versions')
+    .select('id, reason, credit_charged, created_at')
+    .eq('website_id', websiteId)
+    .order('created_at', { ascending: false })
+    .limit(20)
+  if (error) throw error
+  return (data as { id: string; reason: VersionReason; credit_charged: number; created_at: string }[]).map((r) => ({
+    id: r.id,
+    reason: r.reason,
+    creditCharged: r.credit_charged,
+    createdAt: r.created_at,
+  }))
+}
+
+/** Bir sürüme geri döner: o sürümün sayfalarını geri yükler + yeni 'rollback' sürümü kaydeder. */
+export async function rollbackToVersion(
+  userId: string,
+  websiteId: string,
+  versionId: string,
+): Promise<WebsitePage[] | null> {
+  const db = requireClient()
+  const site = await getWebsite(userId, websiteId)
+  if (!site) return null
+  const { data: ver, error } = await db
+    .from('website_versions')
+    .select('snapshot')
+    .eq('website_id', websiteId)
+    .eq('id', versionId)
+    .maybeSingle()
+  if (error) throw error
+  if (!ver) return null
+  const snapshot = (ver as { snapshot: WebsiteSnapshot }).snapshot
+  const pageInputs: WebsitePageInput[] = (snapshot.pages ?? []).map((p) => ({
+    locale: p.locale,
+    slug: p.slug,
+    pageRole: p.pageRole,
+    sections: p.sections,
+    seo: p.seo,
+    orderIndex: p.orderIndex,
+  }))
+  const pages = await replacePages(userId, websiteId, pageInputs)
+  await createVersion(websiteId, { website: snapshot.website, pages }, 'rollback', 0)
+  return pages
 }
 
 /** Siteyi yayınlar: status='published' + published_version_id = en yeni sürüm. */

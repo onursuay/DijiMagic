@@ -17,8 +17,9 @@ async function ensureBucket() {
   }
 }
 
+// SVG KASITEN HARİÇ: gömülü <script> ile stored-XSS riski. Logo için raster yeterli.
 const EXT: Record<string, string> = {
-  'image/png': 'png', 'image/jpeg': 'jpg', 'image/jpg': 'jpg', 'image/webp': 'webp', 'image/svg+xml': 'svg',
+  'image/png': 'png', 'image/jpeg': 'jpg', 'image/jpg': 'jpg', 'image/webp': 'webp',
 }
 
 /** Logo yükle → Supabase Storage → public URL → website.theme.logoUrl (mevcut tema korunur). */

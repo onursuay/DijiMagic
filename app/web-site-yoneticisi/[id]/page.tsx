@@ -4,14 +4,14 @@ import { useState, useEffect, useCallback, useRef } from 'react'
 import { useParams } from 'next/navigation'
 import Link from 'next/link'
 import { useTranslations, useLocale } from 'next-intl'
-import { Sparkles, RefreshCw, Globe, ExternalLink, ArrowLeft, Wand2, Monitor, Smartphone, ImagePlus, Trash2 } from 'lucide-react'
+import { Sparkles, RefreshCw, Globe, ExternalLink, ArrowLeft, Wand2, Monitor, Smartphone, ImagePlus, Trash2, History, RotateCcw, ChevronDown } from 'lucide-react'
 import Topbar from '@/components/Topbar'
 import { ToastContainer, type Toast } from '@/components/Toast'
 import AccessRequiredModal from '@/components/billing/AccessRequiredModal'
 import DictateButton from '@/components/website/DictateButton'
-import type { Website, WebsitePage } from '@/lib/website/types'
+import type { Website, WebsitePage, WebsiteVersionMeta } from '@/lib/website/types'
 
-type Busy = 'ai' | 'quick' | 'publish' | 'logo' | null
+type Busy = 'ai' | 'quick' | 'publish' | 'logo' | 'rollback' | null
 type Device = 'desktop' | 'mobile'
 
 const LOCALE_NAMES: Record<string, string> = {
@@ -47,6 +47,8 @@ export default function WebSiteDetailPage() {
   const [toasts, setToasts] = useState<Toast[]>([])
   const [device, setDevice] = useState<Device>('desktop')
   const [reloadKey, setReloadKey] = useState(0)
+  const [versions, setVersions] = useState<WebsiteVersionMeta[]>([])
+  const [showHistory, setShowHistory] = useState(false)
 
   const frameWrapRef = useRef<HTMLDivElement>(null)
   const fileInputRef = useRef<HTMLInputElement>(null)
@@ -67,7 +69,13 @@ export default function WebSiteDetailPage() {
     if (pRes?.ok) setPages(pRes.pages ?? [])
   }, [id])
 
-  useEffect(() => { load() }, [load])
+  const fetchVersions = useCallback(async () => {
+    if (!id) return
+    const res = await fetch(`/api/website/${id}/versions`).then((r) => r.json()).catch(() => null)
+    if (res?.ok) setVersions(res.versions ?? [])
+  }, [id])
+
+  useEffect(() => { load(); fetchVersions() }, [load, fetchVersions])
 
   // Önizleme kutusunun gerçek genişliğini ölç (iframe'i ölçekleyip gerçek viewport düzeni göster)
   useEffect(() => {
@@ -103,7 +111,7 @@ export default function WebSiteDetailPage() {
       })
       if (res.status === 402) { setShowCredit(true); return }
       const json = await res.json()
-      if (json.ok) { setPages(json.pages ?? []); setActiveSlug('home'); setInstructions(''); setReloadKey((k) => k + 1) }
+      if (json.ok) { setPages(json.pages ?? []); setActiveSlug('home'); setInstructions(''); setReloadKey((k) => k + 1); fetchVersions() }
       else addToast(json.error || t('buildError'), 'error')
     } catch { addToast(t('buildError'), 'error') } finally { setBusy(null) }
   }
@@ -113,9 +121,27 @@ export default function WebSiteDetailPage() {
     try {
       const res = await fetch(`/api/website/${id}/build`, { method: 'POST' })
       const json = await res.json()
-      if (json.ok) { setPages(json.pages ?? []); setActiveSlug('home'); setReloadKey((k) => k + 1) }
+      if (json.ok) { setPages(json.pages ?? []); setActiveSlug('home'); setReloadKey((k) => k + 1); fetchVersions() }
       else addToast(t('buildError'), 'error')
     } catch { addToast(t('buildError'), 'error') } finally { setBusy(null) }
+  }
+
+  const handleRollback = async (versionId: string) => {
+    setBusy('rollback')
+    try {
+      const res = await fetch(`/api/website/${id}/versions`, {
+        method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ versionId }),
+      })
+      const json = await res.json()
+      if (json.ok) { setPages(json.pages ?? []); setActiveSlug('home'); setReloadKey((k) => k + 1); fetchVersions() }
+      else addToast(json.error || t('rollbackError'), 'error')
+    } catch { addToast(t('rollbackError'), 'error') } finally { setBusy(null) }
+  }
+
+  const reasonLabel = (r: string) =>
+    r === 'revision' ? t('reasonRevision') : r === 'rollback' ? t('reasonRollback') : t('reasonInitial')
+  const fmtDate = (s: string) => {
+    try { return new Date(s).toLocaleString(uiLocale === 'en' ? 'en-US' : 'tr-TR', { dateStyle: 'medium', timeStyle: 'short' }) } catch { return s }
   }
 
   const handlePublish = async (action: 'publish' | 'unpublish') => {
@@ -202,7 +228,7 @@ export default function WebSiteDetailPage() {
                 <input
                   ref={fileInputRef}
                   type="file"
-                  accept="image/png,image/jpeg,image/webp,image/svg+xml"
+                  accept="image/png,image/jpeg,image/webp"
                   className="hidden"
                   onChange={(e) => { handleLogoFile(e.target.files?.[0]); e.target.value = '' }}
                 />
@@ -296,6 +322,45 @@ export default function WebSiteDetailPage() {
               )}
             </div>
           </div>
+
+          {/* Sürüm geçmişi (Faz 2 — geri alma) */}
+          {hasPages && versions.length > 0 && (
+            <div className="bg-white rounded-xl border border-gray-200 animate-card-enter overflow-hidden">
+              <button
+                onClick={() => setShowHistory((s) => !s)}
+                className="w-full flex items-center gap-2 px-4 py-3 text-left hover:bg-gray-50/60 transition-colors"
+              >
+                <History className="w-4 h-4 text-gray-500" />
+                <span className="text-sm font-medium text-gray-800">{t('historyTitle')}</span>
+                <span className="text-xs text-gray-400">({versions.length})</span>
+                <ChevronDown className={`w-4 h-4 text-gray-400 ml-auto transition-transform ${showHistory ? 'rotate-180' : ''}`} />
+              </button>
+              {showHistory && (
+                <ul className="border-t border-gray-100 divide-y divide-gray-100">
+                  {versions.map((v, i) => (
+                    <li key={v.id} className="flex items-center gap-3 px-4 py-2.5">
+                      <span className="inline-flex items-center rounded-full bg-gray-100 text-gray-700 text-xs px-2 py-0.5">
+                        {reasonLabel(v.reason)}
+                      </span>
+                      <span className="text-xs text-gray-500">{fmtDate(v.createdAt)}</span>
+                      {i === 0 ? (
+                        <span className="ml-auto w-2 h-2 rounded-full bg-emerald-500" title="Güncel" />
+                      ) : (
+                        <button
+                          onClick={() => handleRollback(v.id)}
+                          disabled={busy !== null}
+                          className="ml-auto inline-flex items-center gap-1.5 rounded-lg border border-gray-200 px-2.5 py-1.5 text-xs font-medium text-gray-700 hover:bg-gray-50/60 transition-colors disabled:opacity-50"
+                        >
+                          <RotateCcw className="w-3.5 h-3.5" />
+                          {busy === 'rollback' ? t('rollingBack') : t('rollback')}
+                        </button>
+                      )}
+                    </li>
+                  ))}
+                </ul>
+              )}
+            </div>
+          )}
 
           {/* Önizleme / boş durum */}
           {!hasPages ? (

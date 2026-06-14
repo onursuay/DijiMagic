@@ -70,6 +70,14 @@ export interface WebsiteVersion {
   createdAt: string
 }
 
+/** Sürüm geçmişi listesi için hafif meta (snapshot olmadan). */
+export interface WebsiteVersionMeta {
+  id: string
+  reason: VersionReason
+  creditCharged: number
+  createdAt: string
+}
+
 /** Yeni taslak site oluştururken kabul edilen alanlar. */
 export interface WebsiteDraftInput {
   label: string
