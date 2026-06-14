@@ -1,6 +1,6 @@
 import type { CSSProperties } from 'react'
 import type { WebsitePage, ThemeTokens } from '../types'
-import { themeToCssVars, WEBSITE_FONTS_HREF } from './theme'
+import { themeToCssVars, fontHrefFor } from './theme'
 import { renderSection } from './sections'
 
 interface SiteRendererProps {
@@ -17,10 +17,10 @@ export default function SiteRenderer({ page, theme, style }: SiteRendererProps) 
       style={{ ...themeToCssVars(theme), fontFamily: 'var(--site-font-body)', ...style }}
       className="bg-white text-black antialiased"
     >
-      {/* Üretilen sitenin yazı aileleri (Next app router head'e hoist eder) */}
+      {/* Üretilen sitenin yazı aileleri — yalnız bu sitenin fontları (Next head'e hoist eder) */}
       <link rel="preconnect" href="https://fonts.googleapis.com" />
       <link rel="preconnect" href="https://fonts.gstatic.com" crossOrigin="anonymous" />
-      <link rel="stylesheet" href={WEBSITE_FONTS_HREF} />
+      <link rel="stylesheet" href={fontHrefFor(theme)} />
       {page.sections.map((block, i) => renderSection(block, i))}
     </div>
   )

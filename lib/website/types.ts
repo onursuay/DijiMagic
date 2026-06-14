@@ -11,7 +11,11 @@ export interface ThemeTokens {
   secondaryColor?: string | null
   fontHeading?: string | null
   fontBody?: string | null
+  /** Bu sitenin Google Fonts linki (yalnız kendi fontlarını yükler). */
+  fontHref?: string | null
   logoUrl?: string | null
+  /** AI üretiminde ilham alınacak referans site URL'leri (birebir kopya DEĞİL). theme jsonb'sinde tutulur. */
+  referenceUrls?: string[] | null
 }
 
 export interface SectionBlock {

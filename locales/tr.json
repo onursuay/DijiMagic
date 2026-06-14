@@ -5784,9 +5784,11 @@
       "languagesLabel": "Diller",
       "languagesHint": "Türkçe dahildir; her ek dil üretim kredisini artırır.",
       "fontLabel": "Yazı stili",
-      "fontElegant": "Zarif (Serif başlık + Sans)",
-      "fontModern": "Modern (Sans)",
-      "fontClassic": "Klasik (Serif)",
+      "fontSearch": "Yazı ailesi ara…",
+      "refLabel": "Referans web siteleri (opsiyonel)",
+      "refHint": "Beğendiğiniz en fazla 3 site adresi verin; tasarım onlardan ilham alır.",
+      "refPlaceholder": "https://ornek-site.com",
+      "refWarning": "Girilen siteler yalnızca ilham/referans alınır. Üretilen site bunlarla birebir AYNI olmaz; mümkün olduğunca yaklaştırılır, özgün üretilir.",
       "create": "Oluştur",
       "cancel": "Vazgeç"
     }

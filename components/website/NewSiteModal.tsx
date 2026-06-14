@@ -2,9 +2,9 @@
 
 import { useEffect, useState } from 'react'
 import { useTranslations } from 'next-intl'
-import { X } from 'lucide-react'
+import { X, Info } from 'lucide-react'
 import WizardSelect from '@/components/meta/wizard/WizardSelect'
-import { FONT_PAIRINGS } from '@/lib/website/render/theme'
+import { FONT_PAIRINGS, FONT_PAIRING_LIST } from '@/lib/website/render/theme'
 import type { SiteType, WebsiteDraftInput } from '@/lib/website/types'
 
 const LANGS: { code: string; name: string }[] = [
@@ -29,9 +29,12 @@ export default function NewSiteModal({ open, creating, onClose, onCreate }: NewS
   const [siteType, setSiteType] = useState<SiteType>('multipage')
   const [locales, setLocales] = useState<string[]>(['tr'])
   const [fontPairing, setFontPairing] = useState<string>('elegant')
+  const [refUrls, setRefUrls] = useState<string[]>(['', '', ''])
 
   useEffect(() => {
-    if (open) { setLabel(''); setSiteType('multipage'); setLocales(['tr']); setFontPairing('elegant') }
+    if (open) {
+      setLabel(''); setSiteType('multipage'); setLocales(['tr']); setFontPairing('elegant'); setRefUrls(['', '', ''])
+    }
   }, [open])
 
   useEffect(() => {
@@ -45,27 +48,28 @@ export default function NewSiteModal({ open, creating, onClose, onCreate }: NewS
   if (!open) return null
 
   const toggleLocale = (code: string) => {
-    if (code === 'tr') return // Türkçe her zaman dahil
+    if (code === 'tr') return
     setLocales((prev) => (prev.includes(code) ? prev.filter((x) => x !== code) : [...prev, code]))
   }
+  const setRef = (i: number, v: string) => setRefUrls((prev) => prev.map((x, idx) => (idx === i ? v : x)))
 
   const handleCreate = () => {
-    // tr önce, sonra seçim sırası — defaultLocale = ilk (tr)
     const ordered = ['tr', ...locales.filter((l) => l !== 'tr')]
     const pair = FONT_PAIRINGS[fontPairing] ?? FONT_PAIRINGS.elegant
+    const references = refUrls.map((u) => u.trim()).filter(Boolean)
     onCreate({
       label: label.trim() || 'Yeni Web Sitesi',
       siteType,
       defaultLocale: ordered[0],
       locales: ordered,
-      theme: { fontHeading: pair.heading, fontBody: pair.body },
+      theme: { fontHeading: pair.heading, fontBody: pair.body, fontHref: pair.href, referenceUrls: references },
     })
   }
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
       <div className="absolute inset-0 bg-black/40 backdrop-blur-sm" onClick={onClose} />
-      <div className="relative w-full max-w-md bg-white rounded-2xl shadow-2xl border border-gray-200 p-6">
+      <div className="relative w-full max-w-md bg-white rounded-2xl shadow-2xl border border-gray-200 p-6 max-h-[88vh] overflow-y-auto">
         <div className="flex items-center justify-between">
           <h2 className="text-base font-semibold text-gray-900">{t('modalTitle')}</h2>
           <button onClick={onClose} className="text-gray-400 hover:text-gray-600 transition-colors" aria-label={t('cancel')}>
@@ -127,12 +131,31 @@ export default function NewSiteModal({ open, creating, onClose, onCreate }: NewS
             <WizardSelect
               value={fontPairing}
               onChange={setFontPairing}
-              options={[
-                { value: 'elegant', label: t('fontElegant') },
-                { value: 'modern', label: t('fontModern') },
-                { value: 'classic', label: t('fontClassic') },
-              ]}
+              searchable
+              searchPlaceholder={t('fontSearch')}
+              options={FONT_PAIRING_LIST.map((p) => ({ value: p.id, label: p.label }))}
             />
+          </div>
+
+          <div>
+            <label className="block text-sm font-medium text-gray-700">{t('refLabel')}</label>
+            <p className="text-xs text-gray-500 mt-0.5">{t('refHint')}</p>
+            <div className="mt-2 space-y-2">
+              {refUrls.map((u, i) => (
+                <input
+                  key={i}
+                  value={u}
+                  onChange={(e) => setRef(i, e.target.value)}
+                  placeholder={t('refPlaceholder')}
+                  inputMode="url"
+                  className="w-full rounded-xl border border-gray-200 px-3 py-2.5 text-sm focus:outline-none focus:border-primary focus:ring-2 focus:ring-primary/20 transition-all"
+                />
+              ))}
+            </div>
+            <div className="mt-2 flex gap-2 rounded-lg bg-gray-50 border border-gray-200 p-2.5">
+              <Info className="w-4 h-4 text-gray-500 shrink-0 mt-0.5" />
+              <p className="text-xs leading-relaxed text-gray-600">{t('refWarning')}</p>
+            </div>
           </div>
         </div>
 

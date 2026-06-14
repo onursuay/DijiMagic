@@ -1,6 +1,7 @@
 import 'server-only'
 import { claudeJson, isClaudeReady } from '@/lib/anthropic/text'
 import { pickStockImage, isStockReady } from '../stock'
+import { scanReferences } from '../referenceScanner'
 import { labelsFor, type SiteLabels } from '../templates/deterministic'
 import type { WebsitePageInput, SectionBlock, SiteType, PageRole } from '../types'
 import type { BusinessProfileRow, BusinessIntelligenceRow } from '@/lib/yoai/businessProfileStore'
@@ -36,6 +37,7 @@ export interface GenerateInput {
   intelligence: BusinessIntelligenceRow | null
   locale: string
   instructions?: string
+  referenceUrls?: string[]
 }
 
 export function isWebsiteAiReady(): boolean {
@@ -44,7 +46,7 @@ export function isWebsiteAiReady(): boolean {
 
 const clean = (s: string | null | undefined): string => (typeof s === 'string' ? s.trim() : '')
 
-function buildPrompt(input: GenerateInput, ai: BrandSynthesisLike): { system: string; user: string } {
+function buildPrompt(input: GenerateInput, ai: BrandSynthesisLike, refSummaries: string[]): { system: string; user: string } {
   const p = input.profile
   const intel = input.intelligence
   const langName = input.locale === 'en' ? 'English' : 'Türkçe'
@@ -84,6 +86,7 @@ function buildPrompt(input: GenerateInput, ai: BrandSynthesisLike): { system: st
     '- UYDURMA YOK: yalnız verilen gerçeklere dayan. Bilmediğin somut iddiayı (ödül, yıl, müşteri sayısı, garanti) UYDURMA.',
     '- Marka tonuna uy; abartılı/klişe pazarlama dilinden kaçın.',
     '- imageQuery alanları İNGİLİZCE, kısa ve görsel arama için uygun olsun (örn. "modern dental clinic interior").',
+    '- REFERANS site özetleri verilmişse onların yapı/ton/düzen MANTIĞINI ilham al ve YAKLAŞTIR; ama ASLA birebir kopyalama — özgün metin üret.',
     '- Yalnız istenen JSON şemasını döndür; ek açıklama, markdown veya kod bloğu YOK.',
   ].join('\n')
 
@@ -95,6 +98,9 @@ function buildPrompt(input: GenerateInput, ai: BrandSynthesisLike): { system: st
     facts.length ? facts.join('\n') : '(sınırlı veri — nötr, dürüst ve genel geçer bir metin üret)',
     '',
     input.instructions ? `KULLANICI DÜZELTMELERİ (önceliklidir):\n${input.instructions}\n` : '',
+    refSummaries.length
+      ? `REFERANS SİTELER (yalnız İLHAM — birebir kopya DEĞİL; bu sitelerin düzen/ton/yapı mantığını yaklaştır):\n${refSummaries.map((s) => `- ${s}`).join('\n')}\n`
+      : '',
     'Aşağıdaki JSON şemasını doldur (boş bırakabileceğin alanları boş string yap, items dizilerini gerçek hizmet/farklılıklarla doldur):',
     `{
   "hero": { "title": string, "subtitle": string, "ctaLabel": string, "imageQuery": string },
@@ -151,7 +157,8 @@ export async function generateSitePages(input: GenerateInput): Promise<WebsitePa
   const L = labelsFor(input.locale)
   const brand = clean(input.profile?.company_name) || clean(input.label) || (input.locale === 'en' ? 'Your Brand' : 'Markanız')
 
-  const { system, user } = buildPrompt(input, ai)
+  const refSummaries = input.referenceUrls?.length ? await scanReferences(input.referenceUrls) : []
+  const { system, user } = buildPrompt(input, ai, refSummaries)
   const content = await claudeJson<AiContent>({ system, user, maxTokens: 3000, temperature: 0.6, timeoutMs: 60_000 })
   if (!content) return null
 

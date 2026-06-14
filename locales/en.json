@@ -5784,9 +5784,11 @@
       "languagesLabel": "Languages",
       "languagesHint": "Turkish is included; each extra language increases generation credits.",
       "fontLabel": "Typography",
-      "fontElegant": "Elegant (Serif heading + Sans)",
-      "fontModern": "Modern (Sans)",
-      "fontClassic": "Classic (Serif)",
+      "fontSearch": "Search font family…",
+      "refLabel": "Reference websites (optional)",
+      "refHint": "Add up to 3 sites you like; the design draws inspiration from them.",
+      "refPlaceholder": "https://example-site.com",
+      "refWarning": "Reference sites are used for inspiration only. The generated site will NOT be identical to them; it is approximated as closely as possible while remaining original.",
       "create": "Create",
       "cancel": "Cancel"
     }
