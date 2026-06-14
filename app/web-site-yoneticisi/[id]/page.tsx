@@ -1,23 +1,35 @@
 'use client'
 
-import { useState, useEffect, useCallback } from 'react'
+import { useState, useEffect, useCallback, useRef } from 'react'
 import { useParams } from 'next/navigation'
 import Link from 'next/link'
 import { useTranslations, useLocale } from 'next-intl'
-import { Sparkles, RefreshCw, Globe, ExternalLink, ArrowLeft, Wand2 } from 'lucide-react'
+import { Sparkles, RefreshCw, Globe, ExternalLink, ArrowLeft, Wand2, Monitor, Smartphone } from 'lucide-react'
 import Topbar from '@/components/Topbar'
 import { ToastContainer, type Toast } from '@/components/Toast'
 import AccessRequiredModal from '@/components/billing/AccessRequiredModal'
 import DictateButton from '@/components/website/DictateButton'
-import SiteRenderer from '@/lib/website/render/SiteRenderer'
 import type { Website, WebsitePage } from '@/lib/website/types'
 
 type Busy = 'ai' | 'quick' | 'publish' | null
+type Device = 'desktop' | 'mobile'
 
 const LOCALE_NAMES: Record<string, string> = {
   tr: 'Türkçe', en: 'English', de: 'Deutsch', fr: 'Français', es: 'Español', ar: 'العربية', it: 'Italiano', ru: 'Русский',
 }
 const localeName = (l: string) => LOCALE_NAMES[l] ?? l.toUpperCase()
+
+// Sayfa sekmesi etiketleri — önizlenen SİTE diline göre (header nav ile tutarlı olsun)
+const PAGE_LABELS: Record<string, Record<string, string>> = {
+  tr: { home: 'Ana Sayfa', about: 'Hakkımızda', services: 'Hizmetler', contact: 'İletişim' },
+  en: { home: 'Home', about: 'About', services: 'Services', contact: 'Contact' },
+  de: { home: 'Startseite', about: 'Über uns', services: 'Leistungen', contact: 'Kontakt' },
+  fr: { home: 'Accueil', about: 'À propos', services: 'Services', contact: 'Contact' },
+  es: { home: 'Inicio', about: 'Nosotros', services: 'Servicios', contact: 'Contacto' },
+}
+
+const DESIGN_W: Record<Device, number> = { desktop: 1280, mobile: 390 }
+const DESIGN_H = 760
 
 export default function WebSiteDetailPage() {
   const params = useParams()
@@ -33,6 +45,11 @@ export default function WebSiteDetailPage() {
   const [busy, setBusy] = useState<Busy>(null)
   const [showCredit, setShowCredit] = useState(false)
   const [toasts, setToasts] = useState<Toast[]>([])
+  const [device, setDevice] = useState<Device>('desktop')
+  const [reloadKey, setReloadKey] = useState(0)
+
+  const frameWrapRef = useRef<HTMLDivElement>(null)
+  const [wrapW, setWrapW] = useState(0)
 
   const addToast = useCallback((message: string, type: Toast['type']) => {
     setToasts((prev) => [...prev, { id: crypto.randomUUID(), message, type }])
@@ -51,37 +68,43 @@ export default function WebSiteDetailPage() {
 
   useEffect(() => { load() }, [load])
 
+  // Önizleme kutusunun gerçek genişliğini ölç (iframe'i ölçekleyip gerçek viewport düzeni göster)
+  useEffect(() => {
+    const el = frameWrapRef.current
+    if (!el || typeof ResizeObserver === 'undefined') return
+    const ro = new ResizeObserver(() => setWrapW(el.clientWidth))
+    ro.observe(el)
+    setWrapW(el.clientWidth)
+    return () => ro.disconnect()
+  }, [pages.length])
+
   const pageLabel = (p: WebsitePage) => {
-    const map: Record<string, string> = {
-      home: t('pageHome'), about: t('pageAbout'), services: t('pageServices'), contact: t('pageContact'),
-    }
-    return map[p.pageRole] ?? p.slug
+    const m = PAGE_LABELS[previewLocale] ?? PAGE_LABELS.en
+    return m[p.pageRole] ?? p.slug
   }
 
   const localePages = pages.filter((p) => p.locale === previewLocale)
   const visiblePages = localePages.length ? localePages : pages
   const activePage = visiblePages.find((p) => p.slug === activeSlug) ?? visiblePages[0] ?? null
+  const activeSlugSafe = activePage?.slug ?? 'home'
   const isPublished = site?.status === 'published'
   const hasPages = pages.length > 0
   const siteLocales = site?.locales ?? []
+
+  const designW = DESIGN_W[device]
+  const scale = wrapW > 0 ? Math.min(1, wrapW / designW) : 1
 
   const handleAi = async () => {
     setBusy('ai')
     try {
       const res = await fetch(`/api/website/${id}/generate`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ instructions }),
+        method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ instructions }),
       })
       if (res.status === 402) { setShowCredit(true); return }
       const json = await res.json()
-      if (json.ok) { setPages(json.pages ?? []); setActiveSlug('home'); setInstructions('') }
+      if (json.ok) { setPages(json.pages ?? []); setActiveSlug('home'); setInstructions(''); setReloadKey((k) => k + 1) }
       else addToast(json.error || t('buildError'), 'error')
-    } catch {
-      addToast(t('buildError'), 'error')
-    } finally {
-      setBusy(null)
-    }
+    } catch { addToast(t('buildError'), 'error') } finally { setBusy(null) }
   }
 
   const handleQuick = async () => {
@@ -89,32 +112,32 @@ export default function WebSiteDetailPage() {
     try {
       const res = await fetch(`/api/website/${id}/build`, { method: 'POST' })
       const json = await res.json()
-      if (json.ok) { setPages(json.pages ?? []); setActiveSlug('home') }
+      if (json.ok) { setPages(json.pages ?? []); setActiveSlug('home'); setReloadKey((k) => k + 1) }
       else addToast(t('buildError'), 'error')
-    } catch {
-      addToast(t('buildError'), 'error')
-    } finally {
-      setBusy(null)
-    }
+    } catch { addToast(t('buildError'), 'error') } finally { setBusy(null) }
   }
 
   const handlePublish = async (action: 'publish' | 'unpublish') => {
     setBusy('publish')
     try {
       const res = await fetch(`/api/website/${id}/publish`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ action }),
+        method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ action }),
       })
       const json = await res.json()
       if (json.ok && json.website) setSite(json.website)
       else addToast(json.error || t('publishError'), 'error')
-    } catch {
-      addToast(t('publishError'), 'error')
-    } finally {
-      setBusy(null)
-    }
+    } catch { addToast(t('publishError'), 'error') } finally { setBusy(null) }
   }
+
+  const deviceBtn = (d: Device, Icon: typeof Monitor, label: string) => (
+    <button
+      onClick={() => setDevice(d)}
+      aria-label={label}
+      className={`rounded-md p-1.5 transition-colors ${device === d ? 'bg-primary/10 text-primary' : 'text-gray-400 hover:text-gray-700'}`}
+    >
+      <Icon className="w-4 h-4" />
+    </button>
+  )
 
   return (
     <>
@@ -167,11 +190,12 @@ export default function WebSiteDetailPage() {
                 {busy === 'quick' ? t('building') : hasPages ? t('quickRebuild') : t('quickBuild')}
               </button>
 
-              {/* Yayın grubu — Hızlı Yenile'nin sağında (içeriği değiştir + yayına al) */}
+              {/* Yayın grubu — Hızlı Yenile'nin hemen sağında, gruplu (ayraçla) */}
               {hasPages && (
-                <div className="ml-auto flex flex-wrap items-center gap-2">
+                <>
+                  <span className="hidden sm:block h-7 w-px bg-gray-200 mx-1" />
                   <span
-                    className={`inline-flex items-center rounded-full px-2.5 py-0.5 text-xs ${
+                    className={`inline-flex items-center rounded-full px-2.5 py-1 text-xs ${
                       isPublished ? 'bg-emerald-50 text-emerald-700' : 'bg-gray-100 text-gray-700'
                     }`}
                   >
@@ -199,7 +223,7 @@ export default function WebSiteDetailPage() {
                       <ExternalLink className="w-4 h-4" /> {t('viewLive')}
                     </a>
                   )}
-                </div>
+                </>
               )}
             </div>
           </div>
@@ -215,39 +239,45 @@ export default function WebSiteDetailPage() {
             </div>
           ) : (
             <div className="space-y-3 animate-card-enter">
-              {/* Dil switcher (çoklu dil) */}
-              {siteLocales.length > 1 && (
-                <div className="inline-flex rounded-lg border border-gray-200 p-0.5 bg-white">
-                  {siteLocales.map((loc) => (
-                    <button
-                      key={loc}
-                      onClick={() => setPreviewLocale(loc)}
-                      className={`rounded-md px-3 py-1 text-xs font-medium transition-colors ${
-                        previewLocale === loc ? 'bg-primary/10 text-primary' : 'text-gray-500 hover:text-gray-800'
-                      }`}
-                    >
-                      {localeName(loc)}
-                    </button>
-                  ))}
+              {/* Kontrol satırı: dil + sayfa sekmeleri (solda) · cihaz toggle (sağda) */}
+              <div className="flex flex-wrap items-center gap-3">
+                {siteLocales.length > 1 && (
+                  <div className="inline-flex rounded-lg border border-gray-200 p-0.5 bg-white">
+                    {siteLocales.map((loc) => (
+                      <button
+                        key={loc}
+                        onClick={() => setPreviewLocale(loc)}
+                        className={`rounded-md px-3 py-1 text-xs font-medium transition-colors ${
+                          previewLocale === loc ? 'bg-primary/10 text-primary' : 'text-gray-500 hover:text-gray-800'
+                        }`}
+                      >
+                        {localeName(loc)}
+                      </button>
+                    ))}
+                  </div>
+                )}
+                {visiblePages.length > 1 && (
+                  <div className="flex flex-wrap gap-1.5">
+                    {visiblePages.map((p) => (
+                      <button
+                        key={p.id}
+                        onClick={() => setActiveSlug(p.slug)}
+                        className={`rounded-lg px-3 py-1.5 text-sm transition-colors ${
+                          activePage?.slug === p.slug ? 'bg-primary/10 text-primary font-medium' : 'text-gray-600 hover:bg-gray-50/60'
+                        }`}
+                      >
+                        {pageLabel(p)}
+                      </button>
+                    ))}
+                  </div>
+                )}
+                <div className="ml-auto inline-flex items-center rounded-lg border border-gray-200 p-0.5 bg-white">
+                  {deviceBtn('desktop', Monitor, 'Masaüstü')}
+                  {deviceBtn('mobile', Smartphone, 'Mobil')}
                 </div>
-              )}
-              {visiblePages.length > 1 && (
-                <div className="flex flex-wrap gap-2">
-                  {visiblePages.map((p) => (
-                    <button
-                      key={p.id}
-                      onClick={() => setActiveSlug(p.slug)}
-                      className={`rounded-lg px-3.5 py-1.5 text-sm transition-colors ${
-                        activePage?.slug === p.slug
-                          ? 'bg-primary/10 text-primary font-medium'
-                          : 'text-gray-600 hover:bg-gray-50/60'
-                      }`}
-                    >
-                      {pageLabel(p)}
-                    </button>
-                  ))}
-                </div>
-              )}
+              </div>
+
+              {/* Tarayıcı çerçevesi + ölçekli iframe (gerçek viewport → responsive doğru) */}
               <div className="rounded-xl border border-gray-200 overflow-hidden bg-white shadow-sm">
                 <div className="flex items-center gap-2 px-4 h-10 border-b border-gray-100 bg-gray-50/60">
                   <span className="flex gap-1.5">
@@ -256,12 +286,25 @@ export default function WebSiteDetailPage() {
                     <span className="w-2.5 h-2.5 rounded-full bg-gray-300" />
                   </span>
                   <span className="ml-2 text-xs text-gray-500 truncate">
-                    {site?.subdomain}{activePage && activePage.slug !== 'home' ? `/${activePage.slug}` : ''}
+                    {site?.subdomain}{activeSlugSafe !== 'home' ? `/${activeSlugSafe}` : ''}
                   </span>
                   <span className="ml-auto text-xs text-gray-400">{t('preview')}</span>
                 </div>
-                <div className="max-h-[70vh] overflow-y-auto">
-                  {activePage && <SiteRenderer page={activePage} theme={site?.theme} />}
+                <div ref={frameWrapRef} className="bg-gray-100 flex justify-center overflow-hidden" style={{ height: DESIGN_H * scale }}>
+                  <iframe
+                    key={`${previewLocale}-${activeSlugSafe}-${reloadKey}`}
+                    src={`/website-preview/${id}?locale=${previewLocale}&slug=${activeSlugSafe}`}
+                    title={t('preview')}
+                    className="border-0 bg-white shrink-0"
+                    style={{
+                      width: designW,
+                      height: DESIGN_H,
+                      transform: `scale(${scale})`,
+                      transformOrigin: 'top center',
+                      boxShadow: device === 'mobile' ? '0 10px 40px -12px rgba(0,0,0,0.3)' : 'none',
+                      borderRadius: device === 'mobile' ? 18 : 0,
+                    }}
+                  />
                 </div>
               </div>
             </div>
