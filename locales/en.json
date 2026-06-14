@@ -5775,6 +5775,12 @@
       "dictate": "Dictate",
       "listening": "Listening…",
       "stopDictate": "Stop",
+      "logoLabel": "Brand logo",
+      "logoUpload": "Upload logo",
+      "logoChange": "Change",
+      "logoRemove": "Remove",
+      "logoHint": "PNG/JPG/WEBP/SVG · max 2MB · transparent background recommended",
+      "logoError": "Could not upload logo.",
       "modalTitle": "New Website",
       "nameLabel": "Site name",
       "namePlaceholder": "Example Site",
@@ -5790,7 +5796,7 @@
       "refLabel": "Reference websites (optional)",
       "refHint": "Add up to 3 sites you like; the design draws inspiration from them.",
       "refPlaceholder": "https://example-site.com",
-      "refWarning": "Reference sites are used for inspiration only. The generated site will NOT be identical to them; it is approximated as closely as possible while remaining original.",
+      "refWarning": "The sites you provide will only be used as a reference.",
       "create": "Create",
       "cancel": "Cancel"
     }

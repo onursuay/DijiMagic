@@ -4,14 +4,14 @@ import { useState, useEffect, useCallback, useRef } from 'react'
 import { useParams } from 'next/navigation'
 import Link from 'next/link'
 import { useTranslations, useLocale } from 'next-intl'
-import { Sparkles, RefreshCw, Globe, ExternalLink, ArrowLeft, Wand2, Monitor, Smartphone } from 'lucide-react'
+import { Sparkles, RefreshCw, Globe, ExternalLink, ArrowLeft, Wand2, Monitor, Smartphone, ImagePlus, Trash2 } from 'lucide-react'
 import Topbar from '@/components/Topbar'
 import { ToastContainer, type Toast } from '@/components/Toast'
 import AccessRequiredModal from '@/components/billing/AccessRequiredModal'
 import DictateButton from '@/components/website/DictateButton'
 import type { Website, WebsitePage } from '@/lib/website/types'
 
-type Busy = 'ai' | 'quick' | 'publish' | null
+type Busy = 'ai' | 'quick' | 'publish' | 'logo' | null
 type Device = 'desktop' | 'mobile'
 
 const LOCALE_NAMES: Record<string, string> = {
@@ -49,6 +49,7 @@ export default function WebSiteDetailPage() {
   const [reloadKey, setReloadKey] = useState(0)
 
   const frameWrapRef = useRef<HTMLDivElement>(null)
+  const fileInputRef = useRef<HTMLInputElement>(null)
   const [wrapW, setWrapW] = useState(0)
 
   const addToast = useCallback((message: string, type: Toast['type']) => {
@@ -129,6 +130,30 @@ export default function WebSiteDetailPage() {
     } catch { addToast(t('publishError'), 'error') } finally { setBusy(null) }
   }
 
+  const handleLogoFile = async (file: File | undefined) => {
+    if (!file) return
+    setBusy('logo')
+    try {
+      const fd = new FormData()
+      fd.append('file', file)
+      const res = await fetch(`/api/website/${id}/logo`, { method: 'POST', body: fd })
+      const json = await res.json()
+      if (json.ok && json.website) { setSite(json.website); setReloadKey((k) => k + 1) }
+      else addToast(json.error || t('logoError'), 'error')
+    } catch { addToast(t('logoError'), 'error') } finally { setBusy(null) }
+  }
+
+  const handleLogoRemove = async () => {
+    setBusy('logo')
+    try {
+      const res = await fetch(`/api/website/${id}/logo`, { method: 'DELETE' })
+      const json = await res.json()
+      if (json.ok && json.website) { setSite(json.website); setReloadKey((k) => k + 1) }
+    } catch { /* noop */ } finally { setBusy(null) }
+  }
+
+  const logoUrl = site?.theme?.logoUrl ?? null
+
   const deviceBtn = (d: Device, Icon: typeof Monitor, label: string) => (
     <button
       onClick={() => setDevice(d)}
@@ -158,6 +183,50 @@ export default function WebSiteDetailPage() {
               <h2 className="text-base font-semibold text-gray-900">{t('intakeTitle')}</h2>
             </div>
             <p className="mt-1 text-sm leading-relaxed text-gray-600">{t('intakeHint')}</p>
+
+            {/* Marka logosu */}
+            <div className="mt-3 flex items-center gap-3 rounded-xl border border-gray-200 p-3">
+              <div className="w-12 h-12 rounded-lg bg-gray-50 border border-gray-200 flex items-center justify-center overflow-hidden shrink-0">
+                {logoUrl ? (
+                  // eslint-disable-next-line @next/next/no-img-element
+                  <img src={logoUrl} alt={t('logoLabel')} className="w-full h-full object-contain" />
+                ) : (
+                  <ImagePlus className="w-5 h-5 text-gray-400" />
+                )}
+              </div>
+              <div className="min-w-0">
+                <p className="text-sm font-medium text-gray-800">{t('logoLabel')}</p>
+                <p className="text-xs text-gray-500 truncate">{t('logoHint')}</p>
+              </div>
+              <div className="ml-auto flex items-center gap-2">
+                <input
+                  ref={fileInputRef}
+                  type="file"
+                  accept="image/png,image/jpeg,image/webp,image/svg+xml"
+                  className="hidden"
+                  onChange={(e) => { handleLogoFile(e.target.files?.[0]); e.target.value = '' }}
+                />
+                <button
+                  onClick={() => fileInputRef.current?.click()}
+                  disabled={busy !== null}
+                  className="inline-flex items-center gap-1.5 rounded-lg border border-gray-200 px-3 py-2 text-sm font-medium text-gray-700 hover:bg-gray-50/60 transition-colors disabled:opacity-50"
+                >
+                  <ImagePlus className="w-4 h-4" />
+                  {busy === 'logo' ? t('building') : logoUrl ? t('logoChange') : t('logoUpload')}
+                </button>
+                {logoUrl && (
+                  <button
+                    onClick={handleLogoRemove}
+                    disabled={busy !== null}
+                    aria-label={t('logoRemove')}
+                    className="rounded-lg border border-gray-200 text-gray-500 p-2 hover:bg-gray-50/60 transition-colors disabled:opacity-50"
+                  >
+                    <Trash2 className="w-4 h-4" />
+                  </button>
+                )}
+              </div>
+            </div>
+
             <textarea
               value={instructions}
               onChange={(e) => setInstructions(e.target.value)}

@@ -12,6 +12,17 @@ interface SiteRendererProps {
 
 /** Tek bir sayfa modelini tema + yazı ailesi uygulayarak render eder. Saf sunum (server+client). */
 export default function SiteRenderer({ page, theme, style }: SiteRendererProps) {
+  // Marka logosu temada tutulur; header/footer bloklarına RENDER anında enjekte edilir
+  // (logo yüklenince yeniden üretmeye gerek kalmaz).
+  const logoUrl = theme?.logoUrl
+  const sections = logoUrl
+    ? page.sections.map((b) =>
+        b.type === 'header' || b.type === 'footer'
+          ? { ...b, content: { ...b.content, logoUrl: b.content?.logoUrl || logoUrl } }
+          : b,
+      )
+    : page.sections
+
   return (
     <div
       style={{ ...themeToCssVars(theme), fontFamily: 'var(--site-font-body)', ...style }}
@@ -21,7 +32,7 @@ export default function SiteRenderer({ page, theme, style }: SiteRendererProps) 
       <link rel="preconnect" href="https://fonts.googleapis.com" />
       <link rel="preconnect" href="https://fonts.gstatic.com" crossOrigin="anonymous" />
       <link rel="stylesheet" href={fontHrefFor(theme)} />
-      {page.sections.map((block, i) => renderSection(block, i))}
+      {sections.map((block, i) => renderSection(block, i))}
     </div>
   )
 }

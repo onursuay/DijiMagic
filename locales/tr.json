@@ -5775,6 +5775,12 @@
       "dictate": "Sesle yaz",
       "listening": "Dinleniyor…",
       "stopDictate": "Durdur",
+      "logoLabel": "Marka logosu",
+      "logoUpload": "Logo yükle",
+      "logoChange": "Değiştir",
+      "logoRemove": "Kaldır",
+      "logoHint": "PNG/JPG/WEBP/SVG · en fazla 2MB · şeffaf arka plan önerilir",
+      "logoError": "Logo yüklenemedi.",
       "modalTitle": "Yeni Web Sitesi",
       "nameLabel": "Site adı",
       "namePlaceholder": "Örnek Site",
@@ -5790,7 +5796,7 @@
       "refLabel": "Referans web siteleri (opsiyonel)",
       "refHint": "Beğendiğiniz en fazla 3 site adresi verin; tasarım onlardan ilham alır.",
       "refPlaceholder": "https://ornek-site.com",
-      "refWarning": "Girilen siteler yalnızca ilham/referans alınır. Üretilen site bunlarla birebir AYNI olmaz; mümkün olduğunca yaklaştırılır, özgün üretilir.",
+      "refWarning": "Verdiğiniz siteler yalnızca referans olarak kullanılacaktır.",
       "create": "Oluştur",
       "cancel": "Vazgeç"
     }
