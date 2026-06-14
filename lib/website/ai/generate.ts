@@ -46,10 +46,19 @@ export function isWebsiteAiReady(): boolean {
 
 const clean = (s: string | null | undefined): string => (typeof s === 'string' ? s.trim() : '')
 
+const LANG_NAMES: Record<string, string> = {
+  tr: 'Turkish', en: 'English', de: 'German', fr: 'French', es: 'Spanish', it: 'Italian',
+  pt: 'Portuguese', nl: 'Dutch', ru: 'Russian', pl: 'Polish', sv: 'Swedish', da: 'Danish',
+  no: 'Norwegian', fi: 'Finnish', el: 'Greek', cs: 'Czech', ro: 'Romanian', hu: 'Hungarian',
+  uk: 'Ukrainian', bg: 'Bulgarian', sr: 'Serbian', hr: 'Croatian', sk: 'Slovak', ar: 'Arabic',
+  fa: 'Persian', he: 'Hebrew', ja: 'Japanese', ko: 'Korean', zh: 'Chinese', hi: 'Hindi',
+  th: 'Thai', id: 'Indonesian', vi: 'Vietnamese', az: 'Azerbaijani',
+}
+
 function buildPrompt(input: GenerateInput, ai: BrandSynthesisLike, refSummaries: string[]): { system: string; user: string } {
   const p = input.profile
   const intel = input.intelligence
-  const langName = input.locale === 'en' ? 'English' : 'Türkçe'
+  const langName = LANG_NAMES[input.locale] ?? 'Turkish'
 
   const facts: string[] = []
   const add = (k: string, v: string | null | undefined | string[]) => {
@@ -74,9 +83,9 @@ function buildPrompt(input: GenerateInput, ai: BrandSynthesisLike, refSummaries:
   if (p?.forbidden_claims?.length) facts.push(`YASAK iddialar (asla kullanma): ${p.forbidden_claims.join(', ')}`)
 
   const trRule =
-    input.locale === 'en'
-      ? 'Write all content in fluent, natural English.'
-      : 'Tüm içeriği akıcı, dilbilgisi ve imla açısından KUSURSUZ Türkçe yaz (ç, ğ, ı, İ, ö, ş, ü eksiksiz; ASCII eşdeğer YASAK; kesme işareti doğru).'
+    input.locale === 'tr'
+      ? 'Tüm içeriği akıcı, dilbilgisi ve imla açısından KUSURSUZ Türkçe yaz (ç, ğ, ı, İ, ö, ş, ü eksiksiz; ASCII eşdeğer YASAK; kesme işareti doğru).'
+      : `Write ALL content fluently and natively in ${langName}. Use correct ${langName} grammar, spelling and punctuation.`
 
   const system = [
     'Sen kıdemli bir web içerik editörü ve marka metni yazarısın.',
