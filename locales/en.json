@@ -6917,6 +6917,17 @@
         "competitorSummary": "Competitor Summary",
         "keywordThemes": "Keyword Themes",
         "missingData": "Missing Data"
+      },
+      "yoalgoritmaHealth": {
+        "title": "YoAlgorithm Card Generation",
+        "healthy": "Healthy",
+        "unhealthy": "Attention — card generation failing",
+        "latestSuccess": "Last successful run",
+        "noRuns": "No runs yet (engine not run / not triggered)",
+        "failedRuns": "Failed",
+        "runningRuns": "Running",
+        "completedRuns": "Completed",
+        "recentFailuresTitle": "Recent failed runs"
       }
     },
     "officialAds": {

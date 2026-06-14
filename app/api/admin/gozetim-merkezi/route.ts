@@ -203,11 +203,27 @@ export async function GET(req: NextRequest) {
       ? supabase.from('user_business_intelligence').select('*').in('user_id', userIds)
       : Promise.resolve({ data: [] as any[], error: null })
 
-    const [competitorsRes, scansRes, intelRes] = await Promise.all([
+    // YoAlgoritma kart üretimi sağlığı — asıl hastalık SESSİZ HATA idi:
+    // hiyerarşik akış (writeHierRunStatus) ai_engine_runs'a platform='yoalgoritma_hier'
+    // satırı yazar. Burada son 14 günü okuyup failed/stale koşuları yüzeye çıkarıyoruz.
+    const engineCutoff = new Date(Date.now() - 14 * 86_400_000).toISOString().slice(0, 10)
+    const fetchEngineRuns = supabase
+      .from('ai_engine_runs')
+      .select('user_id, platform, account_id, run_date, status, error_message')
+      .gte('run_date', engineCutoff)
+      .order('run_date', { ascending: false })
+      .limit(500)
+
+    const [competitorsRes, scansRes, intelRes, engineRunsRes] = await Promise.all([
       fetchCompetitors,
       fetchScans,
       fetchIntel,
+      fetchEngineRuns,
     ])
+
+    if ((engineRunsRes as any).error) {
+      diagnostics.push(`ai_engine_runs:${(engineRunsRes as any).error.message}`)
+    }
 
     if ((competitorsRes as any).error) {
       diagnostics.push(`user_business_competitors:${(competitorsRes as any).error.message}`)
@@ -377,6 +393,36 @@ export async function GET(req: NextRequest) {
         }
       })
 
+    // YoAlgoritma kart üretimi koşu sağlığı (hiyerarşik akış)
+    const engineRuns = ((engineRunsRes as any).data || []) as Array<{
+      user_id: string; platform: string; account_id: string | null
+      run_date: string; status: string; error_message: string | null
+    }>
+    const hierRuns = engineRuns.filter((r) => r.platform === 'yoalgoritma_hier')
+    const hierFailed = hierRuns.filter((r) => r.status === 'failed')
+    const hierRunning = hierRuns.filter((r) => r.status === 'running')
+    const hierCompleted = hierRuns.filter((r) => r.status === 'completed' || r.status === 'partial')
+    const engineCutoff8d = new Date(Date.now() - 8 * 86_400_000).toISOString().slice(0, 10)
+    const latestHierSuccess = hierCompleted[0]?.run_date || null
+    const yoalgoritmaHealth = {
+      totalRuns: hierRuns.length,
+      failedRuns: hierFailed.length,
+      runningRuns: hierRunning.length,
+      completedRuns: hierCompleted.length,
+      latestSuccessDate: latestHierSuccess,
+      // KIRMIZI sinyali: son 8 günde başarısız VAR ya da 8+ gündür başarı YOK
+      isUnhealthy:
+        hierFailed.some((r) => r.run_date >= engineCutoff8d) ||
+        !latestHierSuccess ||
+        latestHierSuccess < engineCutoff8d,
+      recentFailures: hierFailed.slice(0, 10).map((r) => ({
+        user_id: r.user_id,
+        account_id: r.account_id,
+        run_date: r.run_date,
+        error_message: typeof r.error_message === 'string' ? r.error_message.slice(0, 300) : null,
+      })),
+    }
+
     const kpis = {
       totalUsers,
       onboardingCompleted,
@@ -420,6 +466,7 @@ export async function GET(req: NextRequest) {
       recentSignups,
       errorTypeCounts,
       recentFailedScans,
+      yoalgoritmaHealth,
       diagnostics,
       via: access.via,
     })

@@ -49,6 +49,7 @@ VERCEL_CRONS = [
     "/api/yoai/daily-run", "/api/cron/yoalgoritma-scan", "/api/cron/strategy-metrics",
     "/api/cron/official-ads-refresh", "/api/cron/audiences-sync", "/api/cron/seo-article-run",
     "/api/cron/crm-lead-pull", "/api/cron/email-drip-process", "/api/cron/seo-brief-refresh",
+    "/api/cron/yoai-outcome-snapshots",
 ]
 
 
@@ -160,6 +161,43 @@ def check_supabase(env):
     if code is None:
         return ("🔴", "Supabase DB: ERİŞİLEMEDİ")
     return ("⚠️", f"Supabase DB: beklenmedik HTTP {code}")
+
+
+def check_yoalgoritma_runs(env):
+    """YoAlgoritma kart üretimi sağlığı: ai_engine_runs (platform=yoalgoritma_hier) failed/stale OKUR.
+    Asıl hastalık SESSİZ HATA idi — bu kontrol failed/takılı koşuları kırmızıya çevirir."""
+    url = env.get("NEXT_PUBLIC_SUPABASE_URL") or env.get("SUPABASE_URL")
+    key = env.get("SUPABASE_SERVICE_ROLE_KEY") or env.get("SUPABASE_SERVICE_KEY")
+    if not (url and key):
+        return ("⚠️", "YoAlgoritma kart üretimi: SUPABASE_SERVICE_ROLE_KEY yok — kontrol atlandı")
+    q = (url.rstrip("/") +
+         "/rest/v1/ai_engine_runs?platform=eq.yoalgoritma_hier"
+         "&select=status,run_date,error_message&order=run_date.desc&limit=80")
+    code, body = http(q, headers={"apikey": key, "Authorization": f"Bearer {key}"}, timeout=20)
+    if code is None:
+        return ("🔴", "YoAlgoritma kart üretimi: DB'ye erişilemedi")
+    if code != 200:
+        return ("⚠️", f"YoAlgoritma kart üretimi: HTTP {code} — kontrol atlandı")
+    try:
+        rows = json.loads(body or "[]")
+    except Exception:
+        return ("⚠️", "YoAlgoritma kart üretimi: yanıt çözümlenemedi")
+    if not rows:
+        return ("⚠️", "YoAlgoritma kart üretimi: hiç koşu kaydı yok (henüz çalışmadı/tetiklenmiyor)")
+    from datetime import date, timedelta
+    today = date.today().isoformat()
+    cutoff = (date.today() - timedelta(days=8)).isoformat()
+    if rows[0].get("status") == "running" and (rows[0].get("run_date") or "") < today:
+        return ("🔴", f"YoAlgoritma: koşu 'running'da TAKILI ({rows[0].get('run_date')}) — büyük olasılıkla başarısız")
+    recent_failed = [r for r in rows if r.get("status") == "failed" and (r.get("run_date") or "") >= cutoff]
+    ok = [r for r in rows if r.get("status") in ("completed", "partial")]
+    latest_ok = ok[0]["run_date"] if ok else None
+    if recent_failed:
+        first = (recent_failed[0].get("error_message") or "")[:90]
+        return ("🔴", f"YoAlgoritma kart üretimi: son 8 günde {len(recent_failed)} BAŞARISIZ koşu — {first}")
+    if not latest_ok or latest_ok < cutoff:
+        return ("🔴", f"YoAlgoritma kart üretimi: 8+ gündür başarılı üretim YOK (son: {latest_ok or 'hiç'})")
+    return ("✓", f"YoAlgoritma kart üretimi: sağlıklı (son başarılı: {latest_ok})")
 
 
 def check_vercel(env, repo):
@@ -412,6 +450,7 @@ def main():
     rows.append(check_prod_health())
     rows.append(check_homepage())
     rows.append(check_supabase(env))
+    rows.append(check_yoalgoritma_runs(env))
     if repo:
         rows.append(check_vercel(env, repo))
     rows.append(check_brain_job())

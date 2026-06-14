@@ -90,6 +90,20 @@ interface OverviewPayload {
     totalSources: number
   }
   profiles: ProfileEntry[]
+  yoalgoritmaHealth?: {
+    totalRuns: number
+    failedRuns: number
+    runningRuns: number
+    completedRuns: number
+    latestSuccessDate: string | null
+    isUnhealthy: boolean
+    recentFailures: Array<{
+      user_id: string
+      account_id: string | null
+      run_date: string
+      error_message: string | null
+    }>
+  }
   diagnostics: string[]
 }
 
@@ -278,6 +292,67 @@ export default function GozetimMerkeziClient() {
       {error && (
         <div className="mb-4 rounded-lg border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700">
           {error}
+        </div>
+      )}
+
+      {/* YoAlgoritma kart üretimi sağlığı — asıl hastalık SESSİZ HATA idi: failed/stale koşuları yüzeye çıkar */}
+      {data?.yoalgoritmaHealth && (
+        <div
+          className={`mb-4 rounded-xl border px-4 py-3 ${
+            data.yoalgoritmaHealth.isUnhealthy
+              ? 'border-red-200 bg-red-50'
+              : 'border-emerald-200 bg-emerald-50'
+          }`}
+        >
+          <div className="flex items-center justify-between gap-3">
+            <div className="flex items-center gap-2">
+              {data.yoalgoritmaHealth.isUnhealthy ? (
+                <AlertTriangle className="h-4 w-4 text-red-600" />
+              ) : (
+                <CheckCircle2 className="h-4 w-4 text-emerald-600" />
+              )}
+              <span
+                className={`text-base font-semibold ${
+                  data.yoalgoritmaHealth.isUnhealthy ? 'text-red-700' : 'text-emerald-700'
+                }`}
+              >
+                {t('yoalgoritmaHealth.title')} —{' '}
+                {data.yoalgoritmaHealth.isUnhealthy
+                  ? t('yoalgoritmaHealth.unhealthy')
+                  : t('yoalgoritmaHealth.healthy')}
+              </span>
+            </div>
+            <div className="flex items-center gap-3 text-xs text-gray-600">
+              <span>
+                {t('yoalgoritmaHealth.completedRuns')}: {data.yoalgoritmaHealth.completedRuns}
+              </span>
+              <span className={data.yoalgoritmaHealth.failedRuns > 0 ? 'font-semibold text-red-700' : ''}>
+                {t('yoalgoritmaHealth.failedRuns')}: {data.yoalgoritmaHealth.failedRuns}
+              </span>
+              <span>
+                {t('yoalgoritmaHealth.runningRuns')}: {data.yoalgoritmaHealth.runningRuns}
+              </span>
+              <span>
+                {t('yoalgoritmaHealth.latestSuccess')}:{' '}
+                {data.yoalgoritmaHealth.latestSuccessDate || t('yoalgoritmaHealth.noRuns')}
+              </span>
+            </div>
+          </div>
+          {data.yoalgoritmaHealth.recentFailures.length > 0 && (
+            <div className="mt-2 border-t border-red-100 pt-2">
+              <p className="mb-1 text-xs font-medium text-gray-700">
+                {t('yoalgoritmaHealth.recentFailuresTitle')}
+              </p>
+              <ul className="space-y-1">
+                {data.yoalgoritmaHealth.recentFailures.map((f, i) => (
+                  <li key={i} className="text-xs text-red-700">
+                    <span className="font-mono">{f.run_date}</span> · {f.account_id || '—'} ·{' '}
+                    {f.error_message || '—'}
+                  </li>
+                ))}
+              </ul>
+            </div>
+          )}
         </div>
       )}
 

@@ -6917,6 +6917,17 @@
         "competitorSummary": "Rakip Özeti",
         "keywordThemes": "Anahtar Kelime Temaları",
         "missingData": "Eksik Veri"
+      },
+      "yoalgoritmaHealth": {
+        "title": "YoAlgoritma Kart Üretimi",
+        "healthy": "Sağlıklı",
+        "unhealthy": "Dikkat — kart üretimi sorunlu",
+        "latestSuccess": "Son başarılı koşu",
+        "noRuns": "Henüz koşu kaydı yok (motor çalışmadı/tetiklenmiyor)",
+        "failedRuns": "Başarısız",
+        "runningRuns": "Sürüyor",
+        "completedRuns": "Tamamlandı",
+        "recentFailuresTitle": "Son başarısız koşular"
       }
     },
     "officialAds": {

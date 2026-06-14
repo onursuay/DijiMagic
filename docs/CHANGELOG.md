@@ -2,6 +2,14 @@
 
 ---
 
+## 2026-06-14 — YoAlgoritma güvenilirlik R8: gözlemlenebilirlik döngüsünü kapat (failed satırları BİRİ OKUSUN)
+- **Sorun:** R1 `ai_engine_runs`'a `yoalgoritma_hier` failed/stale satırları yazıyordu ama bunları okuyan/uyarı veren kimse yoktu — yazılan iz bir hafta görülmeden kalabilirdi (asıl hastalık SESSİZ HATA'nın diğer yarısı).
+- **Çözüm:**
+  - **Günlük sağlık e-postası** (`saglik_kontrol.py`): yeni `check_yoalgoritma_runs` — Supabase REST (service-role token YERELDE) ile son ~8 günde `failed`, stale `running` veya 8+ gündür başarı yoksa **🔴 kırmızı**; sağlıklıysa son başarılı koşu tarihi. Çalışan launchd kopyası (`~/.yoai-saglik-automation/`) senkronlandı.
+  - **Admin Gözetim Merkezi:** `GET /api/admin/gozetim-merkezi` artık `yoalgoritmaHealth` döner (son 14 gün; failed/running/completed sayımı + son başarısızlıklar + `isUnhealthy`). Panelde KPI üstünde kırmızı/yeşil sağlık banner'ı (EN/TR i18n).
+  - **Cron sayımı:** `VERCEL_CRONS` listesine `yoai-outcome-snapshots` eklendi (9→10; vercel.json ile uyum).
+- **Dosyalar:** _automation/saglik_kontrol.py, app/api/admin/gozetim-merkezi/route.ts, app/gozetim-merkezi/GozetimMerkeziClient.tsx, locales/tr.json, locales/en.json
+
 ## 2026-06-14 — YoAlgoritma güvenilirlik R1: sessizliği kır (run-status + failed izi)
 - **Sorun (kapsamlı denetim — asıl hastalık):** Hiyerarşik kart üretimi başarısız olunca (fetch/batch/parse/truncation/key) sistem "başarılı" görünüp İZ BIRAKMADAN kart üretmiyordu → 1 hafta fark edilmedi. Per-campaign akışı koşu-durumu yazmıyordu; errored/expired/canceled tek `failed++` kovasına gidiyordu; truncated/çok-bloklu JSON sessizce atlanıyordu; ANTHROPIC_API_KEY yoksa supersede sonrası patlayıp kart kaybı oluyordu.
 - **Çözüm (R1 + key guard + parse):**
