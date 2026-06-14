@@ -131,6 +131,13 @@ export const FEATURE_ACCESS: Record<string, FeatureAccessRule> = {
     description:
       'YoAlgoritma içerik üretimi için yeterli kredi bakiyesine sahip olmanız gerekir.',
   },
+  website_generation: {
+    key: 'website_generation',
+    label: 'Web Sitesi Üretimi',
+    tier: 'credit_required',
+    description:
+      'Web sitesi üretmek ve revize etmek için yeterli kredi bakiyesine sahip olmanız gerekir.',
+  },
 } as const
 
 export type FeatureKey = keyof typeof FEATURE_ACCESS
