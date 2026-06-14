@@ -50,6 +50,26 @@ export async function getWebsite(userId: string, id: string): Promise<Website | 
   return data ? rowToWebsite(data as WebsiteRow) : null
 }
 
+/**
+ * GÜVENLİK (Faz 3): bir custom domaini HANGİ sitenin/kullanıcının aldığını döner (TÜM kullanıcılar arası).
+ * Domain hijack'i önlemek için bağlamadan önce kullanılır — başka site almışsa reddedilir.
+ */
+export async function findWebsiteByCustomDomain(
+  domain: string,
+): Promise<{ websiteId: string; userId: string } | null> {
+  const db = requireClient()
+  const { data, error } = await db
+    .from('websites')
+    .select('id, user_id')
+    .eq('theme->>customDomain', domain)
+    .limit(1)
+    .maybeSingle()
+  if (error) throw error
+  if (!data) return null
+  const row = data as { id: string; user_id: string }
+  return { websiteId: row.id, userId: row.user_id }
+}
+
 /** Yeni taslak site oluşturur (status='draft'). Üretim/kredi bu adımda DEĞİL — Faz 1c. */
 export async function createWebsite(userId: string, input: WebsiteDraftInput): Promise<Website> {
   const db = requireClient()

@@ -12,6 +12,7 @@ export default function DomainPanel({ websiteId }: { websiteId: string }) {
   const [data, setData] = useState<DomainData | null>(null)
   const [input, setInput] = useState('')
   const [busy, setBusy] = useState(false)
+  const [error, setError] = useState('')
 
   const load = useCallback(async () => {
     const res = await fetch(`/api/website/${websiteId}/domain`).then((r) => r.json()).catch(() => null)
@@ -23,12 +24,16 @@ export default function DomainPanel({ websiteId }: { websiteId: string }) {
     const d = input.trim()
     if (!d) return
     setBusy(true)
+    setError('')
     try {
       const res = await fetch(`/api/website/${websiteId}/domain`, {
         method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ domain: d }),
       })
       const json = await res.json()
       if (json.ok) { setData({ domain: json.domain, verified: json.verified, records: json.records, configured: true }); setInput('') }
+      else setError(json.error || t('domainError'))
+    } catch {
+      setError(t('domainError'))
     } finally { setBusy(false) }
   }
   const remove = async () => {
@@ -65,6 +70,7 @@ export default function DomainPanel({ websiteId }: { websiteId: string }) {
           >
             {busy ? t('domainConnecting') : t('domainConnect')}
           </button>
+          {error && <p className="w-full text-sm text-red-600">{error}</p>}
         </div>
       ) : (
         <div className="mt-3 space-y-3">

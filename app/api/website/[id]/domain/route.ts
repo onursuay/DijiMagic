@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { getCurrentUser } from '@/lib/billing/user'
-import { getWebsite, updateWebsite } from '@/lib/website/store'
+import { getWebsite, updateWebsite, findWebsiteByCustomDomain } from '@/lib/website/store'
 import { attachDomain, removeDomain, checkDomainConfig, isVercelDomainReady } from '@/lib/website/vercelDomain'
 import { setCustomDomainMapping, removeCustomDomainMapping } from '@/lib/website/edgeConfig'
 
@@ -18,6 +18,9 @@ export async function GET(_req: NextRequest, { params }: { params: { id: string 
   const domain = site.theme?.customDomain ?? null
   if (!domain) return NextResponse.json({ ok: true, domain: null, configured: isVercelDomainReady() })
   const cfg = await checkDomainConfig(domain)
+  // Routing eşlemesi DNS doğrulama durumunu izler: doğrulandıysa yaz, değilse kaldır (sahiplik kanıtı).
+  if (cfg.verified) await setCustomDomainMapping(domain, site.subdomain).catch(() => {})
+  else await removeCustomDomainMapping(domain).catch(() => {})
   return NextResponse.json({ ok: true, domain, configured: isVercelDomainReady(), ...cfg })
 }
 
@@ -33,10 +36,17 @@ export async function POST(req: NextRequest, { params }: { params: { id: string 
     const domain = (body.domain || '').trim().toLowerCase().replace(/^https?:\/\//, '').replace(/\/.*$/, '')
     if (!DOMAIN_RE.test(domain)) return NextResponse.json({ ok: false, error: 'Geçersiz alan adı' }, { status: 400 })
 
+    // GÜVENLİK: domaini başka bir site/kullanıcı zaten almışsa REDDET (cross-tenant hijack önlemi).
+    const claimed = await findWebsiteByCustomDomain(domain)
+    if (claimed && claimed.websiteId !== params.id) {
+      return NextResponse.json({ ok: false, error: 'Bu alan adı başka bir siteye bağlı.' }, { status: 409 })
+    }
+
     const result = await attachDomain(PROJECT_ID, domain)
     if (!result.ok) return NextResponse.json({ ok: false, error: result.error || 'Bağlanamadı' }, { status: 502 })
 
-    await setCustomDomainMapping(domain, site.subdomain)
+    // Routing eşlemesini YALNIZ DNS doğrulandığında yaz (sahiplik kanıtı). Doğrulanmadıysa bekleyen kayıt.
+    if (result.verified) await setCustomDomainMapping(domain, site.subdomain)
     const website = await updateWebsite(user.id, params.id, { theme: { ...site.theme, customDomain: domain } })
     return NextResponse.json({ ok: true, website, domain, verified: result.verified, records: result.records })
   } catch (e) {
