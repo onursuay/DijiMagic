@@ -5772,6 +5772,8 @@
       "intakeTitle": "Describe your site",
       "intakeHint": "Tell us what you want; AI combines it with your business info to build the site. Leave empty to build from your profile.",
       "instructionsPlaceholder": "e.g. Make it cleaner and more corporate, highlight booking in services…",
+      "dictate": "Dictate",
+      "listening": "Listening…",
       "modalTitle": "New Website",
       "nameLabel": "Site name",
       "namePlaceholder": "e.g. Antso Maritime",

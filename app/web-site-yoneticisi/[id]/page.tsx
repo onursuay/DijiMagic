@@ -3,11 +3,12 @@
 import { useState, useEffect, useCallback } from 'react'
 import { useParams } from 'next/navigation'
 import Link from 'next/link'
-import { useTranslations } from 'next-intl'
+import { useTranslations, useLocale } from 'next-intl'
 import { Sparkles, RefreshCw, Globe, ExternalLink, ArrowLeft, Wand2 } from 'lucide-react'
 import Topbar from '@/components/Topbar'
 import { ToastContainer, type Toast } from '@/components/Toast'
 import AccessRequiredModal from '@/components/billing/AccessRequiredModal'
+import DictateButton from '@/components/website/DictateButton'
 import SiteRenderer from '@/lib/website/render/SiteRenderer'
 import type { Website, WebsitePage } from '@/lib/website/types'
 
@@ -22,6 +23,7 @@ export default function WebSiteDetailPage() {
   const params = useParams()
   const id = String(params?.id ?? '')
   const t = useTranslations('dashboard.webSiteYoneticisi')
+  const uiLocale = useLocale()
 
   const [site, setSite] = useState<Website | null>(null)
   const [pages, setPages] = useState<WebsitePage[]>([])
@@ -141,6 +143,12 @@ export default function WebSiteDetailPage() {
               className="mt-3 w-full rounded-xl border border-gray-200 p-3 text-sm leading-relaxed focus:outline-none focus:border-primary focus:ring-2 focus:ring-primary/20 transition-all resize-none"
             />
             <div className="mt-3 flex flex-wrap items-center gap-2">
+              <DictateButton
+                onAppend={(text) => setInstructions((prev) => (prev ? `${prev} ${text}` : text))}
+                lang={uiLocale === 'en' ? 'en-US' : 'tr-TR'}
+                labelStart={t('dictate')}
+                labelStop={t('listening')}
+              />
               <button
                 onClick={handleAi}
                 disabled={busy !== null}

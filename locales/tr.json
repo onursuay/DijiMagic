@@ -5772,6 +5772,8 @@
       "intakeTitle": "Sitenizi tarif edin",
       "intakeHint": "Ne istediğinizi yazın; AI işletme bilgilerinizle birleştirip siteyi üretir. Boş bırakırsanız profilinizden üretir.",
       "instructionsPlaceholder": "Örn. Daha sade ve kurumsal olsun, hizmetlerden randevuyu öne çıkar…",
+      "dictate": "Sesle yaz",
+      "listening": "Dinleniyor…",
       "modalTitle": "Yeni Web Sitesi",
       "nameLabel": "Site adı",
       "namePlaceholder": "Örn. Antso Denizcilik",
