@@ -9,6 +9,7 @@ import Topbar from '@/components/Topbar'
 import { ToastContainer, type Toast } from '@/components/Toast'
 import AccessRequiredModal from '@/components/billing/AccessRequiredModal'
 import DictateButton from '@/components/website/DictateButton'
+import DomainPanel from '@/components/website/DomainPanel'
 import type { Website, WebsitePage, WebsiteVersionMeta } from '@/lib/website/types'
 
 type Busy = 'ai' | 'quick' | 'publish' | 'logo' | 'rollback' | null
@@ -361,6 +362,9 @@ export default function WebSiteDetailPage() {
               )}
             </div>
           )}
+
+          {/* Faz 3 — kendi alan adı */}
+          {hasPages && <DomainPanel websiteId={id} />}
 
           {/* Önizleme / boş durum */}
           {!hasPages ? (

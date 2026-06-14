@@ -1,4 +1,8 @@
 import { NextRequest, NextResponse } from 'next/server'
+import { get } from '@vercel/edge-config'
+
+/** Uygulamanın kendi host'ları — bunlar ASLA custom-domain olarak yönlendirilmez. */
+const APP_HOST = 'yoai.yodijital.com'
 
 /**
  * EN slug → TR filesystem slug (app routes only).
@@ -75,8 +79,27 @@ function applyPublicLegalHeaders(response: NextResponse) {
   response.headers.set('X-Robots-Tag', 'index, follow')
 }
 
-export function middleware(request: NextRequest) {
+export async function middleware(request: NextRequest) {
   const { pathname } = request.nextUrl
+
+  // 0. Faz 3 — custom domain yönlendirme. DEFAULT-OFF flag: flag kapalıyken bu blok hiç çalışmaz
+  // → davranış bugünküyle BİREBİR aynı (canlıya sıfır risk). Açıkken yalnız Edge Config'te kayıtlı
+  // (cd_<host>) custom domain host'ları ilgili siteye yönlendirilir; dashboard host'u hariç + eşlemesi yok.
+  if (process.env.WEBSITE_CUSTOM_DOMAINS === '1') {
+    const host = (request.headers.get('host') || '').split(':')[0].toLowerCase()
+    if (host && host !== APP_HOST && !host.endsWith('.vercel.app') && host !== 'localhost' && host !== '127.0.0.1') {
+      try {
+        const sub = await get<string>('cd_' + host.replace(/[^a-z0-9]/g, '_'))
+        if (sub) {
+          const url = request.nextUrl.clone()
+          url.pathname = `/s/${sub}${pathname === '/' ? '' : pathname}`
+          return NextResponse.rewrite(url)
+        }
+      } catch {
+        /* Edge Config yok/erişilemedi → normal akışa düş */
+      }
+    }
+  }
 
   // 1. Handle /en prefix: rewrite to TR filesystem route + set locale
   if (pathname === '/en' || pathname.startsWith('/en/')) {
