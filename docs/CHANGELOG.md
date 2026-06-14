@@ -2,6 +2,19 @@
 
 ---
 
+## 2026-06-14 — 🆕 Web Site Yöneticisi modülü (Faz 1 + Faz 2 CANLI) — AI web sitesi kurucu
+- **İstek:** Kullanıcı bilgi/logo/kategori verir, AI markaya uygun gerçek bir web sitesi üretir, önizler ve tek tuşla yayına alır (referans: promake.ai). 7 fazlı yol haritası (spec: docs/superpowers/specs/2026-06-14-web-site-yoneticisi-design.md).
+- **Faz 1 (çekirdek) — BİTTİ:**
+  - Modül + sidebar "Web Site Yöneticisi" + tam TR/EN; DB tabloları `websites`/`website_pages`/`website_versions` (omddq'ya uygulandı, RLS).
+  - Veri-modeli + paylaşımlı çok-kiracılı renderer: yayın anında, deploy yok; public path serving `/s/[subdomain]` + `[slug]` (locale-filtreli, `?lang`). Responsive bölüm bileşenleri (header/hero/about/services/features/contact/footer), tema CSS değişkenleriyle.
+  - AI üretim (Claude `claudeJson`): sabit içerik şemasını doldurur, header/footer/nav güvenli deterministik monte edilir; **34 dil** (her dil ayrı üretim), **38 yazı ailesi** (gerçek Google Fonts, site-özel yükleme), **referans site URL'leri** (gerçek HTTP tarama → ilham, kopya değil). Hızlı Oluştur = AI'sız deterministik fallback.
+  - Stok görsel: Pexels/Unsplash/Pixabay (env-gated, lisans-temiz); Pexels canlı (yerel + Vercel). Kredi: `computeGenerationCost` (sayfa × dil) + revizyon + 402→`AccessRequiredModal`.
+  - Intake UI: yönlendirilmiş diyalog + **sesle yazma** (Web Speech API) + **iframe önizleme** (ölçekli gerçek viewport → masaüstü/mobil) + **marka logosu yükleme** (Supabase Storage). Oluşturma sihirbazı: site tipi + dil (aranabilir dropdown) + yazı stili + referans + uyarı.
+- **Faz 2 (sürüm/geri alma) — BİTTİ:** `website_versions`'tan sürüm geçmişi + rollback (snapshot'tan geri yükle + yeni 'rollback' sürümü, kredisiz). Katlanır geçmiş paneli.
+- **Güvenlik:** `safeHref`/`safeImg` (XSS); referenceScanner **SSRF koruması** (DNS allowlist + private/metadata IP reddi + manuel redirect doğrulama); logo upload'tan **SVG kaldırıldı** (stored-XSS).
+- **Faz 3-7 (yapılmadı, dış bağımlılık):** kendi domain + SSL, domain satın alma, iş e-postası, ödeme/e-ticaret, sohbetle işletme yönetimi — dış hesap/sözleşme/yasal onay gerektirir.
+- **Dosyalar:** app/web-site-yoneticisi/*, app/website-preview/[id]/*, app/api/website/*, app/s/[subdomain]/*, lib/website/*, components/website/*, lib/nav.ts, lib/routes.ts, lib/billing/featureAccessMap.ts, locales/{tr,en}.json, supabase/migrations/20260614120000_create_website_tables.sql
+
 ## 2026-06-14 — Sidebar: "Reklam" menü grubu ilk açılışta kapalı başlasın
 - **Sorun:** Sol menüde "Reklam" accordion grubu (Meta/Google/TikTok/Strateji) sayfa ilk açıldığında otomatik açık geliyordu; diğer gruplar gibi kapalı başlaması, kullanıcının istediği kategoriyi kendisinin açması isteniyordu.
 - **Çözüm:** `openGroups` başlangıç state'i `['reklam']` → `[]` yapıldı. Tüm gruplar artık kapalı başlar.
