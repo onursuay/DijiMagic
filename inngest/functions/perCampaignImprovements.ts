@@ -124,6 +124,18 @@ export const yoalgoritmaPerCampaignImprovements = inngest.createFunction(
       return { userId, generated: 0, reason: 'no-active-campaigns' }
     }
 
+    // R5: ÇEKİM BAŞARISIZ olan platformları "şüpheli" işaretle. Bu platformların pending
+    // kartlarını reconcile İPTAL ETMEZ (cancel terminal!) — geçici bir API hatasını
+    // "kampanya pasif" sanıp tüm kartları silmek felaket olurdu. Cancel sağlıklı taramaya ertelenir.
+    const suspectPlatforms = new Set<'meta' | 'google'>()
+    for (const p of ['meta', 'google'] as const) {
+      const d = p === 'meta' ? scanInputs.meta : scanInputs.google
+      if (d.fetchError || !d.connected || d.errors.length > 0) suspectPlatforms.add(p)
+    }
+    if (suspectPlatforms.size) {
+      logger.warn(`[campaign-improvements] ${userId}: şüpheli (çekim hatalı) platformlar — cancel atlanıyor: ${[...suspectPlatforms].join(',')}`)
+    }
+
     // 2) Reconcile (lifecycle): freeze-on-decision, else weekly refresh
     const plan = await step.run('reconcile-lifecycle', async () => {
       const [recentCamp, recentAdset, recentAd] = await Promise.all([
@@ -147,15 +159,18 @@ export const yoalgoritmaPerCampaignImprovements = inngest.createFunction(
       const activeKeys = new Set(allCampaigns.map((c) => c.key))
 
       // pasif kampanyaların pending alt-ağacını iptal et
-      let cancelled = 0
+      let cancelled = 0, cancelSkippedSuspect = 0
       for (const key of seenCampaignKeys) {
         if (activeKeys.has(key) || frozen.has(key)) continue
         const idx = key.indexOf(':')
         const platform = key.slice(0, idx) as 'meta' | 'google'
         const campaignId = key.slice(idx + 1)
+        // R5: çekimi başarısız platformda İPTAL ETME (geçici hatayı pasiflik sanma)
+        if (suspectPlatforms.has(platform)) { cancelSkippedSuspect++; continue }
         await cancelPendingCampaignSubtree(userId, platform, campaignId, 'Otomatik iptal: kampanya aktif değil')
         cancelled++
       }
+      if (cancelSkippedSuspect) logger.warn(`[campaign-improvements] ${userId}: ${cancelSkippedSuspect} kart iptali ATLANDI (şüpheli platform — sağlıklı taramaya ertelendi)`)
 
       // üretilecekler: aktif + dondurulmamış; varsa pending alt-ağacı supersede
       const generateKeys: string[] = []

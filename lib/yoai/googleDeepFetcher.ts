@@ -106,9 +106,11 @@ type AdRow = {
 export async function fetchGoogleDeep(
   userId?: string,
   override?: { customerId: string | null; loginCustomerId?: string | null },
-): Promise<{ campaigns: DeepCampaignInsight[]; errors: string[]; connected: boolean }> {
+): Promise<{ campaigns: DeepCampaignInsight[]; errors: string[]; connected: boolean; fetchError?: boolean }> {
   const errors: string[] = []
   const campaigns: DeepCampaignInsight[] = []
+  // R5: çekim başarısızlığı (token/5xx/exception) → reconcile pending kartları SİLMEMELİ.
+  let fetchError = false
 
   // İşletmede Google hesabı yoksa hiç bağlanma (örn. yalnız-Meta işletmesi).
   if (override && override.customerId === null) {
@@ -153,7 +155,7 @@ export async function fetchGoogleDeep(
   }
 
   if (!refreshToken || !customerId) {
-    return { campaigns, errors: [], connected: false }
+    return { campaigns, errors: [], connected: false, fetchError: true }
   }
 
   let googleCtx
@@ -167,7 +169,7 @@ export async function fetchGoogleDeep(
     }
   } catch (e) {
     console.error('[GoogleDeepFetcher] Token exchange error:', e)
-    return { campaigns, errors: ['Google Ads token hatası'], connected: false }
+    return { campaigns, errors: ['Google Ads token hatası'], connected: false, fetchError: true }
   }
 
   const now = new Date()
@@ -548,9 +550,10 @@ export async function fetchGoogleDeep(
   } catch (e) {
     console.error('[GoogleDeepFetcher] Error:', e)
     errors.push('Google Ads veri çekme hatası')
+    fetchError = true
   }
 
   campaigns.sort((a, b) => b.metrics.spend - a.metrics.spend)
 
-  return { campaigns, errors, connected: true }
+  return { campaigns, errors, connected: true, fetchError }
 }

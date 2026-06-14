@@ -126,9 +126,12 @@ function parseMetaTargeting(t: any): AdsetTargetingSummary | undefined {
 export async function fetchMetaDeep(
   userId?: string,
   override?: { adAccountId: string | null },
-): Promise<{ campaigns: DeepCampaignInsight[]; errors: string[]; connected: boolean }> {
+): Promise<{ campaigns: DeepCampaignInsight[]; errors: string[]; connected: boolean; fetchError?: boolean }> {
   const errors: string[] = []
   const campaigns: DeepCampaignInsight[] = []
+  // R5: fetchError=true → çekim BAŞARISIZ (auth/5xx/exception). reconcile bunu 'kampanya pasif'
+  // ile karıştırıp pending kartları SİLMEMELİ. Gerçekten boş (0 aktif kampanya) ise false kalır.
+  let fetchError = false
 
   // İşletmede Meta hesabı yoksa hiç bağlanma (örn. yalnız-Google işletmesi).
   if (override && override.adAccountId === null) {
@@ -189,7 +192,7 @@ export async function fetchMetaDeep(
   }
 
   if (!ctx) {
-    return { campaigns, errors: ['Meta bağlantısı bulunamadı'], connected: false }
+    return { campaigns, errors: ['Meta bağlantısı bulunamadı'], connected: false, fetchError: true }
   }
 
   // İşletme scope'u: token korunur, yalnız hangi reklam hesabının çekileceği değişir.
@@ -222,7 +225,7 @@ export async function fetchMetaDeep(
 
     if (!response.ok) {
       errors.push('Meta kampanya verisi alınamadı')
-      return { campaigns, errors, connected: true }
+      return { campaigns, errors, connected: true, fetchError: true }
     }
 
     const data = await response.json().catch(() => ({ data: [] }))
@@ -357,10 +360,11 @@ export async function fetchMetaDeep(
   } catch (e) {
     console.error('[MetaDeepFetcher] Error:', e)
     errors.push('Meta veri çekme hatası')
+    fetchError = true
   }
 
   // Sort by spend descending
   campaigns.sort((a, b) => b.metrics.spend - a.metrics.spend)
 
-  return { campaigns, errors, connected: true }
+  return { campaigns, errors, connected: true, fetchError }
 }

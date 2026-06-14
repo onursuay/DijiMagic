@@ -24,6 +24,8 @@ export interface FetchedPlatformData {
   campaigns: DeepCampaignInsight[]
   accountId: string | null
   errors: string[]
+  /** R5: çekim BAŞARISIZ (auth/5xx/exception). true → reconcile bu platformun kartlarını cancel ETMEZ. */
+  fetchError?: boolean
 }
 
 export interface UserScanInputs {
@@ -57,11 +59,11 @@ export async function gatherUserScanInputs(userId: string, scope?: YoaiScope): P
   const [metaResult, googleResult, competitorMeta, competitorGoogle] = await Promise.all([
     fetchMetaDeep(userId, metaOverride).catch(e => {
       console.error('[AI Scan] Meta fetch failed:', e)
-      return { campaigns: [] as DeepCampaignInsight[], errors: ['Meta veri çekme hatası'], connected: false }
+      return { campaigns: [] as DeepCampaignInsight[], errors: ['Meta veri çekme hatası'], connected: false, fetchError: true }
     }),
     fetchGoogleDeep(userId, googleOverride).catch(e => {
       console.error('[AI Scan] Google fetch failed:', e)
-      return { campaigns: [] as DeepCampaignInsight[], errors: ['Google Ads veri çekme hatası'], connected: false }
+      return { campaigns: [] as DeepCampaignInsight[], errors: ['Google Ads veri çekme hatası'], connected: false, fetchError: true }
     }),
     loadCompetitorBrief(userId, 'Meta').catch(() => null),
     loadCompetitorBrief(userId, 'Google').catch(() => null),
@@ -78,6 +80,7 @@ export async function gatherUserScanInputs(userId: string, scope?: YoaiScope): P
       campaigns: metaResult.campaigns,
       accountId: inferAccountId(metaResult.campaigns),
       errors: metaResult.errors,
+      fetchError: (metaResult as { fetchError?: boolean }).fetchError ?? false,
     },
     google: {
       platform: 'Google',
@@ -85,6 +88,7 @@ export async function gatherUserScanInputs(userId: string, scope?: YoaiScope): P
       campaigns: googleResult.campaigns,
       accountId: inferAccountId(googleResult.campaigns),
       errors: googleResult.errors,
+      fetchError: (googleResult as { fetchError?: boolean }).fetchError ?? false,
     },
   }
 }
