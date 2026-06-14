@@ -5774,6 +5774,7 @@
       "instructionsPlaceholder": "e.g. Make it cleaner and more corporate, highlight booking in services…",
       "dictate": "Dictate",
       "listening": "Listening…",
+      "stopDictate": "Stop",
       "modalTitle": "New Website",
       "nameLabel": "Site name",
       "namePlaceholder": "e.g. Antso Maritime",

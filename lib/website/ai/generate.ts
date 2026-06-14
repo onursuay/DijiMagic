@@ -184,8 +184,28 @@ export async function generateSitePages(input: GenerateInput): Promise<WebsitePa
       links: [],
     }, i)
 
+  // Footer için ortak veri (sosyal linkler gerçek profil verisinden — AI üretmez)
+  const social: { label: string; href: string }[] = []
+  const addSocial = (label: string, url: string | null | undefined) => {
+    const u = clean(url)
+    if (u) social.push({ label, href: u })
+  }
+  addSocial(L.web, input.profile?.website_url)
+  addSocial('Instagram', input.profile?.instagram_url)
+  addSocial('Facebook', input.profile?.facebook_url)
+  addSocial('LinkedIn', input.profile?.linkedin_url)
+  addSocial('YouTube', input.profile?.youtube_url)
+  addSocial('TikTok', input.profile?.tiktok_url)
+  const footerLocations = (input.profile?.target_locations ?? []).map(clean).filter(Boolean)
+  const tagline = str(content.hero?.subtitle) || clean(input.profile?.business_description)
+
   const header = block('header', { brand, logoUrl: null, nav: navFor(input, L) }, 0)
-  const footer = (i: number) => block('footer', { brand, note: `© ${brand}` }, i)
+  const footer = (i: number) =>
+    block('footer', {
+      brand, logoUrl: null, note: `© ${brand}`, tagline,
+      nav: navFor(input, L), links: social, locations: footerLocations,
+      pagesLabel: L.footerPages, contactLabel: L.footerContact,
+    }, i)
   const hasFeatures = featuresItems.length > 0
   const desc = str(content.hero?.subtitle) || brand
 

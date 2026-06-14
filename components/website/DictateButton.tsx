@@ -1,13 +1,13 @@
 'use client'
 
 import { useEffect, useRef, useState } from 'react'
-import { Mic } from 'lucide-react'
+import { Mic, Square } from 'lucide-react'
 
 /**
  * Tarayıcı yerel Web Speech API ile sesle-yazma (client-side, ücretsiz, anahtarsız).
- * Toggle: pasifken mikrofon + etiket; dinlerken kırmızı "açık" durumu + ses çalıyormuş gibi
- * animasyonlu equalizer çubukları. Boyut kardeş butonlarla aynı (text-sm).
- * Desteklenmeyen tarayıcıda (Firefox) hiçbir şey render etmez (graceful).
+ * Toggle + süreç yönetimi: pasifken mikrofon + "Sesle yaz". Dinlerken kırmızı "açık" durumu;
+ * etiket 3 saniyede bir "Dinleniyor…" (equalizer) ↔ "Durdur" (kare) arasında döner → kullanıcı
+ * istediğinde basıp durdurabilir. Desteklenmeyen tarayıcıda hiçbir şey render etmez (graceful).
  */
 
 interface SpeechResultAlt { transcript: string }
@@ -55,15 +55,24 @@ interface DictateButtonProps {
   lang?: string
   labelStart: string
   labelStop: string
+  labelPause: string
 }
 
-export default function DictateButton({ onAppend, lang = 'tr-TR', labelStart, labelStop }: DictateButtonProps) {
+export default function DictateButton({ onAppend, lang = 'tr-TR', labelStart, labelStop, labelPause }: DictateButtonProps) {
   const [supported, setSupported] = useState(false)
   const [listening, setListening] = useState(false)
+  const [phase, setPhase] = useState(0) // 0 = Dinleniyor, 1 = Durdur
   const recRef = useRef<RecognitionLike | null>(null)
 
   useEffect(() => { setSupported(getRecognitionCtor() != null) }, [])
   useEffect(() => () => { try { recRef.current?.stop() } catch { /* noop */ } }, [])
+
+  // Dinlerken 3 saniyede bir "Dinleniyor" ↔ "Durdur"
+  useEffect(() => {
+    if (!listening) { setPhase(0); return }
+    const id = setInterval(() => setPhase((p) => (p === 0 ? 1 : 0)), 3000)
+    return () => clearInterval(id)
+  }, [listening])
 
   const toggle = () => {
     if (listening) { try { recRef.current?.stop() } catch { /* noop */ } return }
@@ -90,20 +99,23 @@ export default function DictateButton({ onAppend, lang = 'tr-TR', labelStart, la
 
   if (!supported) return null
 
+  const showStop = listening && phase === 1
+  const label = !listening ? labelStart : showStop ? labelPause : labelStop
+
   return (
     <button
       type="button"
       onClick={toggle}
       aria-pressed={listening}
-      aria-label={listening ? labelStop : labelStart}
-      className={`inline-flex items-center gap-2 rounded-lg border px-4 py-2.5 text-sm font-medium transition-all ${
+      aria-label={listening ? labelPause : labelStart}
+      className={`inline-flex items-center justify-center gap-2 rounded-lg border px-4 py-2.5 text-sm font-medium transition-all min-w-[130px] ${
         listening
           ? 'border-red-300 bg-red-50 text-red-600 shadow-[0_0_0_3px_rgba(239,68,68,0.12)]'
           : 'border-gray-200 text-gray-700 hover:bg-gray-50/60'
       }`}
     >
-      {listening ? <Equalizer /> : <Mic className="w-4 h-4" />}
-      <span>{listening ? labelStop : labelStart}</span>
+      {!listening ? <Mic className="w-4 h-4" /> : showStop ? <Square className="w-4 h-4 fill-current" /> : <Equalizer />}
+      <span>{label}</span>
     </button>
   )
 }

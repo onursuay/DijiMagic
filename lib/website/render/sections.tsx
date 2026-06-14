@@ -2,8 +2,8 @@ import type { SectionBlock } from '../types'
 
 /**
  * Üretilen sitenin responsive bölüm bileşenleri. Saf sunum (server+client uyumlu, hook yok).
- * Tasarım barı (webmaster/tasarımcı): okunabilir tipografi, tutarlı boşluk ölçeği, görsel-yazı
- * ASLA çakışmaz, simetri + hizalama düzgün. Renkler/fontlar site temasından CSS değişkenleriyle.
+ * Tasarım barı (webmaster/tasarımcı): okunabilir tipografi, TUTARLI boşluk ritmi (bölümler arası
+ * daralt, başlık↔içerik aç), görsel-yazı ASLA çakışmaz, simetri/hizalama düzgün.
  */
 
 type Dict = Record<string, unknown>
@@ -35,9 +35,10 @@ interface NavLink { label: string; href: string }
 const navLinks = (v: unknown): NavLink[] =>
   arr(v).map((x) => ({ label: str(x.label), href: safeHref(x.href) })).filter((x) => x.label)
 
-// Tutarlı ölçek: bölüm container px-6, dikey ritim py-24, başlık serif, gövde 17px/1.8.
+// Tutarlı ölçek: container px-6; bölüm dikey ritmi py-14/16 (daha sıkı); başlık→içerik mt-12 (nefes).
 const CONTAINER = 'max-w-6xl mx-auto px-6'
-const H2 = 'text-[1.75rem] sm:text-[2.1rem] font-semibold tracking-[-0.02em]'
+const SECTION = 'py-14 sm:py-16'
+const H2 = 'text-[1.75rem] sm:text-[2.05rem] font-semibold tracking-[-0.02em]'
 
 export function HeaderSection({ content }: { content: Dict }) {
   const brand = str(content.brand, 'Marka')
@@ -65,7 +66,7 @@ export function HeaderSection({ content }: { content: Dict }) {
             {brand}
           </span>
         </a>
-        {/* Bulletproof boşluk: margin-bazlı (gap'e bağlı değil) */}
+        {/* Bulletproof boşluk: margin-bazlı */}
         <nav className="hidden sm:flex items-center">
           {nav.map((l, i) => (
             <a
@@ -105,7 +106,7 @@ export function HeroSection({ content }: { content: Dict }) {
             "url(\"data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='120' height='120'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.85' numOctaves='3' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E\")",
         }}
       />
-      <div className={`${CONTAINER} py-20 sm:py-28 grid lg:grid-cols-2 gap-12 lg:gap-16 items-center`}>
+      <div className={`${CONTAINER} py-20 sm:py-24 grid lg:grid-cols-2 gap-12 lg:gap-16 items-center`}>
         <div>
           <h1
             className="text-[2.25rem] sm:text-[3rem] lg:text-[3.4rem] font-semibold leading-[1.08]"
@@ -146,7 +147,7 @@ export function AboutSection({ content }: { content: Dict }) {
   const body = str(content.body)
   const imageUrl = safeImg(content.imageUrl)
   return (
-    <section id="about" className="py-20 sm:py-24">
+    <section id="about" className={SECTION}>
       <div className={`${CONTAINER} grid lg:grid-cols-2 gap-12 lg:gap-16 items-center`}>
         {imageUrl && (
           <div className="aspect-[4/3] rounded-3xl overflow-hidden ring-1 ring-black/[0.06]">
@@ -169,7 +170,7 @@ export function ServicesSection({ content }: { content: Dict }) {
   const heading = str(content.heading, 'Hizmetlerimiz')
   const items = arr(content.items)
   return (
-    <section id="services" className="py-20 sm:py-24 bg-black/[0.02]">
+    <section id="services" className={`${SECTION} bg-black/[0.02]`}>
       <div className={CONTAINER}>
         <h2 className={`${H2} text-center`} style={{ color: 'var(--site-ink)', fontFamily: 'var(--site-font-heading)' }}>
           {heading}
@@ -198,12 +199,12 @@ export function FeaturesSection({ content }: { content: Dict }) {
   const heading = str(content.heading, 'Neden Biz')
   const items = arr(content.items)
   return (
-    <section className="py-20 sm:py-24">
+    <section className={SECTION}>
       <div className={CONTAINER}>
         <h2 className={H2} style={{ color: 'var(--site-ink)', fontFamily: 'var(--site-font-heading)' }}>
           {heading}
         </h2>
-        <div className="mt-10 grid sm:grid-cols-2 gap-x-12 gap-y-8">
+        <div className="mt-12 grid sm:grid-cols-2 gap-x-12 gap-y-9">
           {items.map((it, i) => (
             <div key={i} className="flex gap-4">
               <div
@@ -232,7 +233,7 @@ export function ContactSection({ content }: { content: Dict }) {
   const locations = (Array.isArray(content.locations) ? content.locations : []).map((x) => str(x)).filter(Boolean)
   const links = navLinks(content.links)
   return (
-    <section id="contact" className="py-20 sm:py-24" style={{ backgroundColor: 'var(--site-ink)' }}>
+    <section id="contact" className={SECTION} style={{ backgroundColor: 'var(--site-ink)' }}>
       <div className="max-w-3xl mx-auto px-6 text-center text-white">
         <h2 className={H2} style={{ fontFamily: 'var(--site-font-heading)' }}>{heading}</h2>
         {body && <p className="mt-5 text-[1.0625rem] text-white/70" style={{ lineHeight: 1.8 }}>{body}</p>}
@@ -257,12 +258,71 @@ export function ContactSection({ content }: { content: Dict }) {
 
 export function FooterSection({ content }: { content: Dict }) {
   const brand = str(content.brand, 'Marka')
+  const logoUrl = safeImg(content.logoUrl)
   const note = str(content.note)
+  const tagline = str(content.tagline)
+  const nav = navLinks(content.nav)
+  const social = navLinks(content.links)
+  const locations = (Array.isArray(content.locations) ? content.locations : []).map((x) => str(x)).filter(Boolean)
+  const pagesLabel = str(content.pagesLabel, 'Sayfalar')
+  const contactLabel = str(content.contactLabel, 'İletişim')
   return (
-    <footer className="py-10 border-t border-black/[0.06]">
-      <div className={`${CONTAINER} flex flex-col sm:flex-row items-center justify-between gap-3 text-[0.9rem] text-black/45`}>
-        <span style={{ color: 'var(--site-ink)', fontFamily: 'var(--site-font-heading)' }} className="font-semibold">{brand}</span>
-        <span>{note || `© ${brand}`}</span>
+    <footer className="border-t border-black/[0.06] bg-black/[0.015]">
+      <div className={`${CONTAINER} py-14`}>
+        <div className="grid gap-10 sm:grid-cols-2 lg:grid-cols-12">
+          {/* Marka */}
+          <div className="lg:col-span-5 max-w-sm">
+            <div className="flex items-center gap-2.5">
+              {logoUrl ? (
+                // eslint-disable-next-line @next/next/no-img-element
+                <img src={logoUrl} alt={brand} className="h-8 w-auto max-w-[150px] object-contain" />
+              ) : (
+                <span
+                  className="inline-flex h-9 w-9 items-center justify-center rounded-lg text-white text-sm font-bold"
+                  style={{ backgroundColor: 'var(--site-ink)' }}
+                >
+                  {brand.charAt(0).toUpperCase()}
+                </span>
+              )}
+              <span className="text-[1.05rem] font-semibold" style={{ color: 'var(--site-ink)', fontFamily: 'var(--site-font-heading)' }}>
+                {brand}
+              </span>
+            </div>
+            {tagline && <p className="mt-4 text-[0.9rem] text-black/55" style={{ lineHeight: 1.7 }}>{tagline}</p>}
+          </div>
+
+          {/* Sayfalar */}
+          {nav.length > 0 && (
+            <div className="lg:col-span-3">
+              <h4 className="text-[0.72rem] font-semibold uppercase tracking-[0.08em] text-black/40">{pagesLabel}</h4>
+              <ul className="mt-4 space-y-2.5">
+                {nav.map((l, i) => (
+                  <li key={i}>
+                    <a href={l.href} className="text-[0.92rem] text-black/60 hover:text-black transition-colors">{l.label}</a>
+                  </li>
+                ))}
+              </ul>
+            </div>
+          )}
+
+          {/* İletişim + sosyal */}
+          {(locations.length > 0 || social.length > 0) && (
+            <div className="lg:col-span-4">
+              <h4 className="text-[0.72rem] font-semibold uppercase tracking-[0.08em] text-black/40">{contactLabel}</h4>
+              {locations.length > 0 && <p className="mt-4 text-[0.92rem] text-black/60" style={{ lineHeight: 1.7 }}>{locations.join(' · ')}</p>}
+              {social.length > 0 && (
+                <div className="mt-4 flex flex-wrap gap-x-4 gap-y-2">
+                  {social.map((l, i) => (
+                    <a key={i} href={l.href} className="text-[0.88rem] text-black/55 hover:text-black transition-colors">{l.label}</a>
+                  ))}
+                </div>
+              )}
+            </div>
+          )}
+        </div>
+        <div className="mt-12 pt-6 border-t border-black/[0.06] text-[0.85rem] text-black/45">
+          {note || `© ${brand}`}
+        </div>
       </div>
     </footer>
   )

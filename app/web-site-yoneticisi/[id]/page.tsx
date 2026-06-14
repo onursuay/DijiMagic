@@ -148,6 +148,7 @@ export default function WebSiteDetailPage() {
                 lang={uiLocale === 'en' ? 'en-US' : 'tr-TR'}
                 labelStart={t('dictate')}
                 labelStop={t('listening')}
+                labelPause={t('stopDictate')}
               />
               <button
                 onClick={handleAi}
@@ -165,40 +166,43 @@ export default function WebSiteDetailPage() {
                 {hasPages ? <RefreshCw className="w-4 h-4" /> : <Sparkles className="w-4 h-4" />}
                 {busy === 'quick' ? t('building') : hasPages ? t('quickRebuild') : t('quickBuild')}
               </button>
-            </div>
-          </div>
 
-          {/* Yayın çubuğu */}
-          {hasPages && (
-            <div className="bg-white rounded-xl border border-gray-200 p-4 flex flex-wrap items-center gap-3 animate-card-enter">
-              <span
-                className={`inline-flex items-center rounded-full px-2.5 py-0.5 text-xs ${
-                  isPublished ? 'bg-emerald-50 text-emerald-700' : 'bg-gray-100 text-gray-700'
-                }`}
-              >
-                {isPublished ? t('statusPublished') : site?.status === 'unpublished' ? t('statusUnpublished') : t('statusDraft')}
-              </span>
-              <div className="flex-1" />
-              <button
-                onClick={() => handlePublish(isPublished ? 'unpublish' : 'publish')}
-                disabled={busy !== null}
-                className="inline-flex items-center gap-2 rounded-lg bg-primary px-4 py-2 text-sm font-medium text-white active:scale-[0.97] transition-all disabled:opacity-50"
-              >
-                <Globe className="w-4 h-4" />
-                {busy === 'publish' ? t('publishing') : isPublished ? t('unpublish') : t('publish')}
-              </button>
-              {isPublished && (
-                <a
-                  href={`/s/${site?.subdomain}`}
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  className="inline-flex items-center gap-2 rounded-lg border border-emerald-200 bg-emerald-50 px-4 py-2 text-sm font-medium text-emerald-700 hover:bg-emerald-100 transition-colors"
-                >
-                  <ExternalLink className="w-4 h-4" /> {t('viewLive')}
-                </a>
+              {/* Yayın grubu — Hızlı Yenile'nin sağında (içeriği değiştir + yayına al) */}
+              {hasPages && (
+                <div className="ml-auto flex flex-wrap items-center gap-2">
+                  <span
+                    className={`inline-flex items-center rounded-full px-2.5 py-0.5 text-xs ${
+                      isPublished ? 'bg-emerald-50 text-emerald-700' : 'bg-gray-100 text-gray-700'
+                    }`}
+                  >
+                    {isPublished ? t('statusPublished') : site?.status === 'unpublished' ? t('statusUnpublished') : t('statusDraft')}
+                  </span>
+                  <button
+                    onClick={() => handlePublish(isPublished ? 'unpublish' : 'publish')}
+                    disabled={busy !== null}
+                    className={`inline-flex items-center gap-2 rounded-lg px-4 py-2.5 text-sm font-medium active:scale-[0.97] transition-all disabled:opacity-50 ${
+                      isPublished
+                        ? 'border border-gray-200 text-gray-700 hover:bg-gray-50/60'
+                        : 'bg-emerald-600 text-white hover:bg-emerald-700'
+                    }`}
+                  >
+                    <Globe className="w-4 h-4" />
+                    {busy === 'publish' ? t('publishing') : isPublished ? t('unpublish') : t('publish')}
+                  </button>
+                  {isPublished && (
+                    <a
+                      href={`/s/${site?.subdomain}`}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="inline-flex items-center gap-2 rounded-lg border border-emerald-200 bg-emerald-50 px-4 py-2.5 text-sm font-medium text-emerald-700 hover:bg-emerald-100 transition-colors"
+                    >
+                      <ExternalLink className="w-4 h-4" /> {t('viewLive')}
+                    </a>
+                  )}
+                </div>
               )}
             </div>
-          )}
+          </div>
 
           {/* Önizleme / boş durum */}
           {!hasPages ? (

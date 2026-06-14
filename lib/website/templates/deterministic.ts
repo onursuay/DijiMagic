@@ -30,6 +30,8 @@ export interface SiteLabels {
   navServices: string
   navAbout: string
   navContact: string
+  footerPages: string
+  footerContact: string
 }
 
 const LABELS: Record<string, SiteLabels> = {
@@ -45,6 +47,8 @@ const LABELS: Record<string, SiteLabels> = {
     navServices: 'Hizmetler',
     navAbout: 'Hakkımızda',
     navContact: 'İletişim',
+    footerPages: 'Sayfalar',
+    footerContact: 'İletişim',
   },
   en: {
     contactCta: 'Get in Touch',
@@ -58,6 +62,8 @@ const LABELS: Record<string, SiteLabels> = {
     navServices: 'Services',
     navAbout: 'About',
     navContact: 'Contact',
+    footerPages: 'Pages',
+    footerContact: 'Contact',
   },
 }
 
@@ -153,8 +159,25 @@ function headerContent(brand: string, nav: { label: string; href: string }[]): R
   return { brand, logoUrl: null, nav }
 }
 
-function footerContent(brand: string): Record<string, unknown> {
-  return { brand, note: `© ${brand}` }
+function footerContent(
+  brand: string,
+  L: SiteLabels,
+  nav: { label: string; href: string }[],
+  social: { label: string; href: string }[],
+  locations: string[],
+  tagline: string,
+): Record<string, unknown> {
+  return {
+    brand,
+    logoUrl: null,
+    note: `© ${brand}`,
+    tagline,
+    nav,
+    links: social,
+    locations,
+    pagesLabel: L.footerPages,
+    contactLabel: L.footerContact,
+  }
 }
 
 /** Verilen siteye göre sayfa modelini üretir (landing = tek sayfa; multipage = 4 sayfa). */
@@ -165,6 +188,12 @@ export function buildDeterministicSite(input: BuildSiteInput): WebsitePageInput[
   const locale = input.locale
   const features = featuresContent(input, ai, L)
   const hasFeatures = (features.items as unknown[]).length > 0
+
+  // Footer (ve iletişim) için ortak veri
+  const social = socialLinks(input.profile, L)
+  const locations = (input.profile?.target_locations ?? []).map(clean).filter(Boolean)
+  const tgSrc = clean(input.profile?.business_description) || clean(input.intelligence?.company_summary)
+  const tagline = tgSrc ? firstSentence(tgSrc) : ''
 
   const page = (slug: string, pageRole: PageRole, sections: SectionBlock[], seoTitle: string): WebsitePageInput => ({
     locale,
@@ -189,7 +218,7 @@ export function buildDeterministicSite(input: BuildSiteInput): WebsitePageInput[
     if (hasFeatures) sections.push(block('features', features, 3))
     sections.push(block('about', aboutContent(input, L), 4))
     sections.push(block('contact', contactContent(input, L), 5))
-    sections.push(block('footer', footerContent(brand), 6))
+    sections.push(block('footer', footerContent(brand, L, anchorNav, social, locations, tagline), 6))
     return [page('home', 'home', sections, brand)]
   }
 
@@ -202,7 +231,7 @@ export function buildDeterministicSite(input: BuildSiteInput): WebsitePageInput[
     { label: L.navContact, href: `${base}/iletisim` },
   ]
   const header = block('header', headerContent(brand, pathNav), 0)
-  const footer = (i: number) => block('footer', footerContent(brand), i)
+  const footer = (i: number) => block('footer', footerContent(brand, L, pathNav, social, locations, tagline), i)
 
   const homeSections: SectionBlock[] = [header, block('hero', heroContent(input, ai, L), 1), block('services', servicesContent(input, L), 2)]
   if (hasFeatures) homeSections.push(block('features', features, 3))
