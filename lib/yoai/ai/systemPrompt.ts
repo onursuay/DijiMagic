@@ -234,12 +234,30 @@ export function buildUserBrief(args: {
  * Blok 2: platforma özel curated reklam kuralları (Meta veya Google → platform-içi cache hit).
  * Her iki blok da cache_control:ephemeral — prompt caching ile batch maliyeti artmaz.
  */
+/** Sistem bloğu — cache_control opsiyonel (cap sonrası fazladan breakpoint kaldırılabilir). */
+export type SysBlock = { type: 'text'; text: string; cache_control?: { type: 'ephemeral' } }
+
+/**
+ * Anthropic request başına EN FAZLA 4 cache_control breakpoint kabul eder; fazlası
+ * 400 (invalid_request) verir ve TÜM AI çağrısını düşürür. Bu guard, ilk `max` cache'li
+ * bloğu korur, sonrakilerden cache_control'ü kaldırır — İÇERİK AYNEN kalır, yalnız o blok
+ * cache'lenmez. (Meta yolunda prompt+rules+metaAnalysis+business+competitor+official 4'ü aşıyordu.)
+ */
+export function capCacheBreakpoints(blocks: SysBlock[], max = 4): SysBlock[] {
+  let kept = 0
+  return blocks.map((b) => {
+    if (!b.cache_control) return b
+    if (kept < max) { kept++; return b }
+    return { type: b.type, text: b.text }
+  })
+}
+
 export function buildSystemBlocks(
   platform: 'Meta' | 'Google',
   extraBlocks?: Array<{ type: 'text'; text: string; cache_control: { type: 'ephemeral' } }>,
-): Array<{ type: 'text'; text: string; cache_control: { type: 'ephemeral' } }> {
+): SysBlock[] {
   const rules = platform === 'Meta' ? META_AD_RULES_CURATED : GOOGLE_ADS_RULES_CURATED
-  const blocks: Array<{ type: 'text'; text: string; cache_control: { type: 'ephemeral' } }> = [
+  const blocks: SysBlock[] = [
     { type: 'text', text: AI_ENGINE_SYSTEM_PROMPT, cache_control: { type: 'ephemeral' } },
     { type: 'text', text: rules, cache_control: { type: 'ephemeral' } },
   ]
@@ -248,5 +266,5 @@ export function buildSystemBlocks(
   }
   // Onaylı resmi bilgi (alt-proje B) — caller async fetch edip geçirir; yoksa eklenmez.
   if (extraBlocks && extraBlocks.length) blocks.push(...extraBlocks)
-  return blocks
+  return capCacheBreakpoints(blocks) // ≤4 cache_control (Anthropic limiti) — fazlası 400'e yol açıyordu
 }

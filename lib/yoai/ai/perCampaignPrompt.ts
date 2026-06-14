@@ -17,6 +17,7 @@ import { META_AD_RULES_CURATED } from './docs/meta_ad_rules_curated'
 import { GOOGLE_ADS_RULES_CURATED } from './docs/google_ads_rules_curated'
 import { metaAnalysisBlock } from './docs/meta_analysis_knowledge'
 import { copyQualityBlock, isExpertCopyEnabledForYoAlgoritma } from './docs/copyQualityGuide'
+import { capCacheBreakpoints, type SysBlock } from './systemPrompt'
 import { BENCHMARKS } from './accountSerializer'
 import { translateEnum } from '@/lib/yoai/translations'
 import type { AiPlatform } from './types'
@@ -174,9 +175,9 @@ export function buildPerCampaignSystemBlocks(
   businessContext?: string,
   competitorContext?: string | null,
   extraBlocks?: Array<{ type: 'text'; text: string; cache_control: { type: 'ephemeral' } }>,
-): Array<{ type: 'text'; text: string; cache_control: { type: 'ephemeral' } }> {
+): SysBlock[] {
   const rules = platform === 'Meta' ? META_AD_RULES_CURATED : GOOGLE_ADS_RULES_CURATED
-  const blocks: Array<{ type: 'text'; text: string; cache_control: { type: 'ephemeral' } }> = [
+  const blocks: SysBlock[] = [
     { type: 'text', text: PER_CAMPAIGN_SYSTEM_PROMPT, cache_control: { type: 'ephemeral' } },
     { type: 'text', text: rules, cache_control: { type: 'ephemeral' } },
   ]
@@ -196,7 +197,10 @@ export function buildPerCampaignSystemBlocks(
   }
   // Onaylı resmi bilgi (alt-proje B) — caller async fetch edip geçirir; yoksa eklenmez.
   if (extraBlocks && extraBlocks.length) blocks.push(...extraBlocks)
-  return blocks
+  // KRİTİK: Anthropic request başına EN FAZLA 4 cache_control breakpoint kabul eder.
+  // Meta yolu (prompt+rules+metaAnalysis+business+competitor+official) 4'ü aşıp 400 veriyor
+  // ve TÜM kart üretimini düşürüyordu (06-08'den beri aiGenerated=false). İlk 4'te cache'le, gerisi cache'siz.
+  return capCacheBreakpoints(blocks)
 }
 
 export interface AccountCampaignSummary {

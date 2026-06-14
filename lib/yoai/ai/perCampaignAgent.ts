@@ -98,7 +98,7 @@ export function buildPerCampaignBatchRequestParams(
   model: string
   max_tokens: number
   thinking: { type: 'enabled'; budget_tokens: number }
-  system: Array<{ type: 'text'; text: string; cache_control: { type: 'ephemeral' } }>
+  system: Array<{ type: 'text'; text: string; cache_control?: { type: 'ephemeral' } }>
   messages: Array<{ role: 'user'; content: string }>
 } {
   return {

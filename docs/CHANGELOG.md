@@ -2,6 +2,12 @@
 
 ---
 
+## 2026-06-14 — KRİTİK: YoAlgoritma AI motoru durmuştu — 4 cache_control breakpoint limiti aşımı
+- **Sorun (kök neden):** 06-08'den beri YoAlgoritma kart üretimi (ve account-level AI) çalışmıyordu — taramalar `aiGenerated=false` ile kural-motoruna düşüyor, hiyerarşik geliştirme kartları HİÇ üretilmiyordu. Sebep: Anthropic request başına **en fazla 4 `cache_control` breakpoint** kabul eder. 06-07/08'de eklenen `metaAnalysisBlock` + onaylı resmi bilgi bloğu ile Meta yolu (prompt+rules+metaAnalysis+business+competitor+official) **5-7 cache_control bloğuna** çıktı → her Meta AI çağrısı **400 invalid_request** → tüm AI üretimi düştü. Kredi/anahtar değil, kod hatasıydı (06-07'de tam 4 blokken çalışıyordu).
+- **Teşhis:** Vercel prod env (erişimle) — `ANTHROPIC_API_KEY` var (26g, sensitive), kredi $8.35 (yeterli), `aiGenerated` bayrağı 06-07 true → 06-08 false. Antso'da 2 aktif kampanya + 21 aktif reklam (yani "duraklatılmış reklam" değil). Blok sayımı koddan doğrulandı.
+- **Çözüm:** `capCacheBreakpoints(blocks, max=4)` — ilk 4 cache'li bloğu korur, fazlasından `cache_control`'ü kaldırır (İÇERİK aynen kalır, yalnız o blok cache'lenmez). `buildSystemBlocks` (scan.user) + `buildPerCampaignSystemBlocks` (kartlar) artık ≤4 breakpoint garantiler. Çağıran tip imzaları opsiyonel cache_control'e güncellendi.
+- **Dosyalar:** lib/yoai/ai/systemPrompt.ts (capCacheBreakpoints + SysBlock), lib/yoai/ai/perCampaignPrompt.ts, lib/yoai/ai/agent.ts, lib/yoai/ai/perCampaignAgent.ts, src/tests/yoalgoritmaPlatformRules.test.ts
+
 ## 2026-06-14 — YoAlgoritma "Yayınla" = CANLI yayın (PAUSED değil) — kullanıcı gereksinimi
 - **Sorun:** YoAlgoritma'nın ürün vizyonu: kullanıcı bir reklam kartını onaylayıp "Yayınla" dediğinde reklam ilgili platformda **eş zamanlı CANLI** yayınlanır. Faz 1'de güvenlik gerekçesiyle PAUSED yapılmıştı — bu, kullanıcının açık niyetine (tek-tık canlı yayın) AYKIRIYDI.
 - **Çözüm:** YoAlgoritma onay→yayın akışı artık **ACTIVE/ENABLED** (CANLI) yayınlar:

@@ -38,7 +38,7 @@ test('Meta scan: 2 blok döner, ikisi de cache_control ephemeral', () => {
   assert.strictEqual(blocks.length, 2, '2 system blok bekleniyor')
   for (const b of blocks) {
     assert.strictEqual(b.type, 'text')
-    assert.strictEqual(b.cache_control.type, 'ephemeral', 'cache_control eksik')
+    assert.strictEqual(b.cache_control?.type, 'ephemeral', 'cache_control eksik')
   }
 })
 
