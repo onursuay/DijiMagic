@@ -18,7 +18,7 @@ function resolveAnthropicModel(): string {
   return (
     process.env.ANTHROPIC_MODEL_RISK_POLICY ||
     process.env.ANTHROPIC_MODEL ||
-    'claude-sonnet-4-20250514'
+    'claude-sonnet-4-6' // emekli claude-sonnet-4-20250514 yerine güncel varsayılan
   )
 }
 

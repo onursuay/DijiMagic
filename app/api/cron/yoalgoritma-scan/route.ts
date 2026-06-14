@@ -14,7 +14,7 @@
 
 import { NextResponse } from 'next/server'
 import { readUserId } from '@/lib/auth/userCookie'
-import { inngest, isInngestReady } from '@/inngest/client'
+import { inngest, isInngestReady, inngestSigningKeyWarning } from '@/inngest/client'
 import { isAiEngineEnabled, isPerAccountScopeEnabled } from '@/lib/yoai/featureFlag'
 import { isAnthropicReady } from '@/lib/anthropic/client'
 import { listRegisteredAccounts } from '@/lib/account/registeredAccounts'
@@ -139,16 +139,43 @@ export async function GET(request: Request) {
       events.push({ name: 'yoalgoritma/campaign-improvements.user', data })
     }
   }
-  await inngest.send(events)
+  // R3: send'i chunk'la + try/catch. inngest.send() 429/5xx/413/ağ hatasında THROW eder;
+  // Vercel haftalık cron 500'ü RETRY etmez → tek hata o hafta KİMSEYİ taramaz. Chunk'la ki
+  // bir chunk patlasa diğerleri gitsin; başarısız chunk'ları logla + yanıtta bildir.
+  const sendResult = await sendEventsChunked(events)
+  const signingWarn = inngestSigningKeyWarning()
+  if (signingWarn) console.error(`[Cron][yoalgoritma-scan] ${signingWarn}`)
 
   return NextResponse.json({
-    ok: true,
+    ok: sendResult.failedChunks === 0,
     mode: 'inngest',
     users: userIds.size,
     events: events.length,
+    sentEvents: sendResult.sent,
+    failedChunks: sendResult.failedChunks,
     scoped: isPerAccountScopeEnabled(),
-    message: `${userIds.size} kullanıcı için ${events.length} scan/geliştirme event'i gönderildi`,
-  })
+    ...(signingWarn && { warning: signingWarn }),
+    message: `${userIds.size} kullanıcı için ${sendResult.sent}/${events.length} event gönderildi${sendResult.failedChunks ? ` (${sendResult.failedChunks} chunk başarısız)` : ''}`,
+  }, { status: sendResult.failedChunks && sendResult.sent === 0 ? 502 : 200 })
+}
+
+/** Event'leri ~100'lük chunk'larda gönder; her chunk kendi try/catch'inde (biri patlasa diğerleri gider). */
+async function sendEventsChunked(
+  events: Array<{ name: string; data: unknown }>,
+  chunkSize = 100,
+): Promise<{ sent: number; failedChunks: number }> {
+  let sent = 0, failedChunks = 0
+  for (let i = 0; i < events.length; i += chunkSize) {
+    const chunk = events.slice(i, i + chunkSize)
+    try {
+      await inngest.send(chunk as any)
+      sent += chunk.length
+    } catch (e) {
+      failedChunks++
+      console.error(`[Cron][yoalgoritma-scan] send chunk ${i / chunkSize} başarısız (${chunk.length} event):`, e instanceof Error ? e.message : e)
+    }
+  }
+  return { sent, failedChunks }
 }
 
 /**
@@ -179,9 +206,14 @@ export async function POST() {
   const scope = await resolveYoaiScope()
   const data: { userId: string; scope?: YoaiScope } = scope.scoped ? { userId, scope } : { userId }
 
-  await inngest.send([
-    { name: 'yoalgoritma/scan.user', data },
-    { name: 'yoalgoritma/campaign-improvements.user', data },
-  ])
+  try {
+    await inngest.send([
+      { name: 'yoalgoritma/scan.user', data },
+      { name: 'yoalgoritma/campaign-improvements.user', data },
+    ])
+  } catch (e) {
+    console.error('[Cron][yoalgoritma-scan][POST] send başarısız:', e instanceof Error ? e.message : e)
+    return NextResponse.json({ ok: false, error: 'Event gönderilemedi (Inngest)' }, { status: 502 })
+  }
   return NextResponse.json({ ok: true, mode: 'inngest', userId, scoped: scope.scoped })
 }
