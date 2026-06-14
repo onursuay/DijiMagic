@@ -4,6 +4,7 @@ import { useEffect, useState } from 'react'
 import { useTranslations } from 'next-intl'
 import { X } from 'lucide-react'
 import WizardSelect from '@/components/meta/wizard/WizardSelect'
+import { FONT_PAIRINGS } from '@/lib/website/render/theme'
 import type { SiteType, WebsiteDraftInput } from '@/lib/website/types'
 
 const LANGS: { code: string; name: string }[] = [
@@ -27,9 +28,10 @@ export default function NewSiteModal({ open, creating, onClose, onCreate }: NewS
   const [label, setLabel] = useState('')
   const [siteType, setSiteType] = useState<SiteType>('multipage')
   const [locales, setLocales] = useState<string[]>(['tr'])
+  const [fontPairing, setFontPairing] = useState<string>('elegant')
 
   useEffect(() => {
-    if (open) { setLabel(''); setSiteType('multipage'); setLocales(['tr']) }
+    if (open) { setLabel(''); setSiteType('multipage'); setLocales(['tr']); setFontPairing('elegant') }
   }, [open])
 
   useEffect(() => {
@@ -50,7 +52,14 @@ export default function NewSiteModal({ open, creating, onClose, onCreate }: NewS
   const handleCreate = () => {
     // tr önce, sonra seçim sırası — defaultLocale = ilk (tr)
     const ordered = ['tr', ...locales.filter((l) => l !== 'tr')]
-    onCreate({ label: label.trim() || 'Yeni Web Sitesi', siteType, defaultLocale: ordered[0], locales: ordered })
+    const pair = FONT_PAIRINGS[fontPairing] ?? FONT_PAIRINGS.elegant
+    onCreate({
+      label: label.trim() || 'Yeni Web Sitesi',
+      siteType,
+      defaultLocale: ordered[0],
+      locales: ordered,
+      theme: { fontHeading: pair.heading, fontBody: pair.body },
+    })
   }
 
   return (
@@ -111,6 +120,19 @@ export default function NewSiteModal({ open, creating, onClose, onCreate }: NewS
                 )
               })}
             </div>
+          </div>
+
+          <div>
+            <label className="block text-sm font-medium text-gray-700 mb-1.5">{t('fontLabel')}</label>
+            <WizardSelect
+              value={fontPairing}
+              onChange={setFontPairing}
+              options={[
+                { value: 'elegant', label: t('fontElegant') },
+                { value: 'modern', label: t('fontModern') },
+                { value: 'classic', label: t('fontClassic') },
+              ]}
+            />
           </div>
         </div>
 

@@ -1,13 +1,39 @@
 import type { CSSProperties } from 'react'
 import type { ThemeTokens } from '../types'
 
-/** Üretilen site için varsayılan tema — jenerik Tailwind mavi/indigo DEĞİL. */
+/** Üretilen siteler için yazı ailesi eşleşmeleri (display/serif + temiz sans). */
+export interface FontPairing { id: string; heading: string; body: string }
+
+export const FONT_PAIRINGS: Record<string, FontPairing> = {
+  modern: {
+    id: 'modern',
+    heading: "'Plus Jakarta Sans', system-ui, sans-serif",
+    body: "'Plus Jakarta Sans', system-ui, sans-serif",
+  },
+  elegant: {
+    id: 'elegant',
+    heading: "'Fraunces', Georgia, serif",
+    body: "'Plus Jakarta Sans', system-ui, sans-serif",
+  },
+  classic: {
+    id: 'classic',
+    heading: "'Playfair Display', Georgia, serif",
+    body: "'Source Sans 3', system-ui, sans-serif",
+  },
+}
+
+export const DEFAULT_FONT_PAIRING = FONT_PAIRINGS.elegant
+
+/** Üretilen sitelerde yüklenen Google Fonts (tüm pairing fontları tek link). */
+export const WEBSITE_FONTS_HREF =
+  'https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,400;500;600;700&family=Plus+Jakarta+Sans:wght@400;500;600;700&family=Playfair+Display:wght@500;600;700&family=Source+Sans+3:wght@400;500;600&display=swap'
+
 export const DEFAULT_SITE_THEME: Required<Pick<ThemeTokens, 'primaryColor'>> &
   Pick<ThemeTokens, 'secondaryColor' | 'fontHeading' | 'fontBody' | 'logoUrl'> = {
   primaryColor: '#0f172a', // ink (slate-900)
-  secondaryColor: '#0f766e', // accent (teal-700) — markasız varsayılan, ayırt edici
-  fontHeading: "'Playfair Display', Georgia, serif",
-  fontBody: "system-ui, -apple-system, 'Segoe UI', Roboto, sans-serif",
+  secondaryColor: '#0f766e', // accent (teal-700) — markasız varsayılan, jenerik değil
+  fontHeading: DEFAULT_FONT_PAIRING.heading,
+  fontBody: DEFAULT_FONT_PAIRING.body,
   logoUrl: null,
 }
 

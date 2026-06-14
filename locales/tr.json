@@ -5782,6 +5782,10 @@
       "typeMultipage": "Çok sayfalı",
       "languagesLabel": "Diller",
       "languagesHint": "Türkçe dahildir; her ek dil üretim kredisini artırır.",
+      "fontLabel": "Yazı stili",
+      "fontElegant": "Zarif (Serif başlık + Sans)",
+      "fontModern": "Modern (Sans)",
+      "fontClassic": "Klasik (Serif)",
       "create": "Oluştur",
       "cancel": "Vazgeç"
     }
