@@ -1,15 +1,19 @@
 import 'server-only'
 import { claudeJson, isClaudeReady } from '@/lib/anthropic/text'
-import { pickStockImage, isStockReady } from '../stock'
+import { pickStockImage, pickStockImages, isStockReady } from '../stock'
 import { scanReferences } from '../referenceScanner'
 import { labelsFor, type SiteLabels } from '../templates/deterministic'
 import type { WebsitePageInput, SectionBlock, SiteType, PageRole } from '../types'
 import type { BusinessProfileRow, BusinessIntelligenceRow } from '@/lib/yoai/businessProfileStore'
 
 /**
- * Faz 1c — AI üretim motoru. Claude SABİT bir içerik şemasını doldurur (yapıyı uydurmaz);
+ * AI üretim motoru. Claude SABİT bir içerik şemasını doldurur (yapıyı uydurmaz);
  * header/footer/nav güvenli şekilde DETERMİNİSTİK monte edilir; görseller stoktan bağlanır.
- * Bu sayede nav href'leri güvenli (XSS yok), dil tutarlı, yapı öngörülebilir kalır.
+ * Görsel-zengin, modern bölüm seti (referans kalitesi): hero · services(görselli) · split ·
+ * gallery · features · about · cta · contact.
+ *
+ * SAHTE VERİ YASAĞI (feedback_no_fake_data): uydurma müşteri yorumu (testimonial) ve kanıtsız
+ * istatistik (stats) ÜRETİLMEZ — render bileşenleri ileride gerçek veri için durur.
  */
 
 interface BrandSynthesisLike {
@@ -21,11 +25,15 @@ interface BrandSynthesisLike {
   tone_guidance?: string | null
 }
 
+interface AiServiceItem { title?: string; description?: string; imageQuery?: string }
 interface AiContent {
-  hero?: { title?: string; subtitle?: string; ctaLabel?: string; imageQuery?: string }
-  services?: { heading?: string; items?: { title?: string; description?: string }[] }
-  features?: { heading?: string; items?: { title?: string; description?: string }[] }
-  about?: { heading?: string; body?: string; imageQuery?: string }
+  hero?: { eyebrow?: string; title?: string; subtitle?: string; ctaLabel?: string; secondaryCtaLabel?: string; imageQuery?: string }
+  services?: { eyebrow?: string; heading?: string; intro?: string; items?: AiServiceItem[] }
+  split?: { eyebrow?: string; heading?: string; body?: string; bullets?: string[]; imageQuery?: string }
+  gallery?: { eyebrow?: string; heading?: string; imageQuery?: string }
+  features?: { eyebrow?: string; heading?: string; items?: { title?: string; description?: string }[] }
+  about?: { eyebrow?: string; heading?: string; body?: string; imageQuery?: string }
+  cta?: { heading?: string; body?: string; ctaLabel?: string }
   contact?: { heading?: string; body?: string }
 }
 
@@ -88,13 +96,18 @@ function buildPrompt(input: GenerateInput, ai: BrandSynthesisLike, refSummaries:
       : `Write ALL content fluently and natively in ${langName}. Use correct ${langName} grammar, spelling and punctuation.`
 
   const system = [
-    'Sen kıdemli bir web içerik editörü ve marka metni yazarısın.',
-    'Verilen işletme gerçeklerinden, dönüşüm odaklı, markaya uygun bir web sitesi metni üret.',
+    'Sen kıdemli bir web içerik editörü, marka metni yazarı ve UX yazarısın.',
+    'Verilen işletme gerçeklerinden, dönüşüm odaklı, markaya uygun, MODERN bir web sitesi metni üret.',
     'KURALLAR:',
     `- ${trRule}`,
-    '- UYDURMA YOK: yalnız verilen gerçeklere dayan. Bilmediğin somut iddiayı (ödül, yıl, müşteri sayısı, garanti) UYDURMA.',
-    '- Marka tonuna uy; abartılı/klişe pazarlama dilinden kaçın.',
-    '- imageQuery alanları İNGİLİZCE, kısa ve görsel arama için uygun olsun (örn. "modern dental clinic interior").',
+    '- UYDURMA YOK: yalnız verilen gerçeklere dayan. Bilmediğin somut iddiayı (ödül, yıl, müşteri sayısı, garanti, yüzde, rakam) ASLA uydurma.',
+    '- Marka tonuna uy; abartılı/klişe pazarlama dilinden kaçın. Kısa, net, güçlü cümleler.',
+    '- hero.title KISA ve etkileyici olsun (en fazla ~7 kelime); subtitle 1-2 cümle.',
+    '- eyebrow alanları 1-3 kelimelik kısa üst-etiket (örn. sektör, şehir, kısa slogan).',
+    '- services.items: GERÇEK hizmet/ürünlerle doldur (3-6 adet), her birinin kısa açıklaması (1 cümle) olsun.',
+    '- features.items: somut fayda/farklılık (3-4 adet), kısa açıklamalı.',
+    '- split: değer önerisini anlatan bir bölüm; bullets 3-4 kısa madde.',
+    '- imageQuery alanları İNGİLİZCE, kısa, görsel arama için spesifik olsun (örn. "modern dental clinic interior", "fresh organic olive oil bottles"). Her imageQuery FARKLI bir sahne betimlesin.',
     '- REFERANS site özetleri verilmişse onların yapı/ton/düzen MANTIĞINI ilham al ve YAKLAŞTIR; ama ASLA birebir kopyalama — özgün metin üret.',
     '- Yalnız istenen JSON şemasını döndür; ek açıklama, markdown veya kod bloğu YOK.',
   ].join('\n')
@@ -110,12 +123,15 @@ function buildPrompt(input: GenerateInput, ai: BrandSynthesisLike, refSummaries:
     refSummaries.length
       ? `REFERANS SİTELER (yalnız İLHAM — birebir kopya DEĞİL; bu sitelerin düzen/ton/yapı mantığını yaklaştır):\n${refSummaries.map((s) => `- ${s}`).join('\n')}\n`
       : '',
-    'Aşağıdaki JSON şemasını doldur (boş bırakabileceğin alanları boş string yap, items dizilerini gerçek hizmet/farklılıklarla doldur):',
+    'Aşağıdaki JSON şemasını doldur (boş bırakabileceğin alanları boş string yap):',
     `{
-  "hero": { "title": string, "subtitle": string, "ctaLabel": string, "imageQuery": string },
-  "services": { "heading": string, "items": [{ "title": string, "description": string }] },
-  "features": { "heading": string, "items": [{ "title": string, "description": string }] },
-  "about": { "heading": string, "body": string, "imageQuery": string },
+  "hero": { "eyebrow": string, "title": string, "subtitle": string, "ctaLabel": string, "secondaryCtaLabel": string, "imageQuery": string },
+  "services": { "eyebrow": string, "heading": string, "intro": string, "items": [{ "title": string, "description": string, "imageQuery": string }] },
+  "split": { "eyebrow": string, "heading": string, "body": string, "bullets": [string], "imageQuery": string },
+  "gallery": { "eyebrow": string, "heading": string, "imageQuery": string },
+  "features": { "eyebrow": string, "heading": string, "items": [{ "title": string, "description": string }] },
+  "about": { "eyebrow": string, "heading": string, "body": string, "imageQuery": string },
+  "cta": { "heading": string, "body": string, "ctaLabel": string },
   "contact": { "heading": string, "body": string }
 }`,
   ].join('\n')
@@ -124,11 +140,21 @@ function buildPrompt(input: GenerateInput, ai: BrandSynthesisLike, refSummaries:
 }
 
 const str = (v: unknown): string => (typeof v === 'string' ? v.trim() : '')
-const items = (v: unknown): { title: string; description: string }[] =>
+const strList = (v: unknown): string[] => (Array.isArray(v) ? v.map(str).filter(Boolean) : [])
+const svcItems = (v: unknown): AiServiceItem[] =>
+  (Array.isArray(v) ? v : [])
+    .map((x) => ({
+      title: str((x as Record<string, unknown>)?.title),
+      description: str((x as Record<string, unknown>)?.description),
+      imageQuery: str((x as Record<string, unknown>)?.imageQuery),
+    }))
+    .filter((x) => x.title)
+    .slice(0, 6)
+const featItems = (v: unknown): { title: string; description: string }[] =>
   (Array.isArray(v) ? v : [])
     .map((x) => ({ title: str((x as Record<string, unknown>)?.title), description: str((x as Record<string, unknown>)?.description) }))
     .filter((x) => x.title)
-    .slice(0, 9)
+    .slice(0, 4)
 
 function navFor(input: GenerateInput, L: SiteLabels) {
   if (input.siteType === 'landing') {
@@ -149,7 +175,6 @@ function navFor(input: GenerateInput, L: SiteLabels) {
 
 const block = (type: string, content: Record<string, unknown>, i: number): SectionBlock => ({ id: `${type}-${i}`, type, content })
 
-/** Bir imageQuery için stok görsel bağla (stok hazır değilse atla). */
 async function resolveImage(query: string): Promise<string | null> {
   const q = str(query)
   if (!q || !isStockReady()) return null
@@ -165,33 +190,94 @@ export async function generateSitePages(input: GenerateInput): Promise<WebsitePa
   const ai = ((input.intelligence as unknown as { ai_synthesis?: BrandSynthesisLike } | null)?.ai_synthesis) ?? {}
   const L = labelsFor(input.locale)
   const brand = clean(input.profile?.company_name) || clean(input.label) || (input.locale === 'en' ? 'Your Brand' : 'Markanız')
+  const sectorHint = clean([input.profile?.sector_main, input.profile?.sector_sub].filter(Boolean).join(' '))
 
   const refSummaries = input.referenceUrls?.length ? await scanReferences(input.referenceUrls) : []
   const { system, user } = buildPrompt(input, ai, refSummaries)
-  const content = await claudeJson<AiContent>({ system, user, maxTokens: 3000, temperature: 0.6, timeoutMs: 60_000 })
+  const content = await claudeJson<AiContent>({ system, user, maxTokens: 4000, temperature: 0.6, timeoutMs: 60_000 })
   if (!content) return null
 
-  // Görselleri paralel çöz
-  const [heroImg, aboutImg] = await Promise.all([
-    resolveImage(content.hero?.imageQuery ?? ''),
-    resolveImage(content.about?.imageQuery ?? ''),
+  const services = svcItems(content.services?.items)
+  const features = featItems(content.features?.items)
+
+  // Görsel sorguları (her bölüm farklı sahne). Boşsa sektöre dayalı fallback.
+  const heroQ = str(content.hero?.imageQuery) || `modern ${sectorHint || 'business'} hero background`
+  const aboutQ = str(content.about?.imageQuery) || `professional ${sectorHint || 'business'} team workplace`
+  const splitQ = str(content.split?.imageQuery) || `${sectorHint || 'business'} detail closeup`
+  const galleryQ = str(content.gallery?.imageQuery) || `${sectorHint || 'business'} showcase`
+
+  // Tüm görselleri paralel çöz
+  const [heroImg, aboutImg, splitImg, serviceImgs, galleryImgs] = await Promise.all([
+    resolveImage(heroQ),
+    resolveImage(aboutQ),
+    resolveImage(splitQ),
+    Promise.all(services.map((s) => resolveImage(s.imageQuery || `${s.title} ${sectorHint}`))),
+    isStockReady() ? pickStockImages(galleryQ, 5) : Promise.resolve([]),
   ])
 
+  // ── Blok kurucular ──
   const heroBlock = (i: number) =>
     block('hero', {
+      eyebrow: str(content.hero?.eyebrow) || sectorHint || '',
       title: str(content.hero?.title) || brand,
       subtitle: str(content.hero?.subtitle),
       ctaLabel: str(content.hero?.ctaLabel) || L.contactCta,
       ctaHref: input.siteType === 'landing' ? '#contact' : `/s/${input.subdomain}/iletisim`,
+      secondaryCtaLabel: str(content.hero?.secondaryCtaLabel) || L.learnMore,
+      secondaryCtaHref: input.siteType === 'landing' ? '#about' : `/s/${input.subdomain}/hakkimizda`,
       imageUrl: heroImg ?? '',
     }, i)
+
   const servicesBlock = (i: number) =>
-    block('services', { heading: str(content.services?.heading) || L.services, items: items(content.services?.items) }, i)
-  const featuresItems = items(content.features?.items).slice(0, 4)
+    block('services', {
+      eyebrow: str(content.services?.eyebrow) || L.servicesEyebrow,
+      heading: str(content.services?.heading) || L.services,
+      intro: str(content.services?.intro),
+      items: services.map((s, idx) => ({ title: s.title, description: s.description, imageUrl: serviceImgs[idx] ?? '' })),
+    }, i)
+
+  const splitData = content.split
+  const splitBlock = (i: number, side: 'left' | 'right', tone: 'ink' | 'accent') =>
+    block('split', {
+      eyebrow: str(splitData?.eyebrow),
+      heading: str(splitData?.heading) || L.whyUs,
+      body: str(splitData?.body) || clean(input.profile?.business_description),
+      bullets: strList(splitData?.bullets).slice(0, 5),
+      imageUrl: splitImg ?? '',
+      imageSide: side,
+      tone,
+    }, i)
+
+  const galleryBlock = (i: number) =>
+    block('gallery', {
+      eyebrow: str(content.gallery?.eyebrow),
+      heading: str(content.gallery?.heading) || '',
+      images: galleryImgs.map((g) => ({ url: g.url, caption: '' })),
+    }, i)
+
   const featuresBlock = (i: number) =>
-    block('features', { heading: str(content.features?.heading) || L.whyUs, items: featuresItems }, i)
+    block('features', {
+      eyebrow: str(content.features?.eyebrow) || L.whyUsEyebrow,
+      heading: str(content.features?.heading) || L.whyUs,
+      items: features,
+    }, i)
+
   const aboutBlock = (i: number) =>
-    block('about', { heading: str(content.about?.heading) || L.about, body: str(content.about?.body), imageUrl: aboutImg ?? '' }, i)
+    block('about', {
+      eyebrow: str(content.about?.eyebrow) || L.aboutEyebrow,
+      heading: str(content.about?.heading) || L.about,
+      body: str(content.about?.body),
+      imageUrl: aboutImg ?? '',
+    }, i)
+
+  const ctaBlock = (i: number) =>
+    block('cta', {
+      heading: str(content.cta?.heading) || L.ctaHeading,
+      body: str(content.cta?.body),
+      ctaLabel: str(content.cta?.ctaLabel) || L.contactCta,
+      ctaHref: input.siteType === 'landing' ? '#contact' : `/s/${input.subdomain}/iletisim`,
+    }, i)
+
   const contactBlock = (i: number) =>
     block('contact', {
       heading: str(content.contact?.heading) || L.contact,
@@ -200,7 +286,7 @@ export async function generateSitePages(input: GenerateInput): Promise<WebsitePa
       links: [],
     }, i)
 
-  // Footer için ortak veri (sosyal linkler gerçek profil verisinden — AI üretmez)
+  // Footer ortak veri (sosyal linkler gerçek profil verisinden — AI üretmez)
   const social: { label: string; href: string }[] = []
   const addSocial = (label: string, url: string | null | undefined) => {
     const u = clean(url)
@@ -215,14 +301,17 @@ export async function generateSitePages(input: GenerateInput): Promise<WebsitePa
   const footerLocations = (input.profile?.target_locations ?? []).map(clean).filter(Boolean)
   const tagline = str(content.hero?.subtitle) || clean(input.profile?.business_description)
 
-  const header = block('header', { brand, logoUrl: null, nav: navFor(input, L) }, 0)
+  const header = block('header', { brand, logoUrl: null, nav: navFor(input, L), ctaLabel: L.contactCta, ctaHref: input.siteType === 'landing' ? '#contact' : `/s/${input.subdomain}/iletisim` }, 0)
   const footer = (i: number) =>
     block('footer', {
       brand, logoUrl: null, note: `© ${brand}`, tagline,
       nav: navFor(input, L), links: social, locations: footerLocations,
       pagesLabel: L.footerPages, contactLabel: L.footerContact,
     }, i)
-  const hasFeatures = featuresItems.length > 0
+
+  const hasFeatures = features.length > 0
+  const hasSplit = Boolean(str(splitData?.heading) || str(splitData?.body) || strList(splitData?.bullets).length)
+  const hasGallery = galleryImgs.length >= 3
   const desc = str(content.hero?.subtitle) || brand
 
   const page = (slug: string, role: PageRole, sections: SectionBlock[], seoTitle: string): WebsitePageInput => ({
@@ -235,19 +324,40 @@ export async function generateSitePages(input: GenerateInput): Promise<WebsitePa
   })
 
   if (input.siteType === 'landing') {
-    const sections = [header, heroBlock(1), servicesBlock(2)]
-    if (hasFeatures) sections.push(featuresBlock(3))
-    sections.push(aboutBlock(4), contactBlock(5), footer(6))
-    return [page('home', 'home', sections, brand)]
+    // Ritim: hero(görsel) → services(surface) → split(koyu panel) → gallery → features → about → cta(accent) → contact(ink)
+    const s: SectionBlock[] = [header, heroBlock(1), servicesBlock(2)]
+    let idx = 3
+    if (hasSplit) s.push(splitBlock(idx++, 'right', 'ink'))
+    if (hasGallery) s.push(galleryBlock(idx++))
+    if (hasFeatures) s.push(featuresBlock(idx++))
+    s.push(aboutBlock(idx++))
+    s.push(ctaBlock(idx++))
+    s.push(contactBlock(idx++))
+    s.push(footer(idx++))
+    return [page('home', 'home', s, brand)]
   }
 
-  const homeSections = [header, heroBlock(1), servicesBlock(2)]
-  if (hasFeatures) homeSections.push(featuresBlock(3))
-  homeSections.push(footer(4))
+  // multipage — 4 sayfa
+  const home: SectionBlock[] = [header, heroBlock(1), servicesBlock(2)]
+  let hidx = 3
+  if (hasSplit) home.push(splitBlock(hidx++, 'right', 'ink'))
+  if (hasGallery) home.push(galleryBlock(hidx++))
+  if (hasFeatures) home.push(featuresBlock(hidx++))
+  home.push(ctaBlock(hidx++))
+  home.push(footer(hidx++))
+
+  const aboutSections: SectionBlock[] = [header, aboutBlock(1)]
+  if (hasFeatures) aboutSections.push(featuresBlock(2))
+  aboutSections.push(ctaBlock(98), footer(99))
+
+  const serviceSections: SectionBlock[] = [header, servicesBlock(1)]
+  if (hasGallery) serviceSections.push(galleryBlock(2))
+  serviceSections.push(ctaBlock(98), footer(99))
+
   return [
-    page('home', 'home', homeSections, brand),
-    page('hakkimizda', 'about', [header, aboutBlock(1), footer(2)], `${L.about} — ${brand}`),
-    page('hizmetler', 'services', [header, servicesBlock(1), footer(2)], `${L.services} — ${brand}`),
+    page('home', 'home', home, brand),
+    page('hakkimizda', 'about', aboutSections, `${L.about} — ${brand}`),
+    page('hizmetler', 'services', serviceSections, `${L.services} — ${brand}`),
     page('iletisim', 'contact', [header, contactBlock(1), footer(2)], `${L.contact} — ${brand}`),
   ]
 }

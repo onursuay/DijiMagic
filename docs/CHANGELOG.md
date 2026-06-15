@@ -2,6 +2,20 @@
 
 ---
 
+## 2026-06-15 — Web Site Yöneticisi: üretilen site tasarımı referans kalitesine yükseltildi
+- **Sorun:** Üretilen siteler "çöp" görünüyordu — görsel gelmiyor, tipografi çok küçük, görsel-yazı mesafesi dar, modern/yaratıcı değil. Kullanıcı referans olarak elysiumgardenhotel.com, anamournatural.com, ticket.antsodenizcilik.com verdi.
+- **Kök nedenler:** (1) `templates/deterministic.ts` sıfır görsel koyuyordu, AI yolu yalnız 2 görsel; servis kartlarında boş renkli kare. (2) **Tailwind içerik taraması `lib/`'i kapsamıyordu** → `lib/website/render`'daki özgün arbitrary class'lar (büyük tipografi `clamp`, hero `min-h-[88vh]`) purge ediliyor, uygulanmıyordu → "çok küçük" hissinin asıl teknik nedeni. (3) Sönük sabit slate+teal palet. (4) Tek tip "şablon" bölümler. (5) Public `/s/` siteleri YoAi root layout'unu (çerez banner'ı) miras alıyordu.
+- **Çözüm:**
+  - `tailwind.config.ts` içeriğe `./lib/**` eklendi (kritik purge fix).
+  - `render/sections.tsx` komple yeniden yazıldı: **full-bleed hero** (arka plan fotoğraf + overlay + dev `clamp` başlık + çift CTA, görsel yoksa marka gradyanı), görselli servis kartları, **split** (fotoğraf + renkli panel), **gallery** (asimetrik grid), **stats/testimonial/cta** bölümleri, büyük responsive tipografi, ferah boşluk, açık↔koyu ritim.
+  - `render/theme.ts`: sektöre göre canlı palet (otel→petrol+bronz, doğal→yeşil, sağlık→teal, kurumsal→lacivert…) + sektöre göre stok görsel temaları + `--site-surface`/`--site-accent-soft` değişkenleri. Amber/sarı yasağına uyar.
+  - `ai/generate.ts`: zengin içerik şeması (eyebrow/services-açıklama/split/gallery/cta) + **6–10 görsel paralel** (Pexels) + sektör fallback. **Sahte veri yasağı** gereği uydurma yorum/istatistik üretilmez.
+  - `templates/deterministic.ts` async + görselli (hero/about/split/galeri/servis kartları stoktan) + yeni bölümler.
+  - build/generate route üretim anında sektöre göre tema rengini siteye yazar (migration'sız, theme jsonb).
+  - `CookieConsent` path guard: `/s/`, `/website-preview`'da gizlenir (müşteri sitesine YoAi çerez banner'ı sızmaz).
+  - Doğrulama: gerçek render (Playwright) 2 tur, desktop + mobil, otel + doğal ürün demoları referanslarla karşılaştırıldı.
+- **Dosyalar:** tailwind.config.ts, lib/website/render/{theme.ts,sections.tsx}, lib/website/ai/generate.ts, lib/website/templates/deterministic.ts, lib/website/stock/index.ts, lib/website/types.ts, app/api/website/[id]/{build,generate}/route.ts, components/consent/CookieConsent.tsx, docs/superpowers/specs/2026-06-15-web-site-yoneticisi-tasarim-revizyon.md
+
 ## 2026-06-14/15 — 🆕 Web Site Yöneticisi modülü (Faz 1 + 2 + 3 CANLI) — AI web sitesi kurucu
 - **İstek:** Kullanıcı bilgi/logo/kategori verir, AI markaya uygun gerçek bir web sitesi üretir, önizler ve tek tuşla yayına alır (referans: promake.ai). 7 fazlı yol haritası (spec: docs/superpowers/specs/2026-06-14-web-site-yoneticisi-design.md).
 - **Faz 1 (çekirdek) — BİTTİ:**

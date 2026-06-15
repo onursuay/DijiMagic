@@ -1,8 +1,9 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { getCurrentUser } from '@/lib/billing/user'
 import { chargeFeature } from '@/lib/billing/featureGuard'
-import { getWebsite, replacePages, createVersion, getPages } from '@/lib/website/store'
+import { getWebsite, replacePages, createVersion, getPages, updateWebsite } from '@/lib/website/store'
 import { generateSitePages, isWebsiteAiReady } from '@/lib/website/ai/generate'
+import { resolveSiteColors } from '@/lib/website/render/theme'
 import { computeGenerationCost, WEBSITE_REVISION_COST } from '@/lib/website/credits'
 import { getProfileByUserId, getIntelligenceByUserId } from '@/lib/yoai/businessProfileStore'
 import type { WebsiteSnapshot } from '@/lib/website/types'
@@ -47,6 +48,11 @@ export async function POST(req: NextRequest, { params }: { params: { id: string 
       getIntelligenceByUserId(user.id),
     ])
 
+    // Sektöre göre canlı tema rengini çöz ve siteye yaz (render bunu CSS değişkenine çevirir).
+    const sector = [profile?.sector_main, profile?.sector_sub, site.category].filter(Boolean).join(' ')
+    const theme = { ...site.theme, ...resolveSiteColors({ brandColor: null, sector }) }
+    await updateWebsite(user.id, site.id, { theme })
+
     // Çoklu dil — her seçili dil için paralel üret (60sn maxDuration içinde kalır; ilk 4 dil).
     const locales = (site.locales.length ? site.locales : [site.defaultLocale]).slice(0, 4)
     const perLocale = await Promise.all(
@@ -74,7 +80,7 @@ export async function POST(req: NextRequest, { params }: { params: { id: string 
         defaultLocale: site.defaultLocale,
         locales: site.locales,
         category: site.category,
-        theme: site.theme,
+        theme,
       },
       pages,
     }

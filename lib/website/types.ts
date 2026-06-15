@@ -9,6 +9,10 @@ export type PageRole =
 export interface ThemeTokens {
   primaryColor: string | null
   secondaryColor?: string | null
+  /** Tematik açık zemin tonu (bölüm arka planları). theme jsonb'sinde tutulur — migration gerekmez. */
+  surfaceColor?: string | null
+  /** Aksan rengin yumuşak/şeffaf tonu (rozet, ikon zemini). theme jsonb'sinde tutulur. */
+  accentSoftColor?: string | null
   fontHeading?: string | null
   fontBody?: string | null
   /** Bu sitenin Google Fonts linki (yalnız kendi fontlarını yükler). */
@@ -22,7 +26,9 @@ export interface ThemeTokens {
 
 export interface SectionBlock {
   id: string
-  type: string // 'hero' | 'features' | 'about' | 'cta' | 'contact' | ... (Faz 1b'de genişler)
+  // 'header' | 'hero' | 'stats' | 'services' | 'features' | 'split' | 'gallery'
+  // | 'about' | 'testimonial' | 'cta' | 'contact' | 'footer'
+  type: string
   content: Record<string, unknown>
 }
 

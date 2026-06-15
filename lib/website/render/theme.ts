@@ -77,10 +77,123 @@ export const FONT_PAIRINGS: Record<string, FontPairing> = Object.fromEntries(PAI
 export const FONT_PAIRING_LIST: FontPairing[] = PAIRINGS
 export const DEFAULT_FONT_PAIRING = FONT_PAIRINGS.elegant
 
+/**
+ * Sektöre göre uyumlu renk paletleri (tasarımcı kararı).
+ * Her palet: ink (koyu metin/koyu bölüm zemini) · accent (marka aksanı/buton) ·
+ * surface (çok açık tematik bölüm zemini) · onAccent (aksan üstü metin).
+ * Amber/sarı YASAK kuralına uyar (otel paleti şampanya-bronz toprak tonu).
+ */
+export interface SitePalette { ink: string; accent: string; surface: string; onAccent: string }
+
+const PALETTES: Record<string, SitePalette> = {
+  hotel: { ink: '#142A38', accent: '#B0894C', surface: '#F2F6F5', onAccent: '#FFFFFF' },
+  food: { ink: '#1E3326', accent: '#4C7A35', surface: '#F3F6EE', onAccent: '#FFFFFF' },
+  beauty: { ink: '#3A1A28', accent: '#B23A6B', surface: '#FBF2F5', onAccent: '#FFFFFF' },
+  health: { ink: '#0F2A30', accent: '#12877A', surface: '#EEF6F4', onAccent: '#FFFFFF' },
+  corporate: { ink: '#16233C', accent: '#2C57A8', surface: '#F0F3F9', onAccent: '#FFFFFF' },
+  realestate: { ink: '#232830', accent: '#B0542E', surface: '#F4F2EF', onAccent: '#FFFFFF' },
+  tech: { ink: '#131726', accent: '#3B5BDB', surface: '#EFF1F8', onAccent: '#FFFFFF' },
+  food_service: { ink: '#2A1815', accent: '#A33523', surface: '#F7F1EC', onAccent: '#FFFFFF' },
+  education: { ink: '#15243F', accent: '#2867A6', surface: '#EFF3F8', onAccent: '#FFFFFF' },
+  fitness: { ink: '#15191C', accent: '#159A47', surface: '#EFF3EF', onAccent: '#FFFFFF' },
+  default: { ink: '#18202B', accent: '#0E7C73', surface: '#F1F5F4', onAccent: '#FFFFFF' },
+}
+
+/** Türkçe-güvenli normalize (İ/I tuzağına düşmeden anahtar kelime arama). */
+function norm(s: string): string {
+  return s
+    .replace(/İ/g, 'i').replace(/I/g, 'i').replace(/ı/g, 'i')
+    .replace(/Ş/g, 's').replace(/Ğ/g, 'g').replace(/Ü/g, 'u').replace(/Ö/g, 'o').replace(/Ç/g, 'c')
+    .toLowerCase()
+}
+
+// Sektör tahmini için anahtar kelime → palet eşlemesi (TR + EN). İlk eşleşen kazanır.
+const SECTOR_KEYWORDS: { keys: string[]; palette: keyof typeof PALETTES }[] = [
+  { keys: ['otel', 'hotel', 'turizm', 'tourism', 'tatil', 'resort', 'villa', 'konaklama', 'pansiyon', 'seyahat', 'travel', 'tur ', 'booking', 'bilet', 'ferry', 'feribot'], palette: 'hotel' },
+  { keys: ['restoran', 'restaurant', 'cafe', 'kafe', 'lokanta', 'yemek', 'food court', 'pastane', 'firin', 'patisserie', 'bistro', 'bar ', 'pizza', 'burger', 'mutfak'], palette: 'food_service' },
+  { keys: ['gida', 'food', 'dogal', 'organik', 'organic', 'natural', 'tarim', 'agri', 'zeytin', 'bal ', 'cay', 'kahve', 'ciftlik', 'farm', 'market', 'bakkal', 'manav'], palette: 'food' },
+  { keys: ['guzellik', 'beauty', 'kozmetik', 'cosmetic', 'spa', 'cilt', 'skin', 'kuafor', 'berber', 'salon', 'estetik', 'makyaj', 'sac', 'bakim', 'wellness'], palette: 'beauty' },
+  { keys: ['saglik', 'health', 'klinik', 'clinic', 'dis ', 'dental', 'hastane', 'hospital', 'doktor', 'tip', 'medical', 'eczane', 'pharma', 'fizyoterapi', 'psikolog', 'veteriner'], palette: 'health' },
+  { keys: ['insaat', 'construction', 'mimar', 'architect', 'emlak', 'gayrimenkul', 'realestate', 'real estate', 'yapi', 'dekorasyon', 'mobilya', 'furniture', 'tadilat', 'peyzaj'], palette: 'realestate' },
+  { keys: ['teknoloji', 'technology', 'yazilim', 'software', 'dijital', 'digital', 'tech', 'ajans', 'agency', 'e-ticaret', 'ecommerce', 'startup', 'saas', 'uygulama', 'app ', 'web '], palette: 'tech' },
+  { keys: ['danismanlik', 'consulting', 'finans', 'finance', 'hukuk', 'avukat', 'law', 'legal', 'muhasebe', 'accounting', 'sigorta', 'insurance', 'kurumsal', 'corporate', 'banka'], palette: 'corporate' },
+  { keys: ['egitim', 'education', 'kurs', 'course', 'okul', 'school', 'akademi', 'academy', 'universite', 'dershane', 'kolej', 'anaokulu'], palette: 'education' },
+  { keys: ['spor', 'sport', 'fitness', 'gym', 'yoga', 'pilates', 'crossfit', 'antrenor', 'koc '], palette: 'fitness' },
+]
+
+/** Verilen sektör/kategori metninden palet anahtarını seçer (eşleşme yoksa 'default'). */
+export function sectorKeyFor(sector: string | null | undefined): keyof typeof PALETTES {
+  const s = sector ? ` ${norm(sector)} ` : ''
+  if (s.trim()) {
+    for (const { keys, palette } of SECTOR_KEYWORDS) {
+      if (keys.some((k) => s.includes(k))) return palette
+    }
+  }
+  return 'default'
+}
+
+/** Verilen sektör/kategori metninden uygun paleti seçer (eşleşme yoksa default). */
+export function paletteForSector(sector: string | null | undefined): SitePalette {
+  return PALETTES[sectorKeyFor(sector)]
+}
+
+/** Sektöre göre İngilizce stok görsel sorgu temaları (deterministik üretim + AI fallback). */
+const STOCK_THEME: Record<keyof typeof PALETTES, { hero: string; about: string; detail: string; gallery: string; service: string }> = {
+  hotel: { hero: 'luxury hotel resort exterior sea view', about: 'elegant hotel lobby interior', detail: 'hotel room comfort detail', gallery: 'boutique hotel rooms and pool', service: 'hotel amenity' },
+  food: { hero: 'fresh organic natural produce farm', about: 'natural food production workshop', detail: 'organic food ingredients closeup', gallery: 'natural organic food products', service: 'organic product' },
+  beauty: { hero: 'modern beauty spa salon interior', about: 'beauty treatment professional', detail: 'skincare cosmetic products', gallery: 'beauty salon treatments', service: 'beauty treatment' },
+  health: { hero: 'modern medical clinic interior bright', about: 'professional doctor healthcare team', detail: 'medical equipment closeup', gallery: 'modern clinic facilities', service: 'medical service' },
+  corporate: { hero: 'modern corporate office building', about: 'professional business team meeting', detail: 'business handshake closeup', gallery: 'corporate office workspace', service: 'business service' },
+  realestate: { hero: 'modern architecture luxury building', about: 'architect construction professional', detail: 'modern interior design detail', gallery: 'modern real estate properties', service: 'property service' },
+  tech: { hero: 'modern technology office workspace', about: 'software development team', detail: 'technology code screen closeup', gallery: 'modern tech workspace', service: 'technology service' },
+  food_service: { hero: 'cozy restaurant interior ambience', about: 'chef cooking professional kitchen', detail: 'gourmet plated dish closeup', gallery: 'restaurant dishes and interior', service: 'restaurant dish' },
+  education: { hero: 'modern classroom learning environment', about: 'teacher students learning', detail: 'books study materials closeup', gallery: 'education campus facilities', service: 'course' },
+  fitness: { hero: 'modern fitness gym interior', about: 'personal trainer workout', detail: 'fitness equipment closeup', gallery: 'gym training facilities', service: 'fitness program' },
+  default: { hero: 'modern professional business workspace', about: 'professional team at work', detail: 'professional detail closeup', gallery: 'modern professional showcase', service: 'professional service' },
+}
+
+/** Sektöre göre stok görsel sorgu temaları (deterministik üretimde + AI fallback'te kullanılır). */
+export function stockThemeForSector(sector: string | null | undefined) {
+  return STOCK_THEME[sectorKeyFor(sector)]
+}
+
+/** #RRGGBB → "r, g, b" (rgba bileşimi için). Geçersizse null. */
+function hexToRgb(hex: string | null | undefined): string | null {
+  if (!hex) return null
+  const m = /^#?([0-9a-f]{6})$/i.exec(hex.trim())
+  if (!m) return null
+  const n = parseInt(m[1], 16)
+  return `${(n >> 16) & 255}, ${(n >> 8) & 255}, ${n & 255}`
+}
+
+/**
+ * Üretim anında siteye yazılacak tema renklerini çözer.
+ * Marka rengi (primaryColor) varsa aksan onu alır; ink/surface uyum için sektör paletinden.
+ * Sonuç theme jsonb'sine yazılır (migration gerekmez) → render `themeToCssVars` ile okur.
+ */
+export function resolveSiteColors(opts: {
+  brandColor?: string | null
+  sector?: string | null
+}): Pick<ThemeTokens, 'primaryColor' | 'secondaryColor' | 'surfaceColor' | 'accentSoftColor'> {
+  const pal = paletteForSector(opts.sector)
+  const brand = typeof opts.brandColor === 'string' && /^#?[0-9a-f]{6}$/i.test(opts.brandColor.trim())
+    ? (opts.brandColor.trim().startsWith('#') ? opts.brandColor.trim() : `#${opts.brandColor.trim()}`)
+    : null
+  const accent = brand || pal.accent
+  const rgb = hexToRgb(accent)
+  return {
+    primaryColor: pal.ink,
+    secondaryColor: accent,
+    surfaceColor: pal.surface,
+    accentSoftColor: rgb ? `rgba(${rgb}, 0.10)` : null,
+  }
+}
+
 export const DEFAULT_SITE_THEME: Required<Pick<ThemeTokens, 'primaryColor'>> &
-  Pick<ThemeTokens, 'secondaryColor' | 'fontHeading' | 'fontBody' | 'logoUrl'> = {
-  primaryColor: '#0f172a',
-  secondaryColor: '#0f766e',
+  Pick<ThemeTokens, 'secondaryColor' | 'surfaceColor' | 'fontHeading' | 'fontBody' | 'logoUrl'> = {
+  primaryColor: PALETTES.default.ink,
+  secondaryColor: PALETTES.default.accent,
+  surfaceColor: PALETTES.default.surface,
   fontHeading: DEFAULT_FONT_PAIRING.heading,
   fontBody: DEFAULT_FONT_PAIRING.body,
   logoUrl: null,
@@ -96,9 +209,15 @@ export function themeToCssVars(theme: ThemeTokens | null | undefined): CSSProper
   const t: Partial<ThemeTokens> = theme ?? {}
   const ink = t.primaryColor || DEFAULT_SITE_THEME.primaryColor
   const accent = t.secondaryColor || DEFAULT_SITE_THEME.secondaryColor || ink
+  const surface = t.surfaceColor || DEFAULT_SITE_THEME.surfaceColor || '#F4F6F8'
+  const rgb = hexToRgb(accent)
+  const accentSoft = t.accentSoftColor || (rgb ? `rgba(${rgb}, 0.10)` : 'rgba(0,0,0,0.05)')
   return {
     ['--site-ink' as string]: ink,
     ['--site-accent' as string]: accent,
+    ['--site-accent-soft' as string]: accentSoft,
+    ['--site-surface' as string]: surface,
+    ['--site-on-accent' as string]: '#FFFFFF',
     ['--site-font-heading' as string]: t.fontHeading || DEFAULT_SITE_THEME.fontHeading,
     ['--site-font-body' as string]: t.fontBody || DEFAULT_SITE_THEME.fontBody,
   }

@@ -11,6 +11,7 @@
 
 import { useEffect, useState } from 'react'
 import Link from 'next/link'
+import { usePathname } from 'next/navigation'
 import { useTranslations } from 'next-intl'
 
 const CONSENT_COOKIE = 'cookie_consent'
@@ -35,13 +36,18 @@ function setConsent(value: 'accepted' | 'rejected') {
 
 export default function CookieConsent() {
   const t = useTranslations('cookieConsent')
+  const pathname = usePathname()
   const [visible, setVisible] = useState(false)
 
   useEffect(() => {
     if (!getConsent()) setVisible(true)
   }, [])
 
-  if (!visible) return null
+  // Üretilen müşteri siteleri (public render + önizleme) YoAi root layout'unu miras alır;
+  // YoAi'nin çerez banner'ı oralarda görünmemeli (marka sızıntısı). Yalnız YoAi panelinde göster.
+  const isGeneratedSite =
+    pathname?.startsWith('/s/') || pathname?.startsWith('/website-preview') || pathname?.startsWith('/site-render-test')
+  if (isGeneratedSite || !visible) return null
 
   const choose = (value: 'accepted' | 'rejected') => {
     setConsent(value)

@@ -142,3 +142,18 @@ export async function pickStockImage(query: string): Promise<StockImage | null> 
   const res = await searchStock(query, 3)
   return res[0] ?? null
 }
+
+/** Tek sorgudan birden çok DISTINCT görsel (galeri/grid için). */
+export async function pickStockImages(query: string, count: number): Promise<StockImage[]> {
+  const res = await searchStock(query, Math.max(count + 2, 4))
+  const seen = new Set<string>()
+  const out: StockImage[] = []
+  for (const img of res) {
+    if (img.url && !seen.has(img.url)) {
+      seen.add(img.url)
+      out.push(img)
+      if (out.length >= count) break
+    }
+  }
+  return out
+}

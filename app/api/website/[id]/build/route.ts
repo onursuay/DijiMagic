@@ -1,7 +1,8 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { getCurrentUser } from '@/lib/billing/user'
-import { getWebsite, replacePages, createVersion } from '@/lib/website/store'
+import { getWebsite, replacePages, createVersion, updateWebsite } from '@/lib/website/store'
 import { buildDeterministicSite } from '@/lib/website/templates/deterministic'
+import { resolveSiteColors } from '@/lib/website/render/theme'
 import { getProfileByUserId, getIntelligenceByUserId } from '@/lib/yoai/businessProfileStore'
 import type { WebsiteSnapshot } from '@/lib/website/types'
 
@@ -25,7 +26,12 @@ export async function POST(_req: NextRequest, { params }: { params: { id: string
       getIntelligenceByUserId(user.id),
     ])
 
-    const pageInputs = buildDeterministicSite({
+    // Sektöre göre canlı tema rengini çöz ve siteye yaz (render bunu CSS değişkenine çevirir).
+    const sector = [profile?.sector_main, profile?.sector_sub, site.category].filter(Boolean).join(' ')
+    const theme = { ...site.theme, ...resolveSiteColors({ brandColor: null, sector }) }
+    await updateWebsite(user.id, site.id, { theme })
+
+    const pageInputs = await buildDeterministicSite({
       subdomain: site.subdomain,
       siteType: site.siteType,
       label: site.label,
@@ -43,7 +49,7 @@ export async function POST(_req: NextRequest, { params }: { params: { id: string
         defaultLocale: site.defaultLocale,
         locales: site.locales,
         category: site.category,
-        theme: site.theme,
+        theme,
       },
       pages,
     }

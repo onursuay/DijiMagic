@@ -1,12 +1,17 @@
+import 'server-only'
 import type { BusinessProfileRow, BusinessIntelligenceRow } from '@/lib/yoai/businessProfileStore'
 import type { WebsitePageInput, SectionBlock, SiteType, PageRole } from '../types'
+import { pickStockImage, pickStockImages, isStockReady } from '../stock'
+import { stockThemeForSector } from '../render/theme'
 
 /**
  * Profil + intelligence verisinden DETERMİNİSTİK (AI'sız, kredisiz) bir sayfa modeli üretir.
- * Faz 1c bunun yerine Claude + stok görsel + yönlendirilmiş diyaloğu koyar.
+ * "Hızlı Oluştur" akışı. Görsel-zengin: hero/about/split + galeri + görselli servis kartları
+ * sektöre göre stoktan bağlanır (Pexels). AI yolu (generate.ts) daha zengin metin üretir.
  * Kurallar:
  *  - Uydurma iddia YOK — metin yalnız gerçek profil alanlarından; alan boşsa nötr ifade.
  *  - Site içeriği site diline göre (TR/EN) — sabit etiketler aşağıdaki sözlükten gelir.
+ *  - Sahte müşteri yorumu / kanıtsız istatistik üretilmez (feedback_no_fake_data).
  */
 
 interface BrandSynthesisLike {
@@ -20,9 +25,14 @@ interface BrandSynthesisLike {
 
 export interface SiteLabels {
   contactCta: string
+  learnMore: string
   services: string
+  servicesEyebrow: string
   whyUs: string
+  whyUsEyebrow: string
   about: string
+  aboutEyebrow: string
+  ctaHeading: string
   contact: string
   contactBody: string
   web: string
@@ -37,9 +47,14 @@ export interface SiteLabels {
 const LABELS: Record<string, SiteLabels> = {
   tr: {
     contactCta: 'İletişime Geçin',
+    learnMore: 'Daha Fazla',
     services: 'Hizmetlerimiz',
+    servicesEyebrow: 'Hizmetler',
     whyUs: 'Neden Biz',
+    whyUsEyebrow: 'Farkımız',
     about: 'Hakkımızda',
+    aboutEyebrow: 'Hikayemiz',
+    ctaHeading: 'Bizimle çalışmaya hazır mısınız',
     contact: 'İletişim',
     contactBody: 'Bizimle iletişime geçin, size en kısa sürede dönüş yapalım.',
     web: 'Web Sitesi',
@@ -52,9 +67,14 @@ const LABELS: Record<string, SiteLabels> = {
   },
   en: {
     contactCta: 'Get in Touch',
+    learnMore: 'Learn More',
     services: 'Our Services',
+    servicesEyebrow: 'Services',
     whyUs: 'Why Us',
+    whyUsEyebrow: 'Our Difference',
     about: 'About',
+    aboutEyebrow: 'Our Story',
+    ctaHeading: 'Ready to work with us',
     contact: 'Contact',
     contactBody: 'Get in touch and we will get back to you shortly.',
     web: 'Website',
@@ -108,92 +128,141 @@ function socialLinks(p: BusinessProfileRow | null, L: SiteLabels): { label: stri
   return out
 }
 
-function heroContent(input: BuildSiteInput, ai: BrandSynthesisLike, L: SiteLabels): Record<string, unknown> {
-  const brand = deriveBrand(input)
-  const title = clean(ai.value_proposition) || brand
-  const summary =
-    clean(input.profile?.business_description) ||
-    clean(input.intelligence?.company_summary) ||
-    clean(ai.brand_voice)
-  const subtitle = summary ? firstSentence(summary) : ''
-  return { title, subtitle, ctaLabel: L.contactCta, ctaHref: '#contact' }
-}
-
-function servicesContent(input: BuildSiteInput, L: SiteLabels): Record<string, unknown> {
+function serviceTitles(input: BuildSiteInput): string[] {
   const list = (input.profile?.most_profitable_services?.length
     ? input.profile.most_profitable_services
     : input.profile?.products_or_services) ?? []
-  const items = list.map((s) => ({ title: clean(s), description: '' })).filter((x) => x.title).slice(0, 9)
-  return { heading: L.services, items }
+  return list.map((s) => clean(s)).filter(Boolean).slice(0, 6)
 }
 
-function featuresContent(input: BuildSiteInput, ai: BrandSynthesisLike, L: SiteLabels): Record<string, unknown> {
+function differentiators(input: BuildSiteInput, ai: BrandSynthesisLike): string[] {
   const source =
     (ai.differentiators?.length && ai.differentiators) ||
     (ai.messaging_pillars?.length && ai.messaging_pillars) ||
     (input.intelligence?.recommended_content_angles?.length && input.intelligence.recommended_content_angles) ||
     []
-  const items = (source as string[]).map((t) => ({ title: clean(t), description: '' })).filter((x) => x.title).slice(0, 4)
-  return { heading: L.whyUs, items }
+  return (source as string[]).map((t) => clean(t)).filter(Boolean).slice(0, 5)
 }
 
-function aboutContent(input: BuildSiteInput, L: SiteLabels): Record<string, unknown> {
-  const body =
-    clean(input.intelligence?.company_summary) ||
-    clean(input.profile?.business_description) ||
-    ''
-  return { heading: L.about, body }
-}
-
-function contactContent(input: BuildSiteInput, L: SiteLabels): Record<string, unknown> {
-  const locations = (input.profile?.target_locations ?? []).map(clean).filter(Boolean)
-  return {
-    heading: L.contact,
-    body: L.contactBody,
-    locations,
-    links: socialLinks(input.profile, L),
-  }
-}
-
-function headerContent(brand: string, nav: { label: string; href: string }[]): Record<string, unknown> {
-  return { brand, logoUrl: null, nav }
-}
-
-function footerContent(
-  brand: string,
-  L: SiteLabels,
-  nav: { label: string; href: string }[],
-  social: { label: string; href: string }[],
-  locations: string[],
-  tagline: string,
-): Record<string, unknown> {
-  return {
-    brand,
-    logoUrl: null,
-    note: `© ${brand}`,
-    tagline,
-    nav,
-    links: social,
-    locations,
-    pagesLabel: L.footerPages,
-    contactLabel: L.footerContact,
-  }
-}
-
-/** Verilen siteye göre sayfa modelini üretir (landing = tek sayfa; multipage = 4 sayfa). */
-export function buildDeterministicSite(input: BuildSiteInput): WebsitePageInput[] {
+/** Verilen siteye göre sayfa modelini üretir (landing = tek sayfa; multipage = 4 sayfa). Görseller stoktan. */
+export async function buildDeterministicSite(input: BuildSiteInput): Promise<WebsitePageInput[]> {
   const ai = ((input.intelligence as unknown as { ai_synthesis?: BrandSynthesisLike } | null)?.ai_synthesis) ?? {}
   const L = labelsFor(input.locale)
   const brand = deriveBrand(input)
   const locale = input.locale
-  const features = featuresContent(input, ai, L)
-  const hasFeatures = (features.items as unknown[]).length > 0
+  const sector = clean([input.profile?.sector_main, input.profile?.sector_sub].filter(Boolean).join(' '))
+  const theme = stockThemeForSector(sector)
 
-  // Footer (ve iletişim) için ortak veri
+  const svcTitles = serviceTitles(input)
+  const diffs = differentiators(input, ai)
+
+  // Görselleri paralel çöz (stok hazırsa)
+  const ready = isStockReady()
+  const [heroImg, aboutImg, splitImg, serviceImgs, galleryImgs] = await Promise.all([
+    ready ? pickStockImage(theme.hero) : Promise.resolve(null),
+    ready ? pickStockImage(theme.about) : Promise.resolve(null),
+    ready ? pickStockImage(theme.detail) : Promise.resolve(null),
+    ready && svcTitles.length ? pickStockImages(theme.service, svcTitles.length) : Promise.resolve([]),
+    ready ? pickStockImages(theme.gallery, 5) : Promise.resolve([]),
+  ])
+
+  const summary =
+    clean(input.profile?.business_description) ||
+    clean(input.intelligence?.company_summary) ||
+    clean(ai.brand_voice)
+  const heroTitle = clean(ai.value_proposition) || clean(input.profile?.specialization) || brand
+  const heroSub = summary ? firstSentence(summary) : ''
+  const tagline = heroSub
+
+  const heroBlock = (i: number) =>
+    block('hero', {
+      eyebrow: sector || '',
+      title: heroTitle,
+      subtitle: heroSub,
+      ctaLabel: L.contactCta,
+      ctaHref: input.siteType === 'landing' ? '#contact' : `/s/${input.subdomain}/iletisim`,
+      secondaryCtaLabel: L.learnMore,
+      secondaryCtaHref: input.siteType === 'landing' ? '#about' : `/s/${input.subdomain}/hakkimizda`,
+      imageUrl: heroImg?.url ?? '',
+    }, i)
+
+  const servicesBlock = (i: number) =>
+    block('services', {
+      eyebrow: L.servicesEyebrow,
+      heading: L.services,
+      intro: '',
+      items: svcTitles.map((title, idx) => ({ title, description: '', imageUrl: serviceImgs[idx]?.url ?? '' })),
+    }, i)
+
+  const splitBlock = (i: number) =>
+    block('split', {
+      eyebrow: L.whyUsEyebrow,
+      heading: L.whyUs,
+      body: summary,
+      bullets: diffs,
+      imageUrl: splitImg?.url ?? '',
+      imageSide: 'right',
+      tone: 'ink',
+    }, i)
+
+  const galleryBlock = (i: number) =>
+    block('gallery', {
+      eyebrow: '',
+      heading: '',
+      images: galleryImgs.map((g) => ({ url: g.url, caption: '' })),
+    }, i)
+
+  const aboutBlock = (i: number) =>
+    block('about', {
+      eyebrow: L.aboutEyebrow,
+      heading: L.about,
+      body: clean(input.intelligence?.company_summary) || clean(input.profile?.business_description) || '',
+      imageUrl: aboutImg?.url ?? '',
+    }, i)
+
+  const ctaBlock = (i: number) =>
+    block('cta', {
+      heading: L.ctaHeading,
+      body: '',
+      ctaLabel: L.contactCta,
+      ctaHref: input.siteType === 'landing' ? '#contact' : `/s/${input.subdomain}/iletisim`,
+    }, i)
+
+  const contactBlock = (i: number) =>
+    block('contact', {
+      heading: L.contact,
+      body: L.contactBody,
+      locations: (input.profile?.target_locations ?? []).map(clean).filter(Boolean),
+      links: socialLinks(input.profile, L),
+    }, i)
+
   const social = socialLinks(input.profile, L)
   const locations = (input.profile?.target_locations ?? []).map(clean).filter(Boolean)
-  const tgSrc = clean(input.profile?.business_description) || clean(input.intelligence?.company_summary)
-  const tagline = tgSrc ? firstSentence(tgSrc) : ''
+  const navAnchors = [
+    { label: L.navServices, href: '#services' },
+    { label: L.navAbout, href: '#about' },
+    { label: L.navContact, href: '#contact' },
+  ]
+  const base = `/s/${input.subdomain}`
+  const navPaths = [
+    { label: L.navHome, href: base },
+    { label: L.navServices, href: `${base}/hizmetler` },
+    { label: L.navAbout, href: `${base}/hakkimizda` },
+    { label: L.navContact, href: `${base}/iletisim` },
+  ]
+  const nav = input.siteType === 'landing' ? navAnchors : navPaths
+  const headerBlock = (i: number) =>
+    block('header', { brand, logoUrl: null, nav, ctaLabel: L.contactCta, ctaHref: input.siteType === 'landing' ? '#contact' : `${base}/iletisim` }, i)
+  const footerBlock = (i: number) =>
+    block('footer', {
+      brand, logoUrl: null, note: `© ${brand}`, tagline,
+      nav, links: social, locations,
+      pagesLabel: L.footerPages, contactLabel: L.footerContact,
+    }, i)
+
+  const hasServices = svcTitles.length > 0
+  const hasSplit = Boolean(summary) || diffs.length > 0
+  const hasGallery = galleryImgs.length >= 3
 
   const page = (slug: string, pageRole: PageRole, sections: SectionBlock[], seoTitle: string): WebsitePageInput => ({
     locale,
@@ -205,42 +274,38 @@ export function buildDeterministicSite(input: BuildSiteInput): WebsitePageInput[
   })
 
   if (input.siteType === 'landing') {
-    const anchorNav = [
-      { label: L.navServices, href: '#services' },
-      { label: L.navAbout, href: '#about' },
-      { label: L.navContact, href: '#contact' },
-    ]
-    const sections: SectionBlock[] = [
-      block('header', headerContent(brand, anchorNav), 0),
-      block('hero', heroContent(input, ai, L), 1),
-      block('services', servicesContent(input, L), 2),
-    ]
-    if (hasFeatures) sections.push(block('features', features, 3))
-    sections.push(block('about', aboutContent(input, L), 4))
-    sections.push(block('contact', contactContent(input, L), 5))
-    sections.push(block('footer', footerContent(brand, L, anchorNav, social, locations, tagline), 6))
-    return [page('home', 'home', sections, brand)]
+    const s: SectionBlock[] = [headerBlock(0), heroBlock(1)]
+    let i = 2
+    if (hasServices) s.push(servicesBlock(i++))
+    if (hasSplit) s.push(splitBlock(i++))
+    if (hasGallery) s.push(galleryBlock(i++))
+    s.push(aboutBlock(i++))
+    s.push(ctaBlock(i++))
+    s.push(contactBlock(i++))
+    s.push(footerBlock(i++))
+    return [page('home', 'home', s, brand)]
   }
 
-  // multipage — 4 sayfa, header path nav (path-tabanlı serving: /s/<subdomain>/<slug>)
-  const base = `/s/${input.subdomain}`
-  const pathNav = [
-    { label: L.navHome, href: base },
-    { label: L.navServices, href: `${base}/hizmetler` },
-    { label: L.navAbout, href: `${base}/hakkimizda` },
-    { label: L.navContact, href: `${base}/iletisim` },
-  ]
-  const header = block('header', headerContent(brand, pathNav), 0)
-  const footer = (i: number) => block('footer', footerContent(brand, L, pathNav, social, locations, tagline), i)
+  // multipage — 4 sayfa
+  const home: SectionBlock[] = [headerBlock(0), heroBlock(1)]
+  let hi = 2
+  if (hasServices) home.push(servicesBlock(hi++))
+  if (hasSplit) home.push(splitBlock(hi++))
+  if (hasGallery) home.push(galleryBlock(hi++))
+  home.push(ctaBlock(hi++), footerBlock(hi++))
 
-  const homeSections: SectionBlock[] = [header, block('hero', heroContent(input, ai, L), 1), block('services', servicesContent(input, L), 2)]
-  if (hasFeatures) homeSections.push(block('features', features, 3))
-  homeSections.push(footer(4))
+  const aboutSections: SectionBlock[] = [headerBlock(0), aboutBlock(1)]
+  if (hasSplit) aboutSections.push(splitBlock(2))
+  aboutSections.push(ctaBlock(98), footerBlock(99))
+
+  const serviceSections: SectionBlock[] = [headerBlock(0), servicesBlock(1)]
+  if (hasGallery) serviceSections.push(galleryBlock(2))
+  serviceSections.push(ctaBlock(98), footerBlock(99))
 
   return [
-    page('home', 'home', homeSections, brand),
-    page('hakkimizda', 'about', [header, block('about', aboutContent(input, L), 1), footer(2)], `${L.about} — ${brand}`),
-    page('hizmetler', 'services', [header, block('services', servicesContent(input, L), 1), footer(2)], `${L.services} — ${brand}`),
-    page('iletisim', 'contact', [header, block('contact', contactContent(input, L), 1), footer(2)], `${L.contact} — ${brand}`),
+    page('home', 'home', home, brand),
+    page('hakkimizda', 'about', aboutSections, `${L.about} — ${brand}`),
+    page('hizmetler', 'services', serviceSections, `${L.services} — ${brand}`),
+    page('iletisim', 'contact', [headerBlock(0), contactBlock(1), footerBlock(2)], `${L.contact} — ${brand}`),
   ]
 }
