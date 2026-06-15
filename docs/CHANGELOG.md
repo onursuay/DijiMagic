@@ -2,7 +2,7 @@
 
 ---
 
-## 2026-06-14 — 🆕 Web Site Yöneticisi modülü (Faz 1 + Faz 2 CANLI) — AI web sitesi kurucu
+## 2026-06-14/15 — 🆕 Web Site Yöneticisi modülü (Faz 1 + 2 + 3 CANLI) — AI web sitesi kurucu
 - **İstek:** Kullanıcı bilgi/logo/kategori verir, AI markaya uygun gerçek bir web sitesi üretir, önizler ve tek tuşla yayına alır (referans: promake.ai). 7 fazlı yol haritası (spec: docs/superpowers/specs/2026-06-14-web-site-yoneticisi-design.md).
 - **Faz 1 (çekirdek) — BİTTİ:**
   - Modül + sidebar "Web Site Yöneticisi" + tam TR/EN; DB tabloları `websites`/`website_pages`/`website_versions` (omddq'ya uygulandı, RLS).
@@ -11,9 +11,10 @@
   - Stok görsel: Pexels/Unsplash/Pixabay (env-gated, lisans-temiz); Pexels canlı (yerel + Vercel). Kredi: `computeGenerationCost` (sayfa × dil) + revizyon + 402→`AccessRequiredModal`.
   - Intake UI: yönlendirilmiş diyalog + **sesle yazma** (Web Speech API) + **iframe önizleme** (ölçekli gerçek viewport → masaüstü/mobil) + **marka logosu yükleme** (Supabase Storage). Oluşturma sihirbazı: site tipi + dil (aranabilir dropdown) + yazı stili + referans + uyarı.
 - **Faz 2 (sürüm/geri alma) — BİTTİ:** `website_versions`'tan sürüm geçmişi + rollback (snapshot'tan geri yükle + yeni 'rollback' sürümü, kredisiz). Katlanır geçmiş paneli.
-- **Güvenlik:** `safeHref`/`safeImg` (XSS); referenceScanner **SSRF koruması** (DNS allowlist + private/metadata IP reddi + manuel redirect doğrulama); logo upload'tan **SVG kaldırıldı** (stored-XSS).
-- **Faz 3-7 (yapılmadı, dış bağımlılık):** kendi domain + SSL, domain satın alma, iş e-postası, ödeme/e-ticaret, sohbetle işletme yönetimi — dış hesap/sözleşme/yasal onay gerektirir.
-- **Dosyalar:** app/web-site-yoneticisi/*, app/website-preview/[id]/*, app/api/website/*, app/s/[subdomain]/*, lib/website/*, components/website/*, lib/nav.ts, lib/routes.ts, lib/billing/featureAccessMap.ts, locales/{tr,en}.json, supabase/migrations/20260614120000_create_website_tables.sql
+- **Faz 3 (kendi alan adı) — BİTTİ (default-OFF flag):** Vercel Domains API ile domain bağla/çıkar + DNS config (apex→A, subdomain→CNAME); host→subdomain eşlemesi **Vercel Edge Config**'e yazılır; `middleware` custom domain host'unu `/s/<subdomain>`'e rewrite eder. **`WEBSITE_CUSTOM_DOMAINS` flag kapalıyken davranış BİREBİR aynı (sıfır prod riski)**; aktive için flag=1 + gerçek domain + DNS. DomainPanel UI (bağla + DNS kaydı + doğrulama + kaldır).
+- **Güvenlik:** `safeHref`/`safeImg` (XSS); referenceScanner **SSRF koruması** (DNS allowlist + private/metadata IP reddi + manuel redirect doğrulama); logo upload'tan **SVG kaldırıldı** (stored-XSS); Faz 3 **domain-hijack önlemi** (`findWebsiteByCustomDomain` ile başka kullanıcının domaini reddi + Edge Config eşlemesi YALNIZ DNS-doğrulamasında yazılır = sahiplik kanıtı).
+- **Faz 4-7 (yapılmadı, dış bağımlılık):** domain satın alma (registrar bayilik), iş e-postası (sağlayıcı), ödeme/e-ticaret (iyzico pazaryeri + KYC), sohbetle işletme yönetimi — dış hesap/sözleşme/yasal onay gerektirir; her biri ilgili hesap açılınca bağlanır.
+- **Dosyalar:** app/web-site-yoneticisi/*, app/website-preview/[id]/*, app/api/website/* (route + [id]/{build,generate,pages,publish,logo,versions,domain}), app/s/[subdomain]/*, lib/website/* (types/store/credits/subdomain/stock/referenceScanner/vercelDomain/edgeConfig/render/templates/ai), components/website/* (SiteList/NewSiteModal/DictateButton/DomainPanel), middleware.ts, lib/nav.ts, lib/routes.ts, lib/billing/featureAccessMap.ts, locales/{tr,en}.json, supabase/migrations/20260614120000_create_website_tables.sql
 
 ## 2026-06-14 — Sidebar: "Reklam" menü grubu ilk açılışta kapalı başlasın
 - **Sorun:** Sol menüde "Reklam" accordion grubu (Meta/Google/TikTok/Strateji) sayfa ilk açıldığında otomatik açık geliyordu; diğer gruplar gibi kapalı başlaması, kullanıcının istediği kategoriyi kendisinin açması isteniyordu.
