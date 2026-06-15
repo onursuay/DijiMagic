@@ -24,3 +24,16 @@ export function isPerAccountScopeEnabled(): boolean {
   const v = (process.env.YOAI_PER_ACCOUNT_SCOPE ?? '').toLowerCase().trim()
   return v === 'true' || v === '1' || v === 'yes'
 }
+
+/**
+ * Erken Uyarı (günlük nöbetçi) — deterministik, LLM'siz günlük reklam taraması.
+ * WATCHDOG_ENABLED=true → /api/cron/erken-uyari günlük (05:00 UTC) çalışır:
+ *   bağlı her kullanıcının aktif Meta+Google hesaplarını tarar, acil/bozulma
+ *   tespit eder (account_alerts'e yazar) + uyarı e-postası gönderir.
+ * Default KAPALI → cron no-op döner (sıfır maliyet, sıfır regresyon).
+ * Haftalık AI taramasından (USE_AI_ENGINE) BAĞIMSIZ açılır/kapanır.
+ */
+export function isWatchdogEnabled(): boolean {
+  const v = (process.env.WATCHDOG_ENABLED ?? '').toLowerCase().trim()
+  return v === 'true' || v === '1' || v === 'yes'
+}
