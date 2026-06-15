@@ -1,6 +1,10 @@
 {
   "crons": [
     {
+      "path": "/api/cron/erken-uyari",
+      "schedule": "0 5 * * *"
+    },
+    {
       "path": "/api/yoai/daily-run",
       "schedule": "0 5 * * *"
     },
