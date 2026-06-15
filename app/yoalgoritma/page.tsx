@@ -8,6 +8,7 @@ import CommandCenterHeader from '@/components/yoai/CommandCenterHeader'
 // HealthOverviewCards removed — stats moved into CommandCenterHeader
 import AdCreationWizard from '@/components/yoai/AdCreationWizard'
 import HierarchicalImprovements from '@/components/yoai/hierarchy/HierarchicalImprovements'
+import ErkenUyariSection from '@/components/yoai/ErkenUyariSection'
 import { useCredits } from '@/components/providers/CreditProvider'
 import { useSubscription } from '@/components/providers/SubscriptionProvider'
 import AccessRequiredModal from '@/components/billing/AccessRequiredModal'
@@ -551,6 +552,9 @@ export default function YoAiPage() {
                 setShowAdWizard(true)
               }}
             />
+
+            {/* Erken Uyarı — günlük nöbetçi (reklam önerilerinin altında, tek sayfa) */}
+            <ErkenUyariSection />
           </div>
         ) : (
           <div className="max-w-4xl mx-auto p-6 pb-12">
