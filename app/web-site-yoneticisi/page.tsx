@@ -6,17 +6,16 @@ import { useTranslations } from 'next-intl'
 import Topbar from '@/components/Topbar'
 import { ToastContainer, type Toast } from '@/components/Toast'
 import SiteList from '@/components/website/SiteList'
-import NewSiteModal from '@/components/website/NewSiteModal'
+import CreateSiteWizard from '@/components/website/CreateSiteWizard'
 import WebsiteBuilderAnimation from '@/components/website/WebsiteBuilderAnimation'
-import type { Website, WebsiteDraftInput } from '@/lib/website/types'
+import type { Website } from '@/lib/website/types'
 
 export default function WebSiteYoneticisiPage() {
   const router = useRouter()
   const t = useTranslations('dashboard.webSiteYoneticisi')
   const [sites, setSites] = useState<Website[]>([])
   const [loading, setLoading] = useState(true)
-  const [creating, setCreating] = useState(false)
-  const [modalOpen, setModalOpen] = useState(false)
+  const [wizardOpen, setWizardOpen] = useState(false)
   const [toasts, setToasts] = useState<Toast[]>([])
 
   const addToast = useCallback((message: string, type: Toast['type']) => {
@@ -41,23 +40,6 @@ export default function WebSiteYoneticisiPage() {
 
   useEffect(() => { fetchSites() }, [fetchSites])
 
-  const handleCreate = async (input: WebsiteDraftInput) => {
-    setCreating(true)
-    try {
-      const res = await fetch('/api/website', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(input),
-      })
-      const json = await res.json()
-      if (json.ok && json.website) router.push(`/web-site-yoneticisi/${json.website.id}`)
-      else { addToast(t('createError'), 'error'); setCreating(false) }
-    } catch {
-      addToast(t('createError'), 'error')
-      setCreating(false)
-    }
-  }
-
   const handleDelete = async (id: string) => {
     if (!window.confirm(t('deleteConfirm'))) return
     const res = await fetch(`/api/website/${id}`, { method: 'DELETE' })
@@ -70,7 +52,7 @@ export default function WebSiteYoneticisiPage() {
       <Topbar
         title={t('title')}
         description={t('pageDescription')}
-        actionButton={{ label: t('newSite'), onClick: () => setModalOpen(true), disabled: creating }}
+        actionButton={{ label: t('newSite'), onClick: () => setWizardOpen(true) }}
       />
       <div className="flex-1 overflow-y-auto app-content-surface p-6">
         <div className="max-w-7xl mx-auto space-y-6">
@@ -87,12 +69,7 @@ export default function WebSiteYoneticisiPage() {
           )}
         </div>
       </div>
-      <NewSiteModal
-        open={modalOpen}
-        creating={creating}
-        onClose={() => setModalOpen(false)}
-        onCreate={handleCreate}
-      />
+      <CreateSiteWizard open={wizardOpen} onClose={() => setWizardOpen(false)} />
       <ToastContainer toasts={toasts} onClose={removeToast} />
     </>
   )

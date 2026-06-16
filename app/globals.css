@@ -616,3 +616,64 @@ table tbody tr {
 @media (prefers-reduced-motion: reduce) {
   .seo-scan-dots > span { animation: none; opacity: 0.6; transform: none; }
 }
+
+/* Web Site Wizard — çerçeve kenarında soldan sağa sonsuz dönen yeşil "yılan" shimmer */
+@property --wizard-snake-angle {
+  syntax: '<angle>';
+  initial-value: 0deg;
+  inherits: false;
+}
+@keyframes wizard-snake-rotate {
+  to { --wizard-snake-angle: 360deg; }
+}
+.wizard-snake-border {
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  z-index: 5;
+  padding: 3px;
+  border-radius: inherit;
+  background: conic-gradient(
+    from var(--wizard-snake-angle),
+    transparent 0deg,
+    transparent 200deg,
+    rgba(16, 185, 129, 0.55) 240deg,
+    rgba(52, 211, 153, 1) 285deg,
+    rgba(110, 231, 183, 1) 315deg,
+    rgba(5, 150, 105, 0.55) 350deg,
+    transparent 360deg
+  );
+  -webkit-mask:
+    linear-gradient(#000 0 0) content-box,
+    linear-gradient(#000 0 0);
+  -webkit-mask-composite: xor;
+          mask-composite: exclude;
+  animation: wizard-snake-rotate 4s linear infinite;
+  filter: blur(0.7px);
+}
+.wizard-snake-border::after {
+  /* yumuşak neon glow ikinci katman */
+  content: '';
+  position: absolute;
+  inset: -2px;
+  border-radius: inherit;
+  background: conic-gradient(
+    from var(--wizard-snake-angle),
+    transparent 0deg,
+    transparent 235deg,
+    rgba(52, 211, 153, 0.55) 300deg,
+    rgba(110, 231, 183, 0.55) 330deg,
+    transparent 360deg
+  );
+  -webkit-mask:
+    linear-gradient(#000 0 0) content-box,
+    linear-gradient(#000 0 0);
+  -webkit-mask-composite: xor;
+          mask-composite: exclude;
+  padding: 6px;
+  filter: blur(9px);
+  pointer-events: none;
+}
+@media (prefers-reduced-motion: reduce) {
+  .wizard-snake-border, .wizard-snake-border::after { animation: none; }
+}

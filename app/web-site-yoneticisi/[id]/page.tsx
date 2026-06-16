@@ -1,10 +1,10 @@
 'use client'
 
 import { useState, useEffect, useCallback, useRef } from 'react'
-import { useParams } from 'next/navigation'
+import { useParams, useRouter, useSearchParams } from 'next/navigation'
 import Link from 'next/link'
 import { useTranslations, useLocale } from 'next-intl'
-import { Sparkles, RefreshCw, Globe, ExternalLink, ArrowLeft, Wand2, Monitor, Smartphone, ImagePlus, Trash2, History, RotateCcw, ChevronDown } from 'lucide-react'
+import { Sparkles, RefreshCw, Globe, ExternalLink, ArrowLeft, Wand2, Monitor, Smartphone, ImagePlus, Trash2, History, RotateCcw, ChevronDown, Eye } from 'lucide-react'
 import Topbar from '@/components/Topbar'
 import { ToastContainer, type Toast } from '@/components/Toast'
 import AccessRequiredModal from '@/components/billing/AccessRequiredModal'
@@ -34,6 +34,8 @@ const DESIGN_H = 760
 
 export default function WebSiteDetailPage() {
   const params = useParams()
+  const router = useRouter()
+  const search = useSearchParams()
   const id = String(params?.id ?? '')
   const t = useTranslations('dashboard.webSiteYoneticisi')
   const uiLocale = useLocale()
@@ -104,11 +106,11 @@ export default function WebSiteDetailPage() {
   const designW = DESIGN_W[device]
   const scale = wrapW > 0 ? Math.min(1, wrapW / designW) : 1
 
-  const handleAi = async () => {
+  const handleAi = async (override?: string) => {
     setBusy('ai')
     try {
       const res = await fetch(`/api/website/${id}/generate`, {
-        method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ instructions }),
+        method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ instructions: override ?? instructions }),
       })
       if (res.status === 402) { setShowCredit(true); return }
       const json = await res.json()
@@ -126,6 +128,17 @@ export default function WebSiteDetailPage() {
       else addToast(t('buildError'), 'error')
     } catch { addToast(t('buildError'), 'error') } finally { setBusy(null) }
   }
+
+  // Wizard'dan ?create=ai|quick ile gelince ilk üretimi otomatik başlat (yalnız bir kez, sayfa boşsa).
+  const autoStarted = useRef(false)
+  useEffect(() => {
+    if (autoStarted.current || !site || busy) return
+    if (pages.length > 0) { autoStarted.current = true; return }
+    const mode = search.get('create')
+    if (mode === 'ai') { autoStarted.current = true; void handleAi(site.theme?.initialInstructions ?? '') }
+    else if (mode === 'quick') { autoStarted.current = true; void handleQuick() }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [site, pages.length])
 
   const handleRollback = async (versionId: string) => {
     setBusy('rollback')
@@ -152,7 +165,7 @@ export default function WebSiteDetailPage() {
         method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ action }),
       })
       const json = await res.json()
-      if (json.ok && json.website) setSite(json.website)
+      if (json.ok && json.website) { setSite(json.website); if (action === 'publish') addToast(t('publishSuccess'), 'success') }
       else addToast(json.error || t('publishError'), 'error')
     } catch { addToast(t('publishError'), 'error') } finally { setBusy(null) }
   }
@@ -270,7 +283,7 @@ export default function WebSiteDetailPage() {
                 labelPause={t('stopDictate')}
               />
               <button
-                onClick={handleAi}
+                onClick={() => handleAi()}
                 disabled={busy !== null}
                 className="inline-flex items-center gap-2 rounded-lg bg-primary px-5 py-2.5 text-sm font-medium text-white active:scale-[0.97] transition-all disabled:opacity-60"
               >
@@ -345,7 +358,7 @@ export default function WebSiteDetailPage() {
                       </span>
                       <span className="text-xs text-gray-500">{fmtDate(v.createdAt)}</span>
                       {i === 0 ? (
-                        <span className="ml-auto w-2 h-2 rounded-full bg-emerald-500" title="Güncel" />
+                        <span className="ml-auto w-2 h-2 rounded-full bg-emerald-500" title={t('currentVersion')} />
                       ) : (
                         <button
                           onClick={() => handleRollback(v.id)}
@@ -409,9 +422,17 @@ export default function WebSiteDetailPage() {
                     ))}
                   </div>
                 )}
-                <div className="ml-auto inline-flex items-center rounded-lg border border-gray-200 p-0.5 bg-white">
-                  {deviceBtn('desktop', Monitor, 'Masaüstü')}
-                  {deviceBtn('mobile', Smartphone, 'Mobil')}
+                <div className="ml-auto flex items-center gap-2">
+                  <button
+                    onClick={() => router.push(`/web-site-yoneticisi/${id}/onizleme`)}
+                    className="inline-flex items-center gap-1.5 rounded-lg bg-primary px-3.5 py-2 text-sm font-medium text-white active:scale-[0.97] transition-all"
+                  >
+                    <Eye className="w-4 h-4" /> {t('detailedPreview')}
+                  </button>
+                  <div className="inline-flex items-center rounded-lg border border-gray-200 p-0.5 bg-white">
+                    {deviceBtn('desktop', Monitor, t('deviceDesktop'))}
+                    {deviceBtn('mobile', Smartphone, t('deviceMobile'))}
+                  </div>
                 </div>
               </div>
 

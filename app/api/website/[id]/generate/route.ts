@@ -1,10 +1,11 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { getCurrentUser } from '@/lib/billing/user'
 import { chargeFeature } from '@/lib/billing/featureGuard'
-import { getWebsite, replacePages, createVersion, getPages, updateWebsite } from '@/lib/website/store'
+import { getWebsite, replacePages, createVersion, getPages, updateWebsite, listVersions } from '@/lib/website/store'
 import { generateSitePages, isWebsiteAiReady } from '@/lib/website/ai/generate'
 import { resolveSiteColors } from '@/lib/website/render/theme'
-import { computeGenerationCost, WEBSITE_REVISION_COST } from '@/lib/website/credits'
+import { computeGenerationCost, WEBSITE_REVISION_COST, WEBSITE_FREE_REVISIONS } from '@/lib/website/credits'
+import { summarizeSiteForRevision } from '@/lib/website/revisionContext'
 import { getProfileByUserId, getIntelligenceByUserId } from '@/lib/yoai/businessProfileStore'
 import type { WebsiteSnapshot } from '@/lib/website/types'
 
@@ -24,19 +25,27 @@ export async function POST(req: NextRequest, { params }: { params: { id: string 
   const user = await getCurrentUser()
   if (!user) return NextResponse.json({ ok: false, error: 'Oturum gerekli' }, { status: 401 })
 
-  const body = (await req.json().catch(() => ({}))) as { instructions?: string }
+  const body = (await req.json().catch(() => ({}))) as { instructions?: string; revisionMode?: string }
   const instructions = typeof body.instructions === 'string' ? body.instructions.trim() : ''
+  const revisionMode = body.revisionMode === 'reject' || body.revisionMode === 'edit' ? body.revisionMode : undefined
 
   const site = await getWebsite(user.id, params.id)
   if (!site) return NextResponse.json({ ok: false, error: 'Bulunamadı' }, { status: 404 })
 
-  // İlk üretim mi revizyon mu → maliyet
+  // İlk üretim mi revizyon mu → maliyet. Mevcut sayfa VARSA (sitenin tekrar üretimi/revizesi) revizyondur
+  // — talimat boş olsa da (kredi atlatma kapalı). İlk üretim yalnız sayfa hiç yokken. Revizyonda ilk
+  // WEBSITE_FREE_REVISIONS adet ÜCRETSİZ, sonrası WEBSITE_REVISION_COST.
   const existing = await getPages(user.id, site.id)
-  const isRevision = existing.length > 0 && instructions.length > 0
+  const isRevision = existing.length > 0
   const pageCount = site.siteType === 'landing' ? 1 : 4
-  const cost = isRevision
-    ? WEBSITE_REVISION_COST
-    : computeGenerationCost({ siteType: site.siteType, pageCount, localeCount: site.locales.length })
+  let cost: number
+  if (isRevision) {
+    const versions = await listVersions(user.id, site.id)
+    const usedRevisions = versions.filter((v) => v.reason === 'revision').length
+    cost = usedRevisions < WEBSITE_FREE_REVISIONS ? 0 : WEBSITE_REVISION_COST
+  } else {
+    cost = computeGenerationCost({ siteType: site.siteType, pageCount, localeCount: site.locales.length })
+  }
 
   // Krediyi düş (owner bypass + yetersiz bakiye 402 featureGuard içinde)
   const access = await chargeFeature({ featureKey: 'website_generation', creditCost: cost })
@@ -66,6 +75,12 @@ export async function POST(req: NextRequest, { params }: { params: { id: string 
           locale,
           instructions,
           referenceUrls: site.theme?.referenceUrls ?? undefined,
+          revisionMode,
+          // 'edit' (cerrahi) modunda AI'a mevcut o-dil içeriğini ver → belirtilmeyen kısımları korur.
+          currentSummary:
+            revisionMode === 'edit'
+              ? summarizeSiteForRevision(existing.filter((pg) => pg.locale === locale))
+              : undefined,
         }),
       ),
     )

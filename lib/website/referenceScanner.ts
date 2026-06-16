@@ -2,10 +2,17 @@ import 'server-only'
 import * as cheerio from 'cheerio'
 import { lookup } from 'dns/promises'
 import net from 'net'
+import { isFirecrawlReady, firecrawlScrape } from '@/lib/firecrawl/client'
 
 /**
- * Referans sitelerden tasarım/yapı/ton ipuçları çıkarır (GERÇEK HTTP tarama, hata-toleranslı).
+ * Referans sitelerden tasarım/yapı/ton ipuçları çıkarır (hata-toleranslı).
  * AI bunları İLHAM olarak kullanır; birebir kopya ÜRETMEZ.
+ *
+ * İKİ YOL:
+ *  - Firecrawl HAZIRSA (FIRECRAWL_API_KEY + FIRECRAWL_ENABLED=true): JS-render edilmiş temiz
+ *    markdown → modern (React/Vue) siteler de okunur, bölüm/başlık akışı (layout mantığı) çıkar.
+ *  - Aksi halde: Cheerio HTTP tarama (header/nav, footer, bölüm başlık akışı, tema rengi, CTA).
+ *  Firecrawl başarısız olursa Cheerio'ya düşülür (sıfır kesinti).
  *
  * GÜVENLİK (SSRF koruması): URL kullanıcı girdisidir ve sunucuda fetch edilir.
  *  - Yalnız http/https; hostname DNS'te çözülür ve TÜM çözülen IP'ler genel (public) olmalı.
@@ -94,26 +101,68 @@ async function safeFetch(rawUrl: string): Promise<Response | null> {
   return null
 }
 
-async function scanOne(rawUrl: string): Promise<string | null> {
+/** Markdown'dan başlık akışını (bölüm sırası = layout mantığı) çıkarır. */
+function markdownHeadings(md: string): string[] {
+  return md
+    .split('\n')
+    .map((l) => l.match(/^#{1,3}\s+(.+?)\s*#*$/))
+    .filter((m): m is RegExpMatchArray => Boolean(m))
+    .map((m) => m[1].trim().replace(/\s+/g, ' '))
+    .filter((s) => s && s.length < 80)
+}
+
+/** Firecrawl ile tarama (JS-render edilmiş temiz markdown). Hata/uygunsuzlukta null. */
+async function scanOneFirecrawl(rawUrl: string): Promise<string | null> {
+  try {
+    const url = /^https?:\/\//i.test(rawUrl) ? rawUrl : `https://${rawUrl}`
+    const parsed = new URL(url)
+    await assertSafeHost(parsed.hostname) // public host doğrula (firecrawl yine de public tarar)
+    const page = await firecrawlScrape(parsed.toString())
+    if (!page || !page.markdown) return null
+    const headings = markdownHeadings(page.markdown).slice(0, 12)
+    const parts: string[] = [`URL: ${parsed.toString()}`]
+    if (page.title) parts.push(`Başlık: ${page.title.trim().slice(0, 120)}`)
+    if (page.description) parts.push(`Açıklama: ${page.description.trim().slice(0, 220)}`)
+    if (headings.length) parts.push(`Bölüm/başlık akışı (layout): ${headings.join(' / ')}`)
+    return parts.length > 1 ? parts.join(' | ') : null
+  } catch (e) {
+    // Sessiz hata bırakma: Firecrawl başarısızsa neden olduğunu logla, Cheerio'ya düş.
+    console.warn('[referenceScanner] firecrawl başarısız, Cheerio fallback:', e instanceof Error ? e.message : e)
+    return null
+  }
+}
+
+/** Cheerio HTTP tarama (header/nav, footer, bölüm akışı, tema rengi, CTA). */
+async function scanOneCheerio(rawUrl: string): Promise<string | null> {
   try {
     const res = await safeFetch(rawUrl)
     if (!res || !res.ok) return null
     const html = (await res.text()).slice(0, 400_000)
     const $ = cheerio.load(html)
-    const title = $('title').first().text().trim().replace(/\s+/g, ' ').slice(0, 120)
-    const desc = (
+    const clean = (s: string) => s.trim().replace(/\s+/g, ' ')
+    const title = clean($('title').first().text()).slice(0, 120)
+    const desc = clean(
       $('meta[name="description"]').attr('content') ||
-      $('meta[property="og:description"]').attr('content') ||
-      ''
-    ).trim().slice(0, 220)
+        $('meta[property="og:description"]').attr('content') ||
+        '',
+    ).slice(0, 220)
     const themeColor = $('meta[name="theme-color"]').attr('content')?.trim() || ''
-    const headings = $('h1, h2')
-      .map((_, el) => $(el).text().trim().replace(/\s+/g, ' '))
+    // Header/nav yapısı
+    const navLinks = $('header a, nav a')
+      .map((_, el) => clean($(el).text()))
+      .get()
+      .filter((x) => x && x.length < 28)
+      .slice(0, 8)
+    const hasFooter = $('footer').length > 0
+    // Bölüm akışı (layout mantığı)
+    const headings = $('h1, h2, h3')
+      .map((_, el) => clean($(el).text()))
       .get()
       .filter(Boolean)
-      .slice(0, 8)
-    const ctas = $('a.button, a.btn, button, [class*="cta"]')
-      .map((_, el) => $(el).text().trim().replace(/\s+/g, ' '))
+      .slice(0, 12)
+    const sectionCount = $('section, [class*="section"], main > div').length
+    const ctas = $('a.button, a.btn, button, [class*="cta"], [class*="btn"]')
+      .map((_, el) => clean($(el).text()))
       .get()
       .filter((x) => x && x.length < 40)
       .slice(0, 5)
@@ -122,12 +171,24 @@ async function scanOne(rawUrl: string): Promise<string | null> {
     if (title) parts.push(`Başlık: ${title}`)
     if (desc) parts.push(`Açıklama: ${desc}`)
     if (themeColor) parts.push(`Tema rengi: ${themeColor}`)
-    if (headings.length) parts.push(`Bölüm başlıkları: ${headings.join(' / ')}`)
+    if (navLinks.length) parts.push(`Üst menü (header): ${navLinks.join(', ')}`)
+    if (sectionCount) parts.push(`Yaklaşık bölüm sayısı: ${Math.min(sectionCount, 20)}`)
+    if (hasFooter) parts.push('Footer: var')
+    if (headings.length) parts.push(`Bölüm/başlık akışı (layout): ${headings.join(' / ')}`)
     if (ctas.length) parts.push(`CTA örnekleri: ${ctas.join(', ')}`)
     return parts.length > 1 ? parts.join(' | ') : null
   } catch {
     return null
   }
+}
+
+/** Firecrawl hazırsa onunla (JS-render), değilse/başarısızsa Cheerio ile tara. */
+async function scanOne(rawUrl: string): Promise<string | null> {
+  if (isFirecrawlReady()) {
+    const fc = await scanOneFirecrawl(rawUrl)
+    if (fc) return fc
+  }
+  return scanOneCheerio(rawUrl)
 }
 
 export async function scanReferences(urls: string[]): Promise<string[]> {

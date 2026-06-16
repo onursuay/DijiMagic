@@ -46,6 +46,10 @@ export interface GenerateInput {
   locale: string
   instructions?: string
   referenceUrls?: string[]
+  /** Revize modu: 'reject' → tamamen farklı yön; 'edit' → mevcut yapıyı koru, hedefli değiştir. */
+  revisionMode?: 'reject' | 'edit'
+  /** 'edit' modunda AI'ın neyi değiştireceğini bilmesi için mevcut sitenin içerik özeti. */
+  currentSummary?: string
 }
 
 export function isWebsiteAiReady(): boolean {
@@ -112,6 +116,25 @@ function buildPrompt(input: GenerateInput, ai: BrandSynthesisLike, refSummaries:
     '- Yalnız istenen JSON şemasını döndür; ek açıklama, markdown veya kod bloğu YOK.',
   ].join('\n')
 
+  // Revize modu çerçevesi: reject = tamamen farklı yön; edit = mevcut yapıyı koru, hedefli değiştir.
+  let revisionBlock = ''
+  if (input.instructions) {
+    if (input.revisionMode === 'reject') {
+      revisionBlock =
+        `KULLANICI MEVCUT TASARIMI REDDETTİ. Şikayet/istek:\n${input.instructions}\n\n` +
+        'BU SEFER TAMAMEN FARKLI BİR YÖN DENE: farklı bölüm düzeni, farklı ton, farklı görsel yaklaşımı, farklı başlık dili. Önceki tasarımı TEKRARLAMA; kullanıcının şikayetini gider.\n'
+    } else if (input.revisionMode === 'edit') {
+      revisionBlock = `KULLANICI ŞU NOKTALARI DÜZELTMEK İSTİYOR (YALNIZ bunları değiştir, belirtilmeyen her şeyi AYNI KORU):\n${input.instructions}\n`
+      if (input.currentSummary && input.currentSummary.trim()) {
+        revisionBlock += `\nMEVCUT SİTE İÇERİĞİ (bunu referans al; düzeltme istenmeyen bölüm/metinleri olduğu gibi koru):\n${input.currentSummary}\n`
+      } else {
+        revisionBlock += '\nBu dilde henüz içerik yok; işletme verisinden tutarlı bir site üret ve yukarıdaki kullanıcı düzeltmelerini uygula.\n'
+      }
+    } else {
+      revisionBlock = `KULLANICI DÜZELTMELERİ/İSTEKLERİ (önceliklidir):\n${input.instructions}\n`
+    }
+  }
+
   const user = [
     `Dil: ${langName}`,
     `Site tipi: ${input.siteType === 'landing' ? 'Tek sayfa (landing)' : 'Çok sayfalı'}`,
@@ -119,9 +142,9 @@ function buildPrompt(input: GenerateInput, ai: BrandSynthesisLike, refSummaries:
     'İŞLETME GERÇEKLERİ:',
     facts.length ? facts.join('\n') : '(sınırlı veri — nötr, dürüst ve genel geçer bir metin üret)',
     '',
-    input.instructions ? `KULLANICI DÜZELTMELERİ (önceliklidir):\n${input.instructions}\n` : '',
+    revisionBlock,
     refSummaries.length
-      ? `REFERANS SİTELER (yalnız İLHAM — birebir kopya DEĞİL; bu sitelerin düzen/ton/yapı mantığını yaklaştır):\n${refSummaries.map((s) => `- ${s}`).join('\n')}\n`
+      ? `REFERANS SİTELER — bu sitelerin HEADER/menü yapısını, bölüm SIRASINI ve genel DÜZEN/yapı mantığını yaklaştır (birebir kopya DEĞİL; özgün metin üret). Yukarıdaki kullanıcı istekleri referanslarla çelişirse KULLANICIYI ÖNCELE:\n${refSummaries.map((s) => `- ${s}`).join('\n')}\n`
       : '',
     'Aşağıdaki JSON şemasını doldur (boş bırakabileceğin alanları boş string yap):',
     `{

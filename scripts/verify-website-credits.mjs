@@ -26,5 +26,23 @@ for (const c of cases) {
   if (!ok) fail++
   console.log(`${ok ? '✓' : '✗'} ${JSON.stringify(c.in)} => ${got} (beklenen ${c.want})`)
 }
+
+// Revize kredi mantığı (generate route portu): ilk WEBSITE_FREE_REVISIONS revize ÜCRETSİZ.
+const WEBSITE_FREE_REVISIONS = 3
+const WEBSITE_REVISION_COST = 10
+const revisionCost = (usedRevisions) => (usedRevisions < WEBSITE_FREE_REVISIONS ? 0 : WEBSITE_REVISION_COST)
+const revCases = [
+  { used: 0, want: 0 },  // ilk revize ücretsiz
+  { used: 2, want: 0 },  // 3. revize (used=2) ücretsiz
+  { used: 3, want: 10 }, // 4. revize kredili
+  { used: 7, want: 10 },
+]
+for (const c of revCases) {
+  const got = revisionCost(c.used)
+  const ok = got === c.want
+  if (!ok) fail++
+  console.log(`${ok ? '✓' : '✗'} revize used=${c.used} => ${got} (beklenen ${c.want})`)
+}
+
 if (fail) { console.error(`\n❌ ${fail} hata`); process.exit(1) }
-console.log('\n✓ Tüm kredi hesabı senaryoları geçti')
+console.log('\n✓ Tüm kredi senaryoları geçti')

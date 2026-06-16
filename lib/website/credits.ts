@@ -14,6 +14,9 @@ export const WEBSITE_CREDITS = {
 /** Bir revizyon talebinin sabit kredi maliyeti. */
 export const WEBSITE_REVISION_COST = 10
 
+/** İlk üretimden sonra ücretsiz revize hakkı (Reddet/Düzenle). Bu kadar revize 0 kredi; sonrası WEBSITE_REVISION_COST. */
+export const WEBSITE_FREE_REVISIONS = 3
+
 export interface GenerationCostInput {
   siteType: SiteType
   pageCount: number

@@ -22,6 +22,8 @@ export interface ThemeTokens {
   referenceUrls?: string[] | null
   /** Faz 3: siteye bağlı kullanıcı domaini (ör. firma.com). theme jsonb'sinde tutulur. */
   customDomain?: string | null
+  /** Wizard'da girilen ilk marka açıklaması/tarif (ilk AI üretim talimatı). theme jsonb'sinde tutulur. */
+  initialInstructions?: string | null
 }
 
 export interface SectionBlock {
