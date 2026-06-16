@@ -75,6 +75,11 @@ export default function PrivacyPolicyContent({ locale = 'tr' }: { locale?: 'tr' 
                 <br />
                 {g('section3GTMContent')}
               </p>
+              <p className="text-[14px] text-[#8a8f98] mt-3 whitespace-pre-line">
+                <strong className="text-gray-300">{g('section3GmailTitle')}</strong>
+                <br />
+                {g('section3GmailContent')}
+              </p>
             </section>
 
             <section>
