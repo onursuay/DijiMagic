@@ -2,6 +2,19 @@
 
 ---
 
+## 2026-06-16 — Web Site Yöneticisi Faz C2: alan bazlı yazı ölçeği + vurgu rengi + zemin opaklığı
+- **İstek:** C1'in (alan bazlı font + metin + zemin rengi) üzerine her alan (Üst/Gövde/Alt) için üç yeni kontrol: **yazı boyutu ölçeği** (Küçük/Normal/Büyük/Çok büyük), **vurgu rengi** (buton/CTA/ikon aksanı) ve **zemin opaklığı** (özellikle header'da cam/saydam efekti). Migration yok — hepsi `theme.areaStyles` jsonb içinde.
+- **Çözüm:**
+  - **Token modeli:** `AreaStyle`'a `textScale` ('0.9'|'1'|'1.1'|'1.25') + `accentColor` (#rrggbb) + `bgOpacity` (0–100) eklendi (jsonb, migration'sız).
+  - **Render cascade (`areaCssVars`):** ölçek → `--site-text-scale`; accent → `--site-accent` + türetilen `--site-accent-soft` (color-mix %12) + **kontrast-aware `--site-on-accent`**; opaklık → `color-mix(in srgb, bgColor X%, transparent)` ile `--site-surface`/`--site-area-bg`. `themeToCssVars` köke `--site-text-scale:'1'` default ekler → C2 alanı yoksa render C1 ile **bit-aynı**.
+  - **Tipografi:** `sections.tsx`'teki tüm font-size token'ları `text-[calc(var(--site-text-scale,1)*…)]` formuna çevrildi (clamp dahil). Gerçek Tailwind 3.4 build ile doğrulandı — iç içe `calc(var()*clamp())` sorunsuz parse ediliyor, inline fallback gerekmedi.
+  - **Panel:** alan sekmesine WizardSelect (ölçek) + ColorField (vurgu) + slider (opaklık, aria-label'lı) + canlı mini örnek; accent üstü buton yazısı 4.5:1'e ulaşmazsa kontrast uyarısı.
+  - **Adversarial review (3 paralel: regresyon/correctness/i18n-UX) düzeltmeleri:**
+    - **`onAccentFor` kontrast bug'ı (ORTA):** `> 0.5` luminance eşiği yanlış kırılma noktasıydı; orta tonlarda (turuncu/mavi/kırmızı) okunaksız beyaz metin seçiyordu (turuncu CTA 1.97). İki adayı (koyu/beyaz) ölçüp kontrastı yükseği seçen mantığa geçirildi → turuncu 8.49, sarı 15.61; accent uyarısı artık yalnız gerçekten çözümsüz tonlarda çıkıyor.
+    - **Dangling `bgOpacity`:** zemin rengi yokken opaklık kaydedilmesi engellendi (`isHex(bgColor)` guard).
+    - **A11y:** opaklık slider'ına `aria-label` eklendi.
+- **Dosyalar:** lib/website/{types,render/theme,render/sections}.ts(x), components/website/DesignPanel.tsx, locales/{tr,en}.json, docs/superpowers/specs/2026-06-16-web-site-yoneticisi-faz-c2-olcek-opaklik-accent.md
+
 ## 2026-06-16 — Web Site Yöneticisi Faz C1: alan bazlı tasarım (Üst/Gövde/Alt)
 - **İstek:** Kullanıcı, sitenin üst (header) / gövde (body) / alt (footer) alanlarına ayrı **yazı tipi + metin rengi + arka plan rengi** seçebilsin; canlı önizlemeyle.
 - **Çözüm:**

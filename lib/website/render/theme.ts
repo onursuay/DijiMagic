@@ -218,9 +218,40 @@ export function themeToCssVars(theme: ThemeTokens | null | undefined): CSSProper
     ['--site-accent-soft' as string]: accentSoft,
     ['--site-surface' as string]: surface,
     ['--site-on-accent' as string]: '#FFFFFF',
+    ['--site-text-scale' as string]: '1', // Faz C2: alan override'ı bunu ezer (calc tipografi tabanı)
     ['--site-font-heading' as string]: t.fontHeading || DEFAULT_SITE_THEME.fontHeading,
     ['--site-font-body' as string]: t.fontBody || DEFAULT_SITE_THEME.fontBody,
   }
+}
+
+/** Hex rengin WCAG bağıl parlaklığı (0..1). Accent üstündeki metin rengini seçmek için. */
+function relLuminance(hex: string): number {
+  const rgb = hexToRgb(hex)
+  if (!rgb) return 0
+  const ch = rgb.split(',').map((s) => {
+    const c = parseInt(s.trim(), 10) / 255
+    return c <= 0.03928 ? c / 12.92 : Math.pow((c + 0.055) / 1.055, 2.4)
+  })
+  return 0.2126 * ch[0] + 0.7152 * ch[1] + 0.0722 * ch[2]
+}
+
+/** İki hex renk arası WCAG kontrast oranı (1..21). */
+function contrastRatio(a: string, b: string): number {
+  const la = relLuminance(a)
+  const lb = relLuminance(b)
+  const hi = Math.max(la, lb)
+  const lo = Math.min(la, lb)
+  return (hi + 0.05) / (lo + 0.05)
+}
+
+/**
+ * Faz C2: accent üstünde en okunaklı metin rengi (buton/CTA).
+ * Eşik yerine iki adayı (koyu/beyaz) ölç, kontrastı yüksek olanı seç — orta tonlarda
+ * (turuncu/mavi/kırmızı) beyazın okunmazlığını önler.
+ */
+export function onAccentFor(hex: string): string {
+  const dark = '#14201C'
+  return contrastRatio(hex, dark) >= contrastRatio(hex, '#FFFFFF') ? dark : '#FFFFFF'
 }
 
 /** Faz B — site tarzı: AI üretim tonu yönergesi + wizard'da önerilen yazı ailesi. */
@@ -250,9 +281,20 @@ export function areaCssVars(area: AreaStyle | null | undefined, footer = false):
   const v: Record<string, string> = {}
   if (area.textColor) v[footer ? '--site-area-text' : '--site-ink'] = area.textColor
   if (area.bgColor) {
-    v['--site-surface'] = area.bgColor // gövde açık bölümleri
-    v['--site-area-bg'] = area.bgColor // header/footer tek-renk zemini
+    // Faz C2: zemin opaklığı (<100) → color-mix saydamlık; 100/yoksa C1 davranışı (tam opak).
+    const op = typeof area.bgOpacity === 'number' ? Math.max(0, Math.min(100, Math.round(area.bgOpacity))) : 100
+    const bg = op >= 100 ? area.bgColor : `color-mix(in srgb, ${area.bgColor} ${op}%, transparent)`
+    v['--site-surface'] = bg // gövde açık bölümleri
+    v['--site-area-bg'] = bg // header/footer tek-renk zemini
   }
+  // Faz C2: alan vurgu rengi → accent + türetilen soft + okunabilir on-accent.
+  if (area.accentColor) {
+    v['--site-accent'] = area.accentColor
+    v['--site-accent-soft'] = `color-mix(in srgb, ${area.accentColor} 12%, transparent)`
+    v['--site-on-accent'] = onAccentFor(area.accentColor)
+  }
+  // Faz C2: yazı boyutu ölçeği (≠1 ise) → tipografi calc() tabanı.
+  if (area.textScale && area.textScale !== '1') v['--site-text-scale'] = area.textScale
   const pair = area.fontPairing ? FONT_PAIRINGS[area.fontPairing] : null
   if (pair) {
     v['--site-font-heading'] = pair.heading

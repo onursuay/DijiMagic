@@ -38,6 +38,12 @@ export interface AreaStyle {
   textColor?: string | null
   /** Arka plan rengi (header/footer için --site-area-bg; gövde için --site-surface). */
   bgColor?: string | null
+  /** Faz C2: yazı boyutu ölçeği ('0.9'|'1'|'1.1'|'1.25') → --site-text-scale. */
+  textScale?: string | null
+  /** Faz C2: alan vurgu rengi (#rrggbb) → --site-accent + türetilen soft/on-accent. */
+  accentColor?: string | null
+  /** Faz C2: zemin opaklığı (0..100; yalnız bgColor ile anlamlı) → color-mix saydamlık. */
+  bgOpacity?: number | null
 }
 
 export interface AreaStyles {

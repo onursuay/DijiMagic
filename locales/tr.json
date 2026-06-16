@@ -5881,7 +5881,16 @@
       "designSampleCta": "Buton",
       "designSaveHint": "Değişiklikler 'Uygula' ile kaydedilir. Hiçbir şey seçmezsen profesyonel varsayılan uygulanır.",
       "designApplyToSeeFull": "Tam görünüm için Uygula",
-      "designContrastWarn": "Metin ile arka plan rengi birbirine çok yakın; okunabilirlik için daha koyu veya daha açık bir ton seçin."
+      "designContrastWarn": "Metin ile arka plan rengi birbirine çok yakın; okunabilirlik için daha koyu veya daha açık bir ton seçin.",
+      "designTextScale": "Yazı boyutu ölçeği",
+      "designScale_small": "Küçük",
+      "designScale_normal": "Normal",
+      "designScale_large": "Büyük",
+      "designScale_xlarge": "Çok büyük",
+      "designAccentColor": "Vurgu rengi",
+      "designBgOpacity": "Zemin opaklığı",
+      "designBgOpacityHint": "Opaklık yalnızca bir zemin rengi seçildiğinde etkilidir (örn. üst alanda cam/saydam görünüm).",
+      "designAccentContrastWarn": "Bu vurgu rengi üzerindeki buton yazısı yeterince okunaklı değil; biraz daha koyu veya daha açık bir ton seçin."
     }
   },
   "sidebar": {

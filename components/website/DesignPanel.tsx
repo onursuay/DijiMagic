@@ -4,11 +4,12 @@ import { useState, useEffect } from 'react'
 import { useTranslations } from 'next-intl'
 import { X, Check, RotateCcw, Palette, AlertTriangle } from 'lucide-react'
 import WizardSelect from '@/components/meta/wizard/WizardSelect'
-import { FONT_PAIRINGS, FONT_PAIRING_LIST, areaFontHref } from '@/lib/website/render/theme'
+import { FONT_PAIRINGS, FONT_PAIRING_LIST, areaFontHref, onAccentFor } from '@/lib/website/render/theme'
 import type { AreaStyle, AreaStyles, ThemeTokens } from '@/lib/website/types'
 
 type Area = 'header' | 'body' | 'footer'
 const AREAS: Area[] = ['header', 'body', 'footer']
+const SCALE_VALUES = ['0.9', '1', '1.1', '1.25']
 
 /** Geçerli 6 haneli hex (#rrggbb). Picker + örnek + kayıt yalnız geçerli değeri kullanır. */
 const isHex = (c: string | null | undefined): c is string => /^#[0-9a-fA-F]{6}$/.test(c || '')
@@ -89,13 +90,16 @@ export default function DesignPanel({
       for (const a of AREAS) {
         const s = areas[a]
         if (!s) continue
-        // Yalnız geçerli hex renkleri kaydet — geçersiz (#zzz vb.) yazılı değer atlanır.
+        // Yalnız geçerli değerleri kaydet — geçersiz hex (#zzz) / preset dışı ölçek / 100 opaklık atlanır.
         const c: AreaStyle = {
           ...(s.fontPairing ? { fontPairing: s.fontPairing } : {}),
           ...(isHex(s.textColor) ? { textColor: s.textColor } : {}),
           ...(isHex(s.bgColor) ? { bgColor: s.bgColor } : {}),
+          ...(s.textScale && s.textScale !== '1' && SCALE_VALUES.includes(s.textScale) ? { textScale: s.textScale } : {}),
+          ...(isHex(s.accentColor) ? { accentColor: s.accentColor } : {}),
+          ...(isHex(s.bgColor) && typeof s.bgOpacity === 'number' && s.bgOpacity >= 0 && s.bgOpacity < 100 ? { bgOpacity: Math.round(s.bgOpacity) } : {}),
         }
-        if (c.fontPairing || c.textColor || c.bgColor) cleaned[a] = c
+        if (c.fontPairing || c.textColor || c.bgColor || c.textScale || c.accentColor || c.bgOpacity != null) cleaned[a] = c
       }
       const newTheme: ThemeTokens = { ...theme, areaStyles: Object.keys(cleaned).length ? cleaned : null }
       const res = await fetch(`/api/website/${websiteId}`, {
@@ -117,6 +121,13 @@ export default function DesignPanel({
   const lowContrast = contrastRatio(sampleBg, sampleInk) < 4.5
   const headingFont = pair?.heading || 'inherit'
   const bodyFont = pair?.body || 'inherit'
+  // Faz C2 mini örnek: vurgu rengi + boyut ölçeği + zemin opaklığı (saydam zeminde kart arkası görünür)
+  const sampleAccent = isHex(cur.accentColor) ? cur.accentColor : theme.secondaryColor || '#0E7C73'
+  const sampleScale = cur.textScale && SCALE_VALUES.includes(cur.textScale) ? Number(cur.textScale) : 1
+  const sampleOp = typeof cur.bgOpacity === 'number' ? cur.bgOpacity : 100
+  const sampleBgCss = sampleOp < 100 && isHex(cur.bgColor) ? `color-mix(in srgb, ${sampleBg} ${sampleOp}%, transparent)` : sampleBg
+  // Faz C2: kullanıcı özel accent seçtiyse buton yazısı (on-accent) ile kontrastı uyar — bazı orta tonlarda ne beyaz ne koyu 4.5:1'e ulaşır.
+  const accentLowContrast = isHex(cur.accentColor) && contrastRatio(cur.accentColor, onAccentFor(cur.accentColor)) < 4.5
 
   const fontLinks = Array.from(new Set(AREAS.map((a) => areaFontHref(areas[a])).filter(Boolean))) as string[]
 
@@ -154,11 +165,11 @@ export default function DesignPanel({
             </div>
 
             {/* Mini canlı örnek */}
-            <div className="rounded-xl ring-1 ring-black/[0.06] overflow-hidden" style={{ backgroundColor: sampleBg, color: sampleInk }}>
+            <div className="rounded-xl ring-1 ring-black/[0.06] overflow-hidden" style={{ backgroundColor: sampleBgCss, color: sampleInk }}>
               <div className="p-5">
-                <p className="text-[1.35rem] font-semibold leading-tight" style={{ fontFamily: headingFont }}>{t('designSampleHeading')}</p>
-                <p className="mt-1.5 text-[0.9rem] opacity-80" style={{ fontFamily: bodyFont }}>{t('designSampleBody')}</p>
-                <span className="mt-3 inline-flex items-center rounded-full px-4 py-1.5 text-[0.8rem] font-medium" style={{ backgroundColor: theme.accentSoftColor || theme.secondaryColor || '#0E7C73', color: '#fff' }}>{t('designSampleCta')}</span>
+                <p className="font-semibold leading-tight" style={{ fontFamily: headingFont, fontSize: `calc(${sampleScale} * 1.35rem)` }}>{t('designSampleHeading')}</p>
+                <p className="mt-1.5 opacity-80" style={{ fontFamily: bodyFont, fontSize: `calc(${sampleScale} * 0.9rem)` }}>{t('designSampleBody')}</p>
+                <span className="mt-3 inline-flex items-center rounded-full px-4 py-1.5 font-medium" style={{ backgroundColor: sampleAccent, color: onAccentFor(sampleAccent), fontSize: `calc(${sampleScale} * 0.8rem)` }}>{t('designSampleCta')}</span>
               </div>
             </div>
 
@@ -166,6 +177,13 @@ export default function DesignPanel({
               <div className="flex items-start gap-2 rounded-lg border border-primary/20 bg-primary/5 px-3 py-2">
                 <AlertTriangle className="w-4 h-4 text-gray-500 mt-0.5 shrink-0" />
                 <p className="text-xs text-primary leading-relaxed">{t('designContrastWarn')}</p>
+              </div>
+            )}
+
+            {accentLowContrast && (
+              <div className="flex items-start gap-2 rounded-lg border border-primary/20 bg-primary/5 px-3 py-2">
+                <AlertTriangle className="w-4 h-4 text-gray-500 mt-0.5 shrink-0" />
+                <p className="text-xs text-primary leading-relaxed">{t('designAccentContrastWarn')}</p>
               </div>
             )}
 
@@ -182,8 +200,37 @@ export default function DesignPanel({
               />
             </div>
 
+            {/* Yazı boyutu ölçeği */}
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-1.5">{t('designTextScale')}</label>
+              <WizardSelect
+                value={cur.textScale || '1'}
+                onChange={(v) => setCur({ textScale: v })}
+                options={[
+                  { value: '0.9', label: t('designScale_small') },
+                  { value: '1', label: t('designScale_normal') },
+                  { value: '1.1', label: t('designScale_large') },
+                  { value: '1.25', label: t('designScale_xlarge') },
+                ]}
+              />
+            </div>
+
             <ColorField label={t('designTextColor')} value={cur.textColor} fallback={sampleInk} placeholder={t('designDefault')} resetLabel={t('designReset')} onChange={(v) => setCur({ textColor: v })} onClear={() => setCur({ textColor: null })} />
+            <ColorField label={t('designAccentColor')} value={cur.accentColor} fallback={sampleAccent} placeholder={t('designDefault')} resetLabel={t('designReset')} onChange={(v) => setCur({ accentColor: v })} onClear={() => setCur({ accentColor: null })} />
             <ColorField label={t('designBgColor')} value={cur.bgColor} fallback={sampleBg} placeholder={t('designDefault')} resetLabel={t('designReset')} onChange={(v) => setCur({ bgColor: v })} onClear={() => setCur({ bgColor: null })} />
+
+            {/* Zemin opaklığı */}
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-1.5">{t('designBgOpacity')}</label>
+              <div className="flex items-center gap-3">
+                <input type="range" min={0} max={100} step={5} value={cur.bgOpacity ?? 100} onChange={(e) => setCur({ bgOpacity: Number(e.target.value) })} aria-label={t('designBgOpacity')} className="flex-1 accent-primary cursor-pointer" />
+                <span className="text-sm font-mono text-gray-600 w-11 text-right tabular-nums">{cur.bgOpacity ?? 100}%</span>
+                {typeof cur.bgOpacity === 'number' && cur.bgOpacity !== 100 && (
+                  <button onClick={() => setCur({ bgOpacity: null })} aria-label={t('designReset')} className="rounded-lg border border-gray-200 text-gray-500 p-2 hover:bg-gray-50/60 transition-colors"><RotateCcw className="w-4 h-4" /></button>
+                )}
+              </div>
+              {!isHex(cur.bgColor) && <p className="mt-1.5 text-xs text-gray-400 leading-relaxed">{t('designBgOpacityHint')}</p>}
+            </div>
 
             <button onClick={resetArea} className="inline-flex items-center gap-2 rounded-lg border border-gray-200 px-4 py-2 text-sm font-medium text-gray-600 hover:bg-gray-50/60 transition-colors">
               <RotateCcw className="w-4 h-4" /> {t('designResetArea')}

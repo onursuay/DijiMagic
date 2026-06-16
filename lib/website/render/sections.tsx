@@ -45,9 +45,9 @@ const navLinks = (v: unknown): NavLink[] =>
 // ── Tutarlı ölçek tokenları ──
 const CONTAINER = 'max-w-6xl mx-auto px-6 sm:px-8'
 const SECTION = 'py-20 sm:py-28'
-const EYEBROW = 'text-[0.78rem] font-semibold uppercase tracking-[0.18em]'
-const H2 = 'text-[clamp(1.9rem,3.6vw,2.75rem)] font-semibold leading-[1.12] tracking-[-0.02em]'
-const LEAD = 'text-[1.0625rem] sm:text-[1.15rem] leading-[1.75]'
+const EYEBROW = 'text-[calc(var(--site-text-scale,1)*0.78rem)] font-semibold uppercase tracking-[0.18em]'
+const H2 = 'text-[calc(var(--site-text-scale,1)*clamp(1.9rem,3.6vw,2.75rem))] font-semibold leading-[1.12] tracking-[-0.02em]'
+const LEAD = 'text-[calc(var(--site-text-scale,1)*1.0625rem)] sm:text-[calc(var(--site-text-scale,1)*1.15rem)] leading-[1.75]'
 
 const HEADING_STYLE = { fontFamily: 'var(--site-font-heading)' as const }
 
@@ -89,7 +89,7 @@ export function HeaderSection({ content }: { content: Dict }) {
             </span>
           )}
           <span
-            className="text-[1.1rem] font-semibold tracking-[-0.01em]"
+            className="text-[calc(var(--site-text-scale,1)*1.1rem)] font-semibold tracking-[-0.01em]"
             style={{ color: 'var(--site-ink)', ...HEADING_STYLE }}
           >
             {brand}
@@ -101,7 +101,7 @@ export function HeaderSection({ content }: { content: Dict }) {
               <a
                 key={i}
                 href={l.href}
-                className="ml-8 first:ml-0 text-[0.95rem] whitespace-nowrap opacity-60 hover:opacity-100 transition-opacity"
+                className="ml-8 first:ml-0 text-[calc(var(--site-text-scale,1)*0.95rem)] whitespace-nowrap opacity-60 hover:opacity-100 transition-opacity"
                 style={{ color: 'var(--site-ink)' }}
               >
                 {l.label}
@@ -111,7 +111,7 @@ export function HeaderSection({ content }: { content: Dict }) {
           {ctaLabel && (
             <a
               href={ctaHref}
-              className="hidden md:inline-flex items-center rounded-full px-5 py-2.5 text-[0.9rem] font-medium transition-transform hover:-translate-y-0.5"
+              className="hidden md:inline-flex items-center rounded-full px-5 py-2.5 text-[calc(var(--site-text-scale,1)*0.9rem)] font-medium transition-transform hover:-translate-y-0.5"
               style={{ backgroundColor: 'var(--site-accent)', color: 'var(--site-on-accent)' }}
             >
               {ctaLabel}
@@ -177,7 +177,7 @@ export function HeroSection({ content }: { content: Dict }) {
             </p>
           )}
           <h1
-            className="text-[clamp(2.5rem,6vw,5rem)] font-semibold leading-[1.04] tracking-[-0.03em]"
+            className="text-[calc(var(--site-text-scale,1)*clamp(2.5rem,6vw,5rem))] font-semibold leading-[1.04] tracking-[-0.03em]"
             style={HEADING_STYLE}
           >
             {title}
@@ -190,7 +190,7 @@ export function HeroSection({ content }: { content: Dict }) {
               {ctaLabel && (
                 <a
                   href={ctaHref}
-                  className="inline-flex items-center rounded-full px-8 py-4 text-[0.98rem] font-medium transition-transform hover:-translate-y-0.5"
+                  className="inline-flex items-center rounded-full px-8 py-4 text-[calc(var(--site-text-scale,1)*0.98rem)] font-medium transition-transform hover:-translate-y-0.5"
                   style={{
                     backgroundColor: 'var(--site-accent)',
                     color: 'var(--site-on-accent)',
@@ -203,7 +203,7 @@ export function HeroSection({ content }: { content: Dict }) {
               {ctaLabel2 && (
                 <a
                   href={ctaHref2}
-                  className="inline-flex items-center rounded-full border border-white/35 px-7 py-4 text-[0.98rem] font-medium text-white hover:bg-white/10 transition-colors"
+                  className="inline-flex items-center rounded-full border border-white/35 px-7 py-4 text-[calc(var(--site-text-scale,1)*0.98rem)] font-medium text-white hover:bg-white/10 transition-colors"
                 >
                   {ctaLabel2}
                 </a>
@@ -228,10 +228,10 @@ export function StatsSection({ content }: { content: Dict }) {
         <div className="grid grid-cols-2 lg:grid-cols-4 gap-y-10 gap-x-6 divide-y sm:divide-y-0 sm:divide-x divide-black/[0.07]">
           {items.map((it, i) => (
             <div key={i} className="text-center px-4 pt-8 sm:pt-0 first:pt-0">
-              <div className="text-[clamp(2rem,4vw,3rem)] font-semibold leading-none" style={{ color: 'var(--site-accent)', ...HEADING_STYLE }}>
+              <div className="text-[calc(var(--site-text-scale,1)*clamp(2rem,4vw,3rem))] font-semibold leading-none" style={{ color: 'var(--site-accent)', ...HEADING_STYLE }}>
                 {it.value}
               </div>
-              <div className="mt-3 text-[0.9rem] font-medium uppercase tracking-[0.1em] text-black/55">{it.label}</div>
+              <div className="mt-3 text-[calc(var(--site-text-scale,1)*0.9rem)] font-medium uppercase tracking-[0.1em] text-black/55">{it.label}</div>
             </div>
           ))}
         </div>
@@ -289,9 +289,9 @@ export function ServicesSection({ content }: { content: Dict }) {
                 )}
               </div>
               <div className="p-7">
-                <h3 className="text-[1.2rem] font-semibold leading-snug" style={{ color: 'var(--site-ink)', ...HEADING_STYLE }}>{it.title}</h3>
+                <h3 className="text-[calc(var(--site-text-scale,1)*1.2rem)] font-semibold leading-snug" style={{ color: 'var(--site-ink)', ...HEADING_STYLE }}>{it.title}</h3>
                 {it.description && (
-                  <p className="mt-2.5 text-[0.975rem] text-black/60" style={{ lineHeight: 1.7 }}>{it.description}</p>
+                  <p className="mt-2.5 text-[calc(var(--site-text-scale,1)*0.975rem)] text-black/60" style={{ lineHeight: 1.7 }}>{it.description}</p>
                 )}
               </div>
             </div>
@@ -316,15 +316,15 @@ export function FeaturesSection({ content }: { content: Dict }) {
           {items.map((it, i) => (
             <div key={i} className="flex gap-5">
               <div
-                className="mt-0.5 h-12 w-12 shrink-0 rounded-2xl flex items-center justify-center text-[1.05rem] font-bold"
+                className="mt-0.5 h-12 w-12 shrink-0 rounded-2xl flex items-center justify-center text-[calc(var(--site-text-scale,1)*1.05rem)] font-bold"
                 style={{ backgroundColor: 'var(--site-accent-soft)', color: 'var(--site-accent)' }}
               >
                 {String(i + 1).padStart(2, '0')}
               </div>
               <div>
-                <h3 className="text-[1.2rem] font-semibold" style={{ color: 'var(--site-ink)', ...HEADING_STYLE }}>{it.title}</h3>
+                <h3 className="text-[calc(var(--site-text-scale,1)*1.2rem)] font-semibold" style={{ color: 'var(--site-ink)', ...HEADING_STYLE }}>{it.title}</h3>
                 {it.description && (
-                  <p className="mt-2 text-[1rem] text-black/60" style={{ lineHeight: 1.75 }}>{it.description}</p>
+                  <p className="mt-2 text-[calc(var(--site-text-scale,1)*1rem)] text-black/60" style={{ lineHeight: 1.75 }}>{it.description}</p>
                 )}
               </div>
             </div>
@@ -373,7 +373,7 @@ export function SplitSection({ content }: { content: Dict }) {
             {bullets.length > 0 && (
               <ul className="mt-7 space-y-3.5">
                 {bullets.map((b, i) => (
-                  <li key={i} className="flex items-start gap-3 text-[1rem] text-white/85">
+                  <li key={i} className="flex items-start gap-3 text-[calc(var(--site-text-scale,1)*1rem)] text-white/85">
                     <span className="mt-2 h-1.5 w-1.5 rounded-full shrink-0" style={{ backgroundColor: tone === 'accent' ? '#fff' : 'var(--site-accent)' }} />
                     <span style={{ lineHeight: 1.6 }}>{b}</span>
                   </li>
@@ -410,7 +410,7 @@ export function GallerySection({ content }: { content: Dict }) {
               {img.caption && (
                 <>
                   <div aria-hidden className="absolute inset-x-0 bottom-0 h-2/3 bg-gradient-to-t from-black/65 to-transparent" />
-                  <span className="absolute bottom-4 left-4 right-4 text-white text-[0.95rem] font-medium drop-shadow">{img.caption}</span>
+                  <span className="absolute bottom-4 left-4 right-4 text-white text-[calc(var(--site-text-scale,1)*0.95rem)] font-medium drop-shadow">{img.caption}</span>
                 </>
               )}
             </div>
@@ -464,12 +464,12 @@ export function TestimonialSection({ content }: { content: Dict }) {
         <div className={`${heading || eyebrow ? 'mt-14' : ''} grid md:grid-cols-3 gap-6`}>
           {items.map((it, i) => (
             <figure key={i} className="rounded-3xl bg-white/[0.06] ring-1 ring-white/10 p-8 flex flex-col">
-              <div className="text-[2.5rem] leading-none mb-3" style={{ color: 'var(--site-accent)', fontFamily: 'Georgia, serif' }}>“</div>
-              <blockquote className="text-[1.0625rem] text-white/85 flex-1" style={{ lineHeight: 1.7 }}>{it.quote}</blockquote>
+              <div className="text-[calc(var(--site-text-scale,1)*2.5rem)] leading-none mb-3" style={{ color: 'var(--site-accent)', fontFamily: 'Georgia, serif' }}>“</div>
+              <blockquote className="text-[calc(var(--site-text-scale,1)*1.0625rem)] text-white/85 flex-1" style={{ lineHeight: 1.7 }}>{it.quote}</blockquote>
               {(it.author || it.role) && (
                 <figcaption className="mt-6 pt-5 border-t border-white/10">
-                  {it.author && <div className="text-[0.98rem] font-semibold text-white">{it.author}</div>}
-                  {it.role && <div className="text-[0.85rem] text-white/55 mt-0.5">{it.role}</div>}
+                  {it.author && <div className="text-[calc(var(--site-text-scale,1)*0.98rem)] font-semibold text-white">{it.author}</div>}
+                  {it.role && <div className="text-[calc(var(--site-text-scale,1)*0.85rem)] text-white/55 mt-0.5">{it.role}</div>}
                 </figcaption>
               )}
             </figure>
@@ -490,14 +490,14 @@ export function CtaSection({ content }: { content: Dict }) {
     <section className="relative overflow-hidden" style={{ backgroundColor: 'var(--site-accent)' }}>
       <div aria-hidden className="absolute inset-0 opacity-[0.12]" style={{ background: 'radial-gradient(40rem 30rem at 80% -20%, #fff, transparent 60%)' }} />
       <div className={`relative ${CONTAINER} py-20 sm:py-24 text-center`} style={{ color: 'var(--site-on-accent)' }}>
-        <h2 className="text-[clamp(1.9rem,4vw,3rem)] font-semibold leading-[1.1] tracking-[-0.02em] max-w-3xl mx-auto" style={HEADING_STYLE}>
+        <h2 className="text-[calc(var(--site-text-scale,1)*clamp(1.9rem,4vw,3rem))] font-semibold leading-[1.1] tracking-[-0.02em] max-w-3xl mx-auto" style={HEADING_STYLE}>
           {heading}
         </h2>
-        {body && <p className="mt-5 text-[1.1rem] text-white/85 max-w-xl mx-auto" style={{ lineHeight: 1.7 }}>{body}</p>}
+        {body && <p className="mt-5 text-[calc(var(--site-text-scale,1)*1.1rem)] text-white/85 max-w-xl mx-auto" style={{ lineHeight: 1.7 }}>{body}</p>}
         {ctaLabel && (
           <a
             href={ctaHref}
-            className="mt-9 inline-flex items-center rounded-full bg-white px-8 py-4 text-[0.98rem] font-semibold transition-transform hover:-translate-y-0.5"
+            className="mt-9 inline-flex items-center rounded-full bg-white px-8 py-4 text-[calc(var(--site-text-scale,1)*0.98rem)] font-semibold transition-transform hover:-translate-y-0.5"
             style={{ color: 'var(--site-accent)', boxShadow: '0 18px 40px -16px rgba(0,0,0,0.4)' }}
           >
             {ctaLabel}
@@ -536,7 +536,7 @@ export function ContactSection({ content }: { content: Dict }) {
       <span className="mt-0.5 inline-flex h-10 w-10 shrink-0 items-center justify-center rounded-xl" style={{ backgroundColor: 'var(--site-accent-soft)', color: 'var(--site-accent)' }}>
         <Icon className="w-[1.15rem] h-[1.15rem]" />
       </span>
-      <div className="text-[0.975rem] leading-relaxed pt-1.5" style={{ color: 'var(--site-ink)' }}>{children}</div>
+      <div className="text-[calc(var(--site-text-scale,1)*0.975rem)] leading-relaxed pt-1.5" style={{ color: 'var(--site-ink)' }}>{children}</div>
     </div>
   )
 
@@ -556,7 +556,7 @@ export function ContactSection({ content }: { content: Dict }) {
             {links.length > 0 && (
               <div className="flex flex-wrap gap-2.5 pt-1">
                 {links.map((l, i) => (
-                  <a key={i} href={l.href} className="rounded-full border border-black/[0.12] px-5 py-2 text-[0.9rem] hover:bg-black/[0.03] transition-colors" style={{ color: 'var(--site-ink)' }}>{l.label}</a>
+                  <a key={i} href={l.href} className="rounded-full border border-black/[0.12] px-5 py-2 text-[calc(var(--site-text-scale,1)*0.9rem)] hover:bg-black/[0.03] transition-colors" style={{ color: 'var(--site-ink)' }}>{l.label}</a>
                 ))}
               </div>
             )}
@@ -571,7 +571,7 @@ export function ContactSection({ content }: { content: Dict }) {
           {websiteId ? (
             <ContactForm websiteId={websiteId} labels={formLabels} />
           ) : (
-            <div className="rounded-2xl bg-white ring-1 ring-black/[0.06] p-8 text-center text-[0.95rem] text-black/55">{body || formLabels.message}</div>
+            <div className="rounded-2xl bg-white ring-1 ring-black/[0.06] p-8 text-center text-[calc(var(--site-text-scale,1)*0.95rem)] text-black/55">{body || formLabels.message}</div>
           )}
         </div>
       </div>
@@ -612,13 +612,13 @@ export function FooterSection({ content }: { content: Dict }) {
                   {brand.charAt(0).toUpperCase()}
                 </span>
               )}
-              <span className="text-[1.1rem] font-semibold" style={HEADING_STYLE}>{brand}</span>
+              <span className="text-[calc(var(--site-text-scale,1)*1.1rem)] font-semibold" style={HEADING_STYLE}>{brand}</span>
             </div>
-            {tagline && <p className="mt-4 text-[0.95rem] opacity-60" style={{ lineHeight: 1.7 }}>{tagline}</p>}
+            {tagline && <p className="mt-4 text-[calc(var(--site-text-scale,1)*0.95rem)] opacity-60" style={{ lineHeight: 1.7 }}>{tagline}</p>}
             {social.length > 0 && (
               <div className="mt-5 flex flex-wrap gap-x-4 gap-y-2">
                 {social.map((l, i) => (
-                  <a key={i} href={l.href} className="text-[0.88rem] opacity-55 hover:opacity-100 transition-opacity">{l.label}</a>
+                  <a key={i} href={l.href} className="text-[calc(var(--site-text-scale,1)*0.88rem)] opacity-55 hover:opacity-100 transition-opacity">{l.label}</a>
                 ))}
               </div>
             )}
@@ -627,10 +627,10 @@ export function FooterSection({ content }: { content: Dict }) {
           {/* Sayfalar */}
           {nav.length > 0 && (
             <div className="lg:col-span-2">
-              <h4 className="text-[0.72rem] font-semibold uppercase tracking-[0.12em] opacity-40">{pagesLabel}</h4>
+              <h4 className="text-[calc(var(--site-text-scale,1)*0.72rem)] font-semibold uppercase tracking-[0.12em] opacity-40">{pagesLabel}</h4>
               <ul className="mt-4 space-y-3">
                 {nav.map((l, i) => (
-                  <li key={i}><a href={l.href} className="text-[0.95rem] opacity-65 hover:opacity-100 transition-opacity">{l.label}</a></li>
+                  <li key={i}><a href={l.href} className="text-[calc(var(--site-text-scale,1)*0.95rem)] opacity-65 hover:opacity-100 transition-opacity">{l.label}</a></li>
                 ))}
               </ul>
             </div>
@@ -639,10 +639,10 @@ export function FooterSection({ content }: { content: Dict }) {
           {/* Hizmetler */}
           {serviceLinks.length > 0 && (
             <div className="lg:col-span-3">
-              <h4 className="text-[0.72rem] font-semibold uppercase tracking-[0.12em] opacity-40">{servicesLabel}</h4>
+              <h4 className="text-[calc(var(--site-text-scale,1)*0.72rem)] font-semibold uppercase tracking-[0.12em] opacity-40">{servicesLabel}</h4>
               <ul className="mt-4 space-y-3">
                 {serviceLinks.slice(0, 6).map((l, i) => (
-                  <li key={i}><a href={l.href} className="text-[0.95rem] opacity-65 hover:opacity-100 transition-opacity">{l.label}</a></li>
+                  <li key={i}><a href={l.href} className="text-[calc(var(--site-text-scale,1)*0.95rem)] opacity-65 hover:opacity-100 transition-opacity">{l.label}</a></li>
                 ))}
               </ul>
             </div>
@@ -651,8 +651,8 @@ export function FooterSection({ content }: { content: Dict }) {
           {/* İletişim */}
           {contactLines.length > 0 && (
             <div className="lg:col-span-3">
-              <h4 className="text-[0.72rem] font-semibold uppercase tracking-[0.12em] opacity-40">{contactLabel}</h4>
-              <div className="mt-4 space-y-2.5 text-[0.92rem]" style={{ lineHeight: 1.6 }}>
+              <h4 className="text-[calc(var(--site-text-scale,1)*0.72rem)] font-semibold uppercase tracking-[0.12em] opacity-40">{contactLabel}</h4>
+              <div className="mt-4 space-y-2.5 text-[calc(var(--site-text-scale,1)*0.92rem)]" style={{ lineHeight: 1.6 }}>
                 {address || locations.length ? <p className="opacity-65">{address || locations.join(' · ')}</p> : null}
                 {phone && <p className="opacity-65"><a href={`tel:${phone.replace(/\s+/g, '')}`} className="hover:opacity-100 transition-opacity">{phone}</a></p>}
                 {email && <p className="opacity-65"><a href={`mailto:${email}`} className="hover:opacity-100 transition-opacity">{email}</a></p>}
@@ -661,7 +661,7 @@ export function FooterSection({ content }: { content: Dict }) {
             </div>
           )}
         </div>
-        <div className="mt-14 pt-6 border-t border-current/10 text-[0.85rem] opacity-45">
+        <div className="mt-14 pt-6 border-t border-current/10 text-[calc(var(--site-text-scale,1)*0.85rem)] opacity-45">
           {note || `© ${brand}`}
         </div>
       </div>

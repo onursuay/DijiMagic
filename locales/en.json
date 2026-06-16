@@ -5881,7 +5881,16 @@
       "designSampleCta": "Button",
       "designSaveHint": "Changes are saved with 'Apply'. If you select nothing, the professional default applies.",
       "designApplyToSeeFull": "Apply to see full view",
-      "designContrastWarn": "The text and background colors are too similar; pick a darker or lighter tone for readability."
+      "designContrastWarn": "The text and background colors are too similar; pick a darker or lighter tone for readability.",
+      "designTextScale": "Text size scale",
+      "designScale_small": "Small",
+      "designScale_normal": "Normal",
+      "designScale_large": "Large",
+      "designScale_xlarge": "Extra large",
+      "designAccentColor": "Accent color",
+      "designBgOpacity": "Background opacity",
+      "designBgOpacityHint": "Opacity applies only when a background color is set (e.g. a glass/translucent header).",
+      "designAccentContrastWarn": "The button text on this accent color isn't readable enough; pick a slightly darker or lighter tone."
     }
   },
   "sidebar": {
