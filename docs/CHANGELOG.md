@@ -2,6 +2,11 @@
 
 ---
 
+## 2026-06-16 — Web Site Yöneticisi: detay sayfası çift durum kartı fix
+- **Sorun:** AI üretim sürerken detay sayfasında üstte "AI siteni hazırlıyor" kartı doğru çıkarken, alttaki önizleme bloğu yalnız `!hasPages`'e baktığı (üretim/`busy` durumunu bilmediği) için aynı anda "Site henüz oluşturulmadı" ikinci kartını basıyordu → ekranda çelişkili iki kart. (Prod'da gözle yakalandı; kod-varlık denetimi bu görsel çelişkiyi kaçırmıştı.)
+- **Çözüm:** Alt önizleme bloğu artık yalnız `hasPages` iken render ediliyor. Boş ve "üretiliyor" durumu **tek** üst durum kartından gösteriliyor (tek kaynak); ikinci boş-durum kartı kaldırıldı. Her durumda tek kart kalır (üretiliyor / oluşturulmadı+buton / hata+yeniden dene / sayfa-var aksiyon barı).
+- **Dosyalar:** app/web-site-yoneticisi/[id]/page.tsx
+
 ## 2026-06-16 — Web Site Yöneticisi Faz C2: alan bazlı yazı ölçeği + vurgu rengi + zemin opaklığı
 - **İstek:** C1'in (alan bazlı font + metin + zemin rengi) üzerine her alan (Üst/Gövde/Alt) için üç yeni kontrol: **yazı boyutu ölçeği** (Küçük/Normal/Büyük/Çok büyük), **vurgu rengi** (buton/CTA/ikon aksanı) ve **zemin opaklığı** (özellikle header'da cam/saydam efekti). Migration yok — hepsi `theme.areaStyles` jsonb içinde.
 - **Çözüm:**

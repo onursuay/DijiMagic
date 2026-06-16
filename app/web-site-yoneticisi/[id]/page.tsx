@@ -338,16 +338,9 @@ export default function WebSiteDetailPage() {
           {/* Faz 3 — kendi alan adı */}
           {hasPages && <DomainPanel websiteId={id} />}
 
-          {/* Önizleme / boş durum */}
-          {!hasPages ? (
-            <div className="bg-white rounded-xl border border-gray-200 p-10 text-center animate-card-enter">
-              <div className="mx-auto w-12 h-12 rounded-xl bg-primary/5 flex items-center justify-center">
-                <Sparkles className="w-6 h-6 text-primary" />
-              </div>
-              <h3 className="mt-4 text-base font-semibold text-gray-900">{t('noPagesTitle')}</h3>
-              <p className="mt-1 text-sm leading-relaxed text-gray-600 max-w-md mx-auto">{t('noPagesDesc')}</p>
-            </div>
-          ) : (
+          {/* Önizleme — yalnız sayfa VARKEN. Boş ve "üretiliyor" durumu yukarıdaki tek durum
+              kartında gösterilir; burada ikinci bir boş-durum kartı YOK (çift kart hatasını önler). */}
+          {hasPages && (
             <div className="space-y-3 animate-card-enter">
               {/* Kontrol satırı: dil + sayfa sekmeleri (solda) · cihaz toggle (sağda) */}
               <div className="flex flex-wrap items-center gap-3">
