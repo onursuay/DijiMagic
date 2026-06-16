@@ -4,11 +4,12 @@ import { useState, useEffect, useCallback, useRef } from 'react'
 import { useParams, useRouter, useSearchParams } from 'next/navigation'
 import Link from 'next/link'
 import { useTranslations, useLocale } from 'next-intl'
-import { Sparkles, RefreshCw, Globe, ExternalLink, ArrowLeft, Monitor, Smartphone, ImagePlus, History, RotateCcw, ChevronDown, Eye, AlertCircle } from 'lucide-react'
+import { Sparkles, RefreshCw, Globe, ExternalLink, ArrowLeft, Monitor, Smartphone, ImagePlus, History, RotateCcw, ChevronDown, Eye, AlertCircle, Palette } from 'lucide-react'
 import Topbar from '@/components/Topbar'
 import { ToastContainer, type Toast } from '@/components/Toast'
 import AccessRequiredModal from '@/components/billing/AccessRequiredModal'
 import DomainPanel from '@/components/website/DomainPanel'
+import DesignPanel from '@/components/website/DesignPanel'
 import type { Website, WebsitePage, WebsiteVersionMeta } from '@/lib/website/types'
 
 type Busy = 'ai' | 'quick' | 'publish' | 'logo' | 'rollback' | null
@@ -51,6 +52,7 @@ export default function WebSiteDetailPage() {
   const [reloadKey, setReloadKey] = useState(0)
   const [versions, setVersions] = useState<WebsiteVersionMeta[]>([])
   const [showHistory, setShowHistory] = useState(false)
+  const [showDesign, setShowDesign] = useState(false)
 
   const frameWrapRef = useRef<HTMLDivElement>(null)
   const fileInputRef = useRef<HTMLInputElement>(null)
@@ -265,6 +267,12 @@ export default function WebSiteDetailPage() {
                     {busy === 'logo' ? <RefreshCw className="w-4 h-4 animate-spin" /> : <ImagePlus className="w-4 h-4" />}
                   </button>
                   <button
+                    onClick={() => setShowDesign(true)}
+                    className="inline-flex items-center gap-2 rounded-lg border border-gray-200 px-4 py-2.5 text-sm font-medium text-gray-700 hover:bg-gray-50/60 transition-colors"
+                  >
+                    <Palette className="w-4 h-4" /> {t('designTitle')}
+                  </button>
+                  <button
                     onClick={() => router.push(`/web-site-yoneticisi/${id}/onizleme`)}
                     className="inline-flex items-center gap-2 rounded-lg bg-primary px-5 py-2.5 text-sm font-medium text-white active:scale-[0.97] transition-all"
                   >
@@ -421,6 +429,15 @@ export default function WebSiteDetailPage() {
           dismissible
           onClose={() => setShowCredit(false)}
           reason="website_generation_gate"
+        />
+      )}
+      {showDesign && site && (
+        <DesignPanel
+          websiteId={id}
+          theme={site.theme}
+          previewLocale={previewLocale}
+          onClose={() => setShowDesign(false)}
+          onSaved={(th) => { setSite((p) => (p ? { ...p, theme: th } : p)); setReloadKey((k) => k + 1) }}
         />
       )}
       <ToastContainer toasts={toasts} onClose={removeToast} />

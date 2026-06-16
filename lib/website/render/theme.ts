@@ -1,5 +1,5 @@
 import type { CSSProperties } from 'react'
-import type { ThemeTokens } from '../types'
+import type { ThemeTokens, AreaStyle } from '../types'
 
 /** Üretilen siteler için yazı ailesi eşleşmeleri (gerçek Google Fonts). */
 export interface FontPairing { id: string; label: string; heading: string; body: string; href: string }
@@ -238,4 +238,31 @@ export const SITE_STYLE_MAP: Record<string, SiteStylePreset> = Object.fromEntrie
 /** Tarz id'sinden AI prompt'a verilecek tasarım yönergesi (yoksa boş). */
 export function styleDirective(style: string | null | undefined): string {
   return (style && SITE_STYLE_MAP[style]?.directive) || ''
+}
+
+/**
+ * Faz C — bir alanın override'ını CSS değişkenlerine çevirir (yalnız set olanlar).
+ * footer=true ise metin rengi `--site-area-text`'e yazılır (footer zemini koyu/ink olduğundan
+ * metin --site-ink'ten ayrıdır); header/body'de metin `--site-ink`'i ezer.
+ */
+export function areaCssVars(area: AreaStyle | null | undefined, footer = false): CSSProperties {
+  if (!area) return {}
+  const v: Record<string, string> = {}
+  if (area.textColor) v[footer ? '--site-area-text' : '--site-ink'] = area.textColor
+  if (area.bgColor) {
+    v['--site-surface'] = area.bgColor // gövde açık bölümleri
+    v['--site-area-bg'] = area.bgColor // header/footer tek-renk zemini
+  }
+  const pair = area.fontPairing ? FONT_PAIRINGS[area.fontPairing] : null
+  if (pair) {
+    v['--site-font-heading'] = pair.heading
+    v['--site-font-body'] = pair.body
+  }
+  return v as CSSProperties
+}
+
+/** Alan yazı ailesi farklıysa ek yüklenecek Google Fonts linki (yoksa null). */
+export function areaFontHref(area: AreaStyle | null | undefined): string | null {
+  const pair = area?.fontPairing ? FONT_PAIRINGS[area.fontPairing] : null
+  return pair?.href ?? null
 }

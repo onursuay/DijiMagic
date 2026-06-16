@@ -26,6 +26,24 @@ export interface ThemeTokens {
   initialInstructions?: string | null
   /** Faz B: site tarzı (modern|corporate|playful|luxury|minimal|vibrant). theme jsonb'sinde tutulur. */
   style?: string | null
+  /** Faz C: alan bazlı tasarım override (header/body/footer). theme jsonb'sinde tutulur — migration yok. */
+  areaStyles?: AreaStyles | null
+}
+
+/** Faz C — bir alanın (header/body/footer) global temayı ezen tasarımı. */
+export interface AreaStyle {
+  /** FONT_PAIRINGS id'si (alan yazı ailesi). */
+  fontPairing?: string | null
+  /** Metin/başlık rengi (--site-ink). */
+  textColor?: string | null
+  /** Arka plan rengi (header/footer için --site-area-bg; gövde için --site-surface). */
+  bgColor?: string | null
+}
+
+export interface AreaStyles {
+  header?: AreaStyle | null
+  body?: AreaStyle | null
+  footer?: AreaStyle | null
 }
 
 export interface SectionBlock {

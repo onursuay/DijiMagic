@@ -2,6 +2,20 @@
 
 ---
 
+## 2026-06-16 — Web Site Yöneticisi Faz C1: alan bazlı tasarım (Üst/Gövde/Alt)
+- **İstek:** Kullanıcı, sitenin üst (header) / gövde (body) / alt (footer) alanlarına ayrı **yazı tipi + metin rengi + arka plan rengi** seçebilsin; canlı önizlemeyle.
+- **Çözüm:**
+  - **Token modeli (migration'sız):** `ThemeTokens.areaStyles` (jsonb) → her alan için `{ fontPairing, textColor, bgColor }`; seçilmeyen alan global temayı miras alır.
+  - **Render 3-grup wrapper:** `SiteRenderer` bölümleri header/body/footer olarak sarar; her grubun wrapper'ı o alanın CSS değişken override'ını taşır (`areaCssVars`). Footer metni global ink'ten ayrı **`--site-area-text`** değişkenine bağlanır (footer zemini koyu olduğundan).
+  - **DesignPanel:** Tam ekran panel — sol kontroller (alan sekmesi + canlı mini örnek + yazı ailesi/metin/zemin rengi) + sağ iframe tam önizleme; "Uygula" → `PATCH theme.areaStyles`.
+  - **Adversarial review (20 ham → 11 doğrulanmış) düzeltmeleri:**
+    - **Metin rengi override'ı artık gerçekten çalışıyor:** header nav `text-black/60` → `var(--site-ink)`+opacity; footer metinleri `text-white/*` → `currentColor`+`opacity-*` (kök `--site-area-text`). Logo kutuları (accent zemin) sabit beyaz kalır.
+    - **WCAG kontrast uyarısı:** seçilen metin/zemin kontrastı < 4.5:1 ise panelde uyarı (okunmaz kombinasyon engellenir).
+    - **Hex doğrulama:** ColorField geçersiz değeri (`#zzz`) kırmızı işaretler ve **kaydetmez**; picker/örnek/CSS yalnız geçerli `#rrggbb` kullanır.
+    - **Önizleme linkleri:** contact bölümü `links` dizisi de taslak önizleme linkine çevrilir (404 önlenir).
+    - **Mini örnek gerçekle hizalı:** footer/gövde zemin + CTA fallback'leri sabit yerine **tema renginden** türetilir.
+- **Dosyalar:** lib/website/{types,render/theme,render/SiteRenderer,render/sections}.ts(x), components/website/DesignPanel.tsx, app/web-site-yoneticisi/[id]/page.tsx, app/api/website/[id]/route.ts, locales/{tr,en}.json, docs/superpowers/specs/2026-06-16-web-site-yoneticisi-faz-c1-alan-tasarimi.md
+
 ## 2026-06-16 — Web Site Yöneticisi Faz B: akış sadeleştirme + tarz seçimi
 - **İstek:** (B1) Detay sayfasında "Sitenizi tarif edin" formu tekrar soruluyordu — kaldır; üretim başlasın, sonra review. (B2) Wizard'a görsel tarz seçimi (AI tasarıma yansıtsın).
 - **Çözüm:**

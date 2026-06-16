@@ -5862,7 +5862,24 @@
       "style_vibrant": "Vibrant",
       "preparingTitle": "AI is building your site",
       "preparingDesc": "We're creating an image-rich site tailored to your brand. This may take a minute; you can preview and approve it when ready.",
-      "retry": "Try Again"
+      "retry": "Try Again",
+      "designTitle": "Design",
+      "designHint": "Customize fonts and colors per area",
+      "designApply": "Apply",
+      "designArea_header": "Top",
+      "designArea_body": "Body",
+      "designArea_footer": "Bottom",
+      "designTextColor": "Text color",
+      "designBgColor": "Background color",
+      "designDefault": "Default",
+      "designReset": "Reset",
+      "designResetArea": "Reset this area",
+      "designSampleHeading": "Sample Heading",
+      "designSampleBody": "This is how this area's fonts and colors look.",
+      "designSampleCta": "Button",
+      "designSaveHint": "Changes are saved with 'Apply'. If you select nothing, the professional default applies.",
+      "designApplyToSeeFull": "Apply to see full view",
+      "designContrastWarn": "The text and background colors are too similar; pick a darker or lighter tone for readability."
     }
   },
   "sidebar": {

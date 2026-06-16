@@ -74,7 +74,7 @@ export function HeaderSection({ content }: { content: Dict }) {
   const ctaLabel = str(content.ctaLabel)
   const ctaHref = safeHref(content.ctaHref, '#contact')
   return (
-    <header className="sticky top-0 z-30 backdrop-blur-md bg-white/80 border-b border-black/[0.06]">
+    <header className="sticky top-0 z-30 backdrop-blur-md border-b border-black/[0.06]" style={{ backgroundColor: 'var(--site-area-bg, rgba(255,255,255,0.85))' }}>
       <div className={`${CONTAINER} h-[74px] flex items-center justify-between gap-4`}>
         <a href={safeHref(content.homeHref, '#')} className="flex items-center gap-2.5 shrink-0">
           {logoUrl ? (
@@ -101,7 +101,8 @@ export function HeaderSection({ content }: { content: Dict }) {
               <a
                 key={i}
                 href={l.href}
-                className="ml-8 first:ml-0 text-[0.95rem] text-black/60 hover:text-black whitespace-nowrap transition-colors"
+                className="ml-8 first:ml-0 text-[0.95rem] whitespace-nowrap opacity-60 hover:opacity-100 transition-opacity"
+                style={{ color: 'var(--site-ink)' }}
               >
                 {l.label}
               </a>
@@ -597,7 +598,7 @@ export function FooterSection({ content }: { content: Dict }) {
   const contactLines = [address || (locations.length ? locations.join(' · ') : ''), phone, email, hours].filter(Boolean)
 
   return (
-    <footer style={{ backgroundColor: 'var(--site-ink)' }} className="text-white">
+    <footer style={{ backgroundColor: 'var(--site-area-bg, var(--site-ink))', color: 'var(--site-area-text, #ffffff)' }}>
       <div className={`${CONTAINER} py-16`}>
         <div className="grid gap-10 sm:grid-cols-2 lg:grid-cols-12">
           {/* Marka */}
@@ -611,13 +612,13 @@ export function FooterSection({ content }: { content: Dict }) {
                   {brand.charAt(0).toUpperCase()}
                 </span>
               )}
-              <span className="text-[1.1rem] font-semibold text-white" style={HEADING_STYLE}>{brand}</span>
+              <span className="text-[1.1rem] font-semibold" style={HEADING_STYLE}>{brand}</span>
             </div>
-            {tagline && <p className="mt-4 text-[0.95rem] text-white/60" style={{ lineHeight: 1.7 }}>{tagline}</p>}
+            {tagline && <p className="mt-4 text-[0.95rem] opacity-60" style={{ lineHeight: 1.7 }}>{tagline}</p>}
             {social.length > 0 && (
               <div className="mt-5 flex flex-wrap gap-x-4 gap-y-2">
                 {social.map((l, i) => (
-                  <a key={i} href={l.href} className="text-[0.88rem] text-white/55 hover:text-white transition-colors">{l.label}</a>
+                  <a key={i} href={l.href} className="text-[0.88rem] opacity-55 hover:opacity-100 transition-opacity">{l.label}</a>
                 ))}
               </div>
             )}
@@ -626,10 +627,10 @@ export function FooterSection({ content }: { content: Dict }) {
           {/* Sayfalar */}
           {nav.length > 0 && (
             <div className="lg:col-span-2">
-              <h4 className="text-[0.72rem] font-semibold uppercase tracking-[0.12em] text-white/40">{pagesLabel}</h4>
+              <h4 className="text-[0.72rem] font-semibold uppercase tracking-[0.12em] opacity-40">{pagesLabel}</h4>
               <ul className="mt-4 space-y-3">
                 {nav.map((l, i) => (
-                  <li key={i}><a href={l.href} className="text-[0.95rem] text-white/65 hover:text-white transition-colors">{l.label}</a></li>
+                  <li key={i}><a href={l.href} className="text-[0.95rem] opacity-65 hover:opacity-100 transition-opacity">{l.label}</a></li>
                 ))}
               </ul>
             </div>
@@ -638,10 +639,10 @@ export function FooterSection({ content }: { content: Dict }) {
           {/* Hizmetler */}
           {serviceLinks.length > 0 && (
             <div className="lg:col-span-3">
-              <h4 className="text-[0.72rem] font-semibold uppercase tracking-[0.12em] text-white/40">{servicesLabel}</h4>
+              <h4 className="text-[0.72rem] font-semibold uppercase tracking-[0.12em] opacity-40">{servicesLabel}</h4>
               <ul className="mt-4 space-y-3">
                 {serviceLinks.slice(0, 6).map((l, i) => (
-                  <li key={i}><a href={l.href} className="text-[0.95rem] text-white/65 hover:text-white transition-colors">{l.label}</a></li>
+                  <li key={i}><a href={l.href} className="text-[0.95rem] opacity-65 hover:opacity-100 transition-opacity">{l.label}</a></li>
                 ))}
               </ul>
             </div>
@@ -650,17 +651,17 @@ export function FooterSection({ content }: { content: Dict }) {
           {/* İletişim */}
           {contactLines.length > 0 && (
             <div className="lg:col-span-3">
-              <h4 className="text-[0.72rem] font-semibold uppercase tracking-[0.12em] text-white/40">{contactLabel}</h4>
-              <div className="mt-4 space-y-2.5 text-[0.92rem] text-white/65" style={{ lineHeight: 1.6 }}>
-                {address || locations.length ? <p>{address || locations.join(' · ')}</p> : null}
-                {phone && <p><a href={`tel:${phone.replace(/\s+/g, '')}`} className="hover:text-white transition-colors">{phone}</a></p>}
-                {email && <p><a href={`mailto:${email}`} className="hover:text-white transition-colors">{email}</a></p>}
-                {hours && <p className="text-white/50">{hours}</p>}
+              <h4 className="text-[0.72rem] font-semibold uppercase tracking-[0.12em] opacity-40">{contactLabel}</h4>
+              <div className="mt-4 space-y-2.5 text-[0.92rem]" style={{ lineHeight: 1.6 }}>
+                {address || locations.length ? <p className="opacity-65">{address || locations.join(' · ')}</p> : null}
+                {phone && <p className="opacity-65"><a href={`tel:${phone.replace(/\s+/g, '')}`} className="hover:opacity-100 transition-opacity">{phone}</a></p>}
+                {email && <p className="opacity-65"><a href={`mailto:${email}`} className="hover:opacity-100 transition-opacity">{email}</a></p>}
+                {hours && <p className="opacity-50">{hours}</p>}
               </div>
             </div>
           )}
         </div>
-        <div className="mt-14 pt-6 border-t border-white/10 text-[0.85rem] text-white/45">
+        <div className="mt-14 pt-6 border-t border-current/10 text-[0.85rem] opacity-45">
           {note || `© ${brand}`}
         </div>
       </div>

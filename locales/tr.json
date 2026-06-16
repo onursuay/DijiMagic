@@ -5862,7 +5862,24 @@
       "style_vibrant": "Canlı",
       "preparingTitle": "AI siteni hazırlıyor",
       "preparingDesc": "Markana uygun, görsel-zengin bir site oluşturuyoruz. Bu birkaç dakika sürebilir; bittiğinde önizleyip onaylayabilirsin.",
-      "retry": "Yeniden Dene"
+      "retry": "Yeniden Dene",
+      "designTitle": "Tasarım",
+      "designHint": "Alanların yazı tipini ve renklerini özelleştir",
+      "designApply": "Uygula",
+      "designArea_header": "Üst",
+      "designArea_body": "Gövde",
+      "designArea_footer": "Alt",
+      "designTextColor": "Metin rengi",
+      "designBgColor": "Arka plan rengi",
+      "designDefault": "Varsayılan",
+      "designReset": "Sıfırla",
+      "designResetArea": "Bu alanı sıfırla",
+      "designSampleHeading": "Örnek Başlık",
+      "designSampleBody": "Bu alanın yazı tipi ve renkleri böyle görünür.",
+      "designSampleCta": "Buton",
+      "designSaveHint": "Değişiklikler 'Uygula' ile kaydedilir. Hiçbir şey seçmezsen profesyonel varsayılan uygulanır.",
+      "designApplyToSeeFull": "Tam görünüm için Uygula",
+      "designContrastWarn": "Metin ile arka plan rengi birbirine çok yakın; okunabilirlik için daha koyu veya daha açık bir ton seçin."
     }
   },
   "sidebar": {
