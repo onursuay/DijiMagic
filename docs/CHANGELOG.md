@@ -2,6 +2,14 @@
 
 ---
 
+## 2026-06-16 — Web Site Yöneticisi Faz B: akış sadeleştirme + tarz seçimi
+- **İstek:** (B1) Detay sayfasında "Sitenizi tarif edin" formu tekrar soruluyordu — kaldır; üretim başlasın, sonra review. (B2) Wizard'a görsel tarz seçimi (AI tasarıma yansıtsın).
+- **Çözüm:**
+  - **B2 tarz:** `ThemeTokens.style` (jsonb, migration yok) + `theme.ts` `SITE_STYLE_PRESETS` (6 tarz: Modern/Kurumsal/Keyifli/Lüks/Minimal/Canlı → AI direktifi + önerilen yazı ailesi). `CreateSiteWizard`'a görsel tarz kartları (seçilince font varsayılanı güncellenir, kullanıcı değiştirebilir). `generate.ts` prompt'a `TASARIM TARZI` direktifi; `generate` route `site.theme.style`'ı geçirir.
+  - **B1 akış:** Detay sayfası intake formu (logo+tarif+AI/Hızlı butonları) kaldırıldı; yerine **üretim durumu kartı**: üretiliyorsa "AI siteni hazırlıyor"; hazırsa önizleme + **Detaylı Önizle / Yayınla** (Reddet/Düzenle `/onizleme`'de) + durum rozeti. Sürüm geçmişi + alan adı paneli korunur. Wizard'dan `?create=ai` ile autostart.
+  - **Adversarial review** (17 ham → 9 doğrulanmış): autostart hata yönetimi (kalıcı hata banner + "Yeniden Dene" + `?create` param temizleme → reload'da tekrar tetiklenmez), "Detaylı Önizle" tekrarı kaldırıldı, descHint'ten tarz referansı çıkarıldı, ölü kod (logoUrl/handleLogoRemove/unused import) temizlendi.
+- **Dosyalar:** lib/website/{types,render/theme,ai/generate}.ts, app/api/website/[id]/generate/route.ts, components/website/CreateSiteWizard.tsx, app/web-site-yoneticisi/[id]/page.tsx, locales/{tr,en}.json, docs/superpowers/specs/2026-06-16-web-site-yoneticisi-faz-b-akis-tarz.md
+
 ## 2026-06-16 — Web Site Yöneticisi Faz A: "gerçek çalışan site" (form/harita/hamburger/footer + önizleme 404 fix)
 - **Sorun (kullanıcı testi):** Önizlemede menü 404/yanlış sayfa; stok görsellerde Çince yazı; içerik/footer zayıf; mobilde hamburger menü yok; iletişim sayfasında form/iletişim alanı yok.
 - **Kök neden (404/menü):** Üretilen menü `/s/<altalan>/…` (yayın) kullanıyordu; `/s/` sayfaları yalnız YAYINLANMIŞ siteyi gösterir → taslak önizlemede `notFound()`.

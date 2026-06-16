@@ -6,8 +6,13 @@ import { useTranslations, useLocale } from 'next-intl'
 import { X, Info, Sparkles, Wand2, ImagePlus, Trash2, AlertCircle } from 'lucide-react'
 import WizardSelect from '@/components/meta/wizard/WizardSelect'
 import DictateButton from '@/components/website/DictateButton'
-import { FONT_PAIRINGS, FONT_PAIRING_LIST } from '@/lib/website/render/theme'
+import { FONT_PAIRINGS, FONT_PAIRING_LIST, SITE_STYLE_PRESETS } from '@/lib/website/render/theme'
 import type { SiteType } from '@/lib/website/types'
+
+// Tarz temsili noktalar (YoAi UI — amber/sarı yok).
+const STYLE_DOT: Record<string, string> = {
+  modern: '#0E7C73', corporate: '#2C57A8', playful: '#B23A6B', luxury: '#1A2E45', minimal: '#18202B', vibrant: '#159A47',
+}
 
 const LANGS: { code: string; name: string }[] = [
   { code: 'tr', name: 'Türkçe' }, { code: 'en', name: 'English' }, { code: 'de', name: 'Deutsch' },
@@ -44,6 +49,7 @@ export default function CreateSiteWizard({ open, onClose }: CreateSiteWizardProp
   const [siteType, setSiteType] = useState<SiteType>('multipage')
   const [locales, setLocales] = useState<string[]>(['tr'])
   const [fontPairing, setFontPairing] = useState<string>('elegant')
+  const [siteStyle, setSiteStyle] = useState<string>('modern')
   const [refUrls, setRefUrls] = useState<string[]>(['', '', ''])
   const [instructions, setInstructions] = useState('')
   const [logoFile, setLogoFile] = useState<File | null>(null)
@@ -54,7 +60,7 @@ export default function CreateSiteWizard({ open, onClose }: CreateSiteWizardProp
 
   useEffect(() => {
     if (open) {
-      setLabel(''); setSiteType('multipage'); setLocales(['tr']); setFontPairing('elegant')
+      setLabel(''); setSiteType('multipage'); setLocales(['tr']); setFontPairing('elegant'); setSiteStyle('modern')
       setRefUrls(['', '', '']); setInstructions(''); setLogoFile(null); setLogoPreview(''); setBusy(null); setError('')
     }
   }, [open])
@@ -73,6 +79,11 @@ export default function CreateSiteWizard({ open, onClose }: CreateSiteWizardProp
   const removeLocale = (code: string) => { if (code !== 'tr') setLocales((prev) => prev.filter((x) => x !== code)) }
   const availableLangs = LANGS.filter((l) => !locales.includes(l.code))
   const setRef = (i: number, v: string) => setRefUrls((prev) => prev.map((x, idx) => (idx === i ? v : x)))
+  const pickStyle = (id: string) => {
+    setSiteStyle(id)
+    const p = SITE_STYLE_PRESETS.find((s) => s.id === id)
+    if (p) setFontPairing(p.fontHint) // tarza uygun yazı ailesi varsayılanı (kullanıcı değiştirebilir)
+  }
 
   const onLogoPick = (file: File | undefined) => {
     if (!file) return
@@ -100,6 +111,7 @@ export default function CreateSiteWizard({ open, onClose }: CreateSiteWizardProp
             fontHref: pair.href,
             referenceUrls: references,
             initialInstructions: instructions.trim() || null,
+            style: siteStyle,
           },
         }),
       })
@@ -158,6 +170,29 @@ export default function CreateSiteWizard({ open, onClose }: CreateSiteWizardProp
                 placeholder={t('namePlaceholder')}
                 className="mt-1.5 w-full rounded-xl border border-gray-200 px-3 py-2.5 text-sm focus:outline-none focus:border-primary focus:ring-2 focus:ring-primary/20 transition-all"
               />
+            </div>
+
+            {/* Tarz */}
+            <div>
+              <label className="block text-sm font-medium text-gray-700">{t('styleLabel')}</label>
+              <p className="text-xs text-gray-500 mt-0.5">{t('styleHint')}</p>
+              <div className="mt-2 grid grid-cols-2 sm:grid-cols-3 gap-2">
+                {SITE_STYLE_PRESETS.map((s) => (
+                  <button
+                    key={s.id}
+                    type="button"
+                    onClick={() => pickStyle(s.id)}
+                    className={`flex items-center gap-2 rounded-xl border px-3 py-2.5 text-sm transition-all ${
+                      siteStyle === s.id
+                        ? 'border-primary bg-primary/5 text-primary font-medium ring-2 ring-primary/20'
+                        : 'border-gray-200 text-gray-700 hover:bg-gray-50/60'
+                    }`}
+                  >
+                    <span className="h-3.5 w-3.5 rounded-full shrink-0" style={{ backgroundColor: STYLE_DOT[s.id] }} />
+                    {t(`style_${s.id}`)}
+                  </button>
+                ))}
+              </div>
             </div>
 
             {/* Tür + Yazı stili */}

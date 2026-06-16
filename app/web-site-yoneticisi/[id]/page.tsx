@@ -4,11 +4,10 @@ import { useState, useEffect, useCallback, useRef } from 'react'
 import { useParams, useRouter, useSearchParams } from 'next/navigation'
 import Link from 'next/link'
 import { useTranslations, useLocale } from 'next-intl'
-import { Sparkles, RefreshCw, Globe, ExternalLink, ArrowLeft, Wand2, Monitor, Smartphone, ImagePlus, Trash2, History, RotateCcw, ChevronDown, Eye } from 'lucide-react'
+import { Sparkles, RefreshCw, Globe, ExternalLink, ArrowLeft, Monitor, Smartphone, ImagePlus, History, RotateCcw, ChevronDown, Eye, AlertCircle } from 'lucide-react'
 import Topbar from '@/components/Topbar'
 import { ToastContainer, type Toast } from '@/components/Toast'
 import AccessRequiredModal from '@/components/billing/AccessRequiredModal'
-import DictateButton from '@/components/website/DictateButton'
 import DomainPanel from '@/components/website/DomainPanel'
 import type { Website, WebsitePage, WebsiteVersionMeta } from '@/lib/website/types'
 
@@ -44,8 +43,8 @@ export default function WebSiteDetailPage() {
   const [pages, setPages] = useState<WebsitePage[]>([])
   const [activeSlug, setActiveSlug] = useState<string>('home')
   const [previewLocale, setPreviewLocale] = useState<string>('tr')
-  const [instructions, setInstructions] = useState('')
   const [busy, setBusy] = useState<Busy>(null)
+  const [genError, setGenError] = useState('')
   const [showCredit, setShowCredit] = useState(false)
   const [toasts, setToasts] = useState<Toast[]>([])
   const [device, setDevice] = useState<Device>('desktop')
@@ -107,26 +106,26 @@ export default function WebSiteDetailPage() {
   const scale = wrapW > 0 ? Math.min(1, wrapW / designW) : 1
 
   const handleAi = async (override?: string) => {
-    setBusy('ai')
+    setBusy('ai'); setGenError('')
     try {
       const res = await fetch(`/api/website/${id}/generate`, {
-        method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ instructions: override ?? instructions }),
+        method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ instructions: override ?? '' }),
       })
       if (res.status === 402) { setShowCredit(true); return }
       const json = await res.json()
-      if (json.ok) { setPages(json.pages ?? []); setActiveSlug('home'); setInstructions(''); setReloadKey((k) => k + 1); fetchVersions() }
-      else addToast(json.error || t('buildError'), 'error')
-    } catch { addToast(t('buildError'), 'error') } finally { setBusy(null) }
+      if (json.ok) { setPages(json.pages ?? []); setActiveSlug('home'); setReloadKey((k) => k + 1); fetchVersions() }
+      else { const m = json.error || t('buildError'); setGenError(m); addToast(m, 'error') }
+    } catch { setGenError(t('buildError')); addToast(t('buildError'), 'error') } finally { setBusy(null) }
   }
 
   const handleQuick = async () => {
-    setBusy('quick')
+    setBusy('quick'); setGenError('')
     try {
       const res = await fetch(`/api/website/${id}/build`, { method: 'POST' })
       const json = await res.json()
       if (json.ok) { setPages(json.pages ?? []); setActiveSlug('home'); setReloadKey((k) => k + 1); fetchVersions() }
-      else addToast(t('buildError'), 'error')
-    } catch { addToast(t('buildError'), 'error') } finally { setBusy(null) }
+      else { setGenError(t('buildError')); addToast(t('buildError'), 'error') }
+    } catch { setGenError(t('buildError')); addToast(t('buildError'), 'error') } finally { setBusy(null) }
   }
 
   // Wizard'dan ?create=ai|quick ile gelince ilk üretimi otomatik başlat (yalnız bir kez, sayfa boşsa).
@@ -135,8 +134,12 @@ export default function WebSiteDetailPage() {
     if (autoStarted.current || !site || busy) return
     if (pages.length > 0) { autoStarted.current = true; return }
     const mode = search.get('create')
-    if (mode === 'ai') { autoStarted.current = true; void handleAi(site.theme?.initialInstructions ?? '') }
-    else if (mode === 'quick') { autoStarted.current = true; void handleQuick() }
+    if (mode === 'ai' || mode === 'quick') {
+      autoStarted.current = true
+      router.replace(`/web-site-yoneticisi/${id}`, { scroll: false }) // ?create temizle → reload'da tekrar tetiklenmez
+      if (mode === 'ai') void handleAi(site.theme?.initialInstructions ?? '')
+      else void handleQuick()
+    }
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [site, pages.length])
 
@@ -183,17 +186,6 @@ export default function WebSiteDetailPage() {
     } catch { addToast(t('logoError'), 'error') } finally { setBusy(null) }
   }
 
-  const handleLogoRemove = async () => {
-    setBusy('logo')
-    try {
-      const res = await fetch(`/api/website/${id}/logo`, { method: 'DELETE' })
-      const json = await res.json()
-      if (json.ok && json.website) { setSite(json.website); setReloadKey((k) => k + 1) }
-    } catch { /* noop */ } finally { setBusy(null) }
-  }
-
-  const logoUrl = site?.theme?.logoUrl ?? null
-
   const deviceBtn = (d: Device, Icon: typeof Monitor, label: string) => (
     <button
       onClick={() => setDevice(d)}
@@ -216,125 +208,84 @@ export default function WebSiteDetailPage() {
             <ArrowLeft className="w-4 h-4" /> {t('backToList')}
           </Link>
 
-          {/* Yönlendirilmiş intake */}
+          {/* Üretim durumu + aksiyonlar (intake wizard'a taşındı; burada tekrar sorulmaz) */}
           <div className="bg-white rounded-xl border border-gray-200 p-5 animate-card-enter">
-            <div className="flex items-center gap-2">
-              <Wand2 className="w-4 h-4 text-primary" />
-              <h2 className="text-base font-semibold text-gray-900">{t('intakeTitle')}</h2>
-            </div>
-            <p className="mt-1 text-sm leading-relaxed text-gray-600">{t('intakeHint')}</p>
-
-            {/* Marka logosu */}
-            <div className="mt-3 flex items-center gap-3 rounded-xl border border-gray-200 p-3">
-              <div className="w-12 h-12 rounded-lg bg-gray-50 border border-gray-200 flex items-center justify-center overflow-hidden shrink-0">
-                {logoUrl ? (
-                  // eslint-disable-next-line @next/next/no-img-element
-                  <img src={logoUrl} alt={t('logoLabel')} className="w-full h-full object-contain" />
+            {busy === 'ai' || busy === 'quick' ? (
+              <div className="py-8 flex flex-col items-center text-center gap-3">
+                <Sparkles className="w-8 h-8 text-primary animate-pulse" />
+                <h2 className="text-base font-semibold text-gray-900">{t('preparingTitle')}</h2>
+                <p className="text-sm leading-relaxed text-gray-500 max-w-md">{t('preparingDesc')}</p>
+              </div>
+            ) : !hasPages ? (
+              <div className="py-6 flex flex-col items-center text-center gap-3">
+                <div className="w-12 h-12 rounded-xl bg-primary/5 flex items-center justify-center">
+                  <Sparkles className="w-6 h-6 text-primary" />
+                </div>
+                <h2 className="text-base font-semibold text-gray-900">{t('noPagesTitle')}</h2>
+                {genError ? (
+                  <div className="flex items-center gap-2 rounded-lg bg-red-50 border border-red-200 px-3.5 py-2.5 text-sm text-red-700 max-w-md">
+                    <AlertCircle className="w-4 h-4 shrink-0" /> {genError}
+                  </div>
                 ) : (
-                  <ImagePlus className="w-5 h-5 text-gray-400" />
+                  <p className="text-sm leading-relaxed text-gray-600 max-w-md">{t('noPagesDesc')}</p>
                 )}
-              </div>
-              <div className="min-w-0">
-                <p className="text-sm font-medium text-gray-800">{t('logoLabel')}</p>
-                <p className="text-xs text-gray-500 truncate">{t('logoHint')}</p>
-              </div>
-              <div className="ml-auto flex items-center gap-2">
-                <input
-                  ref={fileInputRef}
-                  type="file"
-                  accept="image/png,image/jpeg,image/webp"
-                  className="hidden"
-                  onChange={(e) => { handleLogoFile(e.target.files?.[0]); e.target.value = '' }}
-                />
                 <button
-                  onClick={() => fileInputRef.current?.click()}
+                  onClick={() => handleAi(site?.theme?.initialInstructions ?? '')}
                   disabled={busy !== null}
-                  className="inline-flex items-center gap-1.5 rounded-lg border border-gray-200 px-3 py-2 text-sm font-medium text-gray-700 hover:bg-gray-50/60 transition-colors disabled:opacity-50"
+                  className="mt-1 inline-flex items-center gap-2 rounded-lg bg-primary px-5 py-2.5 text-sm font-medium text-white active:scale-[0.97] transition-all disabled:opacity-60"
                 >
-                  <ImagePlus className="w-4 h-4" />
-                  {busy === 'logo' ? t('building') : logoUrl ? t('logoChange') : t('logoUpload')}
+                  <Sparkles className="w-4 h-4" /> {genError ? t('retry') : t('aiBuild')}
                 </button>
-                {logoUrl && (
-                  <button
-                    onClick={handleLogoRemove}
-                    disabled={busy !== null}
-                    aria-label={t('logoRemove')}
-                    className="rounded-lg border border-gray-200 text-gray-500 p-2 hover:bg-gray-50/60 transition-colors disabled:opacity-50"
-                  >
-                    <Trash2 className="w-4 h-4" />
-                  </button>
-                )}
               </div>
-            </div>
-
-            <textarea
-              value={instructions}
-              onChange={(e) => setInstructions(e.target.value)}
-              rows={3}
-              placeholder={t('instructionsPlaceholder')}
-              className="mt-3 w-full rounded-xl border border-gray-200 p-3 text-sm leading-relaxed focus:outline-none focus:border-primary focus:ring-2 focus:ring-primary/20 transition-all resize-none"
-            />
-            <div className="mt-3 flex flex-wrap items-center gap-2">
-              <DictateButton
-                onAppend={(text) => setInstructions((prev) => (prev ? `${prev} ${text}` : text))}
-                lang={uiLocale === 'en' ? 'en-US' : 'tr-TR'}
-                labelStart={t('dictate')}
-                labelStop={t('listening')}
-                labelPause={t('stopDictate')}
-              />
-              <button
-                onClick={() => handleAi()}
-                disabled={busy !== null}
-                className="inline-flex items-center gap-2 rounded-lg bg-primary px-5 py-2.5 text-sm font-medium text-white active:scale-[0.97] transition-all disabled:opacity-60"
-              >
-                <Sparkles className={`w-4 h-4 ${busy === 'ai' ? 'animate-pulse' : ''}`} />
-                {busy === 'ai' ? t('aiBuilding') : hasPages ? t('aiRebuild') : t('aiBuild')}
-              </button>
-              <button
-                onClick={handleQuick}
-                disabled={busy !== null}
-                className="inline-flex items-center gap-2 rounded-lg border border-gray-200 px-4 py-2.5 text-sm font-medium text-gray-700 hover:bg-gray-50/60 transition-colors disabled:opacity-50"
-              >
-                {hasPages ? <RefreshCw className="w-4 h-4" /> : <Sparkles className="w-4 h-4" />}
-                {busy === 'quick' ? t('building') : hasPages ? t('quickRebuild') : t('quickBuild')}
-              </button>
-
-              {/* Yayın grubu — Hızlı Yenile'nin hemen sağında, gruplu (ayraçla) */}
-              {hasPages && (
-                <>
-                  <span className="hidden sm:block h-7 w-px bg-gray-200 mx-1" />
-                  <span
-                    className={`inline-flex items-center rounded-full px-2.5 py-1 text-xs ${
-                      isPublished ? 'bg-emerald-50 text-emerald-700' : 'bg-gray-100 text-gray-700'
-                    }`}
+            ) : (
+              <div className="flex flex-col sm:flex-row sm:items-center gap-4">
+                <div className="flex-1 min-w-0">
+                  <div className="flex items-center gap-2">
+                    <h2 className="text-base font-semibold text-gray-900">{t('reviewActionsTitle')}</h2>
+                    <span className={`inline-flex items-center rounded-full px-2.5 py-0.5 text-xs ${isPublished ? 'bg-emerald-50 text-emerald-700' : 'bg-gray-100 text-gray-700'}`}>
+                      {isPublished ? t('statusPublished') : site?.status === 'unpublished' ? t('statusUnpublished') : t('statusDraft')}
+                    </span>
+                  </div>
+                  <p className="mt-1 text-sm leading-relaxed text-gray-600">{t('reviewActionsHint')}</p>
+                </div>
+                <div className="flex flex-wrap items-center gap-2">
+                  <input
+                    ref={fileInputRef}
+                    type="file"
+                    accept="image/png,image/jpeg,image/webp"
+                    className="hidden"
+                    onChange={(e) => { handleLogoFile(e.target.files?.[0]); e.target.value = '' }}
+                  />
+                  <button
+                    onClick={() => fileInputRef.current?.click()}
+                    disabled={busy !== null}
+                    aria-label={t('logoChange')}
+                    className="rounded-lg border border-gray-200 text-gray-600 p-2.5 hover:bg-gray-50/60 transition-colors disabled:opacity-50"
                   >
-                    {isPublished ? t('statusPublished') : site?.status === 'unpublished' ? t('statusUnpublished') : t('statusDraft')}
-                  </span>
+                    {busy === 'logo' ? <RefreshCw className="w-4 h-4 animate-spin" /> : <ImagePlus className="w-4 h-4" />}
+                  </button>
+                  <button
+                    onClick={() => router.push(`/web-site-yoneticisi/${id}/onizleme`)}
+                    className="inline-flex items-center gap-2 rounded-lg bg-primary px-5 py-2.5 text-sm font-medium text-white active:scale-[0.97] transition-all"
+                  >
+                    <Eye className="w-4 h-4" /> {t('detailedPreview')}
+                  </button>
                   <button
                     onClick={() => handlePublish(isPublished ? 'unpublish' : 'publish')}
                     disabled={busy !== null}
-                    className={`inline-flex items-center gap-2 rounded-lg px-4 py-2.5 text-sm font-medium active:scale-[0.97] transition-all disabled:opacity-50 ${
-                      isPublished
-                        ? 'border border-gray-200 text-gray-700 hover:bg-gray-50/60'
-                        : 'bg-emerald-600 text-white hover:bg-emerald-700'
-                    }`}
+                    className={`inline-flex items-center gap-2 rounded-lg px-4 py-2.5 text-sm font-medium active:scale-[0.97] transition-all disabled:opacity-50 ${isPublished ? 'border border-gray-200 text-gray-700 hover:bg-gray-50/60' : 'bg-emerald-600 text-white hover:bg-emerald-700'}`}
                   >
                     <Globe className="w-4 h-4" />
                     {busy === 'publish' ? t('publishing') : isPublished ? t('unpublish') : t('publish')}
                   </button>
                   {isPublished && (
-                    <a
-                      href={`/s/${site?.subdomain}`}
-                      target="_blank"
-                      rel="noopener noreferrer"
-                      className="inline-flex items-center gap-2 rounded-lg border border-emerald-200 bg-emerald-50 px-4 py-2.5 text-sm font-medium text-emerald-700 hover:bg-emerald-100 transition-colors"
-                    >
+                    <a href={`/s/${site?.subdomain}`} target="_blank" rel="noopener noreferrer" className="inline-flex items-center gap-2 rounded-lg border border-emerald-200 bg-emerald-50 px-4 py-2.5 text-sm font-medium text-emerald-700 hover:bg-emerald-100 transition-colors">
                       <ExternalLink className="w-4 h-4" /> {t('viewLive')}
                     </a>
                   )}
-                </>
-              )}
-            </div>
+                </div>
+              </div>
+            )}
           </div>
 
           {/* Sürüm geçmişi (Faz 2 — geri alma) */}
@@ -422,17 +373,9 @@ export default function WebSiteDetailPage() {
                     ))}
                   </div>
                 )}
-                <div className="ml-auto flex items-center gap-2">
-                  <button
-                    onClick={() => router.push(`/web-site-yoneticisi/${id}/onizleme`)}
-                    className="inline-flex items-center gap-1.5 rounded-lg bg-primary px-3.5 py-2 text-sm font-medium text-white active:scale-[0.97] transition-all"
-                  >
-                    <Eye className="w-4 h-4" /> {t('detailedPreview')}
-                  </button>
-                  <div className="inline-flex items-center rounded-lg border border-gray-200 p-0.5 bg-white">
-                    {deviceBtn('desktop', Monitor, t('deviceDesktop'))}
-                    {deviceBtn('mobile', Smartphone, t('deviceMobile'))}
-                  </div>
+                <div className="ml-auto inline-flex items-center rounded-lg border border-gray-200 p-0.5 bg-white">
+                  {deviceBtn('desktop', Monitor, t('deviceDesktop'))}
+                  {deviceBtn('mobile', Smartphone, t('deviceMobile'))}
                 </div>
               </div>
 

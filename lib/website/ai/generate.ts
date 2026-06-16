@@ -3,6 +3,7 @@ import { claudeJson, isClaudeReady } from '@/lib/anthropic/text'
 import { pickStockImage, pickStockImages, isStockReady } from '../stock'
 import { scanReferences } from '../referenceScanner'
 import { labelsFor, formLabelsFor, type SiteLabels } from '../templates/deterministic'
+import { styleDirective } from '../render/theme'
 import type { WebsitePageInput, SectionBlock, SiteType, PageRole } from '../types'
 import type { BusinessProfileRow, BusinessIntelligenceRow } from '@/lib/yoai/businessProfileStore'
 
@@ -50,6 +51,8 @@ export interface GenerateInput {
   revisionMode?: 'reject' | 'edit'
   /** 'edit' modunda AI'ın neyi değiştireceğini bilmesi için mevcut sitenin içerik özeti. */
   currentSummary?: string
+  /** Faz B: site tarzı (modern|corporate|playful|luxury|minimal|vibrant) — içerik tonu yönergesi. */
+  style?: string
 }
 
 export function isWebsiteAiReady(): boolean {
@@ -144,6 +147,7 @@ function buildPrompt(input: GenerateInput, ai: BrandSynthesisLike, refSummaries:
     'İŞLETME GERÇEKLERİ:',
     facts.length ? facts.join('\n') : '(sınırlı veri — nötr, dürüst ve genel geçer bir metin üret)',
     '',
+    styleDirective(input.style) ? `TASARIM TARZI (içerik tonunu ve tasarım hissini buna göre ayarla): ${styleDirective(input.style)}\n` : '',
     revisionBlock,
     refSummaries.length
       ? `REFERANS SİTELER — bu sitelerin HEADER/menü yapısını, bölüm SIRASINI ve genel DÜZEN/yapı mantığını yaklaştır (birebir kopya DEĞİL; özgün metin üret). Yukarıdaki kullanıcı istekleri referanslarla çelişirse KULLANICIYI ÖNCELE:\n${refSummaries.map((s) => `- ${s}`).join('\n')}\n`

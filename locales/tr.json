@@ -5822,7 +5822,7 @@
       "wizardTitle": "Yeni Web Sitesi Oluştur",
       "wizardSubtitle": "Bilgileri girin, AI markanıza uygun siteyi tasarlasın.",
       "descLabel": "Nasıl bir site istiyorsunuz?",
-      "descHint": "Markanızı, tarzınızı ve özel isteklerinizi yazın. Boş bırakırsanız işletme profilinizden üretilir.",
+      "descHint": "Markanızı ve özel isteklerinizi yazın (tarz yukarıdan seçilir). Boş bırakırsanız işletme profilinizden üretilir.",
       "descPlaceholder": "Örn. Sade ve kurumsal, sıcak renkler, hizmetlerden randevuyu öne çıkar…",
       "refWizardHint": "Verdiğiniz siteler yalnızca tasarım ve yapı ilhamı için taranır; içerik markanıza özgün üretilir.",
       "defaultName": "Yeni Web Sitesi",
@@ -5851,7 +5851,18 @@
       "deviceTablet": "Tablet",
       "deviceMobile": "Mobil",
       "currentVersion": "Güncel",
-      "revisionAllLocalesHint": "Bu revize, sitenizin tüm dillerini günceller."
+      "revisionAllLocalesHint": "Bu revize, sitenizin tüm dillerini günceller.",
+      "styleLabel": "Tarz",
+      "styleHint": "Sitenizin genel havası; AI tasarımı buna göre ayarlar.",
+      "style_modern": "Modern",
+      "style_corporate": "Kurumsal",
+      "style_playful": "Keyifli",
+      "style_luxury": "Lüks",
+      "style_minimal": "Minimal",
+      "style_vibrant": "Canlı",
+      "preparingTitle": "AI siteni hazırlıyor",
+      "preparingDesc": "Markana uygun, görsel-zengin bir site oluşturuyoruz. Bu birkaç dakika sürebilir; bittiğinde önizleyip onaylayabilirsin.",
+      "retry": "Yeniden Dene"
     }
   },
   "sidebar": {

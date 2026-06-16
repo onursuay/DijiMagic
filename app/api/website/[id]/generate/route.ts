@@ -75,6 +75,7 @@ export async function POST(req: NextRequest, { params }: { params: { id: string 
           locale,
           instructions,
           referenceUrls: site.theme?.referenceUrls ?? undefined,
+          style: site.theme?.style ?? undefined,
           revisionMode,
           // 'edit' (cerrahi) modunda AI'a mevcut o-dil içeriğini ver → belirtilmeyen kısımları korur.
           currentSummary:

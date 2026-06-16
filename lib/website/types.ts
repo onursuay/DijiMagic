@@ -24,6 +24,8 @@ export interface ThemeTokens {
   customDomain?: string | null
   /** Wizard'da girilen ilk marka açıklaması/tarif (ilk AI üretim talimatı). theme jsonb'sinde tutulur. */
   initialInstructions?: string | null
+  /** Faz B: site tarzı (modern|corporate|playful|luxury|minimal|vibrant). theme jsonb'sinde tutulur. */
+  style?: string | null
 }
 
 export interface SectionBlock {

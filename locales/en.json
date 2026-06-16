@@ -5822,7 +5822,7 @@
       "wizardTitle": "Create a New Website",
       "wizardSubtitle": "Fill in the details and let AI design a site for your brand.",
       "descLabel": "What kind of site do you want?",
-      "descHint": "Describe your brand, style and special requests. Leave empty to generate from your business profile.",
+      "descHint": "Describe your brand and special requests (style is selected above). Leave empty to generate from your business profile.",
       "descPlaceholder": "e.g. Clean and corporate, warm colors, highlight appointment booking…",
       "refWizardHint": "Provided sites are scanned only for design and structure inspiration; content is generated uniquely for your brand.",
       "defaultName": "New Website",
@@ -5851,7 +5851,18 @@
       "deviceTablet": "Tablet",
       "deviceMobile": "Mobile",
       "currentVersion": "Current",
-      "revisionAllLocalesHint": "This revision updates all languages of your site."
+      "revisionAllLocalesHint": "This revision updates all languages of your site.",
+      "styleLabel": "Style",
+      "styleHint": "Your site's overall vibe; AI tailors the design accordingly.",
+      "style_modern": "Modern",
+      "style_corporate": "Corporate",
+      "style_playful": "Playful",
+      "style_luxury": "Luxury",
+      "style_minimal": "Minimal",
+      "style_vibrant": "Vibrant",
+      "preparingTitle": "AI is building your site",
+      "preparingDesc": "We're creating an image-rich site tailored to your brand. This may take a minute; you can preview and approve it when ready.",
+      "retry": "Try Again"
     }
   },
   "sidebar": {

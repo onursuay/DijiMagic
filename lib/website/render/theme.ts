@@ -222,3 +222,20 @@ export function themeToCssVars(theme: ThemeTokens | null | undefined): CSSProper
     ['--site-font-body' as string]: t.fontBody || DEFAULT_SITE_THEME.fontBody,
   }
 }
+
+/** Faz B — site tarzı: AI üretim tonu yönergesi + wizard'da önerilen yazı ailesi. */
+export interface SiteStylePreset { id: string; label: string; directive: string; fontHint: string }
+export const SITE_STYLE_PRESETS: SiteStylePreset[] = [
+  { id: 'modern', label: 'Modern', directive: 'Temiz, çağdaş ve ferah; bol beyaz alan, net sans-serif tipografi, sade ve dengeli renk; gereksiz süsten kaçın.', fontHint: 'inter' },
+  { id: 'corporate', label: 'Kurumsal', directive: 'Profesyonel, güven veren ve yapılandırılmış; ciddi ve net dil, nötr/lacivert ton, düzenli hizalama.', fontHint: 'classic' },
+  { id: 'playful', label: 'Keyifli', directive: 'Sıcak, samimi ve enerjik; davetkâr dil, yuvarlak hatlar, canlı ama dengeli renk.', fontHint: 'poppins' },
+  { id: 'luxury', label: 'Lüks', directive: 'Zarif, premium ve sofistike; ölçülü ve şık dil, serif başlık hissi, koyu zemin + metalik/altın aksan vurgusu, geniş nefes alanı.', fontHint: 'elegant' },
+  { id: 'minimal', label: 'Minimal', directive: 'Sade ve tipografi-odaklı; çok boşluk, az renk, kısa ve öz metin; her öğe amaçlı.', fontHint: 'manrope' },
+  { id: 'vibrant', label: 'Canlı', directive: 'Cesur, enerjik ve dikkat çekici; parlak renkler, büyük tipografi, güçlü ve iddialı ifadeler.', fontHint: 'syne' },
+]
+export const SITE_STYLE_MAP: Record<string, SiteStylePreset> = Object.fromEntries(SITE_STYLE_PRESETS.map((p) => [p.id, p]))
+
+/** Tarz id'sinden AI prompt'a verilecek tasarım yönergesi (yoksa boş). */
+export function styleDirective(style: string | null | undefined): string {
+  return (style && SITE_STYLE_MAP[style]?.directive) || ''
+}
