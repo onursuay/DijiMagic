@@ -2,6 +2,15 @@
 
 ---
 
+## 2026-06-16 — Reklam hesabı kaldırma standardı + kayıtlı-liste ↔ aktif-bağlantı senkronu
+- **Sorun (owner):** (1) Google'da kayıtlı hesabı silince dashboard hâlâ onu gösteriyordu — silme yalnız kayıt tablosundan yapılıyor, aktif bağlantı (google_ads_connections) uzlaştırılmıyordu; (2) Meta aktif hesabın silme kutusunu gizliyor, Google gösteriyordu (tutarsız) → tek hesap bağlıysa kaldırma imkânsızdı.
+- **Çözüm:**
+  - `removeRegisteredAccount` artık aktif bağlantıyı uzlaştırır: silinen hesap o an seçiliyse bağlantı kalan kayıtlı hesaba geçer; kalan yoksa bağlantı pasiflenir (Meta + Google).
+  - Standart: her iki dropdown'da AKTİF dahil HER hesap silinebilir; aktif silinince UI reload ile yeni aktif (ya da bağlantısız) durum yansır. **Tek/son hesabı silmek = bağlantıyı kesmek.**
+  - Google aktif-eşleşmesi normalize edildi (tire/format farkından dolayı "aktif değil" sanılıp çöp ikonunun yanlış çıkması düzeldi).
+- **Doğrulama:** tsc 0 hata, next build EXIT=0.
+- **Dosyalar:** lib/account/registeredAccounts.ts, components/account/MultiAccountDropdown.tsx, components/google/GoogleAccountDropdown.tsx
+
 ## 2026-06-16 — Erken Uyarı düzeltmeleri: aktif-çalışan filtresi + kayıtlı-hesap kapsamı + Türkçe hesap adı
 - **Sorun (owner geri bildirimi):** (1) Watchdog toggle-açık ama "Tamamlandı"/duraklatılmış kampanyaları aktif sayıyordu (configured `status` kullanıyordu) → veri kirleniyordu; (2) kapsam token'ın gördüğü TÜM hesaplardı, kullanıcının eklediği hesaplar değil; (3) Google hesap dropdown'unda İngilizce "Account 1422686974" yazıyordu (TR arayüz).
 - **Çözüm:**

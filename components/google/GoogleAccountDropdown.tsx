@@ -9,6 +9,9 @@ import { useRegisteredAccounts } from '@/hooks/useRegisteredAccounts'
 import { clearYoAlgoritmaClientCache } from '@/lib/yoai/clientCache'
 import AccessRequiredModal from '@/components/billing/AccessRequiredModal'
 
+/** Hesap id normalize (tire farkını yok say — aktif eşleşmesi güvenli olsun). */
+const normId = (s: string | null | undefined): string => (s ?? '').replace(/-/g, '').trim().toLowerCase()
+
 type GoogleConnection = ReturnType<typeof useGoogleAdsConnection>
 
 interface Props {
@@ -74,7 +77,7 @@ export default function GoogleAccountDropdown({ connection, isAppReview = false 
 
   // Kayıtlı bir Google hesabına geç (mevcut select-account endpoint'i + reload)
   const switchToRegistered = async (acc: typeof googleRegistered[number]) => {
-    if (acc.account_id === activeId || busy) return
+    if (normId(acc.account_id) === normId(activeId) || busy) return
     setBusyId(acc.account_id)
     try {
       await fetch('/api/integrations/google-ads/select-account', {
@@ -96,9 +99,12 @@ export default function GoogleAccountDropdown({ connection, isAppReview = false 
 
   const handleRemove = async (e: React.MouseEvent, acc: typeof googleRegistered[number]) => {
     e.stopPropagation()
-    if (acc.account_id === activeId || busy) return
+    if (busy) return
+    const wasActive = normId(acc.account_id) === normId(activeId)
     setBusyId(acc.account_id)
     await reg.removeAccount('google', acc.account_id)
+    // Aktif hesabı sildiyse bağlantı sunucuda kalan hesaba geçti (ya da kesildi) → yansıt.
+    if (wasActive) { clearYoAlgoritmaClientCache(); window.location.reload(); return }
     setBusyId(null)
   }
 
@@ -175,13 +181,13 @@ export default function GoogleAccountDropdown({ connection, isAppReview = false 
 
               {multi && googleRegistered.length > 0 ? (
                 googleRegistered.map(acc => {
-                  const active = acc.account_id === activeId
+                  const active = normId(acc.account_id) === normId(activeId)
                   return (
                     <button
                       key={acc.account_id}
                       type="button"
                       onClick={() => switchToRegistered(acc)}
-                      disabled={active || busy}
+                      disabled={busy}
                       className={`w-full text-left px-4 py-2.5 hover:bg-gray-50 transition-colors flex items-center justify-between ${active ? 'bg-green-50' : ''}`}
                     >
                       <div className="min-w-0">
@@ -191,7 +197,7 @@ export default function GoogleAccountDropdown({ connection, isAppReview = false 
                       <div className="flex items-center gap-2 shrink-0">
                         {active && <div className="w-2 h-2 bg-green-500 rounded-full" />}
                         {busyId === acc.account_id && <Loader2 className="w-3.5 h-3.5 animate-spin text-primary" />}
-                        {!active && busyId !== acc.account_id && (
+                        {busyId !== acc.account_id && (
                           <span onClick={e => handleRemove(e, acc)} title={t('remove')} className="p-1 rounded text-gray-300 hover:text-red-500 hover:bg-red-50 cursor-pointer">
                             <Trash2 className="w-3.5 h-3.5" />
                           </span>

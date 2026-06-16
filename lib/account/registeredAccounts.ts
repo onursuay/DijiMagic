@@ -16,8 +16,8 @@
 import { supabase } from '@/lib/supabase/client'
 import { getSubscription } from '@/lib/billing/db'
 import { isSuperAdminEmail } from '@/lib/admin/superAdmin'
-import { getMetaConnection } from '@/lib/metaConnectionStore'
-import { getConnection as getGoogleConnection } from '@/lib/googleAdsConnectionStore'
+import { getMetaConnection, updateSelectedMetaAdAccount, updateMetaConnectionHealth } from '@/lib/metaConnectionStore'
+import { getConnection as getGoogleConnection, upsertConnection as upsertGoogleConnection } from '@/lib/googleAdsConnectionStore'
 
 export type AdPlatform = 'meta' | 'google'
 
@@ -191,7 +191,43 @@ export async function addRegisteredAccount(
   return { ok: true, account: data as RegisteredAdAccount, alreadyRegistered: false }
 }
 
-/** Hesabı kayıtlı kümeden çıkarır. */
+/** account_id normalize (act_ öneki + tire farklarını yok say). */
+const normAcct = (s: string | null | undefined): string =>
+  (s ?? '').replace(/^act_/i, '').replace(/-/g, '').trim().toLowerCase()
+
+/**
+ * Çıkarılan hesap o an SEÇİLİ (aktif bağlantı) ise bağlantıyı uzlaştır:
+ * kalan bir kayıtlı hesaba geçir; kalan yoksa bağlantıyı pasifle (revoked).
+ * Aksi halde dashboard silinen hesabı göstermeye devam eder (kayıtlı-liste ↔
+ * aktif-bağlantı senkronsuzluğu — owner 16.06 "sildim ama hâlâ görünüyor").
+ */
+async function reconcileActiveConnectionAfterRemoval(
+  userId: string, platform: AdPlatform, removedAccountId: string,
+): Promise<void> {
+  const removed = normAcct(removedAccountId)
+  const remaining = (await listRegisteredAccounts(userId)).filter((a) => a.platform === platform)
+
+  if (platform === 'google') {
+    const conn = await getGoogleConnection(userId)
+    if (!conn?.customerId || normAcct(conn.customerId) !== removed) return // aktif seçili değildi
+    if (remaining.length > 0) {
+      const next = remaining[0]
+      await upsertGoogleConnection(userId, { customerId: next.account_id, loginCustomerId: next.login_customer_id || next.account_id })
+    } else {
+      await upsertGoogleConnection(userId, { status: 'revoked' })
+    }
+  } else {
+    const conn = await getMetaConnection(userId)
+    if (!conn?.selectedAdAccountId || normAcct(conn.selectedAdAccountId) !== removed) return
+    if (remaining.length > 0) {
+      await updateSelectedMetaAdAccount(userId, remaining[0].account_id)
+    } else {
+      await updateMetaConnectionHealth(userId, 'revoked', 'all_registered_accounts_removed')
+    }
+  }
+}
+
+/** Hesabı kayıtlı kümeden çıkarır + aktif bağlantıyı uzlaştırır. */
 export async function removeRegisteredAccount(
   userId: string,
   platform: AdPlatform,
@@ -204,5 +240,11 @@ export async function removeRegisteredAccount(
     .eq('user_id', userId)
     .eq('platform', platform)
     .eq('account_id', accountId)
-  return !error
+  if (error) return false
+  try {
+    await reconcileActiveConnectionAfterRemoval(userId, platform, accountId)
+  } catch (e) {
+    console.error('[registeredAccounts] reconcile after removal failed:', e instanceof Error ? e.message : e)
+  }
+  return true
 }

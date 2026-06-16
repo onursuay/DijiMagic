@@ -7,6 +7,9 @@ import { ChevronDown, Plus, Trash2, Loader2, ArrowUpRight } from 'lucide-react'
 import type { RegisteredAccount, AddAccountInput, AddAccountResult } from '@/hooks/useRegisteredAccounts'
 import { clearYoAlgoritmaClientCache } from '@/lib/yoai/clientCache'
 
+/** Hesap id normalize (act_ öneki + tire farkını yok say — aktif eşleşmesi güvenli). */
+const normId = (s: string | null | undefined): string => (s ?? '').replace(/^act_/i, '').replace(/-/g, '').trim().toLowerCase()
+
 interface AdAccount {
   id: string
   name: string
@@ -170,17 +173,22 @@ export default function MultiAccountDropdown({
 
   const handleRemoveMeta = async (e: React.MouseEvent, a: AdAccount) => {
     e.stopPropagation()
-    if (selectedAccount === a.id) return
+    if (busyId) return
+    const wasActive = normId(selectedAccount) === normId(a.id)
     setBusyId(a.id)
     await removeAccount('meta', a.id)
+    // Aktif hesabı sildiyse bağlantı sunucuda kalan hesaba geçti (ya da kesildi) → yansıt.
+    if (wasActive) { clearYoAlgoritmaClientCache(); window.location.reload(); return }
     setBusyId(null)
   }
 
   const handleRemoveGoogle = async (e: React.MouseEvent, acc: RegisteredAccount) => {
     e.stopPropagation()
-    if (activeGoogle?.customerId === acc.account_id) return
+    if (busyId) return
+    const wasActive = normId(activeGoogle?.customerId) === normId(acc.account_id)
     setBusyId(acc.account_id)
     await removeAccount('google', acc.account_id)
+    if (wasActive) { clearYoAlgoritmaClientCache(); window.location.reload(); return }
     setBusyId(null)
   }
 
@@ -213,7 +221,7 @@ export default function MultiAccountDropdown({
           <p className="text-[11px] font-semibold uppercase tracking-wide text-gray-400">{t('metaAccounts')}</p>
         </div>
         {metaSwitchable.map(a => {
-          const active = selectedAccount === a.id
+          const active = normId(selectedAccount) === normId(a.id)
           return (
             <button
               key={a.id}
@@ -229,7 +237,7 @@ export default function MultiAccountDropdown({
               <div className="flex items-center gap-2 shrink-0">
                 {active && <div className="w-2 h-2 bg-green-500 rounded-full" />}
                 {busyId === a.id && <Loader2 className="w-3.5 h-3.5 animate-spin text-primary" />}
-                {!active && busyId !== a.id && (
+                {busyId !== a.id && (
                   <span onClick={e => handleRemoveMeta(e, a)} title={t('remove')} className="p-1 rounded text-gray-300 hover:text-red-500 hover:bg-red-50 cursor-pointer">
                     <Trash2 className="w-3.5 h-3.5" />
                   </span>
@@ -247,7 +255,7 @@ export default function MultiAccountDropdown({
               <p className="text-[11px] font-semibold uppercase tracking-wide text-gray-400">{t('googleAccounts')}</p>
             </div>
             {googleVisible.map(acc => {
-              const active = activeGoogle?.customerId === acc.account_id
+              const active = normId(activeGoogle?.customerId) === normId(acc.account_id)
               return (
                 <button
                   key={acc.account_id}
@@ -263,7 +271,7 @@ export default function MultiAccountDropdown({
                   <div className="flex items-center gap-2 shrink-0">
                     {active && <div className="w-2 h-2 bg-green-500 rounded-full" />}
                     {busyId === acc.account_id && <Loader2 className="w-3.5 h-3.5 animate-spin text-primary" />}
-                    {!active && busyId !== acc.account_id && (
+                    {busyId !== acc.account_id && (
                       <span onClick={e => handleRemoveGoogle(e, acc)} title={t('remove')} className="p-1 rounded text-gray-300 hover:text-red-500 hover:bg-red-50 cursor-pointer">
                         <Trash2 className="w-3.5 h-3.5" />
                       </span>
