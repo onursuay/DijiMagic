@@ -91,12 +91,12 @@ export async function GET() {
         CUSTOMER_QUERY,
       )
       const c = (rows[0]?.customer ?? rows[0]) as Record<string, unknown> | undefined
-      const name = (c?.descriptiveName ?? c?.descriptive_name ?? `Account ${id}`) as string
+      const name = (c?.descriptiveName ?? c?.descriptive_name ?? `Hesap ${id}`) as string
       const manager = c?.manager
       const isManager = manager === true || String(manager) === 'true'
       return { name, isManager }
     } catch {
-      return { name: `Account ${id}`, isManager: false }
+      return { name: `Hesap ${id}`, isManager: false }
     }
   }
 
@@ -119,7 +119,7 @@ export async function GET() {
         const childIsManager = cc.manager === true || String(cc.manager) === 'true'
         children.push({
           customerId: childId,
-          name: (cc.descriptiveName ?? cc.descriptive_name ?? `Account ${childId}`) as string,
+          name: (cc.descriptiveName ?? cc.descriptive_name ?? `Hesap ${childId}`) as string,
           isManager: childIsManager,
           loginCustomerId: managerId, // alt hesap işlemleri MCC üzerinden yetkilenir
         })

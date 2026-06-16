@@ -2,6 +2,15 @@
 
 ---
 
+## 2026-06-16 — Erken Uyarı düzeltmeleri: aktif-çalışan filtresi + kayıtlı-hesap kapsamı + Türkçe hesap adı
+- **Sorun (owner geri bildirimi):** (1) Watchdog toggle-açık ama "Tamamlandı"/duraklatılmış kampanyaları aktif sayıyordu (configured `status` kullanıyordu) → veri kirleniyordu; (2) kapsam token'ın gördüğü TÜM hesaplardı, kullanıcının eklediği hesaplar değil; (3) Google hesap dropdown'unda İngilizce "Account 1422686974" yazıyordu (TR arayüz).
+- **Çözüm:**
+  - "Aktif çalışan" tanımı düzeltildi: Meta `effective_status=ACTIVE` (metaDeepFetcher ile birebir), Google `campaign.primary_status IN ('ELIGIBLE','LIMITED')` (ENDED/tamamlanmış hariç). Reddedilen reklamlar ayrı sorguyla yakalanır.
+  - Kapsam = kullanıcının Reklam bölümüne EKLEDİĞİ hesaplar (`user_registered_ad_accounts`); `/me/adaccounts` auto-discovery kaldırıldı. Boşsa backfill + seçili hesap fallback.
+  - Hesap adı gerçek ad (registered name / descriptive_name); fallback İngilizce "Account <id>" → Türkçe "Hesap <id>" (dropdown + 6 Google route, Meta+Google watchdog).
+- **Doğrulama:** tsc 0 hata, next build EXIT=0.
+- **Dosyalar:** lib/yoai/watchdog/{metaWatchdog,googleWatchdog}.ts, components/google/GoogleAccountDropdown.tsx, app/api/integrations/google-ads/{accounts,children,select-account,selected}/route.ts, app/api/marketing-setup/google-ads-accounts/route.ts
+
 ## 2026-06-15 — 🆕 Erken Uyarı: günlük reklam nöbetçisi (yoalgoritma alt sekmesi)
 - **İstek:** Açılan tüm Meta/Google reklamlarını düzenli takip eden, para sızıntısı/hesap askısı/reddedilen-çalışmayan reklamı yakalayıp uyaran bir sistem. yoalgoritma'nın haftalık AI taramasından ayrı, **günlük + deterministik (LLM'siz = maliyetsiz)** bir nöbetçi.
 - **Çözüm:** `lib/yoai/watchdog/` modülü — bağlı token'ın eriştiği tüm hesapları otomatik keşfeder (aktivite filtresi: yalnız son 30g harcayanlar), durum + aktif kampanya/reklam metriklerini salt-okuma çeker, 10 deterministik kural ile acil/bozulma tespit eder (hesap askısı/ödeme, reddedilen reklam, aktif-ama-çalışmayan, harcama-var-dönüşüm-yok, ROAS<1, CPA sıçraması, düşük teslimat, yüksek frekans, IS kaybı), `account_alerts`'e `wd_*` yazar (AI uyarılarına dokunmadan) + Resend ile günlük e-posta özeti. Günlük cron `0 5 * * *` (`WATCHDOG_ENABLED` flag, kapalıyken no-op). UI: yoalgoritma TEK sayfasında, reklam önerilerinin altında "Erken Uyarı" bölümü + "Şimdi tara" (ayrı sekme/sayfa AÇILMADI — owner kararı: tek sayfa). **Migration gerekmez** (alert_type serbest metin). Eşikler optimizasyon motoruyla tutarlı, para-birimi duyarlı.

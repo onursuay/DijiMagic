@@ -72,12 +72,12 @@ export async function GET() {
       const rows = await searchGAds<any>(ctx, CUSTOMER_QUERY)
       const first = rows[0]
       const c = first?.customer ?? first
-      const name = c?.descriptiveName ?? c?.descriptive_name ?? `Account ${id}`
+      const name = c?.descriptiveName ?? c?.descriptive_name ?? `Hesap ${id}`
       const manager = c?.manager ?? (c as { manager?: boolean })?.manager
       const isManager = manager === true || manager === 'true' || String(manager) === 'true'
       return { name, isManager }
     } catch {
-      return { name: `Account ${id}`, isManager: false }
+      return { name: `Hesap ${id}`, isManager: false }
     }
   }
 

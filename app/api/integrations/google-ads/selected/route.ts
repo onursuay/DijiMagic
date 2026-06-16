@@ -45,7 +45,7 @@ export async function GET() {
         selected: {
           customerId,
           loginCustomerId: loginCustomerId || customerId,
-          customerName: customerName || `Account ${customerId}`,
+          customerName: customerName || `Hesap ${customerId}`,
           isManager: cachedIsManager === 'true',
         },
       },
@@ -79,7 +79,7 @@ export async function GET() {
       selected: {
         customerId,
         loginCustomerId: loginCustomerId || customerId,
-        customerName: customerName || `Account ${customerId}`,
+        customerName: customerName || `Hesap ${customerId}`,
         isManager,
       },
     },

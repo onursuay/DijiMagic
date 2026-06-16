@@ -89,7 +89,7 @@ export async function POST(request: Request) {
     const results = searchData.results || []
     const first = results[0]
     descriptiveName =
-      first?.customer?.descriptiveName ?? first?.customer?.descriptive_name ?? `Account ${customerId}`
+      first?.customer?.descriptiveName ?? first?.customer?.descriptive_name ?? `Hesap ${customerId}`
   }
 
   const response = NextResponse.json({

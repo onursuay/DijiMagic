@@ -62,7 +62,7 @@ export async function GET(request: Request) {
       const cc = r.customerClient ?? (r as unknown as { customer_client?: Row['customerClient'] }).customer_client
       const rn = cc?.clientCustomer ?? (cc as { client_customer?: string })?.client_customer ?? ''
       const customerId = rn.replace(/^customers\//, '').replace(/-/g, '')
-      const name = cc?.descriptiveName ?? cc?.descriptive_name ?? `Account ${customerId}`
+      const name = cc?.descriptiveName ?? cc?.descriptive_name ?? `Hesap ${customerId}`
       const manager = cc?.manager ?? (cc as { manager?: boolean })?.manager ?? false
       const isManager = !!manager
       const status = cc?.status ?? (cc as { status?: string })?.status ?? 'UNKNOWN'

@@ -1,10 +1,13 @@
 /* ──────────────────────────────────────────────────────────
    Erken Uyarı — Meta Fetcher + Tarayıcı
 
-   Bağlı token'ın eriştiği TÜM Meta reklam hesaplarını otomatik keşfeder
-   (/me/adaccounts), "aktiviteli" olanları (son 30g harcama > 0) tarar,
-   geri kalanı (yedek/test/uzun-ölü) atlar. Her hesap için durum + aktif
-   kampanya/reklam metriklerini çeker → rules.ts'e verir.
+   KAPSAM: kullanıcının YoAi Reklam bölümüne EKLEDİĞİ hesaplar
+   (user_registered_ad_accounts). Token'ın gördüğü her hesap DEĞİL.
+
+   AKTİF ÇALIŞAN: yalnız `effective_status === 'ACTIVE'` (Meta'nın gerçekten
+   yayında saydığı). Toggle açık ama "Tamamlandı"/duraklatılmış/arşiv olanlar
+   effective ACTIVE DEĞİLDİR → veriye girmez (metaDeepFetcher ile aynı tanım).
+   Ayrı sorguyla DISAPPROVED/WITH_ISSUES reklamlar (reddedilen) yakalanır.
 
    Salt-OKUMA: yalnız GET. Hiçbir reklamı/hesabı DEĞİŞTİRMEZ.
    ────────────────────────────────────────────────────────── */
@@ -12,15 +15,14 @@
 import 'server-only'
 import { metaGraphFetchJSON } from '@/lib/metaGraph'
 import { getMetaConnection } from '@/lib/metaConnectionStore'
+import { listRegisteredAccounts, ensureBackfilled } from '@/lib/account/registeredAccounts'
 import { countMetaConversions } from '@/lib/yoai/metaConversions'
 import { evaluateAccountFindings } from './rules'
 import type { AccountSnapshot, WatchdogEntity, WatchdogFinding } from './types'
 
-const MAX_ACCOUNTS = 40       // token başına taranacak hesap tavanı (gürültü/load guard)
-const MAX_CAMPAIGNS = 50
-const MAX_ADS = 100
+const MAX_CAMPAIGNS = 60
+const MAX_ADS = 150
 
-// ── Meta account_status / disable_reason etiketleri ──
 const ACCOUNT_STATUS: Record<string, string> = {
   '1': 'Aktif', '2': 'Devre dışı', '3': 'Ödenmemiş bakiye', '7': 'Risk incelemesi',
   '8': 'Ödeme bekliyor', '9': 'Ödeme ek süresi', '100': 'Kapatılma sürecinde', '101': 'Kapalı',
@@ -56,6 +58,11 @@ function objectiveMeta(objective: string): { isSales: boolean; resultType: strin
   return { isSales: false, resultType: 'conversion' }
 }
 
+/** act_ önekini garanti et. */
+function actId(id: string): string {
+  return id.startsWith('act_') ? id : `act_${id}`
+}
+
 interface InsightRow {
   campaign_id?: string
   ad_id?: string
@@ -68,15 +75,13 @@ interface InsightRow {
   action_values?: Array<{ action_type: string; value: string }>
 }
 
-/** Bir time window için level=campaign|ad insight haritası (id → row). */
 async function fetchInsightsMap(
   token: string, accountId: string, level: 'campaign' | 'ad', datePreset: string,
 ): Promise<Map<string, InsightRow>> {
   const { data, error } = await metaGraphFetchJSON<{ data: InsightRow[] }>(
     `/${accountId}/insights`, token,
     { params: {
-      level,
-      date_preset: datePreset,
+      level, date_preset: datePreset,
       fields: 'campaign_id,ad_id,spend,impressions,clicks,ctr,frequency,actions,action_values',
       limit: '500',
     } },
@@ -90,149 +95,127 @@ async function fetchInsightsMap(
   return map
 }
 
-/** Token'ın eriştiği tüm reklam hesaplarını keşfet. */
-export async function discoverMetaAccounts(token: string): Promise<Array<{ id: string; name: string; statusCode: string; disableReason: string; currency: string }>> {
-  const { data, error } = await metaGraphFetchJSON<{ data: Array<{ id: string; name: string; account_status: number; disable_reason?: number; currency: string }> }>(
-    `/me/adaccounts`, token,
-    { params: { fields: 'id,name,account_status,disable_reason,currency', limit: '200' } },
-  )
-  if (error || !data?.data) return []
-  return data.data.map((a) => ({
-    id: a.id.startsWith('act_') ? a.id : `act_${a.id}`,
-    name: a.name || a.id,
-    statusCode: String(a.account_status ?? ''),
-    disableReason: String(a.disable_reason ?? '0'),
-    currency: a.currency || 'TRY',
-  }))
-}
+/** Bir Meta hesabını tara → bulgular. registeredName: dropdown'daki gerçek ad. */
+async function scanMetaAccount(token: string, accountId: string, registeredName: string | null): Promise<WatchdogFinding[]> {
+  const id = actId(accountId)
 
-/** Hesabın son 30 gün toplam harcaması (aktivite filtresi için). */
-async function account30dSpend(token: string, accountId: string): Promise<number> {
-  const { data, error } = await metaGraphFetchJSON<{ data: Array<{ spend?: string }> }>(
-    `/${accountId}/insights`, token,
-    { params: { date_preset: 'last_30d', fields: 'spend', level: 'account' } },
+  // Hesap durumu + gerçek ad
+  const accRes = await metaGraphFetchJSON<{ name?: string; account_status?: number; disable_reason?: number; currency?: string }>(
+    `/${id}`, token, { params: { fields: 'name,account_status,disable_reason,currency' } },
   )
-  if (error || !data?.data?.[0]) return 0
-  return Number(data.data[0].spend || 0)
-}
+  const statusCode = String(accRes.data?.account_status ?? '')
+  const disableReason = String(accRes.data?.disable_reason ?? '0')
+  const currency = accRes.data?.currency || 'TRY'
+  const name = registeredName || accRes.data?.name || `Hesap ${accountId}`
 
-/** Bir Meta hesabını tara → bulgular. */
-async function scanMetaAccount(
-  token: string,
-  meta: { id: string; name: string; statusCode: string; disableReason: string; currency: string },
-): Promise<WatchdogFinding[]> {
   const snapshot: AccountSnapshot = {
-    platform: 'meta', accountId: meta.id, accountName: meta.name, currency: meta.currency,
-    statusCode: meta.statusCode, statusLabel: ACCOUNT_STATUS[meta.statusCode] ?? `Durum ${meta.statusCode}`,
-    disableReasonCode: meta.disableReason !== '0' ? meta.disableReason : null,
-    disableReasonLabel: meta.disableReason !== '0' ? (DISABLE_REASON[meta.disableReason] || null) : null,
-    healthy: meta.statusCode === '1',
+    platform: 'meta', accountId: id, accountName: name, currency,
+    statusCode, statusLabel: ACCOUNT_STATUS[statusCode] ?? `Durum ${statusCode}`,
+    disableReasonCode: disableReason !== '0' ? disableReason : null,
+    disableReasonLabel: disableReason !== '0' ? (DISABLE_REASON[disableReason] || null) : null,
+    healthy: statusCode === '1',
   }
-
-  // Hesap sağlıksızsa: entity çekme, yalnız hesap-seviyesi uyarı üret.
   if (!snapshot.healthy) return evaluateAccountFindings(snapshot, [])
 
-  // Kampanyalar (yalnız configured ACTIVE)
-  const campRes = await metaGraphFetchJSON<{ data: Array<{ id: string; name: string; status: string; effective_status: string; objective: string; daily_budget?: string }> }>(
-    `/${meta.id}/campaigns`, token,
-    { params: { fields: 'id,name,status,effective_status,objective,daily_budget', limit: String(MAX_CAMPAIGNS), effective_status: '["ACTIVE","PAUSED","CAMPAIGN_PAUSED","WITH_ISSUES","PENDING_REVIEW","DISAPPROVED"]' } },
+  // YALNIZ effective_status ACTIVE kampanyalar (gerçekten yayında — tamamlanmış/duraklatılmış hariç)
+  const campRes = await metaGraphFetchJSON<{ data: Array<{ id: string; name: string; effective_status: string; objective: string; daily_budget?: string }> }>(
+    `/${id}/campaigns`, token,
+    { params: { fields: 'id,name,effective_status,objective,daily_budget', limit: String(MAX_CAMPAIGNS), effective_status: '["ACTIVE"]' } },
   )
-  const campaigns = (campRes.data?.data ?? []).filter((c) => (c.status || '').toUpperCase() === 'ACTIVE')
+  const campaigns = campRes.data?.data ?? []
 
-  // Insight pencereleri (yesterday / 3d / 30d-baseline) — kampanya + reklam seviyeleri
-  const [campY, camp3d, campBase, adList, ad3d] = await Promise.all([
-    fetchInsightsMap(token, meta.id, 'campaign', 'yesterday'),
-    fetchInsightsMap(token, meta.id, 'campaign', 'last_3d'),
-    fetchInsightsMap(token, meta.id, 'campaign', 'last_30d'),
-    metaGraphFetchJSON<{ data: Array<{ id: string; name: string; status: string; effective_status: string; campaign_id?: string; adset_id?: string; ad_review_feedback?: unknown }> }>(
-      `/${meta.id}/ads`, token,
-      { params: { fields: 'id,name,status,effective_status,campaign_id,adset_id,ad_review_feedback', limit: String(MAX_ADS), effective_status: '["ACTIVE","PAUSED","WITH_ISSUES","PENDING_REVIEW","DISAPPROVED","ADSET_PAUSED","CAMPAIGN_PAUSED"]' } },
-    ),
-    fetchInsightsMap(token, meta.id, 'ad', 'last_3d'),
+  const [campY, camp3d, campBase, activeAds, disapprovedAds, ad3d] = await Promise.all([
+    fetchInsightsMap(token, id, 'campaign', 'yesterday'),
+    fetchInsightsMap(token, id, 'campaign', 'last_3d'),
+    fetchInsightsMap(token, id, 'campaign', 'last_30d'),
+    metaGraphFetchJSON<{ data: Array<{ id: string; name: string; campaign_id?: string; effective_status: string }> }>(
+      `/${id}/ads`, token, { params: { fields: 'id,name,campaign_id,effective_status', limit: String(MAX_ADS), effective_status: '["ACTIVE"]' } }),
+    metaGraphFetchJSON<{ data: Array<{ id: string; name: string; campaign_id?: string; effective_status: string }> }>(
+      `/${id}/ads`, token, { params: { fields: 'id,name,campaign_id,effective_status', limit: '50', effective_status: '["DISAPPROVED","WITH_ISSUES"]' } }),
+    fetchInsightsMap(token, id, 'ad', 'last_3d'),
   ])
 
   const entities: WatchdogEntity[] = []
+  const runningCampaignIds = new Set(campaigns.map((c) => c.id))
 
-  // ── Kampanya seviyesi (metrik kontrolleri: 0-dönüşüm, CPA, ROAS, frekans, teslimat) ──
+  // Kampanya seviyesi metrik kontrolleri
   for (const c of campaigns) {
     const { isSales, resultType } = objectiveMeta(c.objective)
-    const y = campY.get(c.id)
-    const t3 = camp3d.get(c.id)
-    const b = campBase.get(c.id)
-    const spend = Number(y?.spend || 0)
-    const impressions = Number(y?.impressions || 0)
-    const results = countMetaConversions(actionsToRecord(y?.actions))
-    const spend3d = Number(t3?.spend || 0)
-    const results3d = countMetaConversions(actionsToRecord(t3?.actions))
+    const y = campY.get(c.id), t3 = camp3d.get(c.id), b = campBase.get(c.id)
     const baseSpend = Number(b?.spend || 0)
     const baseResults = countMetaConversions(actionsToRecord(b?.actions))
-    const cpaBaseline = baseResults > 0 ? baseSpend / baseResults : null
     entities.push({
-      platform: 'meta', accountId: meta.id, level: 'campaign', id: c.id, name: c.name,
-      campaignId: c.id, configuredStatus: c.status, effectiveStatus: c.effective_status,
-      currency: meta.currency, spend, impressions, results, resultType,
+      platform: 'meta', accountId: id, level: 'campaign', id: c.id, name: c.name, campaignId: c.id,
+      configuredStatus: 'ACTIVE', effectiveStatus: c.effective_status, currency,
+      spend: Number(y?.spend || 0), impressions: Number(y?.impressions || 0),
+      results: countMetaConversions(actionsToRecord(y?.actions)), resultType,
       purchaseValue: actionValue(y?.action_values, PURCHASE_VALUE_TYPES),
       frequency: Number(y?.frequency || 0), ctr: Number(y?.ctr || 0),
-      dailyBudget: c.daily_budget ? Number(c.daily_budget) / 100 : null, // Meta minor units
-      isSalesObjective: isSales, spend3d, results3d, cpaBaseline, baselineResults: baseResults,
+      dailyBudget: c.daily_budget ? Number(c.daily_budget) / 100 : null,
+      isSalesObjective: isSales,
+      spend3d: Number(t3?.spend || 0), results3d: countMetaConversions(actionsToRecord(t3?.actions)),
+      cpaBaseline: baseResults > 0 ? baseSpend / baseResults : null, baselineResults: baseResults,
     })
   }
 
-  // ── Reklam seviyesi (yalnız reddedilen + ölü-aktif tespiti) ──
-  const activeCampaignIds = new Set(campaigns.map((c) => c.id))
-  const ads = (adList.data?.data ?? []).filter((a) => (a.status || '').toUpperCase() === 'ACTIVE')
-  for (const a of ads) {
-    // Yalnız aktif kampanyaların altındaki aktif reklamlar (pasif kampanya altı gürültü değil)
-    if (a.campaign_id && activeCampaignIds.size > 0 && !activeCampaignIds.has(a.campaign_id)) continue
-    const ins = ad3d.get(a.id)
-    const eff = (a.effective_status || '').toUpperCase()
-    const isDisapproved = eff === 'DISAPPROVED' || eff === 'WITH_ISSUES' || Boolean(a.ad_review_feedback && Object.keys(a.ad_review_feedback as object).length > 0)
-    const impressions3d = Number(ins?.impressions || 0)
-    const spendAd3d = Number(ins?.spend || 0)
-    // Yalnız iki durumda entity üret: reddedilen VEYA ölü (0 gösterim+0 harcama). Diğerleri kampanya seviyesinde.
-    if (!isDisapproved && (impressions3d > 0 || spendAd3d > 0)) continue
+  // Reddedilen reklamlar (ayrı sorgu — effective DISAPPROVED/WITH_ISSUES)
+  for (const a of (disapprovedAds.data?.data ?? [])) {
     entities.push({
-      platform: 'meta', accountId: meta.id, level: 'ad', id: a.id, name: a.name,
-      campaignId: a.campaign_id ?? null, adsetId: a.adset_id ?? null,
-      configuredStatus: a.status, effectiveStatus: a.effective_status,
-      reviewStatus: isDisapproved ? 'DISAPPROVED' : null,
-      currency: meta.currency, spend: 0, impressions: 0, results: 0, resultType: 'conversion',
-      purchaseValue: 0, frequency: 0, ctr: 0, dailyBudget: null, isSalesObjective: false,
-      spend3d: spendAd3d, results3d: 0, cpaBaseline: null, baselineResults: 0,
+      platform: 'meta', accountId: id, level: 'ad', id: a.id, name: a.name, campaignId: a.campaign_id ?? null,
+      configuredStatus: 'ACTIVE', effectiveStatus: a.effective_status, reviewStatus: 'DISAPPROVED',
+      currency, spend: 0, impressions: 0, results: 0, resultType: 'conversion', purchaseValue: 0,
+      frequency: 0, ctr: 0, dailyBudget: null, isSalesObjective: false,
+      spend3d: 0, results3d: 0, cpaBaseline: null, baselineResults: 0,
+    })
+  }
+
+  // Aktif ama çalışmayan reklamlar (effective ACTIVE ama 0 gösterim+harcama = teknik hata)
+  for (const a of (activeAds.data?.data ?? [])) {
+    if (a.campaign_id && runningCampaignIds.size > 0 && !runningCampaignIds.has(a.campaign_id)) continue
+    const ins = ad3d.get(a.id)
+    const impressions3d = Number(ins?.impressions || 0)
+    const spend3d = Number(ins?.spend || 0)
+    if (impressions3d > 0 || spend3d > 0) continue // teslim ediyor → sorun yok
+    entities.push({
+      platform: 'meta', accountId: id, level: 'ad', id: a.id, name: a.name, campaignId: a.campaign_id ?? null,
+      configuredStatus: 'ACTIVE', effectiveStatus: a.effective_status, currency,
+      spend: 0, impressions: 0, results: 0, resultType: 'conversion', purchaseValue: 0,
+      frequency: 0, ctr: 0, dailyBudget: null, isSalesObjective: false,
+      spend3d: 0, results3d: 0, cpaBaseline: null, baselineResults: 0,
     })
   }
 
   return evaluateAccountFindings(snapshot, entities)
 }
 
-/** Kullanıcı için tüm Meta hesaplarını tara. */
+/** Kullanıcının KAYITLI (Reklam bölümüne eklediği) Meta hesaplarını tara. */
 export async function runMetaWatchdog(userId: string): Promise<{ findings: WatchdogFinding[]; scanned: number; skipped: number; errors: string[] }> {
   const errors: string[] = []
   const conn = await getMetaConnection(userId)
   if (!conn?.accessToken) return { findings: [], scanned: 0, skipped: 0, errors: ['meta_not_connected'] }
   const token = conn.accessToken
 
-  let accounts = await discoverMetaAccounts(token)
-  if (accounts.length === 0) return { findings: [], scanned: 0, skipped: 0, errors: ['meta_no_accounts'] }
-  accounts = accounts.slice(0, MAX_ACCOUNTS)
+  // Kapsam = kayıtlı hesaplar (dropdown'daki). Boşsa backfill + seçili hesap fallback.
+  let registered = (await listRegisteredAccounts(userId)).filter((a) => a.platform === 'meta')
+  if (registered.length === 0) {
+    try { await ensureBackfilled(userId) } catch { /* geç */ }
+    registered = (await listRegisteredAccounts(userId)).filter((a) => a.platform === 'meta')
+  }
+  let targets = registered.map((a) => ({ accountId: a.account_id, name: a.account_name }))
+  if (targets.length === 0 && conn.selectedAdAccountId) {
+    targets = [{ accountId: conn.selectedAdAccountId, name: null }]
+  }
+  if (targets.length === 0) return { findings: [], scanned: 0, skipped: 0, errors: ['meta_no_registered_accounts'] }
 
   const findings: WatchdogFinding[] = []
-  let scanned = 0, skipped = 0
-
-  // Aktivite filtresi + tarama (hesaplar arası sınırlı paralellik)
-  for (const acc of accounts) {
+  let scanned = 0
+  for (const tgt of targets) {
     try {
-      const spend30 = await account30dSpend(token, acc.id)
-      // Aktivite yok → yedek/test/uzun-ölü hesap; atla (gürültü yok). Sağlıksızsa bile
-      // 30g harcaması yoksa "yönetimde aktif" sayılmaz.
-      if (spend30 <= 0) { skipped++; continue }
-      const accFindings = await scanMetaAccount(token, acc)
-      findings.push(...accFindings)
+      findings.push(...await scanMetaAccount(token, tgt.accountId, tgt.name))
       scanned++
     } catch (e) {
-      errors.push(`meta:${acc.id}:${e instanceof Error ? e.message : 'error'}`)
+      errors.push(`meta:${tgt.accountId}:${e instanceof Error ? e.message : 'error'}`)
     }
   }
-
-  return { findings, scanned, skipped, errors }
+  return { findings, scanned, skipped: 0, errors }
 }

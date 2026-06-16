@@ -51,7 +51,7 @@ export default function GoogleAccountDropdown({ connection, isAppReview = false 
   if (activeId && activeName) nameById.set(activeId, activeName)
   const displayName = (acc: { account_id: string; account_name: string | null }) =>
     nameById.get(acc.account_id) ||
-    (acc.account_name && acc.account_name !== acc.account_id ? acc.account_name : `Account ${acc.account_id}`)
+    (acc.account_name && acc.account_name !== acc.account_id ? acc.account_name : `Hesap ${acc.account_id}`)
 
   // Browse listesinde zaten kayıtlı hesaplar gizlenir (yöneticiler derinleşmek için kalır)
   const registeredGoogleIds = new Set(googleRegistered.map(a => a.account_id))
@@ -148,7 +148,7 @@ export default function GoogleAccountDropdown({ connection, isAppReview = false 
           className="flex items-center gap-2 px-4 py-2 bg-white border border-green-400 rounded-lg hover:bg-green-50 transition-all shadow-[0_0_8px_rgba(34,197,94,0.3)] hover:shadow-[0_0_12px_rgba(34,197,94,0.5)]"
         >
           <div className="w-2 h-2 bg-green-500 rounded-full animate-pulse" />
-          <span className="text-sm font-medium text-gray-700">{activeName || (activeId ? `Account ${activeId}` : 'Google Ads')}</span>
+          <span className="text-sm font-medium text-gray-700">{activeName || (activeId ? `Hesap ${activeId}` : 'Google Ads')}</span>
           <span className="text-xs font-semibold bg-green-100 text-green-700 px-2 py-0.5 rounded-full">
             {isAppReview ? 'Connected' : t('connected')}
           </span>
@@ -204,7 +204,7 @@ export default function GoogleAccountDropdown({ connection, isAppReview = false 
                 /* Tek hesap modu — yalnız aktif hesap */
                 <div className="px-4 py-2.5 flex items-center justify-between bg-green-50">
                   <div className="min-w-0">
-                    <p className="text-sm font-medium text-gray-900 truncate">{activeName || (activeId ? `Account ${activeId}` : '—')}</p>
+                    <p className="text-sm font-medium text-gray-900 truncate">{activeName || (activeId ? `Hesap ${activeId}` : '—')}</p>
                     {activeId && <p className="text-caption text-gray-500 font-mono">ID: {activeId}</p>}
                   </div>
                   <div className="w-2 h-2 bg-green-500 rounded-full shrink-0" />

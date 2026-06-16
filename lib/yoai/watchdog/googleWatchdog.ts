@@ -1,27 +1,27 @@
 /* ──────────────────────────────────────────────────────────
    Erken Uyarı — Google Ads Fetcher + Tarayıcı
 
-   Bağlı refresh token + MCC (login-customer-id) altındaki TÜM müşteri
-   hesaplarını keşfeder (customer_client), aktiviteli olanları tarar.
-   Hesap durumu + aktif kampanya metrikleri + reddedilen reklam +
-   gösterim payı kaybı → rules.ts (+ Google'a özel IS kaybı).
+   KAPSAM: kullanıcının YoAi Reklam bölümüne EKLEDİĞİ Google hesapları
+   (user_registered_ad_accounts, platform=google). Her biri kendi
+   login_customer_id'si (MCC) ile çekilir.
 
-   Salt-OKUMA: yalnız GAQL search (GET semantiği). Değişiklik YOK.
+   AKTİF ÇALIŞAN: `campaign.primary_status IN ('ELIGIBLE','LIMITED')` —
+   gerçekten yayında olanlar. ENDED (tamamlanmış)/PAUSED/REMOVED hariç.
+   Ayrıca reddedilen (policy DISAPPROVED) reklamlar yakalanır.
+
+   Salt-OKUMA: yalnız GAQL search. Değişiklik YOK.
    ────────────────────────────────────────────────────────── */
 
 import 'server-only'
 import { getGoogleAdsAccessToken, searchGAds, type GoogleAdsRequestContext } from '@/lib/googleAdsAuth'
 import { getConnection } from '@/lib/googleAdsConnectionStore'
+import { listRegisteredAccounts, ensureBackfilled } from '@/lib/account/registeredAccounts'
 import { evaluateAccountFindings } from './rules'
 import type { AccountSnapshot, WatchdogEntity, WatchdogFinding } from './types'
 
-const MAX_ACCOUNTS = 60
-const IS_BUDGET_LOST_THRESHOLD = 0.2 // bütçeden kaybedilen gösterim payı > %20
+const IS_BUDGET_LOST_THRESHOLD = 0.2
 
-function ymd(d: Date): string {
-  return d.toISOString().slice(0, 10)
-}
-/** Son N günün [başlangıç, dün] tarih aralığı (bugünü hariç tutar). */
+function ymd(d: Date): string { return d.toISOString().slice(0, 10) }
 function recentRange(days: number): { start: string; end: string } {
   const end = new Date(); end.setUTCDate(end.getUTCDate() - 1)
   const start = new Date(); start.setUTCDate(start.getUTCDate() - days)
@@ -33,83 +33,54 @@ const CUSTOMER_STATUS_LABEL: Record<string, string> = {
 }
 
 interface CampaignMetricRow {
-  campaign?: { id?: string; name?: string; status?: string; advertisingChannelType?: string }
+  campaign?: { id?: string; name?: string; primaryStatus?: string; advertisingChannelType?: string }
   metrics?: { costMicros?: string; impressions?: string; conversions?: number; conversionsValue?: number; searchBudgetLostImpressionShare?: number }
-  campaignBudget?: { amountMicros?: string }
 }
 
 function micros(v?: string): number { return v ? Number(v) / 1e6 : 0 }
 
-/** ctx üret (belirli müşteri için; token paylaşılır, yalnız customerId değişir). */
 function ctxFor(accessToken: string, customerId: string, loginCustomerId: string): GoogleAdsRequestContext {
-  return { accessToken, customerId: customerId.replace(/-/g, ''), loginCustomerId: loginCustomerId.replace(/-/g, ''), locale: 'tr' }
-}
-
-/** MCC altındaki tüm müşteri hesaplarını keşfet (manager değil, harcayan hesaplar). */
-export async function discoverGoogleAccounts(
-  accessToken: string, managerId: string,
-): Promise<Array<{ id: string; name: string; currency: string; status: string }>> {
-  const mctx = ctxFor(accessToken, managerId, managerId)
-  try {
-    const rows = await searchGAds<{ customerClient?: { id?: string; descriptiveName?: string; currencyCode?: string; status?: string; manager?: boolean; level?: string } }>(
-      mctx,
-      `SELECT customer_client.id, customer_client.descriptive_name, customer_client.currency_code,
-              customer_client.status, customer_client.manager, customer_client.level
-       FROM customer_client
-       WHERE customer_client.status = 'ENABLED'`,
-    )
-    const accts = rows
-      .map((r) => r.customerClient)
-      .filter((c): c is NonNullable<typeof c> => Boolean(c?.id) && !c?.manager)
-      .map((c) => ({ id: String(c.id), name: c.descriptiveName || String(c.id), currency: c.currencyCode || 'TRY', status: c.status || 'ENABLED' }))
-    // Tekilleştir
-    const seen = new Set<string>()
-    return accts.filter((a) => (seen.has(a.id) ? false : (seen.add(a.id), true)))
-  } catch {
-    // Manager değilse / customer_client erişilemezse: yalnız bağlı hesabın kendisi
-    return [{ id: managerId.replace(/-/g, ''), name: managerId, currency: 'TRY', status: 'ENABLED' }]
-  }
+  return { accessToken, customerId: customerId.replace(/-/g, ''), loginCustomerId: (loginCustomerId || customerId).replace(/-/g, ''), locale: 'tr' }
 }
 
 async function scanGoogleAccount(
-  accessToken: string, managerId: string,
-  acc: { id: string; name: string; currency: string; status: string },
+  accessToken: string, customerId: string, loginCustomerId: string, registeredName: string | null,
 ): Promise<WatchdogFinding[]> {
-  const ctx = ctxFor(accessToken, acc.id, managerId)
+  const ctx = ctxFor(accessToken, customerId, loginCustomerId)
 
-  // Hesap durumu + para birimi (descriptive)
-  let status = acc.status, currency = acc.currency, name = acc.name
+  // Hesap durumu + gerçek ad
+  let status = 'ENABLED', currency = 'TRY', descriptive = ''
   try {
     const crows = await searchGAds<{ customer?: { descriptiveName?: string; status?: string; currencyCode?: string } }>(
       ctx, `SELECT customer.descriptive_name, customer.status, customer.currency_code FROM customer`,
     )
     const c = crows[0]?.customer
-    if (c) { status = c.status || status; currency = c.currencyCode || currency; name = c.descriptiveName || name }
-  } catch { /* erişilemezse keşif değerleriyle devam */ }
+    if (c) { status = c.status || status; currency = c.currencyCode || currency; descriptive = c.descriptiveName || '' }
+  } catch { /* erişilemezse devam */ }
 
+  const name = registeredName || descriptive || `Hesap ${customerId}`
   const snapshot: AccountSnapshot = {
-    platform: 'google', accountId: acc.id, accountName: name, currency,
+    platform: 'google', accountId: customerId, accountName: name, currency,
     statusCode: status, statusLabel: CUSTOMER_STATUS_LABEL[status] ?? status,
     healthy: status === 'ENABLED',
   }
   if (!snapshot.healthy) return evaluateAccountFindings(snapshot, [])
 
-  const r3 = recentRange(3)
-  const r30 = recentRange(30)
+  const r3 = recentRange(3), r30 = recentRange(30)
+  const RUNNING = `campaign.primary_status IN ('ELIGIBLE','LIMITED')`
 
-  // Kampanya metrikleri: dün / son 3g / baseline 30g
   const [yRows, t3Rows, baseRows] = await Promise.all([
     searchGAds<CampaignMetricRow>(ctx,
-      `SELECT campaign.id, campaign.name, campaign.status, campaign.advertising_channel_type,
+      `SELECT campaign.id, campaign.name, campaign.primary_status, campaign.advertising_channel_type,
               metrics.cost_micros, metrics.impressions, metrics.conversions, metrics.conversions_value,
               metrics.search_budget_lost_impression_share
-       FROM campaign WHERE campaign.status = 'ENABLED' AND segments.date DURING YESTERDAY`),
+       FROM campaign WHERE ${RUNNING} AND segments.date DURING YESTERDAY`),
     searchGAds<CampaignMetricRow>(ctx,
       `SELECT campaign.id, metrics.cost_micros, metrics.conversions
-       FROM campaign WHERE campaign.status = 'ENABLED' AND segments.date BETWEEN '${r3.start}' AND '${r3.end}'`),
+       FROM campaign WHERE ${RUNNING} AND segments.date BETWEEN '${r3.start}' AND '${r3.end}'`),
     searchGAds<CampaignMetricRow>(ctx,
       `SELECT campaign.id, metrics.cost_micros, metrics.conversions
-       FROM campaign WHERE campaign.status = 'ENABLED' AND segments.date BETWEEN '${r30.start}' AND '${r30.end}'`),
+       FROM campaign WHERE ${RUNNING} AND segments.date BETWEEN '${r30.start}' AND '${r30.end}'`),
   ])
 
   const sum3d = new Map<string, { cost: number; conv: number }>()
@@ -123,24 +94,22 @@ async function scanGoogleAccount(
   for (const r of yRows) {
     const id = String(r.campaign?.id)
     const cost = micros(r.metrics?.costMicros)
-    const conv = Number(r.metrics?.conversions || 0)
     const convVal = Number(r.metrics?.conversionsValue || 0)
     const t3 = sum3d.get(id) || { cost: 0, conv: 0 }
     const b = sumBase.get(id) || { cost: 0, conv: 0 }
     entities.push({
-      platform: 'google', accountId: acc.id, level: 'campaign', id, name: r.campaign?.name || id, campaignId: id,
-      configuredStatus: 'ACTIVE', effectiveStatus: r.campaign?.status || 'ENABLED', currency,
-      spend: cost, impressions: Number(r.metrics?.impressions || 0), results: conv, resultType: 'conversion',
-      purchaseValue: convVal, frequency: 0, ctr: 0, dailyBudget: null,
+      platform: 'google', accountId: customerId, level: 'campaign', id, name: r.campaign?.name || id, campaignId: id,
+      configuredStatus: 'ACTIVE', effectiveStatus: r.campaign?.primaryStatus || 'ELIGIBLE', currency,
+      spend: cost, impressions: Number(r.metrics?.impressions || 0), results: Number(r.metrics?.conversions || 0),
+      resultType: 'conversion', purchaseValue: convVal, frequency: 0, ctr: 0, dailyBudget: null,
       isSalesObjective: convVal > 0, spend3d: t3.cost, results3d: t3.conv,
       cpaBaseline: b.conv > 0 ? b.cost / b.conv : null, baselineResults: b.conv,
     })
-    // Google'a özel: bütçeden kaybedilen gösterim payı
     const isLost = Number(r.metrics?.searchBudgetLostImpressionShare || 0)
     if (isLost > IS_BUDGET_LOST_THRESHOLD) {
       directFindings.push({
         type: 'wd_impression_share_lost', severity: 'medium', platform: 'google',
-        accountId: acc.id, accountName: name, level: 'campaign', entityId: id, entityName: r.campaign?.name || id,
+        accountId: customerId, accountName: name, level: 'campaign', entityId: id, entityName: r.campaign?.name || id,
         title: `Bütçe yetersiz — gösterim payı kaybı — ${r.campaign?.name || id}`,
         body: `"${r.campaign?.name || id}" kampanyası gösterimlerinin %${Math.round(isLost * 100)}'ini bütçe yetersizliğinden kaybediyor. Talep var ama bütçe yetişmiyor.`,
         recommendedAction: 'Bütçeyi artırmayı veya teklif stratejisini gözden geçirmeyi değerlendirin.',
@@ -149,12 +118,11 @@ async function scanGoogleAccount(
     }
   }
 
-  // Reddedilen reklamlar (aktif reklam grubu reklamları)
+  // Reddedilen reklamlar
   try {
-    const adRows = await searchGAds<{ adGroupAd?: { ad?: { id?: string; name?: string }; status?: string; policySummary?: { approvalStatus?: string } }; campaign?: { id?: string; name?: string } }>(
+    const adRows = await searchGAds<{ adGroupAd?: { ad?: { id?: string; name?: string } }; campaign?: { id?: string } }>(
       ctx,
-      `SELECT ad_group_ad.ad.id, ad_group_ad.ad.name, ad_group_ad.status,
-              ad_group_ad.policy_summary.approval_status, campaign.name
+      `SELECT ad_group_ad.ad.id, ad_group_ad.ad.name, campaign.id
        FROM ad_group_ad
        WHERE ad_group_ad.status = 'ENABLED' AND ad_group_ad.policy_summary.approval_status = 'DISAPPROVED'`,
       { maxRows: 50 },
@@ -162,7 +130,7 @@ async function scanGoogleAccount(
     for (const r of adRows) {
       const adId = String(r.adGroupAd?.ad?.id || '')
       entities.push({
-        platform: 'google', accountId: acc.id, level: 'ad', id: adId,
+        platform: 'google', accountId: customerId, level: 'ad', id: adId,
         name: r.adGroupAd?.ad?.name || `Reklam ${adId}`, campaignId: r.campaign?.id ?? null,
         configuredStatus: 'ACTIVE', effectiveStatus: 'DISAPPROVED', reviewStatus: 'DISAPPROVED',
         currency, spend: 0, impressions: 0, results: 0, resultType: 'conversion', purchaseValue: 0,
@@ -170,45 +138,42 @@ async function scanGoogleAccount(
         spend3d: 0, results3d: 0, cpaBaseline: null, baselineResults: 0,
       })
     }
-  } catch { /* reklam onay sorgusu erişilemezse atla */ }
+  } catch { /* erişilemezse atla */ }
 
   return [...evaluateAccountFindings(snapshot, entities), ...directFindings]
 }
 
-/** Kullanıcı için tüm Google Ads hesaplarını tara. */
+/** Kullanıcının KAYITLI Google hesaplarını tara. */
 export async function runGoogleWatchdog(userId: string): Promise<{ findings: WatchdogFinding[]; scanned: number; skipped: number; errors: string[] }> {
   const errors: string[] = []
   const conn = await getConnection(userId)
-  if (!conn?.refreshToken || !conn?.customerId) return { findings: [], scanned: 0, skipped: 0, errors: ['google_not_connected'] }
+  if (!conn?.refreshToken) return { findings: [], scanned: 0, skipped: 0, errors: ['google_not_connected'] }
 
   let accessToken: string
-  try {
-    accessToken = await getGoogleAdsAccessToken(conn.refreshToken)
-  } catch (e) {
-    return { findings: [], scanned: 0, skipped: 0, errors: [`google_token:${e instanceof Error ? e.message : 'error'}`] }
-  }
-  const managerId = conn.loginCustomerId || conn.customerId
+  try { accessToken = await getGoogleAdsAccessToken(conn.refreshToken) }
+  catch (e) { return { findings: [], scanned: 0, skipped: 0, errors: [`google_token:${e instanceof Error ? e.message : 'error'}`] } }
 
-  let accounts = await discoverGoogleAccounts(accessToken, managerId)
-  accounts = accounts.slice(0, MAX_ACCOUNTS)
+  // Kapsam = kayıtlı Google hesapları. Boşsa backfill + bağlı hesap fallback.
+  let registered = (await listRegisteredAccounts(userId)).filter((a) => a.platform === 'google')
+  if (registered.length === 0) {
+    try { await ensureBackfilled(userId) } catch { /* geç */ }
+    registered = (await listRegisteredAccounts(userId)).filter((a) => a.platform === 'google')
+  }
+  let targets = registered.map((a) => ({ customerId: a.account_id, loginCustomerId: a.login_customer_id || conn.loginCustomerId || a.account_id, name: a.account_name }))
+  if (targets.length === 0 && conn.customerId) {
+    targets = [{ customerId: conn.customerId, loginCustomerId: conn.loginCustomerId || conn.customerId, name: null }]
+  }
+  if (targets.length === 0) return { findings: [], scanned: 0, skipped: 0, errors: ['google_no_registered_accounts'] }
 
   const findings: WatchdogFinding[] = []
-  let scanned = 0, skipped = 0
-  for (const acc of accounts) {
+  let scanned = 0
+  for (const tgt of targets) {
     try {
-      // Aktivite filtresi: son 30g harcaması olmayan hesabı atla
-      const ctx = ctxFor(accessToken, acc.id, managerId)
-      const r30 = recentRange(30)
-      const spendRows = await searchGAds<{ metrics?: { costMicros?: string } }>(
-        ctx, `SELECT metrics.cost_micros FROM customer WHERE segments.date BETWEEN '${r30.start}' AND '${r30.end}'`,
-      )
-      const spend30 = spendRows.reduce((s, r) => s + micros(r.metrics?.costMicros), 0)
-      if (spend30 <= 0) { skipped++; continue }
-      findings.push(...await scanGoogleAccount(accessToken, managerId, acc))
+      findings.push(...await scanGoogleAccount(accessToken, tgt.customerId, tgt.loginCustomerId, tgt.name))
       scanned++
     } catch (e) {
-      errors.push(`google:${acc.id}:${e instanceof Error ? e.message : 'error'}`)
+      errors.push(`google:${tgt.customerId}:${e instanceof Error ? e.message : 'error'}`)
     }
   }
-  return { findings, scanned, skipped, errors }
+  return { findings, scanned, skipped: 0, errors }
 }
