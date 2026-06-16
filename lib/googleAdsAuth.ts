@@ -85,7 +85,7 @@ export function buildGoogleAdsHeaders(ctx: GoogleAdsRequestContext): Record<stri
 }
 
 import { cookies } from 'next/headers'
-import { getConnection, upsertConnection } from '@/lib/googleAdsConnectionStore'
+import { getConnection, upsertConnection, getConnectionStatus } from '@/lib/googleAdsConnectionStore'
 import { getGoogleAdsUserId } from '@/lib/googleAdsUserId'
 
 export const GOOGLE_ADS_BASE = CONSTANTS_BASE
@@ -122,6 +122,13 @@ export async function getGoogleAdsContext(): Promise<GoogleAdsRequestContext> {
         loginCustomerId: dbCtx.loginCustomerId,
         locale,
       }
+    }
+
+    // Bilinçli disconnect korunur: DB satırı VAR ama aktif değil (revoked / token yok)
+    // ise cookie backfill ile DİRİLTME — yoksa silinen/kesilen hesap geri gelir (owner 16.06).
+    const rawStatus = await getConnectionStatus(userId)
+    if (rawStatus.exists && !rawStatus.hasToken) {
+      throwWithCode('Google Ads bağlantısı kaldırıldı', GOOGLE_ADS_ERROR_CODES.NOT_CONNECTED)
     }
 
     // 2) Cookie backfill: DB missing but cookie exists — persist once

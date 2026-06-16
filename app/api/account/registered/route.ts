@@ -1,4 +1,5 @@
 import { NextResponse } from 'next/server'
+import { cookies } from 'next/headers'
 import { getCurrentUser } from '@/lib/billing/user'
 import {
   isMultiAccountEnabled,
@@ -7,9 +8,18 @@ import {
   resolveAccountLimit,
   addRegisteredAccount,
   removeRegisteredAccount,
+  normAcct,
   type AdPlatform,
 } from '@/lib/account/registeredAccounts'
 import { isPerAccountScopeEnabled } from '@/lib/yoai/featureFlag'
+import { COOKIE } from '@/lib/google-ads/constants'
+import { updateSelectedMetaAdAccount, updateMetaConnectionHealth } from '@/lib/metaConnectionStore'
+import { upsertConnection as upsertGoogleConnection, revokeConnection as revokeGoogleConnection } from '@/lib/googleAdsConnectionStore'
+
+/** Meta seçim cookie'leri için select-adaccount ile birebir aynı seçenekler. */
+const META_COOKIE_OPTS = { httpOnly: true, secure: process.env.NODE_ENV === 'production', sameSite: 'lax' as const, maxAge: 60 * 60 * 24 * 30, path: '/' }
+const META_ALL_COOKIES = ['meta_access_token', 'meta_access_expires_at', 'meta_token_type', 'meta_granted_scopes', 'meta_denied_scopes', 'meta_selected_ad_account_id', 'meta_selected_ad_account_name', 'selected_meta_ad_account']
+const GOOGLE_SELECTION_COOKIES = [COOKIE.CUSTOMER_ID, COOKIE.LOGIN_CUSTOMER_ID, COOKIE.ACCOUNT_NAME, COOKIE.CUSTOMER_NAME, COOKIE.IS_MANAGER]
 
 export const runtime = 'nodejs'
 export const dynamic = 'force-dynamic'
@@ -120,6 +130,47 @@ export async function DELETE(request: Request) {
     return NextResponse.json({ ok: false, error: 'invalid_input' }, { status: 400 })
   }
 
-  const ok = await removeRegisteredAccount(user.id, platform, accountId)
-  return NextResponse.json({ ok })
+  // Silmeden ÖNCE cookie'deki aktif hesabı oku (silinen, dashboard'un gösterdiği aktif miydi?).
+  const jar = await cookies()
+  const removed = normAcct(accountId)
+  const cookieActiveBefore = platform === 'meta'
+    ? normAcct(jar.get('meta_selected_ad_account_id')?.value) === removed
+    : normAcct(jar.get(COOKIE.CUSTOMER_ID)?.value) === removed
+
+  const outcome = await removeRegisteredAccount(user.id, platform, accountId)
+  if (!outcome.ok) return NextResponse.json({ ok: false, error: 'db_error' }, { status: 500 })
+
+  // KÖK ÇÖZÜM: silinen hesap aktifse (DB ya da cookie) → cookie + DB'yi birlikte senkronla.
+  // Aksi halde dashboard/status cookie'den eski hesabı okumaya devam ederdi ("sildim ama görünüyor").
+  const wasActive = outcome.wasActiveInDb || cookieActiveBefore
+  let disconnected = false
+
+  if (wasActive && outcome.next) {
+    // Kalan bir hesaba geçir.
+    const next = outcome.next
+    if (platform === 'meta') {
+      if (!outcome.wasActiveInDb) await updateSelectedMetaAdAccount(user.id, next.accountId)
+      const actId = next.accountId.startsWith('act_') ? next.accountId : `act_${next.accountId.replace(/^act_/i, '')}`
+      jar.set('meta_selected_ad_account_id', actId, META_COOKIE_OPTS)
+      jar.set('selected_meta_ad_account', actId, META_COOKIE_OPTS)
+      jar.set('meta_selected_ad_account_name', next.name || actId, META_COOKIE_OPTS)
+    } else {
+      if (!outcome.wasActiveInDb) await upsertGoogleConnection(user.id, { customerId: next.accountId, loginCustomerId: next.loginCustomerId || next.accountId })
+      // Seçim cookie'lerini sil → /selected DB'ye düşüp kalan hesabı döndürür (cookie-set riski yok).
+      for (const c of GOOGLE_SELECTION_COOKIES) jar.delete(c)
+    }
+  } else if (wasActive && !outcome.next) {
+    // Başka kayıtlı hesap yok → TAM DISCONNECT: DB revoke + TÜM platform cookie'lerini sil.
+    disconnected = true
+    if (platform === 'meta') {
+      if (!outcome.wasActiveInDb) await updateMetaConnectionHealth(user.id, 'revoked', 'last_account_removed')
+      for (const c of META_ALL_COOKIES) jar.delete(c)
+    } else {
+      if (!outcome.wasActiveInDb) await revokeGoogleConnection(user.id)
+      jar.delete(COOKIE.REFRESH_TOKEN)
+      for (const c of GOOGLE_SELECTION_COOKIES) jar.delete(c)
+    }
+  }
+
+  return NextResponse.json({ ok: true, wasActive, disconnected, next: outcome.next })
 }

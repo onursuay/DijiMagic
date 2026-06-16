@@ -192,59 +192,73 @@ export async function addRegisteredAccount(
 }
 
 /** account_id normalize (act_ öneki + tire farklarını yok say). */
-const normAcct = (s: string | null | undefined): string =>
+export const normAcct = (s: string | null | undefined): string =>
   (s ?? '').replace(/^act_/i, '').replace(/-/g, '').trim().toLowerCase()
 
+/** Silme sonucu — route bunu kullanarak cookie'leri + (gerekirse) DB'yi senkronlar. */
+export interface AccountRemovalOutcome {
+  ok: boolean
+  /** Silinen hesap DB'de o an SEÇİLİ aktif bağlantıydı mı. */
+  wasActiveInDb: boolean
+  /** Geçilecek kalan hesap (varsa). null = başka kayıtlı hesap yok → disconnect. */
+  next: { accountId: string; loginCustomerId: string | null; name: string | null } | null
+  /** wasActiveInDb && next yok → bağlantı pasiflendi. */
+  disconnected: boolean
+}
+
 /**
- * Çıkarılan hesap o an SEÇİLİ (aktif bağlantı) ise bağlantıyı uzlaştır:
- * kalan bir kayıtlı hesaba geçir; kalan yoksa bağlantıyı pasifle (revoked).
- * Aksi halde dashboard silinen hesabı göstermeye devam eder (kayıtlı-liste ↔
- * aktif-bağlantı senkronsuzluğu — owner 16.06 "sildim ama hâlâ görünüyor").
+ * Çıkarılan hesap o an SEÇİLİ (DB aktif bağlantı) ise DB bağlantısını uzlaştır:
+ * kalan bir kayıtlı hesaba geçir; kalan yoksa pasifle (revoked). COOKIE'lere
+ * burada DOKUNULMAZ (lib katmanı cookie API'sine erişemez) — route halleder.
+ * Owner 16.06 "sildim ama hâlâ görünüyor" kökü: cookie senkronu route'ta yapılır.
  */
 async function reconcileActiveConnectionAfterRemoval(
   userId: string, platform: AdPlatform, removedAccountId: string,
-): Promise<void> {
+): Promise<Omit<AccountRemovalOutcome, 'ok'>> {
   const removed = normAcct(removedAccountId)
   const remaining = (await listRegisteredAccounts(userId)).filter((a) => a.platform === platform)
+  const next = remaining.length > 0
+    ? { accountId: remaining[0].account_id, loginCustomerId: remaining[0].login_customer_id, name: remaining[0].account_name }
+    : null
 
+  let wasActiveInDb = false
   if (platform === 'google') {
     const conn = await getGoogleConnection(userId)
-    if (!conn?.customerId || normAcct(conn.customerId) !== removed) return // aktif seçili değildi
-    if (remaining.length > 0) {
-      const next = remaining[0]
-      await upsertGoogleConnection(userId, { customerId: next.account_id, loginCustomerId: next.login_customer_id || next.account_id })
-    } else {
-      await upsertGoogleConnection(userId, { status: 'revoked' })
+    wasActiveInDb = !!conn?.customerId && normAcct(conn.customerId) === removed
+    if (wasActiveInDb) {
+      if (next) await upsertGoogleConnection(userId, { customerId: next.accountId, loginCustomerId: next.loginCustomerId || next.accountId })
+      else await upsertGoogleConnection(userId, { status: 'revoked' })
     }
   } else {
     const conn = await getMetaConnection(userId)
-    if (!conn?.selectedAdAccountId || normAcct(conn.selectedAdAccountId) !== removed) return
-    if (remaining.length > 0) {
-      await updateSelectedMetaAdAccount(userId, remaining[0].account_id)
-    } else {
-      await updateMetaConnectionHealth(userId, 'revoked', 'all_registered_accounts_removed')
+    wasActiveInDb = !!conn?.selectedAdAccountId && normAcct(conn.selectedAdAccountId) === removed
+    if (wasActiveInDb) {
+      if (next) await updateSelectedMetaAdAccount(userId, next.accountId)
+      else await updateMetaConnectionHealth(userId, 'revoked', 'all_registered_accounts_removed')
     }
   }
+  return { wasActiveInDb, next, disconnected: wasActiveInDb && !next }
 }
 
-/** Hesabı kayıtlı kümeden çıkarır + aktif bağlantıyı uzlaştırır. */
+/** Hesabı kayıtlı kümeden çıkarır + DB bağlantısını uzlaştırır; outcome döner. */
 export async function removeRegisteredAccount(
   userId: string,
   platform: AdPlatform,
   accountId: string,
-): Promise<boolean> {
-  if (!supabase) return false
+): Promise<AccountRemovalOutcome> {
+  if (!supabase) return { ok: false, wasActiveInDb: false, next: null, disconnected: false }
   const { error } = await supabase
     .from('user_registered_ad_accounts')
     .delete()
     .eq('user_id', userId)
     .eq('platform', platform)
     .eq('account_id', accountId)
-  if (error) return false
+  if (error) return { ok: false, wasActiveInDb: false, next: null, disconnected: false }
   try {
-    await reconcileActiveConnectionAfterRemoval(userId, platform, accountId)
+    const r = await reconcileActiveConnectionAfterRemoval(userId, platform, accountId)
+    return { ok: true, ...r }
   } catch (e) {
     console.error('[registeredAccounts] reconcile after removal failed:', e instanceof Error ? e.message : e)
+    return { ok: true, wasActiveInDb: false, next: null, disconnected: false }
   }
-  return true
 }

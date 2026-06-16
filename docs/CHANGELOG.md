@@ -2,6 +2,16 @@
 
 ---
 
+## 2026-06-16 — Hesap kaldırma KÖK ÇÖZÜM: cookie+DB+modül senkronu ("sildim ama hâlâ görünüyor")
+- **Sorun (owner, kritik/hayati):** Reklam hesabı kaldırılınca dashboard hâlâ "Bağlı" + verisini gösteriyordu; son/tek hesap silinince disconnect olmuyordu; Google'da silinen tek hesap "çöp-kutusuz aktif" geri geliyordu. **Kök neden:** "aktif hesap" bilgisi kayıt-tablosu + DB-bağlantısı + **COOKIE**'lere dağılmış; silme yalnız kayıt tablosunu + DB'yi güncelliyor, COOKIE'leri temizlemiyordu — oysa dashboard/status aktif hesabı COOKIE'den okuyor. Ayrıca Google `getGoogleAdsContext` backfill'i revoke edilmiş bağlantıyı cookie'den tekrar "active" yazıp **diriltiyordu**.
+- **Çözüm (5 paralel keşif workflow'u ile her yer haritalandı → tek tutarlı düzeltme):**
+  - `removeRegisteredAccount` artık outcome döndürüyor (`wasActiveInDb` / `next` / `disconnected`).
+  - `DELETE /api/account/registered`: silinen hesap aktifse (DB ya da cookie) → kalan hesaba geçişte cookie+DB **birlikte** güncellenir (Meta seçim cookie'leri select-adaccount ile birebir aynı seçeneklerle; Google'da seçim cookie'leri silinip `/selected` DB'ye düşürülür); **son/tek hesap silinince TAM DISCONNECT** (DB revoke + TÜM platform cookie'leri silinir).
+  - `getGoogleAdsContext`: bağlantı revoked iken (`exists && !hasToken`) cookie backfill ile **diriltme engellendi** — silinen hesabın geri gelmesi kökten kapandı.
+  - Diğer modüller (YoAlgoritma/Optimizasyon/Hedef Kitle/Raporlar) aktif hesabı aynı cookie/bağlantı context'inden çözdüğü için context temizlenince **hepsinden bağ otomatik kalkar** (ayrı state yok — workflow doğruladı).
+- **Doğrulama:** değişen dosyalar tsc-temiz; Vercel prod build. (Not: çalışma ağacında ilgisiz Web Site Yöneticisi WIP'i var — bu commit'e DAHİL EDİLMEDİ.)
+- **Dosyalar:** lib/account/registeredAccounts.ts, app/api/account/registered/route.ts, lib/googleAdsAuth.ts
+
 ## 2026-06-16 — Reklam hesabı kaldırma standardı + kayıtlı-liste ↔ aktif-bağlantı senkronu
 - **Sorun (owner):** (1) Google'da kayıtlı hesabı silince dashboard hâlâ onu gösteriyordu — silme yalnız kayıt tablosundan yapılıyor, aktif bağlantı (google_ads_connections) uzlaştırılmıyordu; (2) Meta aktif hesabın silme kutusunu gizliyor, Google gösteriyordu (tutarsız) → tek hesap bağlıysa kaldırma imkânsızdı.
 - **Çözüm:**
