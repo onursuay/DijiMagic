@@ -7,6 +7,7 @@ import Topbar from '@/components/Topbar'
 import { ToastContainer, type Toast } from '@/components/Toast'
 import SiteList from '@/components/website/SiteList'
 import NewSiteModal from '@/components/website/NewSiteModal'
+import WebsiteBuilderAnimation from '@/components/website/WebsiteBuilderAnimation'
 import type { Website, WebsiteDraftInput } from '@/lib/website/types'
 
 export default function WebSiteYoneticisiPage() {
@@ -76,10 +77,7 @@ export default function WebSiteYoneticisiPage() {
           {loading ? (
             <p className="text-sm text-gray-500">…</p>
           ) : sites.length === 0 ? (
-            <div className="bg-white rounded-xl border border-gray-200 p-10 text-center animate-card-enter">
-              <h3 className="text-base font-semibold text-gray-900">{t('emptyTitle')}</h3>
-              <p className="mt-1 text-sm leading-relaxed text-gray-600">{t('emptyDescription')}</p>
-            </div>
+            <WebsiteBuilderAnimation />
           ) : (
             <SiteList
               sites={sites}
