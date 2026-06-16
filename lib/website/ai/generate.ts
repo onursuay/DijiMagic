@@ -2,7 +2,7 @@ import 'server-only'
 import { claudeJson, isClaudeReady } from '@/lib/anthropic/text'
 import { pickStockImage, pickStockImages, isStockReady } from '../stock'
 import { scanReferences } from '../referenceScanner'
-import { labelsFor, type SiteLabels } from '../templates/deterministic'
+import { labelsFor, formLabelsFor, type SiteLabels } from '../templates/deterministic'
 import type { WebsitePageInput, SectionBlock, SiteType, PageRole } from '../types'
 import type { BusinessProfileRow, BusinessIntelligenceRow } from '@/lib/yoai/businessProfileStore'
 
@@ -108,9 +108,11 @@ function buildPrompt(input: GenerateInput, ai: BrandSynthesisLike, refSummaries:
     '- Marka tonuna uy; abartılı/klişe pazarlama dilinden kaçın. Kısa, net, güçlü cümleler.',
     '- hero.title KISA ve etkileyici olsun (en fazla ~7 kelime); subtitle 1-2 cümle.',
     '- eyebrow alanları 1-3 kelimelik kısa üst-etiket (örn. sektör, şehir, kısa slogan).',
-    '- services.items: GERÇEK hizmet/ürünlerle doldur (3-6 adet), her birinin kısa açıklaması (1 cümle) olsun.',
-    '- features.items: somut fayda/farklılık (3-4 adet), kısa açıklamalı.',
-    '- split: değer önerisini anlatan bir bölüm; bullets 3-4 kısa madde.',
+    '- İÇERİK ZAYIF/JENERİK OLMASIN: her metin gerçek bir profesyonel web sitesindeki gibi DOLU, özgün ve ikna edici olsun. "Kaliteli hizmet sunuyoruz" gibi boş kalıplar YASAK — işletmeye özgü somut fayda/değer yaz.',
+    '- services.items: GERÇEK hizmet/ürünlerle doldur (3-6 adet), her birinin 1-2 cümlelik somut, fayda-odaklı açıklaması olsun.',
+    '- features.items: somut fayda/farklılık (3-4 adet), her biri 1-2 cümle açıklamalı.',
+    '- split: değer önerisini anlatan bir bölüm; bullets 3-4 kısa somut madde.',
+    '- about.body 2-3 dolu cümle (marka hikayesi/yaklaşımı). contact.body kısa ve davetkâr. cta dönüşüme yönlendiren güçlü bir çağrı.',
     '- imageQuery alanları İNGİLİZCE, kısa, görsel arama için spesifik olsun (örn. "modern dental clinic interior", "fresh organic olive oil bottles"). Her imageQuery FARKLI bir sahne betimlesin.',
     '- REFERANS site özetleri verilmişse onların yapı/ton/düzen MANTIĞINI ilham al ve YAKLAŞTIR; ama ASLA birebir kopyalama — özgün metin üret.',
     '- Yalnız istenen JSON şemasını döndür; ek açıklama, markdown veya kod bloğu YOK.',
@@ -301,15 +303,7 @@ export async function generateSitePages(input: GenerateInput): Promise<WebsitePa
       ctaHref: input.siteType === 'landing' ? '#contact' : `/s/${input.subdomain}/iletisim`,
     }, i)
 
-  const contactBlock = (i: number) =>
-    block('contact', {
-      heading: str(content.contact?.heading) || L.contact,
-      body: str(content.contact?.body) || L.contactBody,
-      locations: (input.profile?.target_locations ?? []).map(clean).filter(Boolean),
-      links: [],
-    }, i)
-
-  // Footer ortak veri (sosyal linkler gerçek profil verisinden — AI üretmez)
+  // Sosyal linkler gerçek profil verisinden — AI üretmez (uydurma yok)
   const social: { label: string; href: string }[] = []
   const addSocial = (label: string, url: string | null | undefined) => {
     const u = clean(url)
@@ -323,13 +317,26 @@ export async function generateSitePages(input: GenerateInput): Promise<WebsitePa
   addSocial('TikTok', input.profile?.tiktok_url)
   const footerLocations = (input.profile?.target_locations ?? []).map(clean).filter(Boolean)
   const tagline = str(content.hero?.subtitle) || clean(input.profile?.business_description)
+  const servicesHref = input.siteType === 'landing' ? '#services' : `/s/${input.subdomain}/hizmetler`
+  const serviceLinks = services.slice(0, 6).map((s) => ({ label: s.title, href: servicesHref }))
 
-  const header = block('header', { brand, logoUrl: null, nav: navFor(input, L), ctaLabel: L.contactCta, ctaHref: input.siteType === 'landing' ? '#contact' : `/s/${input.subdomain}/iletisim` }, 0)
+  const contactBlock = (i: number) =>
+    block('contact', {
+      eyebrow: L.contactEyebrow,
+      heading: str(content.contact?.heading) || L.contact,
+      body: str(content.contact?.body) || L.contactBody,
+      locations: footerLocations,
+      links: social,
+      mapQuery: footerLocations[0] || '',
+      formLabels: formLabelsFor(L),
+    }, i)
+
+  const header = block('header', { brand, logoUrl: null, nav: navFor(input, L), ctaLabel: L.contactCta, ctaHref: input.siteType === 'landing' ? '#contact' : `/s/${input.subdomain}/iletisim`, homeHref: input.siteType === 'landing' ? '#' : `/s/${input.subdomain}`, menuLabel: L.menuLabel, closeLabel: L.closeLabel }, 0)
   const footer = (i: number) =>
     block('footer', {
       brand, logoUrl: null, note: `© ${brand}`, tagline,
-      nav: navFor(input, L), links: social, locations: footerLocations,
-      pagesLabel: L.footerPages, contactLabel: L.footerContact,
+      nav: navFor(input, L), links: social, locations: footerLocations, serviceLinks,
+      pagesLabel: L.footerPages, contactLabel: L.footerContact, servicesLabel: L.footerServices,
     }, i)
 
   const hasFeatures = features.length > 0

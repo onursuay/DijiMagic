@@ -42,6 +42,26 @@ export interface SiteLabels {
   navContact: string
   footerPages: string
   footerContact: string
+  footerServices: string
+  menuLabel: string
+  closeLabel: string
+  contactEyebrow: string
+  formName: string
+  formEmail: string
+  formPhone: string
+  formMessage: string
+  formSend: string
+  formSending: string
+  formSuccess: string
+  formError: string
+}
+
+/** ContactForm island'a geçilecek site-dili form etiketleri. */
+export function formLabelsFor(L: SiteLabels) {
+  return {
+    name: L.formName, email: L.formEmail, phone: L.formPhone, message: L.formMessage,
+    send: L.formSend, sending: L.formSending, success: L.formSuccess, error: L.formError,
+  }
 }
 
 const LABELS: Record<string, SiteLabels> = {
@@ -64,6 +84,18 @@ const LABELS: Record<string, SiteLabels> = {
     navContact: 'İletişim',
     footerPages: 'Sayfalar',
     footerContact: 'İletişim',
+    footerServices: 'Hizmetler',
+    menuLabel: 'Menü',
+    closeLabel: 'Kapat',
+    contactEyebrow: 'İletişim',
+    formName: 'Adınız Soyadınız',
+    formEmail: 'E-posta adresiniz',
+    formPhone: 'Telefon (isteğe bağlı)',
+    formMessage: 'Mesajınız',
+    formSend: 'Gönder',
+    formSending: 'Gönderiliyor…',
+    formSuccess: 'Mesajınız iletildi. En kısa sürede dönüş yapacağız.',
+    formError: 'Gönderilemedi, lütfen tekrar deneyin.',
   },
   en: {
     contactCta: 'Get in Touch',
@@ -84,6 +116,18 @@ const LABELS: Record<string, SiteLabels> = {
     navContact: 'Contact',
     footerPages: 'Pages',
     footerContact: 'Contact',
+    footerServices: 'Services',
+    menuLabel: 'Menu',
+    closeLabel: 'Close',
+    contactEyebrow: 'Contact',
+    formName: 'Your name',
+    formEmail: 'Your email',
+    formPhone: 'Phone (optional)',
+    formMessage: 'Your message',
+    formSend: 'Send',
+    formSending: 'Sending…',
+    formSuccess: 'Your message has been sent. We will get back to you shortly.',
+    formError: 'Could not send, please try again.',
   },
 }
 
@@ -228,12 +272,16 @@ export async function buildDeterministicSite(input: BuildSiteInput): Promise<Web
       ctaHref: input.siteType === 'landing' ? '#contact' : `/s/${input.subdomain}/iletisim`,
     }, i)
 
+  const contactLocations = (input.profile?.target_locations ?? []).map(clean).filter(Boolean)
   const contactBlock = (i: number) =>
     block('contact', {
+      eyebrow: L.contactEyebrow,
       heading: L.contact,
       body: L.contactBody,
-      locations: (input.profile?.target_locations ?? []).map(clean).filter(Boolean),
+      locations: contactLocations,
       links: socialLinks(input.profile, L),
+      mapQuery: contactLocations[0] || '',
+      formLabels: formLabelsFor(L),
     }, i)
 
   const social = socialLinks(input.profile, L)
@@ -251,13 +299,15 @@ export async function buildDeterministicSite(input: BuildSiteInput): Promise<Web
     { label: L.navContact, href: `${base}/iletisim` },
   ]
   const nav = input.siteType === 'landing' ? navAnchors : navPaths
+  const servicesHref = input.siteType === 'landing' ? '#services' : `${base}/hizmetler`
+  const serviceLinks = svcTitles.slice(0, 6).map((t) => ({ label: t, href: servicesHref }))
   const headerBlock = (i: number) =>
-    block('header', { brand, logoUrl: null, nav, ctaLabel: L.contactCta, ctaHref: input.siteType === 'landing' ? '#contact' : `${base}/iletisim` }, i)
+    block('header', { brand, logoUrl: null, nav, ctaLabel: L.contactCta, ctaHref: input.siteType === 'landing' ? '#contact' : `${base}/iletisim`, homeHref: input.siteType === 'landing' ? '#' : base, menuLabel: L.menuLabel, closeLabel: L.closeLabel }, i)
   const footerBlock = (i: number) =>
     block('footer', {
       brand, logoUrl: null, note: `© ${brand}`, tagline,
-      nav, links: social, locations,
-      pagesLabel: L.footerPages, contactLabel: L.footerContact,
+      nav, links: social, locations, serviceLinks,
+      pagesLabel: L.footerPages, contactLabel: L.footerContact, servicesLabel: L.footerServices,
     }, i)
 
   const hasServices = svcTitles.length > 0

@@ -36,5 +36,5 @@ export default async function WebsitePreviewPage({
   if (!page) {
     return <div style={{ padding: 48, fontFamily: 'system-ui', color: '#9ca3af', fontSize: 14 }}>—</div>
   }
-  return <SiteRenderer page={page} theme={site.theme} />
+  return <SiteRenderer page={page} theme={site.theme} previewId={params.id} />
 }

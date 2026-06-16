@@ -1,7 +1,12 @@
 import type { SectionBlock } from '../types'
+import { MapPin, Phone, Mail, Clock } from 'lucide-react'
+import MobileNav from '@/components/website/render/MobileNav'
+import ContactForm, { type ContactFormLabels } from '@/components/website/render/ContactForm'
+import { labelsFor, formLabelsFor } from '../templates/deterministic'
 
 /**
- * Üretilen sitenin responsive bölüm bileşenleri. Saf sunum (server+client uyumlu, hook yok).
+ * Üretilen sitenin responsive bölüm bileşenleri. Server render + iki client island
+ * (MobileNav hamburger menü, ContactForm gerçek iletişim formu).
  * Tasarım barı (referans kalitesi — Elysium/Anamour): görsel-önde hero, her kartta gerçek
  * fotoğraf, büyük responsive tipografi (clamp), ferah ve tutarlı boşluk, açık↔koyu bölüm ritmi,
  * marka aksanı + tematik açık zemin. Görsel yoksa her bölüm zarif fallback ile dolu durur.
@@ -71,7 +76,7 @@ export function HeaderSection({ content }: { content: Dict }) {
   return (
     <header className="sticky top-0 z-30 backdrop-blur-md bg-white/80 border-b border-black/[0.06]">
       <div className={`${CONTAINER} h-[74px] flex items-center justify-between gap-4`}>
-        <a href="#" className="flex items-center gap-2.5 shrink-0">
+        <a href={safeHref(content.homeHref, '#')} className="flex items-center gap-2.5 shrink-0">
           {logoUrl ? (
             // eslint-disable-next-line @next/next/no-img-element
             <img src={logoUrl} alt={brand} className="h-9 w-auto max-w-[170px] object-contain" />
@@ -90,26 +95,35 @@ export function HeaderSection({ content }: { content: Dict }) {
             {brand}
           </span>
         </a>
-        <nav className="hidden md:flex items-center">
-          {nav.map((l, i) => (
+        <div className="flex items-center gap-5">
+          <nav className="hidden md:flex items-center">
+            {nav.map((l, i) => (
+              <a
+                key={i}
+                href={l.href}
+                className="ml-8 first:ml-0 text-[0.95rem] text-black/60 hover:text-black whitespace-nowrap transition-colors"
+              >
+                {l.label}
+              </a>
+            ))}
+          </nav>
+          {ctaLabel && (
             <a
-              key={i}
-              href={l.href}
-              className="ml-8 first:ml-0 text-[0.95rem] text-black/60 hover:text-black whitespace-nowrap transition-colors"
+              href={ctaHref}
+              className="hidden md:inline-flex items-center rounded-full px-5 py-2.5 text-[0.9rem] font-medium transition-transform hover:-translate-y-0.5"
+              style={{ backgroundColor: 'var(--site-accent)', color: 'var(--site-on-accent)' }}
             >
-              {l.label}
+              {ctaLabel}
             </a>
-          ))}
-        </nav>
-        {ctaLabel && (
-          <a
-            href={ctaHref}
-            className="hidden sm:inline-flex items-center rounded-full px-5 py-2.5 text-[0.9rem] font-medium transition-transform hover:-translate-y-0.5"
-            style={{ backgroundColor: 'var(--site-accent)', color: 'var(--site-on-accent)' }}
-          >
-            {ctaLabel}
-          </a>
-        )}
+          )}
+          <MobileNav
+            items={nav}
+            ctaLabel={ctaLabel}
+            ctaHref={ctaHref}
+            menuLabel={str(content.menuLabel, 'Menü')}
+            closeLabel={str(content.closeLabel, 'Kapat')}
+          />
+        </div>
       </div>
     </header>
   )
@@ -495,28 +509,70 @@ export function CtaSection({ content }: { content: Dict }) {
 
 export function ContactSection({ content }: { content: Dict }) {
   const heading = str(content.heading, 'İletişim')
+  const eyebrow = str(content.eyebrow)
   const body = str(content.body)
+  const address = str(content.address)
+  const phone = str(content.phone)
+  const email = str(content.email)
+  const hours = str(content.hours)
   const locations = strArr(content.locations)
   const links = navLinks(content.links)
+  const websiteId = str(content.websiteId)
+  const mapQuery = str(content.mapQuery) || address || locations[0] || ''
+  const mapsSrc = mapQuery ? `https://maps.google.com/maps?q=${encodeURIComponent(mapQuery)}&z=13&output=embed` : ''
+
+  // formLabels her zaman üretimde set edilir; eksikse (eski siteler) SİTE DİLİNE göre fallback (TR'ye gömülmez).
+  const base = formLabelsFor(labelsFor(str(content.locale) || 'tr'))
+  const fl = (content.formLabels ?? {}) as Partial<ContactFormLabels>
+  const formLabels: ContactFormLabels = {
+    name: fl.name || base.name, email: fl.email || base.email, phone: fl.phone || base.phone,
+    message: fl.message || base.message, send: fl.send || base.send, sending: fl.sending || base.sending,
+    success: fl.success || base.success, error: fl.error || base.error,
+  }
+
+  const InfoRow = ({ icon: Icon, children }: { icon: typeof MapPin; children: React.ReactNode }) => (
+    <div className="flex items-start gap-3.5">
+      <span className="mt-0.5 inline-flex h-10 w-10 shrink-0 items-center justify-center rounded-xl" style={{ backgroundColor: 'var(--site-accent-soft)', color: 'var(--site-accent)' }}>
+        <Icon className="w-[1.15rem] h-[1.15rem]" />
+      </span>
+      <div className="text-[0.975rem] leading-relaxed pt-1.5" style={{ color: 'var(--site-ink)' }}>{children}</div>
+    </div>
+  )
+
   return (
-    <section id="contact" className={SECTION} style={{ backgroundColor: 'var(--site-ink)' }}>
-      <div className="max-w-3xl mx-auto px-6 text-center text-white">
-        <h2 className="text-[clamp(1.9rem,4vw,3rem)] font-semibold leading-[1.1] tracking-[-0.02em]" style={HEADING_STYLE}>{heading}</h2>
-        {body && <p className={`mt-6 ${LEAD} text-white/75 max-w-xl mx-auto`}>{body}</p>}
-        {locations.length > 0 && <p className="mt-7 text-[1rem] text-white/60">{locations.join('  ·  ')}</p>}
-        {links.length > 0 && (
-          <div className="mt-9 flex flex-wrap justify-center gap-3">
-            {links.map((l, i) => (
-              <a
-                key={i}
-                href={l.href}
-                className="rounded-full border border-white/20 px-6 py-2.5 text-[0.92rem] text-white/90 hover:bg-white/10 transition-colors"
-              >
-                {l.label}
-              </a>
-            ))}
+    <section id="contact" className={SECTION} style={{ backgroundColor: 'var(--site-surface)' }}>
+      <div className={CONTAINER}>
+        <SectionHeading eyebrow={eyebrow} heading={heading} intro={body} />
+        <div className="mt-12 grid lg:grid-cols-2 gap-10 lg:gap-14 items-start">
+          {/* Sol: iletişim bilgileri + harita */}
+          <div className="space-y-5">
+            {(address || (!address && locations.length > 0)) && (
+              <InfoRow icon={MapPin}>{address || locations.join(' · ')}</InfoRow>
+            )}
+            {phone && <InfoRow icon={Phone}><a href={`tel:${phone.replace(/\s+/g, '')}`} className="hover:underline">{phone}</a></InfoRow>}
+            {email && <InfoRow icon={Mail}><a href={`mailto:${email}`} className="hover:underline">{email}</a></InfoRow>}
+            {hours && <InfoRow icon={Clock}>{hours}</InfoRow>}
+            {links.length > 0 && (
+              <div className="flex flex-wrap gap-2.5 pt-1">
+                {links.map((l, i) => (
+                  <a key={i} href={l.href} className="rounded-full border border-black/[0.12] px-5 py-2 text-[0.9rem] hover:bg-black/[0.03] transition-colors" style={{ color: 'var(--site-ink)' }}>{l.label}</a>
+                ))}
+              </div>
+            )}
+            {mapsSrc && (
+              <div className="mt-2 overflow-hidden rounded-2xl ring-1 ring-black/[0.06] aspect-[16/10]">
+                <iframe src={mapsSrc} title={mapQuery} loading="lazy" referrerPolicy="no-referrer-when-downgrade" className="w-full h-full border-0" />
+              </div>
+            )}
           </div>
-        )}
+
+          {/* Sağ: gerçek iletişim formu (websiteId render anında enjekte edilir) */}
+          {websiteId ? (
+            <ContactForm websiteId={websiteId} labels={formLabels} />
+          ) : (
+            <div className="rounded-2xl bg-white ring-1 ring-black/[0.06] p-8 text-center text-[0.95rem] text-black/55">{body || formLabels.message}</div>
+          )}
+        </div>
       </div>
     </section>
   )
@@ -528,60 +584,83 @@ export function FooterSection({ content }: { content: Dict }) {
   const note = str(content.note)
   const tagline = str(content.tagline)
   const nav = navLinks(content.nav)
+  const serviceLinks = navLinks(content.serviceLinks)
   const social = navLinks(content.links)
   const locations = strArr(content.locations)
+  const address = str(content.address)
+  const phone = str(content.phone)
+  const email = str(content.email)
+  const hours = str(content.hours)
   const pagesLabel = str(content.pagesLabel, 'Sayfalar')
   const contactLabel = str(content.contactLabel, 'İletişim')
+  const servicesLabel = str(content.servicesLabel, 'Hizmetler')
+  const contactLines = [address || (locations.length ? locations.join(' · ') : ''), phone, email, hours].filter(Boolean)
+
   return (
-    <footer className="border-t border-black/[0.06] bg-black/[0.015]">
+    <footer style={{ backgroundColor: 'var(--site-ink)' }} className="text-white">
       <div className={`${CONTAINER} py-16`}>
         <div className="grid gap-10 sm:grid-cols-2 lg:grid-cols-12">
-          <div className="lg:col-span-5 max-w-sm">
+          {/* Marka */}
+          <div className="lg:col-span-4 max-w-sm">
             <div className="flex items-center gap-2.5">
               {logoUrl ? (
                 // eslint-disable-next-line @next/next/no-img-element
                 <img src={logoUrl} alt={brand} className="h-9 w-auto max-w-[160px] object-contain" />
               ) : (
-                <span
-                  className="inline-flex h-9 w-9 items-center justify-center rounded-lg text-white text-sm font-bold"
-                  style={{ backgroundColor: 'var(--site-accent)' }}
-                >
+                <span className="inline-flex h-9 w-9 items-center justify-center rounded-lg text-white text-sm font-bold" style={{ backgroundColor: 'var(--site-accent)' }}>
                   {brand.charAt(0).toUpperCase()}
                 </span>
               )}
-              <span className="text-[1.1rem] font-semibold" style={{ color: 'var(--site-ink)', ...HEADING_STYLE }}>{brand}</span>
+              <span className="text-[1.1rem] font-semibold text-white" style={HEADING_STYLE}>{brand}</span>
             </div>
-            {tagline && <p className="mt-4 text-[0.95rem] text-black/55" style={{ lineHeight: 1.7 }}>{tagline}</p>}
+            {tagline && <p className="mt-4 text-[0.95rem] text-white/60" style={{ lineHeight: 1.7 }}>{tagline}</p>}
+            {social.length > 0 && (
+              <div className="mt-5 flex flex-wrap gap-x-4 gap-y-2">
+                {social.map((l, i) => (
+                  <a key={i} href={l.href} className="text-[0.88rem] text-white/55 hover:text-white transition-colors">{l.label}</a>
+                ))}
+              </div>
+            )}
           </div>
 
+          {/* Sayfalar */}
           {nav.length > 0 && (
-            <div className="lg:col-span-3">
-              <h4 className="text-[0.72rem] font-semibold uppercase tracking-[0.12em] text-black/40">{pagesLabel}</h4>
+            <div className="lg:col-span-2">
+              <h4 className="text-[0.72rem] font-semibold uppercase tracking-[0.12em] text-white/40">{pagesLabel}</h4>
               <ul className="mt-4 space-y-3">
                 {nav.map((l, i) => (
-                  <li key={i}>
-                    <a href={l.href} className="text-[0.95rem] text-black/60 hover:text-black transition-colors">{l.label}</a>
-                  </li>
+                  <li key={i}><a href={l.href} className="text-[0.95rem] text-white/65 hover:text-white transition-colors">{l.label}</a></li>
                 ))}
               </ul>
             </div>
           )}
 
-          {(locations.length > 0 || social.length > 0) && (
-            <div className="lg:col-span-4">
-              <h4 className="text-[0.72rem] font-semibold uppercase tracking-[0.12em] text-black/40">{contactLabel}</h4>
-              {locations.length > 0 && <p className="mt-4 text-[0.95rem] text-black/60" style={{ lineHeight: 1.7 }}>{locations.join('  ·  ')}</p>}
-              {social.length > 0 && (
-                <div className="mt-4 flex flex-wrap gap-x-4 gap-y-2">
-                  {social.map((l, i) => (
-                    <a key={i} href={l.href} className="text-[0.9rem] text-black/55 hover:text-black transition-colors">{l.label}</a>
-                  ))}
-                </div>
-              )}
+          {/* Hizmetler */}
+          {serviceLinks.length > 0 && (
+            <div className="lg:col-span-3">
+              <h4 className="text-[0.72rem] font-semibold uppercase tracking-[0.12em] text-white/40">{servicesLabel}</h4>
+              <ul className="mt-4 space-y-3">
+                {serviceLinks.slice(0, 6).map((l, i) => (
+                  <li key={i}><a href={l.href} className="text-[0.95rem] text-white/65 hover:text-white transition-colors">{l.label}</a></li>
+                ))}
+              </ul>
+            </div>
+          )}
+
+          {/* İletişim */}
+          {contactLines.length > 0 && (
+            <div className="lg:col-span-3">
+              <h4 className="text-[0.72rem] font-semibold uppercase tracking-[0.12em] text-white/40">{contactLabel}</h4>
+              <div className="mt-4 space-y-2.5 text-[0.92rem] text-white/65" style={{ lineHeight: 1.6 }}>
+                {address || locations.length ? <p>{address || locations.join(' · ')}</p> : null}
+                {phone && <p><a href={`tel:${phone.replace(/\s+/g, '')}`} className="hover:text-white transition-colors">{phone}</a></p>}
+                {email && <p><a href={`mailto:${email}`} className="hover:text-white transition-colors">{email}</a></p>}
+                {hours && <p className="text-white/50">{hours}</p>}
+              </div>
             </div>
           )}
         </div>
-        <div className="mt-14 pt-6 border-t border-black/[0.06] text-[0.85rem] text-black/45">
+        <div className="mt-14 pt-6 border-t border-white/10 text-[0.85rem] text-white/45">
           {note || `© ${brand}`}
         </div>
       </div>

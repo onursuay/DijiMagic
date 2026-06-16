@@ -18,7 +18,13 @@ export interface StockImage {
   height: number
   source: 'freepik' | 'pexels' | 'unsplash' | 'pixabay'
   attribution?: string
+  /** Görselin alt metni — CJK (Çince/Japonca/Korece) içerenler elenir (görselde yabancı yazı olasılığı). */
+  alt?: string
 }
+
+/** Alt metninde CJK karakter olan görselleri ele (Çince yazılı stok fotoğrafları azaltmak için). */
+const CJK_RE = /[　-〿぀-ヿ㐀-䶿一-鿿가-힯＀-￯]/
+const hasCJK = (s?: string): boolean => Boolean(s && CJK_RE.test(s))
 
 export function isStockReady(): boolean {
   return Boolean(
@@ -71,9 +77,9 @@ async function searchPexels(query: string, count: number): Promise<StockImage[]>
   const key = process.env.PEXELS_API_KEY
   if (!key) return []
   const data = (await fetchJson(
-    `https://api.pexels.com/v1/search?query=${encodeURIComponent(query)}&per_page=${count}&orientation=landscape`,
+    `https://api.pexels.com/v1/search?query=${encodeURIComponent(query)}&per_page=${count}&orientation=landscape&locale=en-US`,
     { headers: { Authorization: key } },
-  )) as { photos?: { src?: { large2x?: string; large?: string; medium?: string }; width?: number; height?: number; photographer?: string }[] } | null
+  )) as { photos?: { src?: { large2x?: string; large?: string; medium?: string }; width?: number; height?: number; photographer?: string; alt?: string }[] } | null
   if (!data?.photos) return []
   return data.photos
     .map((p) => ({
@@ -83,6 +89,7 @@ async function searchPexels(query: string, count: number): Promise<StockImage[]>
       height: p.height ?? 800,
       source: 'pexels' as const,
       attribution: p.photographer,
+      alt: p.alt,
     }))
     .filter((x) => x.url)
 }
@@ -131,8 +138,11 @@ export async function searchStock(query: string, count = 5): Promise<StockImage[
   const q = query.trim()
   if (!q) return []
   for (const provider of [searchFreepik, searchPexels, searchUnsplash, searchPixabay]) {
-    const res = await provider(q, count)
-    if (res.length) return res
+    const raw = await provider(q, count)
+    if (!raw.length) continue
+    // CJK alt'lı görselleri ele; ama HEPSİ elenirse görselsiz bırakmaktansa orijinali döndür.
+    const clean = raw.filter((img) => !hasCJK(img.alt))
+    return clean.length ? clean : raw
   }
   return []
 }

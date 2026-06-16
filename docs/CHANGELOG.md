@@ -2,6 +2,19 @@
 
 ---
 
+## 2026-06-16 — Web Site Yöneticisi Faz A: "gerçek çalışan site" (form/harita/hamburger/footer + önizleme 404 fix)
+- **Sorun (kullanıcı testi):** Önizlemede menü 404/yanlış sayfa; stok görsellerde Çince yazı; içerik/footer zayıf; mobilde hamburger menü yok; iletişim sayfasında form/iletişim alanı yok.
+- **Kök neden (404/menü):** Üretilen menü `/s/<altalan>/…` (yayın) kullanıyordu; `/s/` sayfaları yalnız YAYINLANMIŞ siteyi gösterir → taslak önizlemede `notFound()`.
+- **Çözüm (A1-A6):**
+  - **A1 önizleme menü/404 fix:** `SiteRenderer`'a `previewId` — önizlemede `/s/…` linkleri `/website-preview/<id>?slug=…&locale=…`'a çevrilir (menü/CTA/footer-hizmet/logo); yayında `/s/` korunur.
+  - **A2 mobil hamburger:** yeni client island `MobileNav` (açılır menü + scroll lock); masaüstü menü korunur.
+  - **A3 gerçek iletişim sayfası:** `ContactForm` island (ad/e-posta/telefon/mesaj) → `POST /api/website/[id]/contact` (public; honeypot + IP rate-limit + gövde sınırı) → site sahibinin e-postasına (`contactNotify`, Resend, replyTo=ziyaretçi). Anahtarsız Google Maps embed + iletişim bilgileri.
+  - **A4 zengin footer:** koyu, 4 kolon (marka+sosyal | Sayfalar | Hizmetler | İletişim).
+  - **A5 Çince görsel filtresi:** Pexels `locale=en-US` + CJK alt-metin filtresi (hepsi elenirse orijinale düşer).
+  - **A6 içerik:** AI prompt güçlendirildi (zayıf/jenerik içerik yasağı, dolu açıklamalar). Form/menü/footer etiketleri üretilen site dilinde (`SiteLabels` TR+EN); eski sitelerde locale-bilinçli fallback.
+  - **Adversarial review** (34 ham → 17 doğrulanmış): e-posta header injection (subject CRLF), rate-limit, locale-koruma, logo home linki düzeltildi.
+- **Dosyalar:** lib/website/render/{SiteRenderer,sections}.tsx, components/website/render/{MobileNav,ContactForm}.tsx, app/api/website/[id]/contact/route.ts, lib/website/{contactNotify,ai/generate,templates/deterministic,stock/index}.ts, app/website-preview/[id]/page.tsx, docs/superpowers/specs/2026-06-16-web-site-yoneticisi-faz-a-gercek-site.md
+
 ## 2026-06-16 — Web Site Yöneticisi: tek-ekran wizard + Firecrawl referans tarama + Onayla/Reddet/Düzenle review
 - **İstek:** (1) "Yeni Site" formu ile "Sitenizi tarif edin" alanı tek ekranda olsun. (2) "AI ile Oluştur" referans siteleri tarayıp (Firecrawl) header/footer/layout/sayfa dahil en yakın tasarımı üretsin; kullanıcı açıklaması taramayla birlikte değerlendirilsin. (3) Site hazır olunca ayrı sayfada detaylı + responsive önizleme + Onayla/Reddet/Düzenle. (4) Reddet/Düzenle revize mekanizması (akış tasarlandı).
 - **Çözüm:**
