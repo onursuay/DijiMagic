@@ -27,7 +27,17 @@ function rateLimited(ip: string): boolean {
   return false
 }
 function clientIp(req: NextRequest): string {
-  return (req.headers.get('x-forwarded-for')?.split(',')[0] || req.headers.get('x-real-ip') || 'unknown').trim()
+  // GÜVENLİK: x-forwarded-for'un İLK değeri caller tarafından spoof edilebilir (Vercel gerçek IP'yi
+  // SONA ekler) → rate-limit atlatılır. Vercel x-real-ip'i doğrulanmış TCP bağlantısından yazar
+  // (caller ezemez) → onu öncele; yoksa x-forwarded-for'un SON (Vercel'in eklediği) elemanını al.
+  const xri = req.headers.get('x-real-ip')
+  if (xri) return xri.trim()
+  const xff = req.headers.get('x-forwarded-for')
+  if (xff) {
+    const parts = xff.split(',').map((s) => s.trim()).filter(Boolean)
+    if (parts.length) return parts[parts.length - 1]
+  }
+  return 'unknown'
 }
 
 export async function POST(req: NextRequest, { params }: { params: { id: string } }) {
