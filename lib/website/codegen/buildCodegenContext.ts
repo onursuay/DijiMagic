@@ -7,23 +7,16 @@ import 'server-only'
  * against prompt injection before passing it to the AI.
  *
  * ── Scoping / cross-business-leak prevention ──────────────────────────────
- * generate.ts (the legacy engine at lib/website/ai/generate.ts) calls:
+ * CLAUDE.md "SEO Makale Üretimi — Bağlam Kapsamı" documents a KRİTİK class
+ * of cross-business leaks: the legacy generate.ts always calls
+ * getProfileByUserId / getIntelligenceByUserId (global, userId-scoped),
+ * which can leak a DIFFERENT business's brand text when a multi-business user
+ * (YOAI_PER_ACCOUNT_SCOPE) has an unrelated business as their global profile.
  *
- *   const [profile, intelligence] = await Promise.all([
- *     getProfileByUserId(user.id),
- *     getIntelligenceByUserId(user.id),
- *   ])
- *
- * and then reads site-specific fields from `site.theme` (style, fontHref,
- * logoUrl, referenceUrls, initialInstructions). There is no per-site profile
- * scoping in the existing engine — it always uses the single global profile
- * tied to the userId.
- *
- * We replicate exactly that behaviour here (no regression, no improvement).
- * The CLAUDE.md note about cross-business leakage applies to the SEO module
- * (topicSelector.ts), which does use siteConnectionId scoping. The website
- * generator has always used the global profile; we mirror that and document
- * the finding in the task report.
+ * This module applies the correct scoping rule (see buildCodegenContext below):
+ *   PRIMARY  → site-scoped referenceUrls scrape content (this site's own URLs)
+ *   FALLBACK → global profile/intelligence, only when the site has no usable
+ *              reference-URL scrape content.
  *
  * ── Quarantine ────────────────────────────────────────────────────────────
  * Any external text (profile, intelligence, reference-URL scrape summaries)
@@ -114,10 +107,27 @@ function summariseIntelligence(
 /**
  * Build the Stage-0 CodegenContext.
  *
- * Mirrors generate.ts data access exactly:
- *   - Profile + intelligence: global getProfileByUserId / getIntelligenceByUserId (userId-scoped)
- *   - Site-specific fields:   website.theme (style, fontHref, logoUrl, referenceUrls, initialInstructions)
- *   - Locale:                 website.defaultLocale
+ * ── Source priority (cross-business-leak prevention) ─────────────────────
+ * CLAUDE.md "SEO Makale Üretimi — Bağlam Kapsamı" documents a KRİTİK class
+ * of cross-business leak bugs: when a multi-business user (YOAI_PER_ACCOUNT_SCOPE)
+ * has a DIFFERENT business registered as their global profile, global
+ * getProfileByUserId / getIntelligenceByUserId would leak that other business's
+ * brand text into THIS site's generation context.
+ *
+ * Rule applied here:
+ *   PRIMARY   — site-specific brand text: scanned referenceUrls content (scraped
+ *               directly from this site's own URLs, so always site-scoped).
+ *   FALLBACK  — global profile/intelligence (userId-scoped, potentially a
+ *               different business) — only when the site has NO usable reference-
+ *               URL scrape content (refSummaries is empty or all-blank).
+ *
+ * Signal used: `refSummaries.some(s => s.trim())` — at least one non-blank
+ * reference-URL scrape block means we have site-specific brand content.
+ *
+ * ── Other fields ──────────────────────────────────────────────────────────
+ *   - Site-specific fields: website.theme (style, fontHref, logoUrl,
+ *                           referenceUrls, initialInstructions)
+ *   - Locale:               website.defaultLocale
  *
  * External sources are wrapped in wrapUntrusted(). User instruction is separate.
  */
@@ -127,23 +137,33 @@ export async function buildCodegenContext(
 ): Promise<CodegenContext> {
   const theme = website.theme ?? {}
 
-  // ── Data access (mirrors generate.ts exactly) ──────────────────────────
-  const [profile, intelligence] = await Promise.all([
-    getProfileByUserId(userId),
-    getIntelligenceByUserId(userId),
-  ])
-
-  // Reference-URL scrape summaries (same call generate.ts makes)
+  // Reference-URL scrape summaries — SITE-SCOPED (scraped from this site's own URLs).
+  // We run this first because it determines whether the global profile is needed.
   const referenceUrls = theme.referenceUrls ?? []
   const refSummaries: string[] = referenceUrls.length
     ? await scanReferences(referenceUrls)
     : []
 
+  // Does this site have usable site-specific brand content?
+  // At least one non-blank reference-URL block = site speaks for itself.
+  const hasSiteSpecificContent = refSummaries.some((s) => s.trim())
+
+  // ── Global profile / intelligence (last-resort fallback only) ──────────
+  // Only fetched when the site has NO site-specific reference-URL content.
+  // Skipped when site content exists to prevent cross-business brand leak
+  // (CLAUDE.md: "SEO Makale Üretimi — Bağlam Kapsamı / KRİTİK").
+  const [profile, intelligence] = hasSiteSpecificContent
+    ? [null, null]
+    : await Promise.all([
+        getProfileByUserId(userId),
+        getIntelligenceByUserId(userId),
+      ])
+
   // ── Trusted instruction (user's own intent) ────────────────────────────
   const instruction = clean(theme.initialInstructions)
 
   // ── Brand name ─────────────────────────────────────────────────────────
-  // Prefer site label > profile company name > generic fallback
+  // Prefer site label > profile company name (global fallback) > generic
   const brandName =
     clean(website.label) ||
     clean(profile?.company_name) ||
@@ -152,6 +172,7 @@ export async function buildCodegenContext(
   // ── Untrusted blocks (external, attacker-influenceable text) ───────────
   const untrustedBlocks: string[] = []
 
+  // Global profile/intelligence blocks — only present when used as fallback
   const profileText = summariseProfile(profile)
   if (profileText) {
     untrustedBlocks.push(wrapUntrusted('brand_profile', profileText))
@@ -162,6 +183,7 @@ export async function buildCodegenContext(
     untrustedBlocks.push(wrapUntrusted('brand_intelligence', intelText))
   }
 
+  // Site-specific reference-URL scrape blocks (always site-scoped)
   refSummaries.forEach((summary, idx) => {
     if (summary.trim()) {
       untrustedBlocks.push(wrapUntrusted(`reference_url_${idx + 1}`, summary))
