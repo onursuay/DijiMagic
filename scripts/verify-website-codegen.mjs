@@ -190,3 +190,71 @@ assert.ok(
 )
 
 console.log('tailwind OK')
+
+// ---------------------------------------------------------------------------
+// ASSEMBLE section — full document assembly
+// ---------------------------------------------------------------------------
+
+// Load the core assemble module directly (single source of truth)
+const assembleDocumentPath = path.join(__dirname, '../lib/website/codegen/assembleDocument.mjs')
+const { assembleDocument } = await import(assembleDocumentPath)
+
+const sampleBody = '<section class="flex p-4"><h1 class="text-3xl">Hello</h1></section>'
+const sampleDesignVars = { '--brand-500': '#059669' }
+
+// A1 — serve mode: correct structure, external runtime, no inline script content
+const serveDoc = await assembleDocument({
+  bodyHtml: sampleBody,
+  designVars: sampleDesignVars,
+  seo: { title: 'Test Site', description: 'A test site' },
+  lang: 'tr',
+  fontHref: null,
+  mode: 'serve',
+})
+
+assert.ok(serveDoc.includes('<!doctype html'), `FAIL A1: missing <!doctype html — got start: ${serveDoc.slice(0, 200)}`)
+
+// Exactly ONE <title> tag
+const titleMatches = (serveDoc.match(/<title/g) || []).length
+assert.strictEqual(titleMatches, 1, `FAIL A1: expected exactly 1 <title>, got ${titleMatches}`)
+
+assert.ok(serveDoc.includes('<meta name="viewport"'), `FAIL A1: missing viewport meta`)
+assert.ok(serveDoc.includes('</html>'), `FAIL A1: missing </html>`)
+assert.ok(serveDoc.includes('<script src="/yoai-site-runtime.js"'), `FAIL A1: missing external runtime script tag`)
+
+// serve mode must NOT contain the inlined runtime code
+assert.ok(!serveDoc.includes('yoai-site-runtime v1'), `FAIL A1: serve mode must not inline runtime — found marker 'yoai-site-runtime v1'`)
+
+// A2 — preview mode: inlined runtime, no external src reference for runtime
+const previewDoc = await assembleDocument({
+  bodyHtml: sampleBody,
+  designVars: sampleDesignVars,
+  seo: { title: 'Preview', description: 'Preview mode' },
+  lang: 'en',
+  fontHref: 'https://fonts.googleapis.com/css2?family=Inter:wght@400;600&display=swap',
+  mode: 'preview',
+})
+
+assert.ok(previewDoc.includes('yoai-site-runtime v1'), `FAIL A2: preview mode must contain inlined runtime marker 'yoai-site-runtime v1'`)
+assert.ok(!previewDoc.includes('<script src="/yoai-site-runtime.js"'), `FAIL A2: preview mode must not use external runtime script src`)
+assert.ok(previewDoc.includes('fonts.googleapis.com'), `FAIL A2: fontHref not included in preview mode`)
+
+// A3 — HTML escaping: AI-generated title with HTML/attr special chars
+const xssTitle = '<b>Acme & "Co"</b>'
+const escapedDoc = await assembleDocument({
+  bodyHtml: '<p>safe</p>',
+  designVars: {},
+  seo: { title: xssTitle, description: 'Desc with <b> & "quotes"' },
+  lang: 'tr',
+  fontHref: null,
+  mode: 'serve',
+})
+
+// Raw unescaped <b> must NOT appear as a real tag in the title context
+// (The body content may have sanitized versions but the SEO title text
+//  must not render raw angle brackets)
+assert.ok(!escapedDoc.includes('<title><b>'), `FAIL A3: title must escape <b> — raw tag present`)
+assert.ok(escapedDoc.includes('&lt;b&gt;'), `FAIL A3: title must contain &lt;b&gt; — escaping missing`)
+assert.ok(escapedDoc.includes('&amp;'), `FAIL A3: title must escape & as &amp;`)
+
+console.log('assemble OK')
