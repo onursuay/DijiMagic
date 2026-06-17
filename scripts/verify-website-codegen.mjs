@@ -521,6 +521,8 @@ const {
   toDesignVars,
   resolveImagePlaceholders,
   buildHtmlSystemPrompt,
+  buildRepairUserMessage,
+  repairInstructionFor,
   DESIGN_VAR_NAMES,
   FALLBACK_IMAGE,
 } = await import(htmlGeneratePath)
@@ -584,3 +586,87 @@ assert.ok(!h6.includes('javascript:'), `FAIL H6: unsafe url leaked — got: ${h6
 assert.ok(h6.includes('data:image/svg+xml'), `FAIL H6: fallback not used for unsafe url — got: ${h6}`)
 
 console.log('htmlgen OK')
+
+// ---------------------------------------------------------------------------
+// ORCHESTRATOR section — Task 13 self-repair (repairInstructionFor + message)
+//
+// generateHtmlSite.ts itself is TS + server-only (live Opus call) and is
+// exercised e2e at Task 18. Here we assert the PURE, deterministic glue:
+//   - repairInstructionFor(reason) is non-empty, on-topic, distinct per reason.
+//   - buildRepairUserMessage reuses the first-pass message + injects the directive
+//     + the previous body (so the repair stays on the same var/IMG contract).
+// ---------------------------------------------------------------------------
+
+const REPAIR_REASONS = [
+  'no_h1',
+  'multiple_h1',
+  'no_landmark',
+  'too_large',
+  'forbidden_remnant',
+  'parse_error',
+]
+
+// O1 — each reason yields a non-empty, trimmed instruction
+const repairInstr = {}
+for (const reason of REPAIR_REASONS) {
+  const instr = repairInstructionFor(reason)
+  assert.ok(
+    typeof instr === 'string' && instr.trim().length > 10,
+    `FAIL O1: repairInstructionFor('${reason}') must be a non-empty instruction — got: ${JSON.stringify(instr)}`,
+  )
+  repairInstr[reason] = instr
+}
+
+// O2 — instructions are DISTINCT across reasons (no copy-paste duplicates)
+const distinctInstr = new Set(Object.values(repairInstr))
+assert.strictEqual(
+  distinctInstr.size,
+  REPAIR_REASONS.length,
+  `FAIL O2: repair instructions are not all distinct — got: ${JSON.stringify(repairInstr)}`,
+)
+
+// O3 — instructions are ON-TOPIC for their reason
+assert.ok(/h1/i.test(repairInstr['no_h1']), `FAIL O3: no_h1 instruction must mention h1 — got: ${repairInstr['no_h1']}`)
+assert.ok(/h1/i.test(repairInstr['multiple_h1']), `FAIL O3: multiple_h1 instruction must mention h1 — got: ${repairInstr['multiple_h1']}`)
+assert.ok(
+  /landmark|header|nav|main|footer/i.test(repairInstr['no_landmark']),
+  `FAIL O3: no_landmark instruction must mention a landmark — got: ${repairInstr['no_landmark']}`,
+)
+assert.ok(
+  /shorten|reduce|too large|size|smaller|trim/i.test(repairInstr['too_large']),
+  `FAIL O3: too_large instruction must mention shortening/size — got: ${repairInstr['too_large']}`,
+)
+assert.ok(
+  /script|on\*|handler|on\.\.\./i.test(repairInstr['forbidden_remnant']),
+  `FAIL O3: forbidden_remnant instruction must mention script/handler — got: ${repairInstr['forbidden_remnant']}`,
+)
+assert.ok(
+  /valid|parse|well-formed|markup/i.test(repairInstr['parse_error']),
+  `FAIL O3: parse_error instruction must mention valid/parse/well-formed — got: ${repairInstr['parse_error']}`,
+)
+
+// O4 — unknown reason falls back to a generic (non-empty, distinct-ish) directive
+const generic = repairInstructionFor('something_unexpected')
+assert.ok(
+  typeof generic === 'string' && generic.trim().length > 10,
+  `FAIL O4: default repair instruction must be non-empty — got: ${JSON.stringify(generic)}`,
+)
+
+// O5 — buildRepairUserMessage reuses var/IMG contract + injects directive + previous body
+const repairCtx = { brandName: 'Acme', locale: 'tr', instruction: '', untrustedBlocks: [] }
+const prevBody = '<main><p data-marker="prev-body-123">old content</p></main>'
+const repairMsg = buildRepairUserMessage(repairCtx, SAFE_DEFAULT_DESIGN_SYSTEM, prevBody, 'no_h1')
+assert.ok(
+  repairMsg.includes(repairInstr['no_h1']),
+  `FAIL O5: repair message must include the no_h1 directive`,
+)
+assert.ok(
+  repairMsg.includes('prev-body-123'),
+  `FAIL O5: repair message must include the previous body to fix`,
+)
+assert.ok(
+  /\{\{IMG:/.test(repairMsg) || /var\(--/.test(repairMsg) || repairMsg.includes('Acme'),
+  `FAIL O5: repair message must reuse the first-pass scaffolding (brand/var/IMG contract)`,
+)
+
+console.log('orchestrator OK')

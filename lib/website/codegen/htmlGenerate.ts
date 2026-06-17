@@ -46,6 +46,12 @@ interface HtmlGenCore {
   ) => Promise<string>
   buildHtmlSystemPrompt: () => string
   buildHtmlUserMessage: (ctx: CodegenContext, ds: DesignSystem) => string
+  buildRepairUserMessage: (
+    ctx: CodegenContext,
+    ds: DesignSystem,
+    previousBody: string,
+    reason: string,
+  ) => string
   cleanGeneratedHtml: (raw: string) => string
   FALLBACK_IMAGE: string
 }
@@ -63,6 +69,7 @@ async function loadCore(): Promise<HtmlGenCore> {
     resolveImagePlaceholders: mod.resolveImagePlaceholders as HtmlGenCore['resolveImagePlaceholders'],
     buildHtmlSystemPrompt: mod.buildHtmlSystemPrompt as HtmlGenCore['buildHtmlSystemPrompt'],
     buildHtmlUserMessage: mod.buildHtmlUserMessage as HtmlGenCore['buildHtmlUserMessage'],
+    buildRepairUserMessage: mod.buildRepairUserMessage as HtmlGenCore['buildRepairUserMessage'],
     cleanGeneratedHtml: mod.cleanGeneratedHtml as HtmlGenCore['cleanGeneratedHtml'],
     FALLBACK_IMAGE: mod.FALLBACK_IMAGE as string,
   }
@@ -132,13 +139,49 @@ export async function generateHomePageHtml(
   ctx: CodegenContext,
   ds: DesignSystem,
 ): Promise<RawBodyHtml> {
+  const core = await loadCore()
+  return streamBodyHtml(core.buildHtmlSystemPrompt(), core.buildHtmlUserMessage(ctx, ds), core)
+}
+
+/**
+ * Stage-3 SELF-REPAIR (Task 13): ONE targeted retry of the body HTML.
+ *
+ * Same constraints + same scaffolding as generateHomePageHtml:
+ *   - identical Opus 4.8 streaming call (NO temperature/top_p/top_k/budget_tokens;
+ *     thinking:{type:'adaptive'}; output_config:{effort:'high'}; finalMessage()).
+ *   - reuses the SAME system prompt (var contract / data-yoai-* / {{IMG:}} rules).
+ *   - reuses the SAME {{IMG:query}} resolution + cleanGeneratedHtml.
+ * The user message is buildRepairUserMessage(): the first-pass message PLUS a
+ * SHORT directive derived from the gate reason + the previous (rejected) body.
+ *
+ * @returns the repaired body-only HTML string (images already resolved).
+ * @throws  if Anthropic is not configured, the call fails, or output is empty.
+ *          The orchestrator (generateHtmlSite) catches and reports ok:false.
+ */
+export async function repairHomePageHtml(
+  ctx: CodegenContext,
+  ds: DesignSystem,
+  previousBody: string,
+  reason: string,
+): Promise<RawBodyHtml> {
+  const core = await loadCore()
+  const user = core.buildRepairUserMessage(ctx, ds, previousBody, reason)
+  return streamBodyHtml(core.buildHtmlSystemPrompt(), user, core)
+}
+
+/**
+ * Shared Opus 4.8 streaming call — single setup used by BOTH the first pass and
+ * the self-repair. Keeping ONE call shape guarantees the repair can never drift
+ * from the proven constraints (no temperature/top_p/top_k/budget_tokens).
+ */
+async function streamBodyHtml(
+  system: string,
+  user: string,
+  core: HtmlGenCore,
+): Promise<RawBodyHtml> {
   if (!isAnthropicReady()) {
     throw new Error('[htmlGenerate] Anthropic not configured (ANTHROPIC_API_KEY missing)')
   }
-
-  const core = await loadCore()
-  const system = core.buildHtmlSystemPrompt()
-  const user = core.buildHtmlUserMessage(ctx, ds)
 
   let rawText = ''
   try {
