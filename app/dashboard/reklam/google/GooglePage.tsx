@@ -92,9 +92,15 @@ export default function GooglePage() {
   const onAccountSelected = useCallback(async () => {
     data.setTableError(null)
     kpis.fetchKpis()
-    if (activeTab === 'kampanyalar') await data.fetchCampaigns(kpis.dateFrom, kpis.dateTo)
-    else if (activeTab === 'reklam-gruplari') await data.fetchAdGroups(kpis.dateFrom, kpis.dateTo)
-    else await data.fetchAds(kpis.dateFrom, kpis.dateTo)
+    if (activeTab === 'kampanyalar') {
+      await data.fetchCampaigns(kpis.dateFrom, kpis.dateTo)
+    } else {
+      // Kampanyalar KPI kartları + ad-grubu/reklam görünürlük filtresi (enabledCampaignIds)
+      // için gereklidir → ad-grupları/reklamlar sekmesinde de arka planda çek.
+      data.fetchCampaigns(kpis.dateFrom, kpis.dateTo, undefined, true)
+      if (activeTab === 'reklam-gruplari') await data.fetchAdGroups(kpis.dateFrom, kpis.dateTo)
+      else await data.fetchAds(kpis.dateFrom, kpis.dateTo)
+    }
   }, [kpis, data, activeTab])
 
   const onInitReady = useCallback(async () => {
@@ -118,9 +124,17 @@ export default function GooglePage() {
   // Fetch data when tab changes
   useEffect(() => {
     if (!connection.selected || connection.selected.isManager) return
-    if (activeTab === 'kampanyalar') data.fetchCampaigns(kpis.dateFrom, kpis.dateTo)
-    else if (activeTab === 'reklam-gruplari') data.fetchAdGroups(kpis.dateFrom, kpis.dateTo)
-    else data.fetchAds(kpis.dateFrom, kpis.dateTo)
+    // Kampanyalar verisi HER sekmede gereklidir: KPI kartları ondan toplanır ve ad-grubu/
+    // reklam görünürlük filtresi (enabledCampaignIds) ona dayanır. Path-routing ile doğrudan
+    // /google-ads/reklam-gruplari veya /reklamlar URL'sine girilince kampanyalar yüklenmezse
+    // aktif satırlar boş kümeyle filtrelenip kaybolur (tablo skeleton'da takılı kalır).
+    if (activeTab === 'kampanyalar') {
+      data.fetchCampaigns(kpis.dateFrom, kpis.dateTo)
+    } else {
+      if (data.campaigns.length === 0) data.fetchCampaigns(kpis.dateFrom, kpis.dateTo, undefined, true)
+      if (activeTab === 'reklam-gruplari') data.fetchAdGroups(kpis.dateFrom, kpis.dateTo)
+      else data.fetchAds(kpis.dateFrom, kpis.dateTo)
+    }
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [activeTab, connection.selected?.customerId, connection.selected?.isManager])
 

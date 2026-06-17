@@ -2,6 +2,11 @@
 
 ---
 
+## 2026-06-17 — Google Ads: Reklam grupları ve reklamlar sekmesinde boş tablo düzeltmesi
+- **Sorun:** Google Ads'te "Reklam Grupları" ve "Reklamlar" sekmeleri boş görünüyordu (kalıcı skeleton + KPI'lar 0). Aktif kampanyada veri olmasına rağmen satır gelmiyordu. Path-routing (`feat(routing): Google Ads sekme path URL'leri`) ile sekme durumu artık URL'den türetiliyor; doğrudan `/google-ads/reklam-gruplari` veya `/reklamlar` URL'sine girilince sekme efekti yalnız o sekmenin verisini çekiyor, kampanyaları hiç çekmiyordu. `adGroupsToShow`/`adsToShow` ise satırları `enabledCampaignIds` (kampanya verisinden türetilir) ile filtrelediğinden, kampanyalar boş olunca tüm aktif satırlar eleniyordu.
+- **Çözüm:** Sekme-değişim efekti ve `onAccountSelected` artık ad-grupları/reklamlar sekmesinde de kampanyaları (yüklü değilse) arka planda çekiyor — `enabledCampaignIds` ve KPI kartları doluyor. Görünür tablo background refresh'ten etkilenmiyor (skeleton yalnız kampanyalar sekmesinde gösterilir).
+- **Dosyalar:** `app/dashboard/reklam/google/GooglePage.tsx`
+
 ## 2026-06-17 — Sosyal Medya: denetim sonrası sertleştirme (8 bulgu)
 - **Sorun:** Çok-ajanlı adversarial denetim 8 doğrulanmış kusur buldu.
 - **Çözüm:**
