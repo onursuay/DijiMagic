@@ -2,6 +2,8 @@ import { notFound } from 'next/navigation'
 import { getCurrentUser } from '@/lib/billing/user'
 import { getWebsite, getPages } from '@/lib/website/store'
 import SiteRenderer from '@/lib/website/render/SiteRenderer'
+import { assembleDocument } from '@/lib/website/codegen/assembleDocument'
+import { themeToDesignVars } from '@/lib/website/render/designVars'
 
 export const dynamic = 'force-dynamic'
 
@@ -36,5 +38,30 @@ export default async function WebsitePreviewPage({
   if (!page) {
     return <div style={{ padding: 48, fontFamily: 'system-ui', color: '#9ca3af', fontSize: 14 }}>—</div>
   }
+
+  // Codegen taslakları (format='html') sandboxlu bir iframe içinde render edilir:
+  // assembleDocument SERVER-ONLY (fs ile runtime'ı inline gömer) + async olduğundan bu
+  // server component içinde await edilip srcDoc'a string olarak verilir. Runtime inline olduğu
+  // için srcdoc same-origin fetch gerektirmez → sandbox YALNIZ 'allow-scripts' (izolasyon korunur,
+  // 'allow-same-origin' KASITLI olarak verilmez). 'sections' taslakları eskisi gibi SiteRenderer ile.
+  if (page.format === 'html') {
+    const doc = await assembleDocument({
+      bodyHtml: page.html ?? '',
+      designVars: themeToDesignVars(site.theme),
+      seo: page.seo ?? {},
+      lang: locale || site.defaultLocale,
+      fontHref: site.theme?.fontHref ?? null,
+      mode: 'preview',
+    })
+    return (
+      <iframe
+        srcDoc={doc}
+        sandbox="allow-scripts allow-forms"
+        className="w-full h-screen border-0"
+        title={page.seo?.title || site.label}
+      />
+    )
+  }
+
   return <SiteRenderer page={page} theme={site.theme} previewId={params.id} />
 }
