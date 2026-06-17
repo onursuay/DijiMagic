@@ -147,10 +147,16 @@ function cachedSystem(systemText: string): SystemBlock[] {
   return [{ type: 'text', text: systemText, cache_control: { type: 'ephemeral' } }]
 }
 
-/** Stable base ethos (CACHED) + per-page appendix (not cached). */
+/**
+ * Stable base ethos (CACHED) + per-page appendix (not cached).
+ * The base block keeps the trailing `\n\n` that the original single string had
+ * between the ethos and the appendix — the API concatenates system text blocks
+ * with NO separator, so folding it into the (still byte-stable) cached prefix
+ * makes the on-the-wire prompt byte-identical to `${base}\n\n${appendix}`.
+ */
 function cachedSystemWithAppendix(baseText: string, appendixText: string): SystemBlock[] {
   return [
-    { type: 'text', text: baseText, cache_control: { type: 'ephemeral' } },
+    { type: 'text', text: `${baseText}\n\n`, cache_control: { type: 'ephemeral' } },
     { type: 'text', text: appendixText },
   ]
 }
