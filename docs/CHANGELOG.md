@@ -2,6 +2,11 @@
 
 ---
 
+## 2026-06-17 — Web Site Yöneticisi: (sites) route group + /s/ provider izolasyonu
+- **Sorun:** Yayınlanan müşteri siteleri (`/s/<subdomain>`) root `app/layout.tsx` üzerinden render oluyor; dashboard provider'ları (NextIntlClientProvider, SubscriptionProvider, CreditProvider, RouteTracker, CookieConsent, AnalyticsScripts) bu sitelere gereksiz yere uygulanıyordu.
+- **Çözüm:** `middleware.ts`'e additive `x-pathname` request header eklendi (3 exit point). `app/layout.tsx`'e path-conditional dal eklendi: `/s/` ile başlayan path'lerde minimal tree (sıfır provider), diğerlerinde tam provider zinciri değişmeden. `app/(sites)/` route group oluşturuldu, sayfa dosyaları git mv ile taşındı.
+- **Dosyalar:** `app/layout.tsx`, `middleware.ts`, `app/(sites)/layout.tsx` (yeni), `app/(sites)/s/[subdomain]/page.tsx` (taşındı), `app/(sites)/s/[subdomain]/[slug]/page.tsx` (taşındı)
+
 ## 2026-06-17 — Yeni modül: Sosyal Medya Yönetimi (içerik takvimi + otomatik yayın)
 - **İstek:** Kullanıcıların görsel/video içeriklerini proje (kampanya) bazında planlayıp ileri bir tarih-saate zamanlayabildiği; zamanı gelince sistemin otomatik Instagram/Facebook'a (Akış/Reels/Hikaye) paylaştığı, Meta Business Suite "Planner" benzeri bir modül. Çoklu hedef (cross-post), başarısızlıkta yeniden deneme.
 - **Çözüm:**
