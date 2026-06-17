@@ -98,6 +98,23 @@ const r11 = sanitizeSiteHtml('<nav id="m" hidden><a href="#x">x</a></nav>')
 assert.ok(r11.includes('hidden'), `FAIL: hidden attr stripped — runtime nav contract broken — got: ${r11}`)
 assert.ok(/<nav[^>]*\bhidden\b/i.test(r11), `FAIL: hidden not present on <nav> — got: ${r11}`)
 
+// 12. Mobile-nav markup contract SURVIVES sanitize: the panel hooks
+//     (data-yoai-mobile-nav + data-yoai-mobile-anim, via the data-* glob) and the
+//     button/panel ARIA (aria-controls / aria-expanded / aria-label / aria-hidden)
+//     are all preserved. yoai-site-runtime.js drives open/close off these; if the
+//     sanitizer stripped them the Tailwind-proof mobile menu would break.
+const r12 = sanitizeSiteHtml(
+  '<button data-yoai-nav-toggle="mobilenav" aria-controls="mobilenav" aria-expanded="false" aria-label="Menü">x</button>' +
+  '<nav id="mobilenav" data-yoai-mobile-nav data-yoai-mobile-anim="left" aria-hidden="true" class="flex"><a href="#x">x</a></nav>',
+)
+assert.ok(r12.includes('data-yoai-mobile-nav'), `FAIL r12: data-yoai-mobile-nav stripped — got: ${r12}`)
+assert.ok(r12.includes('data-yoai-mobile-anim="left"'), `FAIL r12: data-yoai-mobile-anim stripped — got: ${r12}`)
+assert.ok(r12.includes('data-yoai-nav-toggle="mobilenav"'), `FAIL r12: data-yoai-nav-toggle stripped — got: ${r12}`)
+assert.ok(r12.includes('aria-controls="mobilenav"'), `FAIL r12: aria-controls stripped — got: ${r12}`)
+assert.ok(r12.includes('aria-expanded="false"'), `FAIL r12: aria-expanded stripped — got: ${r12}`)
+assert.ok(/aria-label="Men/i.test(r12), `FAIL r12: aria-label stripped — got: ${r12}`)
+assert.ok(r12.includes('aria-hidden="true"'), `FAIL r12: aria-hidden stripped — got: ${r12}`)
+
 // ---------------------------------------------------------------------------
 // NEW SECURITY REGRESSION TESTS
 // ---------------------------------------------------------------------------

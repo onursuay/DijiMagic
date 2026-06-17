@@ -20,9 +20,35 @@
  *   Clicking the element toggles class `is-open` on document.getElementById(value).
  *   Also toggles the `hidden` attribute and sets `aria-expanded` on the trigger.
  *
- * NAV TOGGLE  [data-yoai-nav-toggle="targetId"]
- *   Same as toggle but scoped to mobile nav intent.
- *   Sets `aria-expanded` on the trigger element.
+ * MOBILE NAV  [data-yoai-nav-toggle="panelId"]  +  panel [data-yoai-mobile-nav]
+ *   Tailwind-PROOF mobile menu. The hamburger button carries
+ *   data-yoai-nav-toggle="<panelId>" (+ aria-controls / aria-expanded). The
+ *   menu panel carries id="<panelId>" data-yoai-mobile-nav and an optional
+ *   slide direction data-yoai-mobile-anim ∈ "left" | "right" | "top"
+ *   (DEFAULT "left" if absent).
+ *
+ *   The panel may carry the AI's own Tailwind styling classes (background,
+ *   padding, even a display utility like flex/block/grid). Because a Tailwind
+ *   `.flex{display:flex}` rule OVERRIDES the `[hidden]{display:none}` user-agent
+ *   rule, hiding via the `hidden` attribute or a plain class is unreliable —
+ *   the panel would stay visible and the toggle would do nothing. So the runtime
+ *   NEVER uses the `hidden` attribute for the mobile panel. Instead it owns the
+ *   panel's visibility + slide purely through INLINE styles (highest specificity,
+ *   they beat any display class):
+ *     transition: transform .32s cubic-bezier(.4,0,.2,1), opacity .32s
+ *     closed → off-screen transform per data-yoai-mobile-anim:
+ *        left  → translateX(-100%)   right → translateX(100%)   top → translateY(-100%)
+ *        + opacity:0; pointer-events:none; aria-hidden="true"
+ *     open  → translateX(0)/translateY(0); opacity:1; pointer-events:auto;
+ *        aria-hidden="false"; trigger aria-expanded="true"
+ *   On init every panel is set to the CLOSED inline state, so it is reliably
+ *   hidden on load regardless of any Tailwind display class. Clicking the
+ *   hamburger toggles; clicking a link inside or pressing Escape closes.
+ *   prefers-reduced-motion: skip the slide — visibility flips instantly.
+ *
+ * NAV TOGGLE  [data-yoai-nav-toggle] (legacy fallback)
+ *   If the referenced target is NOT a [data-yoai-mobile-nav] panel, the trigger
+ *   falls back to the generic class/hidden toggle (back-compat for old markup).
  *
  * SMOOTH SCROLL  a[data-yoai-smooth][href^="#"]
  *   Intercepts click and smooth-scrolls to the target element.
@@ -180,33 +206,126 @@
     });
   }
 
-  /* ── Nav toggle ───────────────────────────────────────────────────────── */
-  function handleNavToggle(trigger) {
-    var targetId = trigger.getAttribute('data-yoai-nav-toggle');
-    if (!targetId) return;
-    var target = document.getElementById(targetId);
-    if (!target) return;
+  /* ── Mobile nav (Tailwind-proof inline-style slide) ───────────────────────
+   * The runtime owns the panel's visibility + slide transform via INLINE styles
+   * (highest specificity → beats any Tailwind flex/block/grid display class).
+   * The `hidden` attribute is intentionally NOT used for the mobile panel.
+   */
 
-    var isOpen = target.classList.contains('is-open');
-    if (isOpen) {
-      target.classList.remove('is-open');
-      target.setAttribute('hidden', '');
-      trigger.setAttribute('aria-expanded', 'false');
-    } else {
-      target.classList.add('is-open');
-      target.removeAttribute('hidden');
-      trigger.setAttribute('aria-expanded', 'true');
+  // Off-screen (closed) transform per slide direction. Default → left.
+  function closedTransformFor(anim) {
+    switch (anim) {
+      case 'right': return 'translateX(100%)';
+      case 'top':   return 'translateY(-100%)';
+      case 'left':
+      default:      return 'translateX(-100%)';
     }
   }
 
-  function initNavToggle() {
+  // Direction the panel is hidden in (read once, default left). Stored so we
+  // never re-read a stale/mutated attribute mid-animation.
+  function animFor(panel) {
+    var raw = (panel.getAttribute('data-yoai-mobile-anim') || '').trim().toLowerCase();
+    return (raw === 'right' || raw === 'top') ? raw : 'left';
+  }
+
+  // Apply the CLOSED inline state (off-screen + invisible + inert).
+  function closeMobilePanel(panel) {
+    if (!panel) return;
+    panel.style.opacity = '0';
+    panel.style.pointerEvents = 'none';
+    // Reduced motion: no slide, just flip visibility instantly.
+    panel.style.transform = reducedMotion ? '' : closedTransformFor(animFor(panel));
+    panel.setAttribute('aria-hidden', 'true');
+  }
+
+  // Apply the OPEN inline state (on-screen + visible + interactive).
+  function openMobilePanel(panel) {
+    if (!panel) return;
+    panel.style.opacity = '1';
+    panel.style.pointerEvents = 'auto';
+    panel.style.transform = reducedMotion ? '' : 'translate(0, 0)';
+    panel.setAttribute('aria-hidden', 'false');
+  }
+
+  function isMobilePanelOpen(panel) {
+    return panel.getAttribute('aria-hidden') === 'false';
+  }
+
+  function setExpanded(panelId, expanded) {
+    // Sync every trigger that controls this panel.
+    var triggers = document.querySelectorAll('[data-yoai-nav-toggle="' + panelId + '"]');
+    for (var i = 0; i < triggers.length; i++) {
+      triggers[i].setAttribute('aria-expanded', expanded ? 'true' : 'false');
+    }
+  }
+
+  function setMobilePanelState(panel, open) {
+    if (open) openMobilePanel(panel); else closeMobilePanel(panel);
+    if (panel.id) setExpanded(panel.id, open);
+  }
+
+  function initMobileNav() {
+    var panels = document.querySelectorAll('[data-yoai-mobile-nav]');
+
+    // 1) Init: force every mobile panel to the CLOSED inline state. Inline styles
+    //    beat any Tailwind display class → reliably hidden on load.
+    for (var p = 0; p < panels.length; p++) {
+      var panel = panels[p];
+      if (!reducedMotion) {
+        panel.style.transition =
+          'transform .32s cubic-bezier(.4,0,.2,1), opacity .32s';
+      }
+      closeMobilePanel(panel);
+      if (panel.id) setExpanded(panel.id, false);
+    }
+
+    // 2) Hamburger click (delegated): toggle the controlled mobile panel.
+    //    Falls back to the legacy class/hidden toggle for non-mobile targets.
     document.addEventListener('click', function (e) {
       var trigger = e.target && e.target.closest
         ? e.target.closest('[data-yoai-nav-toggle]')
         : null;
       if (!trigger) return;
+
+      var targetId = trigger.getAttribute('data-yoai-nav-toggle');
+      if (!targetId) return;
+      var target = document.getElementById(targetId);
+      if (!target) return;
+
       e.preventDefault();
-      handleNavToggle(trigger);
+
+      if (target.hasAttribute('data-yoai-mobile-nav')) {
+        setMobilePanelState(target, !isMobilePanelOpen(target));
+        return;
+      }
+
+      // Legacy fallback (old markup without data-yoai-mobile-nav).
+      var isOpen = target.classList.contains('is-open');
+      if (isOpen) {
+        target.classList.remove('is-open');
+        target.setAttribute('hidden', '');
+        trigger.setAttribute('aria-expanded', 'false');
+      } else {
+        target.classList.add('is-open');
+        target.removeAttribute('hidden');
+        trigger.setAttribute('aria-expanded', 'true');
+      }
+    });
+
+    // 3) Clicking a link inside an open panel closes it (nice-to-have).
+    document.addEventListener('click', function (e) {
+      var link = e.target && e.target.closest ? e.target.closest('a[href]') : null;
+      if (!link) return;
+      var panel = link.closest ? link.closest('[data-yoai-mobile-nav]') : null;
+      if (panel && isMobilePanelOpen(panel)) setMobilePanelState(panel, false);
+    });
+
+    // 4) Escape closes any open panel.
+    document.addEventListener('keydown', function (e) {
+      if (e.key !== 'Escape' && e.keyCode !== 27) return;
+      var open = document.querySelectorAll('[data-yoai-mobile-nav][aria-hidden="false"]');
+      for (var i = 0; i < open.length; i++) setMobilePanelState(open[i], false);
     });
   }
 
@@ -241,7 +360,7 @@
     document.documentElement.classList.add('yoai-js');
     initReveal();
     initToggle();
-    initNavToggle();
+    initMobileNav();
     initSmoothScroll();
   }
 
