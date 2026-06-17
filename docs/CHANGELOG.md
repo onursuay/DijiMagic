@@ -2,6 +2,18 @@
 
 ---
 
+## 2026-06-17 — Sosyal Medya: AI üretim, hesap seçimi, carousel, analitik, kütüphane
+- **İstek:** İlk sürümün üzerine 3 acil düzeltme + ek geliştirmeler.
+- **Çözüm:**
+  - **AI ile üret (composer):** Tasarım motoru (fal.ai görsel/video) composer'a bağlandı; üretilen içerik `social-media` bucket'a kopyalanıp doğrudan planlanabiliyor. Hibrit erişim (abonelik + `design_generation` kredi), hata→kredi iadesi. ([/api/social/media/generate], [lib/social/aiMedia.ts])
+  - **Hesap seçimi düzeltmesi:** `/api/social/targets` token'ı cookie+DB ikisinden çözüyor; bağlı değilse composer "Entegrasyon'a git" yönlendirmesi gösteriyor (sessiz boş yerine).
+  - **Carousel (çoklu medya):** IG carousel + FB multi-photo yayını; composer'da feed'de çoklu yükleme/üretim/kütüphane + medya ızgarası (maks. 10). Worker ve API doğrulaması güncellendi.
+  - **Analitik + optimal saat:** Yayınlanan içeriklerin beğeni/yorum metrikleri ay özeti; ≥3 yayında en iyi yayın saati önerisi (composer'da tek tıkla uygula). ([/api/social/analytics], [lib/social/insights.ts])
+  - **Tasarım kütüphanesinden seçme:** Composer'da 3. kaynak; Tasarım modülü çıktıları içe aktarılıp planlanabiliyor (SSRF: fal host whitelist). ([/api/social/media/import])
+  - **Sidebar:** etiket "Sosyal Medya" olarak kısaltıldı.
+  - **Doğrulama:** `npm run build` temiz; tsc 0 hata; i18n parite tam.
+- **Dosyalar:** lib/social/{aiMedia,insights,metaPublisher,runScheduledPosts}.ts, app/api/social/{media/generate,media/import,analytics,targets,posts}/**, components/social/{PostComposerModal,SocialMediaPage,AnalyticsBar,PostCard}.tsx, lib/nav.ts, locales/tr.json, locales/en.json
+
 ## 2026-06-17 — Yeni modül: Sosyal Medya Yönetimi (içerik takvimi + otomatik yayın)
 - **İstek:** Kullanıcıların görsel/video içeriklerini proje (kampanya) bazında planlayıp ileri bir tarih-saate zamanlayabildiği; zamanı gelince sistemin otomatik Instagram/Facebook'a (Akış/Reels/Hikaye) paylaştığı, Meta Business Suite "Planner" benzeri bir modül. Çoklu hedef (cross-post), başarısızlıkta yeniden deneme.
 - **Çözüm:**
