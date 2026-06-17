@@ -15,6 +15,7 @@ import {
   Contact,
   Mail,
   Globe,
+  CalendarClock,
 } from 'lucide-react'
 import { ROUTES } from '@/lib/routes'
 
@@ -88,6 +89,12 @@ export const navItems: NavItem[] = [
     label: 'Tasarım',
     href: '/tasarim',
     icon: Image,
+  },
+  {
+    id: 'sosyal-medya',
+    label: 'Sosyal Medya Yönetimi',
+    href: ROUTES.SOCIAL_MEDIA,
+    icon: CalendarClock,
   },
   {
     id: 'raporlar',

@@ -101,6 +101,13 @@ export const FEATURE_ACCESS: Record<string, FeatureAccessRule> = {
     description:
       'E-posta kampanyaları oluşturmak ve göndermek için aktif bir abonelik planına sahip olmanız gerekir.',
   },
+  social_media_management: {
+    key: 'social_media_management',
+    label: 'Sosyal Medya Yönetimi',
+    tier: 'subscription_required',
+    description:
+      'İçerik takvimi ve otomatik sosyal medya paylaşımı için aktif bir abonelik planına sahip olmanız gerekir.',
+  },
 
   // ─── Kredi gerektiren AI aksiyonları ─────────────────────────────
   optimization_ai_scan_pro: {

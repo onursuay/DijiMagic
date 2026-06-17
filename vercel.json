@@ -43,6 +43,10 @@
     {
       "path": "/api/cron/seo-brief-refresh",
       "schedule": "0 2 1 * *"
+    },
+    {
+      "path": "/api/cron/social-publish",
+      "schedule": "* * * * *"
     }
   ]
 }

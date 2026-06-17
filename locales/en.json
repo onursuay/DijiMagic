@@ -305,6 +305,85 @@
     "loading": "Loading…"
   },
   "dashboard": {
+    "sosyalmedya": {
+      "title": "Social Media Management",
+      "pageDescription": "Plan your content, set a date; the system publishes automatically to Instagram and Facebook when the time comes.",
+      "newPost": "Schedule Content",
+      "loading": "Loading…",
+      "tabs": { "feed": "Feed", "reels": "Reels", "story": "Story" },
+      "project": {
+        "all": "All Projects",
+        "new": "New Project",
+        "namePlaceholder": "Project name (e.g. June Campaign)",
+        "create": "Create",
+        "cancel": "Cancel",
+        "created": "Project created",
+        "createError": "Could not create project",
+        "empty": "No projects yet"
+      },
+      "calendar": {
+        "today": "Today",
+        "prevMonth": "Previous month",
+        "nextMonth": "Next month",
+        "weekdays": ["Mon", "Tue", "Wed", "Thu", "Fri", "Sat", "Sun"],
+        "months": ["January", "February", "March", "April", "May", "June", "July", "August", "September", "October", "November", "December"],
+        "noPostsThisDay": "No content scheduled for this day",
+        "addContent": "Add content",
+        "postCount": "{count} items"
+      },
+      "status": {
+        "draft": "Draft",
+        "scheduled": "Scheduled",
+        "publishing": "Publishing",
+        "published": "Published",
+        "failed": "Failed",
+        "cancelled": "Cancelled"
+      },
+      "composer": {
+        "newTitle": "Schedule Content",
+        "editTitle": "Edit Content",
+        "source": "Content source",
+        "sourceUpload": "Upload file",
+        "sourceDesign": "From Design",
+        "designComingSoon": "Coming soon",
+        "uploadHint": "Drag an image or video, or choose one",
+        "uploadButton": "Choose file",
+        "uploading": "Uploading…",
+        "removeMedia": "Remove",
+        "format": "Format",
+        "targets": "Target accounts",
+        "targetsHint": "Select one or more accounts",
+        "noTargets": "No connected accounts found",
+        "connectMeta": "Connect your Meta account",
+        "caption": "Caption",
+        "captionPlaceholder": "Write a caption…",
+        "storyNoCaption": "Stories do not use captions.",
+        "scheduleAt": "Publish time",
+        "date": "Date",
+        "time": "Time",
+        "schedule": "Schedule",
+        "saveChanges": "Save changes",
+        "cancel": "Cancel",
+        "reelsNeedsVideo": "Reels require a video",
+        "fbNoStory": "Facebook does not support Stories; remove this account or change the format."
+      },
+      "post": {
+        "edit": "Edit",
+        "cancel": "Cancel",
+        "retry": "Retry",
+        "cancelConfirm": "Do you want to cancel this scheduled content?",
+        "publishedAt": "Published at {time}"
+      },
+      "toasts": {
+        "loadError": "Could not load content",
+        "created": "Content scheduled",
+        "createError": "Could not schedule content",
+        "updated": "Content updated",
+        "cancelled": "Content cancelled",
+        "retried": "Rescheduled",
+        "uploadError": "Could not upload file"
+      }
+    },
     "homepage": {
       "title": "Overview",
       "description": "Summary of all your platforms and tools",
@@ -5903,6 +5982,7 @@
     "yoai": "YoAlgorithm",
     "hedefKitle": "Target Audience",
     "tasarim": "Design",
+    "sosyalmedya": "Social Media Management",
     "raporlar": "Reports",
     "katalog": "Catalog",
     "seo": "SEO Plus",
