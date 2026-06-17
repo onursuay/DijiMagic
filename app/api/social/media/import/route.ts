@@ -32,6 +32,8 @@ export async function POST(req: NextRequest) {
 
   const body = await req.json().catch(() => ({} as any))
   const sourceUrl = typeof body?.sourceUrl === 'string' ? body.sourceUrl : ''
+  const expectedType: 'image' | 'video' | null =
+    body?.mediaType === 'video' ? 'video' : body?.mediaType === 'image' ? 'image' : null
   if (!isFalUrl(sourceUrl)) {
     return NextResponse.json({ ok: false, error: 'invalid_request', message: 'Geçersiz kaynak' }, { status: 400 })
   }
@@ -47,8 +49,22 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ ok: false, error: 'fetch_failed', message: 'İçerik alınamadı' }, { status: 502 })
   }
 
-  const isVideo = contentType.startsWith('video/')
-  const ext = isVideo ? 'mp4' : contentType.includes('png') ? 'png' : contentType.includes('webp') ? 'webp' : 'jpg'
+  // Tür belirleme: content-type > URL uzantısı > client beklentisi. Hiçbiri yoksa reddet
+  // (video'nun sessizce .jpg olarak yatmasını önler).
+  const ctImage = contentType.startsWith('image/')
+  const ctVideo = contentType.startsWith('video/')
+  const urlExt = (() => { try { return (new URL(sourceUrl).pathname.split('.').pop() || '').toLowerCase() } catch { return '' } })()
+  const urlImage = ['jpg', 'jpeg', 'png', 'webp'].includes(urlExt)
+  const urlVideo = ['mp4', 'mov'].includes(urlExt)
+  let isVideo: boolean
+  if (ctImage || ctVideo) isVideo = ctVideo
+  else if (urlImage || urlVideo) isVideo = urlVideo
+  else if (expectedType) isVideo = expectedType === 'video'
+  else return NextResponse.json({ ok: false, error: 'unknown_type', message: 'Medya türü belirlenemedi' }, { status: 415 })
+  const ext = isVideo
+    ? 'mp4'
+    : contentType.includes('png') || urlExt === 'png' ? 'png'
+    : contentType.includes('webp') || urlExt === 'webp' ? 'webp' : 'jpg'
   const path = `${access.user.id}/${randomUUID()}.${ext}`
 
   const { error } = await supabase.storage.from(BUCKET).upload(path, buffer, {

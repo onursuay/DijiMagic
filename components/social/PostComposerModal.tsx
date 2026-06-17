@@ -15,6 +15,7 @@ import type {
 } from '@/lib/social/types'
 
 const MAX_CAROUSEL = 10
+const MAX_UPLOAD_BYTES = 200 * 1024 * 1024 // 200MB (doğrudan Storage'a; Vercel gövde limiti uygulanmaz)
 
 interface ComposerSubmit {
   format: SocialFormat
@@ -150,12 +151,23 @@ export default function PostComposerModal({
       const slots = format === 'feed' ? MAX_CAROUSEL - mediaList.length : 1
       const toUpload = Array.from(files).slice(0, Math.max(1, slots))
       for (const file of toUpload) {
-        const fd = new FormData()
-        fd.append('file', file)
-        const res = await fetch('/api/social/media/upload', { method: 'POST', body: fd })
-        const json = await res.json()
-        if (json.ok) addMedia({ storagePath: json.data.storagePath, publicUrl: json.data.publicUrl, mediaType: json.data.mediaType })
-        else { onUploadError(); break }
+        if (file.size > MAX_UPLOAD_BYTES) { onUploadError(); break }
+        // 1) imzalı yükleme URL'i al
+        const signRes = await fetch('/api/social/media/sign-upload', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ contentType: file.type }),
+        })
+        const sign = await signRes.json()
+        if (!sign.ok) { onUploadError(); break }
+        // 2) dosyayı DOĞRUDAN Storage'a yükle (Vercel ~4.5MB gövde limiti bypass)
+        const putRes = await fetch(sign.data.signedUrl, {
+          method: 'PUT',
+          body: file,
+          headers: { 'content-type': file.type },
+        })
+        if (!putRes.ok) { onUploadError(); break }
+        addMedia({ storagePath: sign.data.storagePath, publicUrl: sign.data.publicUrl, mediaType: sign.data.mediaType })
       }
     } catch {
       onUploadError()
@@ -190,14 +202,14 @@ export default function PostComposerModal({
     }
   }, [aiPrompt, aiKind, format, generating, addMedia, onGenerateError])
 
-  const importFromLibrary = useCallback(async (url: string) => {
+  const importFromLibrary = useCallback(async (item: { url: string; type: SocialMediaType }) => {
     if (importing) return
     setImporting(true)
     try {
       const res = await fetch('/api/social/media/import', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ sourceUrl: url }),
+        body: JSON.stringify({ sourceUrl: item.url, mediaType: item.type }),
       })
       const json = await res.json()
       if (json.ok) addMedia({ storagePath: json.data.storagePath, publicUrl: json.data.publicUrl, mediaType: json.data.mediaType })
@@ -229,8 +241,11 @@ export default function PostComposerModal({
 
   const storyFbConflict = format === 'story' && Array.from(selected).some((k) => k.startsWith('facebook:'))
   const reelsImageConflict = format === 'reels' && mediaList[0]?.mediaType === 'image'
-  const canSubmit =
-    !saving && !uploading && mediaList.length > 0 && selected.size > 0 && !!date && !!time && !storyFbConflict && !reelsImageConflict
+  // Edit modunda yalnız caption/tarih güncellenir (API media/target değiştirmez); bu
+  // yüzden submit koşulu edit'te medya/hedef/çakışmadan bağımsız.
+  const canSubmit = isEdit
+    ? !saving && !!date && !!time
+    : !saving && !uploading && mediaList.length > 0 && selected.size > 0 && !!date && !!time && !storyFbConflict && !reelsImageConflict
 
   const canAddMore = format === 'feed' ? mediaList.length < MAX_CAROUSEL : mediaList.length === 0
 
@@ -451,7 +466,7 @@ export default function PostComposerModal({
                             key={i}
                             type="button"
                             disabled={importing}
-                            onClick={() => importFromLibrary(item.url)}
+                            onClick={() => importFromLibrary(item)}
                             className="group relative aspect-square overflow-hidden rounded-lg border border-gray-200 transition-colors hover:border-primary/40 disabled:opacity-60"
                           >
                             {item.type === 'video' ? (
@@ -484,7 +499,8 @@ export default function PostComposerModal({
             </div>
           )}
 
-          {/* Hedef hesaplar */}
+          {/* Hedef hesaplar (edit'te API targets güncellemediği için gizli) */}
+          {!isEdit && (
           <div>
             <label className="mb-1 block text-sm font-medium text-gray-700">{t('targets')}</label>
             <p className="mb-2 text-xs text-gray-400">{t('targetsHint')}</p>
@@ -553,6 +569,7 @@ export default function PostComposerModal({
               </p>
             )}
           </div>
+          )}
 
           {/* Caption */}
           {format !== 'story' ? (

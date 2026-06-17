@@ -2,6 +2,19 @@
 
 ---
 
+## 2026-06-17 — Sosyal Medya: denetim sonrası sertleştirme (8 bulgu)
+- **Sorun:** Çok-ajanlı adversarial denetim 8 doğrulanmış kusur buldu.
+- **Çözüm:**
+  - **(HIGH) Reaper:** `publishing`'de takılı kalan (süreç ölümü/zaman aşımı) postlar `claimDuePosts`'ta zaman-aşımlı (10dk) atomik yeniden-claim ile kurtarılıyor; worker'da per-post try/catch ile bir postun throw'u diğerlerini stranded bırakmıyor.
+  - **(MED) Carousel/feed video:** IG carousel video child + tekil feed video container'ına `media_type=VIDEO` eklendi (Graph v24 zorunlu).
+  - **(MED) Kısmi yayın:** Bazı hedef yayınlanıp bazısı kalıcı başarısız olunca post `failed` yerine yeni `partial` durumu alıyor (migration + badge + i18n).
+  - **(MED) Büyük yükleme:** Vercel ~4.5MB Route Handler gövde limitini bypass eden imzalı doğrudan-Storage yükleme (`/api/social/media/sign-upload`); video yükleme artık çalışır (≤200MB).
+  - **(MED) Edit modu:** Hedef seçim UI'ı edit'te gizlendi (API targets güncellemiyordu — sessiz veri kaybı); canSubmit edit'te medya/hedef/çakışmadan muaf.
+  - **(LOW) projectId IDOR:** createPost/updatePost'ta proje sahipliği doğrulanıyor (cross-user dangling referans engeli).
+  - **(LOW) Import türü:** Kütüphane import'unda medya türü content-type → URL uzantısı → client tipi sırasıyla belirleniyor (video→jpg riski giderildi).
+  - **Doğrulama:** build temiz, tsc 0, i18n parite tam; migration canlıya uygulandı.
+- **Dosyalar:** lib/social/{store,runScheduledPosts,metaPublisher,types}.ts, app/api/social/media/{sign-upload,import}/route.ts, components/social/{PostComposerModal,PostStatusBadge}.tsx, supabase/migrations/20260617120000_social_posts_partial_status.sql, locales/tr.json, locales/en.json
+
 ## 2026-06-17 — Sosyal Medya: AI üretim, hesap seçimi, carousel, analitik, kütüphane
 - **İstek:** İlk sürümün üzerine 3 acil düzeltme + ek geliştirmeler.
 - **Çözüm:**

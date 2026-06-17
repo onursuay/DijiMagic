@@ -336,6 +336,7 @@
         "scheduled": "Scheduled",
         "publishing": "Publishing",
         "published": "Published",
+        "partial": "Partially published",
         "failed": "Failed",
         "cancelled": "Cancelled"
       },

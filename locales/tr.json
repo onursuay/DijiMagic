@@ -336,6 +336,7 @@
         "scheduled": "Planlandı",
         "publishing": "Yayınlanıyor",
         "published": "Yayında",
+        "partial": "Kısmen yayında",
         "failed": "Başarısız",
         "cancelled": "İptal edildi"
       },

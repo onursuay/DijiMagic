@@ -130,8 +130,12 @@ async function publishInstagram(
     const childIds: string[] = []
     for (const m of media) {
       const params = new URLSearchParams()
-      if (m.type === 'image') params.append('image_url', m.url)
-      else params.append('video_url', m.url)
+      if (m.type === 'image') {
+        params.append('image_url', m.url)
+      } else {
+        params.append('video_url', m.url)
+        params.append('media_type', 'VIDEO') // carousel video öğesi için zorunlu (Graph v24)
+      }
       params.append('is_carousel_item', 'true')
       const r = await client.postForm(`/${igUserId}/media`, params)
       if (!r.ok || !r.data?.id) return fail(r.error?.message || 'Instagram carousel öğesi oluşturulamadı')
@@ -162,6 +166,7 @@ async function publishInstagram(
   else containerParams.append('video_url', m.url)
   if (format === 'reels') containerParams.append('media_type', 'REELS')
   else if (format === 'story') containerParams.append('media_type', 'STORIES')
+  else if (m.type === 'video') containerParams.append('media_type', 'VIDEO') // feed video için zorunlu (Graph v24)
 
   const containerResult = await client.postForm(`/${igUserId}/media`, containerParams)
   if (!containerResult.ok) return fail(containerResult.error?.message || 'Instagram medya container hatası')

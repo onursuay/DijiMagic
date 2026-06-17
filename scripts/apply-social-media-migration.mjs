@@ -16,7 +16,7 @@ function parseDbUrl(url) {
   return { user: ui.slice(0, fc), password: ui.slice(fc + 1), host, port: Number(port), database: hp.split('/')[1]?.split('?')[0] || 'postgres' }
 }
 
-const FILE = 'supabase/migrations/20260617000000_create_social_media_tables.sql'
+const FILE = process.argv[2] || 'supabase/migrations/20260617000000_create_social_media_tables.sql'
 const sql = readFileSync(new URL('../' + FILE, import.meta.url), 'utf8')
 const env = loadEnv()
 const ca = readFileSync(new URL('./supabase-ca.pem', import.meta.url), 'utf8')
