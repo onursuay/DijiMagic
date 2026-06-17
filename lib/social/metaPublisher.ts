@@ -11,7 +11,26 @@ import { getMetaConnection } from '@/lib/metaConnectionStore'
 import { getPageAccessToken } from '@/lib/meta/pageToken'
 import { MetaGraphClient } from '@/lib/meta/client'
 import { META_GRAPH_VERSION } from '@/lib/metaConfig'
+import { resolveSupabaseUrl } from '@/lib/supabase/env'
 import type { SocialFormat, SocialMediaType, SocialPlatform } from './types'
+
+/**
+ * SSRF koruması (derinlemesine savunma): yayınlanacak medya URL'i yalnız kendi
+ * Supabase Storage host'umuzdan ve https olabilir. Bu hem sunucunun fetch ettiği
+ * (FB Reels) hem Meta'ya image_url/video_url olarak gönderilen URL'i kapsar; keyfi
+ * bir URL DB'ye sızsa bile internal/loopback/3rd-party hedefe istek gitmez.
+ */
+let allowedMediaHost = ''
+try { allowedMediaHost = new URL(resolveSupabaseUrl() || '').host } catch { /* env yok */ }
+
+function isAllowedMediaUrl(url: string): boolean {
+  try {
+    const u = new URL(url)
+    return u.protocol === 'https:' && !!allowedMediaHost && u.host === allowedMediaHost
+  } catch {
+    return false
+  }
+}
 
 export interface PublishTargetArgs {
   platform: SocialPlatform
@@ -49,6 +68,8 @@ export async function publishToTarget(userId: string, args: PublishTargetArgs): 
   if (format === 'reels' && mediaType === 'image') return fail('Reels yalnızca video destekler')
   if (platform === 'facebook' && format === 'story') return fail('Facebook Hikaye desteklenmiyor')
   if (platform === 'instagram' && !igUserId) return fail('Instagram hesabı çözümlenemedi')
+  // SSRF koruması: medya yalnız kendi Storage host'umuzdan olabilir.
+  if (!isAllowedMediaUrl(mediaUrl)) return fail('Geçersiz medya kaynağı')
 
   const userToken = await resolveUserToken(userId)
   if (!userToken) return fail('Meta bağlantısı bulunamadı veya süresi dolmuş')
