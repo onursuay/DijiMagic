@@ -502,3 +502,78 @@ assert.strictEqual(d4.palette.accent, '#d97706', `FAIL D4: amber accent was reje
 assert.strictEqual(d4.palette.accentSoft, '#fef3c7', `FAIL D4: amber accentSoft was rejected — got: ${d4.palette.accentSoft}`)
 
 console.log('designsystem OK')
+
+// ---------------------------------------------------------------------------
+// HTMLGEN section — Stage 3 testable glue (toDesignVars + image resolution)
+// ---------------------------------------------------------------------------
+
+// Load the shared Stage-3 core directly (single source of truth — also used by
+// htmlGenerate.ts via dynamic import).
+const htmlGeneratePath = path.join(__dirname, '../lib/website/codegen/htmlGenerate.mjs')
+const {
+  toDesignVars,
+  resolveImagePlaceholders,
+  buildHtmlSystemPrompt,
+  DESIGN_VAR_NAMES,
+  FALLBACK_IMAGE,
+} = await import(htmlGeneratePath)
+
+// H1 — toDesignVars(SAFE_DEFAULT-like ds) returns the contract var names + safe values
+const hv = toDesignVars(SAFE_DEFAULT_DESIGN_SYSTEM)
+assert.ok(hv && typeof hv === 'object', `FAIL H1: toDesignVars did not return an object`)
+for (const name of ['--accent', '--ink', '--surface', '--on-accent', '--muted', '--border', '--accent-soft']) {
+  assert.ok(name in hv, `FAIL H1: ${name} missing from toDesignVars output — got: ${JSON.stringify(Object.keys(hv))}`)
+}
+assert.strictEqual(hv['--accent'], SAFE_DEFAULT_DESIGN_SYSTEM.palette.accent, `FAIL H1: --accent value mismatch — got: ${hv['--accent']}`)
+assert.strictEqual(hv['--ink'], SAFE_DEFAULT_DESIGN_SYSTEM.palette.ink, `FAIL H1: --ink value mismatch — got: ${hv['--ink']}`)
+assert.strictEqual(hv['--surface'], SAFE_DEFAULT_DESIGN_SYSTEM.palette.surface, `FAIL H1: --surface value mismatch — got: ${hv['--surface']}`)
+// font + motion + radius + shadow + gradient vars also present
+for (const name of ['--font-heading', '--font-body', '--ease', '--radius-md', '--shadow-md', '--gradient-brand']) {
+  assert.ok(name in hv, `FAIL H1: ${name} missing from toDesignVars output`)
+}
+// Every emitted key must be a declared var name (no drift between map and the list)
+for (const key of Object.keys(hv)) {
+  assert.ok(DESIGN_VAR_NAMES.includes(key), `FAIL H1: emitted ${key} is not in DESIGN_VAR_NAMES`)
+}
+
+// H2 — VAR-NAME CONTRACT: the prompt advertises EXACTLY the names toDesignVars emits
+const sys = buildHtmlSystemPrompt()
+assert.ok(typeof sys === 'string' && sys.length > 500, `FAIL H2: system prompt too short`)
+for (const name of DESIGN_VAR_NAMES) {
+  assert.ok(sys.includes(`var(${name})`), `FAIL H2: prompt does not mention var(${name}) — prompt/toDesignVars drift`)
+}
+// Anti-generic guard: prompt forbids raw hex + default palette for color
+assert.ok(/FORBIDDEN/i.test(sys), `FAIL H2: prompt missing color-freedom/forbidden directive`)
+assert.ok(sys.includes('{{IMG:'), `FAIL H2: prompt missing {{IMG:}} image-placeholder directive`)
+assert.ok(sys.includes('data-yoai-reveal'), `FAIL H2: prompt missing data-yoai-reveal motion hook`)
+assert.ok(sys.includes('data-yoai-block'), `FAIL H2: prompt missing data-yoai-block section hook`)
+
+// H3 — resolveImagePlaceholders: both placeholders replaced, no raw {{IMG remains
+const h3 = await resolveImagePlaceholders(
+  '<img src="{{IMG:a}}"><img src="{{IMG:b}}">',
+  async (q) => 'https://img/' + q,
+)
+assert.ok(!h3.includes('{{IMG'), `FAIL H3: raw {{IMG remains — got: ${h3}`)
+assert.ok(h3.includes('https://img/a'), `FAIL H3: query a not resolved — got: ${h3}`)
+assert.ok(h3.includes('https://img/b'), `FAIL H3: query b not resolved — got: ${h3}`)
+
+// H4 — resolver THROWS → safe fallback image used, no raw placeholder
+const h4 = await resolveImagePlaceholders('<img src="{{IMG:x}}">', async () => { throw new Error('boom') })
+assert.ok(!h4.includes('{{IMG'), `FAIL H4: raw {{IMG remains after throw — got: ${h4}`)
+assert.ok(h4.includes('data:image/svg+xml'), `FAIL H4: fallback image not used on throw — got: ${h4}`)
+assert.ok(h4.includes(FALLBACK_IMAGE), `FAIL H4: FALLBACK_IMAGE not substituted on throw`)
+
+// H5 — resolver returns '' (no provider / no result) → safe fallback, sanitize-safe
+const h5 = await resolveImagePlaceholders('<img src="{{IMG:y}}">', async () => '')
+assert.ok(!h5.includes('{{IMG'), `FAIL H5: raw {{IMG remains on empty — got: ${h5}`)
+assert.ok(h5.includes('data:image/svg+xml'), `FAIL H5: fallback not used on empty result — got: ${h5}`)
+// Resulting src must survive the shared sanitizer (data:image/ is allowlisted)
+const h5clean = sanitizeSiteHtml(h5)
+assert.ok(h5clean.includes('data:image/svg+xml'), `FAIL H5: fallback image stripped by sanitizer — not allowlist-safe — got: ${h5clean}`)
+
+// H6 — unsafe resolver result (javascript: / relative) → treated as unresolved → fallback
+const h6 = await resolveImagePlaceholders('<img src="{{IMG:z}}">', async () => 'javascript:alert(1)')
+assert.ok(!h6.includes('javascript:'), `FAIL H6: unsafe url leaked — got: ${h6}`)
+assert.ok(h6.includes('data:image/svg+xml'), `FAIL H6: fallback not used for unsafe url — got: ${h6}`)
+
+console.log('htmlgen OK')
