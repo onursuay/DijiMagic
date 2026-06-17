@@ -49,7 +49,9 @@ export async function POST(req: NextRequest, { params }: { params: { id: string 
   // kendi cost'unu hesaplar. Bu yüzden hesabı v2 erken-return'ünden SONRA, yalnız legacy
   // yol için yapıyoruz (gereksiz compute kaldırıldı; ücret/iade davranışı değişmedi).
   if (isCodegenV2Enabled()) {
-    return generateWithCodegenV2({ user, site, isRevision })
+    // Revize talimatı + modu motora aktarılır (legacy parite). Boş instructions →
+    // ilk üretim davranışı değişmez (initialInstructions kullanılır).
+    return generateWithCodegenV2({ user, site, isRevision, instructions, revisionMode })
   }
 
   // Legacy (sections) yol — maliyet burada hesaplanır. Revizyonda ilk WEBSITE_FREE_REVISIONS
@@ -142,10 +144,16 @@ async function generateWithCodegenV2({
   user,
   site,
   isRevision,
+  instructions,
+  revisionMode,
 }: {
   user: { id: string }
   site: Website
   isRevision: boolean
+  /** Revize talimatı (POST gövdesinden parse edilmiş). Boş → ilk üretim (initialInstructions). */
+  instructions: string
+  /** 'edit' | 'reject' | undefined — legacy revize modu semantiği. */
+  revisionMode: 'edit' | 'reject' | undefined
 }): Promise<NextResponse> {
   // Maliyet: landing → tek sayfa; multipage → planlanan sayfa sayısı (üretimden ÖNCE
   // kesin bilinmez; ortalama 4 sayfa varsayılır — orchestrator 3..6 üretir). Çoklu dil:
@@ -161,7 +169,9 @@ async function generateWithCodegenV2({
 
   let result: Awaited<ReturnType<typeof generateHtmlSite>>
   try {
-    result = await generateHtmlSite(user.id, site)
+    // Revize talimatı (varsa) motora aktarılır → her sayfanın prompt'una ulaşır,
+    // ctx.instruction olarak initialInstructions'ın ÖNÜNE geçer. Boşsa davranış değişmez.
+    result = await generateHtmlSite(user.id, site, { instructions, revisionMode })
   } catch (e) {
     // generateHtmlSite soft-fail sözleşmelidir; yine de beklenmedik throw olursa krediyi iade et.
     await access.refund()

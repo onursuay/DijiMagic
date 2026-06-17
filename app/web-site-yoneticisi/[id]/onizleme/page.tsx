@@ -84,6 +84,9 @@ export default function WebsiteReviewPage() {
   const revise = async (mode: 'reject' | 'edit') => {
     const text = feedback.trim()
     if (!text) return
+    // Revize başlar başlamaz giriş kutusunu gizle — istek uçarken textarea+butonlar
+    // görünmesin; büyük "revize ediliyor" göstergesi (overlay) öne çıksın.
+    setPanel(null)
     setBusy(mode)
     try {
       const res = await fetch(`/api/website/${id}/generate`, {
@@ -177,9 +180,12 @@ export default function WebsiteReviewPage() {
             </div>
             <div ref={frameWrapRef} className="relative bg-gray-100 flex justify-center overflow-hidden" style={{ height: DESIGN_H * scale }}>
               {working && busy !== 'approve' && (
-                <div className="absolute inset-0 z-10 flex flex-col items-center justify-center bg-white/70 backdrop-blur-sm gap-3">
-                  <Sparkles className="w-7 h-7 text-primary animate-pulse" />
-                  <p className="text-sm font-medium text-gray-700">{t('revising')}</p>
+                <div className="absolute inset-0 z-10 flex flex-col items-center justify-center bg-white/75 backdrop-blur-sm gap-4">
+                  <div className="relative flex items-center justify-center">
+                    <span className="absolute inset-0 -m-6 rounded-full wsy-revising-glow" aria-hidden="true" />
+                    <Sparkles className="relative w-12 h-12 text-primary wsy-revising" />
+                  </div>
+                  <p className="text-base font-semibold text-primary wsy-revising">{t('revising')}</p>
                 </div>
               )}
               <iframe

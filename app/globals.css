@@ -709,3 +709,22 @@ table tbody tr {
   .wsy-build .wsy-scan { display: none; }
   .wsy-build .wsy-progress { width: 100%; }
 }
+
+/* Revize göstergesi — büyük, belirgin nabız (önizleme overlay'inde). Marka emerald glow. */
+@keyframes wsy-revising-pulse {
+  0%, 100% { opacity: 0.55; transform: scale(1); }
+  50%      { opacity: 1;    transform: scale(1.18); }
+}
+.wsy-revising { animation: wsy-revising-pulse 1.3s ease-in-out infinite; }
+@keyframes wsy-revising-glow {
+  0%, 100% { opacity: 0.35; transform: scale(0.92); }
+  50%      { opacity: 0.7;  transform: scale(1.12); }
+}
+.wsy-revising-glow {
+  background: radial-gradient(circle, rgba(43, 182, 115, 0.28), transparent 70%);
+  animation: wsy-revising-glow 1.6s ease-in-out infinite;
+}
+@media (prefers-reduced-motion: reduce) {
+  .wsy-revising,
+  .wsy-revising-glow { animation: none !important; }
+}

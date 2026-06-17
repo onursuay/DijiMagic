@@ -47,6 +47,24 @@ import type { CodegenContext } from './types'
 // Result type
 // ---------------------------------------------------------------------------
 
+/**
+ * Optional revise/regeneration controls (backward-compatible).
+ *
+ * - `instructions` : the user's revise text (POST body). When non-empty it TAKES
+ *                    PRIORITY over website.theme.initialInstructions as ctx.instruction,
+ *                    so the regeneration reflects the user's feedback. Empty/absent →
+ *                    behaviour is identical to the initial (non-revise) generation.
+ * - `revisionMode` : 'edit'  → targeted change (mirror "düzelt"); we still treat the
+ *                              instruction as priority intent reaching every page prompt.
+ *                    'reject' → "regenerate fresh in a different direction" (legacy
+ *                              semantics); the instruction reaches the prompt the same way.
+ *                    MVP: any non-empty instruction = "regenerate incorporating this feedback".
+ */
+export interface GenerateHtmlSiteOptions {
+  instructions?: string
+  revisionMode?: 'edit' | 'reject'
+}
+
 export type GenerateHtmlSiteResult =
   | {
       ok: true
@@ -133,6 +151,9 @@ function derivePageSeo(
  *
  * @param userId   owner of the site (used for context scoping)
  * @param website  the Website row used by buildCodegenContext
+ * @param opts     optional revise controls (instructions + revisionMode). When
+ *                 opts.instructions is non-empty it takes priority over
+ *                 theme.initialInstructions as the prompt instruction (revise applies).
  * @returns
  *   { ok:true, page, designVars } on a gated success, or
  *   { ok:false, reason }          on any failure (never throws).
@@ -140,10 +161,13 @@ function derivePageSeo(
 export async function generateHtmlSite(
   userId: string,
   website: Website,
+  opts?: GenerateHtmlSiteOptions,
 ): Promise<GenerateHtmlSiteResult> {
   try {
-    // 1. Context (brand text + quarantined untrusted blocks).
-    const ctx = await buildCodegenContext(userId, website)
+    // 1. Context (brand text + quarantined untrusted blocks). The revise instruction
+    //    (opts.instructions), when present, becomes ctx.instruction → reaches the design
+    //    system prompt + every page's generation prompt (landing + multipage alike).
+    const ctx = await buildCodegenContext(userId, website, opts)
 
     // 2. Design system — generated ONCE, shared across every page (consistent look).
     //    Already soft-fails to a safe default; never throws.

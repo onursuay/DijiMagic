@@ -139,9 +139,22 @@ function summariseIntelligence(
  *
  * External sources are wrapped in wrapUntrusted(). User instruction is separate.
  */
+/**
+ * Optional revise controls threaded from the generate route.
+ * When `instructions` is non-empty it OVERRIDES theme.initialInstructions as the
+ * prompt instruction so a revise visibly changes the site. Empty/absent → identical
+ * to initial generation (uses initialInstructions). `revisionMode` is accepted for
+ * future targeted-patch phases; today the instruction text alone reaches the prompt.
+ */
+export interface BuildCodegenContextOptions {
+  instructions?: string
+  revisionMode?: 'edit' | 'reject'
+}
+
 export async function buildCodegenContext(
   userId: string,
   website: Website,
+  opts?: BuildCodegenContextOptions,
 ): Promise<CodegenContext> {
   const theme = website.theme ?? {}
 
@@ -168,7 +181,10 @@ export async function buildCodegenContext(
       ])
 
   // ── Trusted instruction (user's own intent) ────────────────────────────
-  const instruction = clean(theme.initialInstructions)
+  // Revize talimatı (opts.instructions) varsa initialInstructions'ın ÖNÜNE geçer →
+  // kullanıcının düzeltme/red isteği üretime yansır (legacy revisionMode paritesi).
+  // Boş/yok → ilk üretim davranışı: initialInstructions kullanılır.
+  const instruction = clean(opts?.instructions) || clean(theme.initialInstructions)
 
   // ── Brand name ─────────────────────────────────────────────────────────
   // Prefer site label > profile company name (global fallback) > generic
