@@ -47,6 +47,13 @@ export interface AssembleDocumentArgs {
   navMode?: 'path' | 'query'
   /** Extra query string appended in 'query' (preview) nav mode, e.g. '&locale=tr'. */
   localeQuery?: string
+  /**
+   * MULTIPAGE: slugs of pages that ACTUALLY exist for this site (incl. home).
+   * Makes the nav rewrite slug-set-aware — a `data-yoai-href` pointing at a page
+   * that was never planned/generated resolves to the home base instead of a 404.
+   * Omitted (back-compat) → legacy shape-only url-safe check.
+   */
+  knownSlugs?: string[]
 }
 
 /**

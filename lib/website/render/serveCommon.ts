@@ -43,6 +43,23 @@ export function findHomePage(site: PublishedSite, locale: string): WebsitePage |
   )
 }
 
+/** url-safe slug deseni — assembleDocument.mjs SAFE_SLUG_RE ile birebir aynı. */
+const SAFE_SLUG_RE = /^[a-z0-9]+(?:-[a-z0-9]+)*$/
+
+/**
+ * Bir sitede GERÇEKTEN var olan sayfaların slug kümesi (anasayfa 'home' DAHİL) —
+ * assembleDocument nav rewrite'ı slug-set-aware yapmak için. Yalnız url-safe slug'lar
+ * alınır (data-yoai-href yalnız bunlara çözülür); 'home' her zaman dahildir. Tüm locale'ler
+ * birleştirilir — nav her dilde aynı sayfa listesine bakar; liste-dışı slug → anasayfa.
+ */
+export function collectKnownSlugs(site: PublishedSite): string[] {
+  const set = new Set<string>(['home'])
+  for (const p of site.pages) {
+    if (typeof p.slug === 'string' && SAFE_SLUG_RE.test(p.slug)) set.add(p.slug)
+  }
+  return Array.from(set)
+}
+
 /**
  * `/s/:path*` için next.config.mjs'de tanımlı CSP ile BİREBİR aynı policy string.
  * Next config `headers()` bu path'e zaten uygular (route handler dahil); ayrıca response

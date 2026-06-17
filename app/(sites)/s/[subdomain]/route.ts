@@ -3,7 +3,7 @@ import { getPublishedSiteBySubdomain } from '@/lib/website/store'
 import { assembleDocument } from '@/lib/website/codegen/assembleDocument'
 import { themeToDesignVars } from '@/lib/website/render/designVars'
 import { renderSectionsDocument } from '@/lib/website/render/serveSectionsDocument'
-import { pickLocale, findHomePage, SITE_CSP } from '@/lib/website/render/serveCommon'
+import { pickLocale, findHomePage, collectKnownSlugs, SITE_CSP } from '@/lib/website/render/serveCommon'
 
 export const dynamic = 'force-dynamic'
 
@@ -52,6 +52,9 @@ export async function GET(
       // serving is the reliable path implemented here.
       linkBase: `/s/${params.subdomain}`,
       navMode: 'path',
+      // SLUG-SET-AWARE: nav links to a page that does not exist resolve to the
+      // home base (/s/<sub>) instead of 404ing on /s/<sub>/<missing-slug>.
+      knownSlugs: collectKnownSlugs(site),
     })
     return new NextResponse(html, { headers })
   }

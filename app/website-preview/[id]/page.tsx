@@ -59,6 +59,17 @@ export default async function WebsitePreviewPage({
       linkBase: `/website-preview/${params.id}`,
       navMode: 'query',
       localeQuery: locale ? `&locale=${encodeURIComponent(locale)}` : '',
+      // SLUG-SET-AWARE: a data-yoai-href to a page that was not generated resolves
+      // to the preview home (?slug=home) instead of pointing at a non-existent page.
+      // 'home' is always included; only url-safe slugs are considered known.
+      knownSlugs: Array.from(
+        new Set<string>([
+          'home',
+          ...pages
+            .map((p) => p.slug)
+            .filter((s) => typeof s === 'string' && /^[a-z0-9]+(?:-[a-z0-9]+)*$/.test(s)),
+        ]),
+      ),
     })
     return (
       <iframe

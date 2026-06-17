@@ -38,11 +38,22 @@ export async function POST(req: NextRequest, { params }: { params: { id: string 
   const site = await getWebsite(user.id, params.id)
   if (!site) return NextResponse.json({ ok: false, error: 'Bulunamadı' }, { status: 404 })
 
-  // İlk üretim mi revizyon mu → maliyet. Mevcut sayfa VARSA (sitenin tekrar üretimi/revizesi) revizyondur
-  // — talimat boş olsa da (kredi atlatma kapalı). İlk üretim yalnız sayfa hiç yokken. Revizyonda ilk
-  // WEBSITE_FREE_REVISIONS adet ÜCRETSİZ, sonrası WEBSITE_REVISION_COST.
+  // İlk üretim mi revizyon mu. Mevcut sayfa VARSA (sitenin tekrar üretimi/revizesi) revizyondur
+  // — talimat boş olsa da (kredi atlatma kapalı). İlk üretim yalnız sayfa hiç yokken.
   const existing = await getPages(user.id, site.id)
   const isRevision = existing.length > 0
+
+  // ── Codegen v2 (serbest HTML) bayrağı açıksa: yeni motor. Kapalıysa aşağıdaki mevcut
+  // sections motoru AYNEN çalışır (additive — eski yol byte-byte korunur). ──────────────
+  // NOT: maliyet/sayfa sayısı pre-compute'u v2 yolunda KULLANILMAZ — generateWithCodegenV2
+  // kendi cost'unu hesaplar. Bu yüzden hesabı v2 erken-return'ünden SONRA, yalnız legacy
+  // yol için yapıyoruz (gereksiz compute kaldırıldı; ücret/iade davranışı değişmedi).
+  if (isCodegenV2Enabled()) {
+    return generateWithCodegenV2({ user, site, isRevision })
+  }
+
+  // Legacy (sections) yol — maliyet burada hesaplanır. Revizyonda ilk WEBSITE_FREE_REVISIONS
+  // adet ÜCRETSİZ, sonrası WEBSITE_REVISION_COST.
   const pageCount = site.siteType === 'landing' ? 1 : 4
   let cost: number
   if (isRevision) {
@@ -51,12 +62,6 @@ export async function POST(req: NextRequest, { params }: { params: { id: string 
     cost = usedRevisions < WEBSITE_FREE_REVISIONS ? 0 : WEBSITE_REVISION_COST
   } else {
     cost = computeGenerationCost({ siteType: site.siteType, pageCount, localeCount: site.locales.length })
-  }
-
-  // ── Codegen v2 (serbest HTML) bayrağı açıksa: yeni motor. Kapalıysa aşağıdaki mevcut
-  // sections motoru AYNEN çalışır (additive — eski yol byte-byte korunur). ──────────────
-  if (isCodegenV2Enabled()) {
-    return generateWithCodegenV2({ user, site, isRevision })
   }
 
   // Krediyi düş (owner bypass + yetersiz bakiye 402 featureGuard içinde)

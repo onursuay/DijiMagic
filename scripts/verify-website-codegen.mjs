@@ -842,4 +842,59 @@ const rwClean = sanitizeSiteHtml(rewriteNavLinks(navBody, { linkBase: '/s/acme',
 assert.ok(rwClean.includes('href="/s/acme/hakkimizda"'), `FAIL MP10: internal href stripped by sanitizer — got: ${rwClean}`)
 assert.ok(!rwClean.includes('javascript:'), `FAIL MP10: no unsafe scheme present`)
 
+// MP11 — SLUG-SET-AWARE: with knownSlugs, a data-yoai-href to a page that does NOT
+// exist resolves to the HOME base (no 404). A known slug still resolves to its path.
+// Injection (javascript:/../) still falls back to base. knownSlugs omitted → legacy
+// shape-only behaviour (back-compat) keeps resolving any url-safe slug to a path.
+const known = ['home', 'hakkimizda']
+
+// resolveNavHref directly — known slug → real path; unknown-but-url-safe → home base
+assert.strictEqual(
+  resolveNavHref('hakkimizda', { linkBase: '/s/acme', navMode: 'path', knownSlugs: known }),
+  '/s/acme/hakkimizda',
+  `FAIL MP11: known slug must resolve to its path`,
+)
+assert.strictEqual(
+  resolveNavHref('blog', { linkBase: '/s/acme', navMode: 'path', knownSlugs: known }),
+  '/s/acme',
+  `FAIL MP11: unknown (not-planned) url-safe slug must resolve to the HOME base, NOT /s/acme/blog`,
+)
+// injection still → base even with a knownSlugs list present
+assert.strictEqual(
+  resolveNavHref('../../etc/passwd', { linkBase: '/s/acme', navMode: 'path', knownSlugs: known }),
+  '/s/acme',
+  `FAIL MP11: path-traversal injection must still resolve to base`,
+)
+assert.strictEqual(
+  resolveNavHref('javascript:alert(1)', { linkBase: '/s/acme', navMode: 'path', knownSlugs: known }),
+  '/s/acme',
+  `FAIL MP11: javascript: injection must still resolve to base`,
+)
+// query (preview) mode: unknown slug → ?slug=home (not ?slug=blog)
+assert.strictEqual(
+  resolveNavHref('blog', { linkBase: '/website-preview/abc', navMode: 'query', knownSlugs: known }),
+  '/website-preview/abc?slug=home',
+  `FAIL MP11: unknown slug in query mode must fall back to ?slug=home`,
+)
+// back-compat: no knownSlugs → shape-only (any url-safe slug still resolves to a path)
+assert.strictEqual(
+  resolveNavHref('blog', { linkBase: '/s/acme', navMode: 'path' }),
+  '/s/acme/blog',
+  `FAIL MP11: without knownSlugs the legacy shape-only behaviour must be preserved`,
+)
+
+// MP12 — rewriteNavLinks slug-set-aware end-to-end: body with a KNOWN and an UNKNOWN
+// data-yoai-href. Known → /s/acme/hakkimizda; unknown 'blog' → /s/acme (home base),
+// and the document must NOT contain a 404-bound /s/acme/blog href.
+const navBodyMixed =
+  '<nav>' +
+  '<a data-yoai-href="hakkimizda">Hakkımızda</a>' +
+  '<a data-yoai-href="blog">Blog</a>' +
+  '</nav>'
+const rwSet = rewriteNavLinks(navBodyMixed, { linkBase: '/s/acme', navMode: 'path', knownSlugs: known })
+assert.ok(rwSet.includes('href="/s/acme/hakkimizda"'), `FAIL MP12: known slug href missing — got: ${rwSet}`)
+assert.ok(!rwSet.includes('href="/s/acme/blog"'), `FAIL MP12: unknown slug must NOT produce /s/acme/blog — got: ${rwSet}`)
+// the unknown 'blog' anchor must instead carry the home base href
+assert.ok(/data-yoai-href="blog" href="\/s\/acme"/.test(rwSet), `FAIL MP12: unknown 'blog' anchor must resolve to home base /s/acme — got: ${rwSet}`)
+
 console.log('multipage OK')
