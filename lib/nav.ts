@@ -92,7 +92,7 @@ export const navItems: NavItem[] = [
   },
   {
     id: 'sosyal-medya',
-    label: 'Sosyal Medya Yönetimi',
+    label: 'Sosyal Medya',
     href: ROUTES.SOCIAL_MEDIA,
     icon: CalendarClock,
   },

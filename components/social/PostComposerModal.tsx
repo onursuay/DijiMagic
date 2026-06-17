@@ -1,10 +1,12 @@
 'use client'
 
 import { useState, useEffect, useRef, useCallback } from 'react'
-import { useTranslations } from 'next-intl'
+import { useRouter } from 'next/navigation'
+import { useTranslations, useLocale } from 'next-intl'
 import {
-  X, Upload, Sparkles, Instagram, Facebook, Check, Play, Loader2, Trash2, AlertCircle,
+  X, Upload, Sparkles, Instagram, Facebook, Check, Play, Loader2, Trash2, AlertCircle, ArrowRight, Link2Off,
 } from 'lucide-react'
+import { localePath } from '@/lib/routes'
 import FormatTabs from './FormatTabs'
 import type {
   SocialFormat, SocialMediaType, MetaTargetAccount, SocialPostWithRelations,
@@ -39,6 +41,7 @@ export default function PostComposerModal({
   initialDate,
   editPost,
   targets,
+  metaConnected = true,
   onSubmit,
   onUploadError,
 }: {
@@ -48,10 +51,13 @@ export default function PostComposerModal({
   initialDate: Date
   editPost: SocialPostWithRelations | null
   targets: MetaTargetAccount[]
+  metaConnected?: boolean
   onSubmit: (payload: ComposerSubmit, editId: string | null) => Promise<boolean>
   onUploadError: () => void
 }) {
   const t = useTranslations('dashboard.sosyalmedya.composer')
+  const locale = useLocale()
+  const router = useRouter()
   const isEdit = Boolean(editPost)
 
   const [source, setSource] = useState<'upload' | 'tasarim'>('upload')
@@ -295,7 +301,22 @@ export default function PostComposerModal({
             <label className="mb-1 block text-sm font-medium text-gray-700">{t('targets')}</label>
             <p className="mb-2 text-xs text-gray-400">{t('targetsHint')}</p>
             {targets.length === 0 ? (
-              <p className="rounded-lg bg-gray-50 px-3 py-2.5 text-sm text-gray-500">{t('noTargets')}</p>
+              !metaConnected ? (
+                <div className="rounded-xl border border-gray-200 bg-gray-50 px-4 py-4 text-center">
+                  <Link2Off className="mx-auto mb-2 h-6 w-6 text-gray-400" />
+                  <p className="text-sm text-gray-600">{t('notConnected')}</p>
+                  <button
+                    type="button"
+                    onClick={() => router.push(localePath('/entegrasyon', locale))}
+                    className="mt-3 inline-flex items-center gap-1.5 rounded-lg bg-primary px-3.5 py-2 text-sm font-medium text-white transition-all hover:bg-primary/90 active:scale-[0.97]"
+                  >
+                    {t('goToIntegration')}
+                    <ArrowRight className="h-4 w-4" />
+                  </button>
+                </div>
+              ) : (
+                <p className="rounded-lg bg-gray-50 px-3 py-2.5 text-sm text-gray-500">{t('noTargets')}</p>
+              )
             ) : (
               <div className="space-y-1.5">
                 {targets.map((acc) => {

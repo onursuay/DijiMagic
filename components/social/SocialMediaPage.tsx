@@ -20,6 +20,7 @@ export default function SocialMediaPage() {
 
   const [projects, setProjects] = useState<SocialProject[]>([])
   const [targets, setTargets] = useState<MetaTargetAccount[]>([])
+  const [metaConnected, setMetaConnected] = useState(true)
   const [posts, setPosts] = useState<SocialPostWithRelations[]>([])
   const [activeProjectId, setActiveProjectId] = useState<string | null>(null)
   const [format, setFormat] = useState<SocialFormat>('feed')
@@ -50,8 +51,9 @@ export default function SocialMediaPage() {
     try {
       const res = await fetch('/api/social/targets')
       const json = await res.json()
-      if (json.ok) setTargets(json.data ?? [])
-    } catch { /* sessiz — Meta bağlı değil */ }
+      if (json.ok) { setTargets(json.data ?? []); setMetaConnected(true) }
+      else if (json.error === 'not_connected') { setTargets([]); setMetaConnected(false) }
+    } catch { setTargets([]) }
   }, [])
 
   const fetchPosts = useCallback(async () => {
@@ -193,6 +195,7 @@ export default function SocialMediaPage() {
         initialDate={selectedDate}
         editPost={editPost}
         targets={targets}
+        metaConnected={metaConnected}
         onSubmit={submitComposer as any}
         onUploadError={() => addToast(t('toasts.uploadError'), 'error')}
       />
