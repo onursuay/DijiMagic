@@ -16,6 +16,7 @@ import assert from 'node:assert/strict'
 import { createRequire } from 'node:module'
 import { fileURLToPath } from 'node:url'
 import path from 'node:path'
+import { load } from 'cheerio'
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url))
 const require = createRequire(import.meta.url)
@@ -1023,5 +1024,55 @@ assert.deepStrictEqual(
 const mlClean = sanitizeSiteHtml(mlOut)
 assert.ok(mlClean.includes('data-yoai-href="contact"'), `FAIL ML10: data-yoai-* stripped by sanitizer`)
 assert.ok(mlClean.includes('[EN] Merhaba Dünya'), `FAIL ML10: translated text lost after sanitize`)
+
+// ML11 — ADVERSARIAL: a malicious attribute translation must be NEUTRALISED in the
+// RAW translatePageHtml output (defense-in-depth — safe even WITHOUT the downstream
+// renderGate). cheerio writes `.attribs` without escaping `<` / `>`, so a translated
+// `alt` of `"><script>alert(1)</script>` could otherwise break out of the attribute
+// and inject live markup. The reinsert HTML-escape must close that breakout.
+const attackBody = '<main><h1>Başlık</h1><img src="https://cdn.example.com/a.jpg" alt="Bir kahve fincanı"></main>'
+// Injected translator: turns the ONLY translatable attr value (the alt) into a
+// breakout payload, and prefixes text nodes (so we also prove text is unaffected).
+const attackTranslator = async (strings) =>
+  strings.map((s) => (s === 'Bir kahve fincanı' ? '"><script>alert(1)</script>' : `[EN] ${s}`))
+const attackOut = await translatePageHtml(attackBody, 'tr', 'en', attackTranslator)
+
+// (1) No LIVE <script> tag and no event-handler attribute in the raw output.
+assert.ok(!/<script/i.test(attackOut), `FAIL ML11: raw output contains a live <script> — attribute breakout — got: ${attackOut}`)
+assert.ok(!/\son\w+\s*=/i.test(attackOut), `FAIL ML11: raw output contains an on*= handler — attribute breakout — got: ${attackOut}`)
+// (2) No attribute breakout: the structure is intact — still exactly one <img> and
+//     one <h1>, and the payload did NOT create extra elements when re-parsed.
+assert.strictEqual((attackOut.match(/<img\b/g) || []).length, 1, `FAIL ML11: <img> count changed — breakout created markup — got: ${attackOut}`)
+assert.strictEqual((attackOut.match(/<h1\b/g) || []).length, 1, `FAIL ML11: <h1> count changed — breakout created markup — got: ${attackOut}`)
+// (3) Defense-in-depth: re-parsing the RAW output yields NO live <script> element
+//     (the payload stayed inert inside the attribute).
+const attackReparsed = load(attackOut, {}, false)
+assert.strictEqual(attackReparsed('script').length, 0, `FAIL ML11: re-parsed raw output has a live <script> element — got: ${attackOut}`)
+assert.strictEqual(attackReparsed('img').length, 1, `FAIL ML11: re-parsed raw output lost/duplicated the <img> — got: ${attackOut}`)
+// (4) Text node was still translated normally (the fix only touches ATTRIBUTE reinsert).
+assert.ok(attackOut.includes('[EN] Başlık'), `FAIL ML11: text node should still be translated — got: ${attackOut}`)
+// (5) And, as today, the downstream gate STILL accepts it (no regression).
+const attackGate = gateSiteHtml(attackOut)
+assert.ok(attackGate.ok === true, `FAIL ML11: gate must accept the neutralised output — got: ${JSON.stringify(attackGate)}`)
+assert.ok(!attackGate.html.includes('<script'), `FAIL ML11: gated html must not contain <script — got: ${attackGate.html}`)
+
+// ML12 — BENIGN ROUND-TRIP: a legitimate translation with `&` and `"` in an
+// attribute must be escaped correctly by construction — NO breakout, and crucially
+// NO double-escape. `alt="Tom & Jerry"` must serialize to `alt="Tom &amp; Jerry"`
+// (a single &amp;, never &amp;amp;) and re-parse back to the intended literal value.
+const benignBody = '<main><h1>x</h1><img src="https://cdn.example.com/c.jpg" alt="ALT"></main>'
+const benignTranslator = async (strings) =>
+  strings.map((s) => (s === 'ALT' ? 'Tom & Jerry "deluxe"' : `[EN] ${s}`))
+const benignOut = await translatePageHtml(benignBody, 'tr', 'en', benignTranslator)
+// Single-escaped & and " in the serialized attribute (cheerio escapes these; we must NOT add a second layer).
+assert.ok(benignOut.includes('alt="Tom &amp; Jerry &quot;deluxe&quot;"'), `FAIL ML12: benign attr not single-escaped — got: ${benignOut}`)
+assert.ok(!benignOut.includes('&amp;amp;'), `FAIL ML12: DOUBLE-escape detected (&amp;amp;) — got: ${benignOut}`)
+// Re-parses back to the intended literal value (no corruption).
+const benignReparsed = load(benignOut, {}, false)
+assert.strictEqual(
+  benignReparsed('img').attr('alt'),
+  'Tom & Jerry "deluxe"',
+  `FAIL ML12: benign attr did not round-trip to the intended value — got: ${JSON.stringify(benignReparsed('img').attr('alt'))}`,
+)
 
 console.log('multilang OK')
