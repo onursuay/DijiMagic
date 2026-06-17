@@ -92,13 +92,21 @@ export default function WebsiteReviewPage() {
       const res = await fetch(`/api/website/${id}/generate`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ instructions: text, revisionMode: mode }),
+        // 'edit' modunda önizlenen sayfayı (slug + dil) gönder → sunucu blok-bazlı
+        // cerrahi patch dener; başarısız olursa tam-üretim fallback'e düşer. 'reject'
+        // modu (baştan üret) hedef göndermez → mevcut tam-üretim davranışı korunur.
+        body: JSON.stringify({
+          instructions: text,
+          revisionMode: mode,
+          ...(mode === 'edit' ? { targetSlug: activeSlugSafe, targetLocale: previewLocale } : {}),
+        }),
       })
       if (res.status === 402) { setShowCredit(true); setPanel(null); setFeedback(''); return }
       const json = await res.json()
       if (json.ok) {
         setPages(json.pages ?? [])
-        setActiveSlug('home')
+        // 'edit' (cerrahi) → kullanıcı düzenlediği sayfada kalsın; 'reject' (baştan üret) → anasayfaya dön.
+        if (mode !== 'edit') setActiveSlug('home')
         setReloadKey((k) => k + 1)
         setPanel(null)
         setFeedback('')

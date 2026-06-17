@@ -8,7 +8,8 @@ import { computeGenerationCost, WEBSITE_REVISION_COST, WEBSITE_FREE_REVISIONS } 
 import { summarizeSiteForRevision } from '@/lib/website/revisionContext'
 import { getProfileByUserId, getIntelligenceByUserId } from '@/lib/yoai/businessProfileStore'
 import { generateHtmlSite } from '@/lib/website/codegen/generateHtmlSite'
-import type { Website, WebsiteSnapshot, ThemeTokens } from '@/lib/website/types'
+import { applyBlockPatch } from '@/lib/website/codegen/applyBlockPatch'
+import type { Website, WebsitePageInput, WebsiteSnapshot, ThemeTokens } from '@/lib/website/types'
 
 export const dynamic = 'force-dynamic'
 export const maxDuration = 60
@@ -31,9 +32,18 @@ export async function POST(req: NextRequest, { params }: { params: { id: string 
   const user = await getCurrentUser()
   if (!user) return NextResponse.json({ ok: false, error: 'Oturum gerekli' }, { status: 401 })
 
-  const body = (await req.json().catch(() => ({}))) as { instructions?: string; revisionMode?: string }
+  const body = (await req.json().catch(() => ({}))) as {
+    instructions?: string
+    revisionMode?: string
+    targetSlug?: string
+    targetLocale?: string
+  }
   const instructions = typeof body.instructions === 'string' ? body.instructions.trim() : ''
   const revisionMode = body.revisionMode === 'reject' || body.revisionMode === 'edit' ? body.revisionMode : undefined
+  // Blok-bazlı chat-edit: önizlemeden gelen hedef sayfa (slug + dil). 'edit' modunda
+  // bu varsa cerrahi blok-patch denenir; başarısız olursa tam-üretim fallback'e düşer.
+  const targetSlug = typeof body.targetSlug === 'string' ? body.targetSlug.trim() : ''
+  const targetLocale = typeof body.targetLocale === 'string' ? body.targetLocale.trim() : ''
 
   const site = await getWebsite(user.id, params.id)
   if (!site) return NextResponse.json({ ok: false, error: 'Bulunamadı' }, { status: 404 })
@@ -51,7 +61,8 @@ export async function POST(req: NextRequest, { params }: { params: { id: string 
   if (isCodegenV2Enabled()) {
     // Revize talimatı + modu motora aktarılır (legacy parite). Boş instructions →
     // ilk üretim davranışı değişmez (initialInstructions kullanılır).
-    return generateWithCodegenV2({ user, site, isRevision, instructions, revisionMode })
+    // targetSlug/targetLocale: 'edit' modunda blok-bazlı cerrahi patch tetikler.
+    return generateWithCodegenV2({ user, site, isRevision, instructions, revisionMode, targetSlug, targetLocale })
   }
 
   // Legacy (sections) yol — maliyet burada hesaplanır. Revizyonda ilk WEBSITE_FREE_REVISIONS
@@ -146,6 +157,8 @@ async function generateWithCodegenV2({
   isRevision,
   instructions,
   revisionMode,
+  targetSlug,
+  targetLocale,
 }: {
   user: { id: string }
   site: Website
@@ -154,6 +167,10 @@ async function generateWithCodegenV2({
   instructions: string
   /** 'edit' | 'reject' | undefined — legacy revize modu semantiği. */
   revisionMode: 'edit' | 'reject' | undefined
+  /** Önizlemede görüntülenen sayfanın slug'ı (blok-patch hedefi). Boş → tam üretim. */
+  targetSlug: string
+  /** Önizlemede görüntülenen sayfanın dili (blok-patch hedefi). */
+  targetLocale: string
 }): Promise<NextResponse> {
   // Maliyet — legacy yolla PARİTE:
   //   • İlk üretim → computeGenerationCost (landing: tek sayfa; multipage: ort. 4 sayfa,
@@ -175,6 +192,32 @@ async function generateWithCodegenV2({
   // Krediyi ÜRETİMDEN ÖNCE düş (owner bypass + yetersiz bakiye 402 featureGuard içinde).
   const access = await chargeFeature({ featureKey: 'website_generation', creditCost: cost })
   if (!access.ok) return NextResponse.json(access.body, { status: access.status })
+
+  // ── Blok-bazlı chat-edit (cerrahi revize) ────────────────────────────────────
+  // 'edit' modunda + hedef sayfa (targetSlug) verilmişse: yalnız o sayfanın hedef
+  // bloklarını yeniden üretip birleştir → dokunulmayan bloklar BYTE-AYNI kalır.
+  // Başarılı (gate geçti) → yalnız o sayfayı persist et (diğer sayfalar byte-aynı) +
+  // createVersion('revision'). Başarısız (ok:false) → MEVCUT tam-üretim fallback'e DÜŞ
+  // (kredi iade edilmez; aynı revizyon ücretiyle tam üretim çalışır). reject / hedef
+  // yok → aşağıdaki tam-üretim aynen çalışır.
+  if (revisionMode === 'edit' && targetSlug) {
+    try {
+      const patch = await applyBlockPatch(user.id, site, { targetSlug, targetLocale, instruction: instructions })
+      if (patch.ok === true) {
+        const persisted = await persistBlockPatch(user.id, site, patch.page, access.spent)
+        if (persisted) {
+          return NextResponse.json({ ok: true, pages: persisted, creditCharged: access.spent })
+        }
+        // persist edilemedi → tam-üretim fallback'e düş (kredi zaten düşüldü; iade etme).
+      } else {
+        console.warn('[website:generate:v2] block-patch fallback:', patch.reason)
+      }
+    } catch (e) {
+      // Beklenmedik throw → tam-üretim fallback (edit asla çıkmaza girmez).
+      console.warn('[website:generate:v2] block-patch threw, full regen fallback:', e instanceof Error ? e.message : e)
+    }
+    // Buraya düşüldü → blok-patch uygulanamadı; aşağıdaki tam-üretim fallback çalışır.
+  }
 
   let result: Awaited<ReturnType<typeof generateHtmlSite>>
   try {
@@ -233,5 +276,60 @@ async function generateWithCodegenV2({
     const message = e instanceof Error ? e.message : 'Üretilemedi'
     console.error('[website:generate:v2]', message)
     return NextResponse.json({ ok: false, error: message }, { status: 500 })
+  }
+}
+
+/**
+ * Blok-patch çıktısını persist eder: YALNIZ hedef sayfanın html'i değişir; diğer tüm
+ * sayfalar (ve diller) MEVCUT html'leriyle BYTE-AYNI yazılır. theme/designVars
+ * DOKUNULMAZ (blok-patch tasarım sistemini değiştirmez). Yeni bir 'revision' sürümü
+ * kaydedilir (otomatik snapshot → "Geri Al" çalışır). Hata olursa null döner →
+ * çağıran tam-üretim fallback'e düşer (kredi iade edilmez; aynı ücretle tam üretim).
+ *
+ * @returns persist edilen sayfa listesi (UI bunu setPages ile kullanır) veya null
+ */
+async function persistBlockPatch(
+  userId: string,
+  site: Website,
+  patchedPage: WebsitePageInput,
+  creditCharged: number,
+): Promise<Awaited<ReturnType<typeof replacePages>> | null> {
+  try {
+    const current = await getPages(userId, site.id)
+    if (current.length === 0) return null
+
+    // Yalnız hedef sayfayı (slug + locale) değiştir; gerisi byte-aynı kalır.
+    const inputs: WebsitePageInput[] = current.map((p) => {
+      const isTarget = p.slug === patchedPage.slug && p.locale === patchedPage.locale
+      return {
+        locale: p.locale,
+        slug: p.slug,
+        pageRole: p.pageRole,
+        sections: p.sections,
+        seo: isTarget ? (patchedPage.seo ?? p.seo) : p.seo,
+        orderIndex: p.orderIndex,
+        html: isTarget ? patchedPage.html : p.html,
+        format: p.format, // dokunulmayan sayfalar formatını korur; hedef zaten 'html'
+      }
+    })
+
+    const pages = await replacePages(userId, site.id, inputs)
+
+    const snapshot: WebsiteSnapshot = {
+      website: {
+        label: site.label,
+        siteType: site.siteType,
+        defaultLocale: site.defaultLocale,
+        locales: site.locales,
+        category: site.category,
+        theme: site.theme, // designVars/compiledCssVersion KORUNUR (patch temayı değiştirmez)
+      },
+      pages,
+    }
+    await createVersion(site.id, snapshot, 'revision', creditCharged)
+    return pages
+  } catch (e) {
+    console.error('[website:generate:v2] block-patch persist failed:', e instanceof Error ? e.message : e)
+    return null
   }
 }

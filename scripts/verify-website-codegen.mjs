@@ -1128,3 +1128,171 @@ assert.strictEqual(
 )
 
 console.log('multilang OK')
+
+// ---------------------------------------------------------------------------
+// BLOCK-PATCH section — chat-edit blockMap (extract/merge byte-identity) +
+// patchPlanner validator (invalid targetId dropped, no-valid-ops → fallback, op cap).
+//
+// Load the pure cores directly (single source of truth — also used by
+// applyBlockPatch.ts + patchPlanner.ts via dynamic import). No live API call.
+// ---------------------------------------------------------------------------
+
+const blockMapPath = path.join(__dirname, '../lib/website/codegen/blockMap.mjs')
+const {
+  extractBlocks,
+  summarizeBlocks,
+  mergeBlocks,
+  nextBlockId,
+  ALLOWED_OPS,
+  MAX_OPS,
+} = await import(blockMapPath)
+
+const patchPlannerPath = path.join(__dirname, '../lib/website/codegen/patchPlannerShared.mjs')
+const {
+  validateOps,
+  parsePlannerOps,
+  buildPlannerSystemPrompt,
+  buildPlannerUserMessage,
+} = await import(patchPlannerPath)
+
+// A realistic generated body: three top-level sections, sequential data-yoai-id,
+// with attribute order/spacing/void-element quirks that cheerio re-serialization
+// would normalize — proving the BYTE-EXACT slice (not re-serialization).
+const bpBody =
+  '<header data-yoai-block="hero" data-yoai-id="b1" class="hero"><h1>Merhaba</h1>' +
+  '<img src="https://cdn.example.com/a.jpg" alt="x" width="800" height="600" loading="lazy"></header>\n' +
+  '<section data-yoai-id="b2"  data-yoai-block="services" class="grid"><h2>Hizmetler</h2><p>İçerik bir iki üç dört beş.</p></section>\n' +
+  "<footer data-yoai-block='footer' data-yoai-id=\"b3\"><p>Alt bilgi</p></footer>"
+
+// BP1 — extractBlocks: three blocks, ids+roles in order, BYTE-EXACT outerHTML slices
+const bpBlocks = extractBlocks(bpBody)
+assert.strictEqual(bpBlocks.length, 3, `FAIL BP1: expected 3 blocks — got: ${bpBlocks.length}`)
+assert.deepStrictEqual(bpBlocks.map((b) => b.id), ['b1', 'b2', 'b3'], `FAIL BP1: block ids/order — got: ${JSON.stringify(bpBlocks.map((b) => b.id))}`)
+assert.deepStrictEqual(bpBlocks.map((b) => b.role), ['hero', 'services', 'footer'], `FAIL BP1: roles — got: ${JSON.stringify(bpBlocks.map((b) => b.role))}`)
+// each block's html must be a verbatim substring of the source (byte-exact slice)
+for (const b of bpBlocks) {
+  assert.ok(bpBody.includes(b.html), `FAIL BP1: block ${b.id} html is not a verbatim slice of the source — got: ${b.html}`)
+}
+// the services block must keep its ODD double-space between attributes (no normalization)
+assert.ok(bpBlocks[1].html.includes('data-yoai-id="b2"  data-yoai-block'), `FAIL BP1: byte-exact slice lost the original attribute spacing — got: ${bpBlocks[1].html}`)
+// the footer block must keep its single-quoted attribute (cheerio would re-quote it)
+assert.ok(bpBlocks[2].html.includes("data-yoai-block='footer'"), `FAIL BP1: byte-exact slice normalized the single-quoted attr — got: ${bpBlocks[2].html}`)
+
+// BP2 — extractBlocks on empty / id-less input → []
+assert.deepStrictEqual(extractBlocks(''), [], `FAIL BP2: empty input must yield []`)
+assert.deepStrictEqual(extractBlocks('<section class="x"><p>no id</p></section>'), [], `FAIL BP2: id-less blocks must yield []`)
+
+// BP3 — summarizeBlocks: id + role + short visible-text snippet (no markup)
+const bpSum = summarizeBlocks(bpBlocks)
+assert.strictEqual(bpSum.length, 3, `FAIL BP3: summary count`)
+assert.deepStrictEqual(bpSum.map((s) => s.id), ['b1', 'b2', 'b3'], `FAIL BP3: summary ids`)
+assert.ok(bpSum[0].snippet.includes('Merhaba'), `FAIL BP3: snippet must carry visible text — got: ${bpSum[0].snippet}`)
+assert.ok(!bpSum[0].snippet.includes('<'), `FAIL BP3: snippet must not contain markup — got: ${bpSum[0].snippet}`)
+
+// BP4 — mergeBlocks EDIT only the target: b2 changes, b1+b3 BYTE-IDENTICAL, order kept
+const editedB2 = '<section data-yoai-block="services" data-yoai-id="b2"><h2>YENİ Hizmetler</h2></section>'
+const mEdit = mergeBlocks(bpBlocks, [{ op: 'edit', targetId: 'b2' }], { b2: editedB2 })
+assert.ok(mEdit.includes(editedB2), `FAIL BP4: edited b2 html missing — got: ${mEdit}`)
+assert.ok(mEdit.includes(bpBlocks[0].html), `FAIL BP4: b1 must be byte-identical after editing b2 — got: ${mEdit}`)
+assert.ok(mEdit.includes(bpBlocks[2].html), `FAIL BP4: b3 must be byte-identical after editing b2 — got: ${mEdit}`)
+assert.ok(!mEdit.includes('İçerik bir iki üç'), `FAIL BP4: old b2 content must be gone — got: ${mEdit}`)
+// b1 then (edited)b2 then b3 — order preserved
+assert.ok(mEdit.indexOf(bpBlocks[0].html) < mEdit.indexOf(editedB2) && mEdit.indexOf(editedB2) < mEdit.indexOf(bpBlocks[2].html), `FAIL BP4: order not preserved — got: ${mEdit}`)
+
+// BP5 — mergeBlocks DELETE: b2 removed, b1+b3 byte-identical, no b2 remnant
+const mDel = mergeBlocks(bpBlocks, [{ op: 'delete', targetId: 'b2' }], {})
+assert.ok(mDel.includes(bpBlocks[0].html) && mDel.includes(bpBlocks[2].html), `FAIL BP5: surviving blocks must stay byte-identical — got: ${mDel}`)
+assert.ok(!mDel.includes('data-yoai-id="b2"'), `FAIL BP5: deleted b2 must be gone — got: ${mDel}`)
+
+// BP6 — mergeBlocks INSERT after b1: new block lands between b1 and b2, others byte-identical
+const newBlock = '<section data-yoai-block="cta" data-yoai-id="b9"><h2>Yeni CTA</h2></section>'
+const mIns = mergeBlocks(bpBlocks, [{ op: 'insert', targetId: 'b9', after: 'b1' }], { b9: newBlock })
+assert.ok(mIns.includes(newBlock), `FAIL BP6: inserted block missing — got: ${mIns}`)
+assert.ok(mIns.indexOf(bpBlocks[0].html) < mIns.indexOf(newBlock) && mIns.indexOf(newBlock) < mIns.indexOf(bpBlocks[1].html), `FAIL BP6: insert position wrong — got: ${mIns}`)
+assert.ok(mIns.includes(bpBlocks[0].html) && mIns.includes(bpBlocks[1].html) && mIns.includes(bpBlocks[2].html), `FAIL BP6: all originals must stay byte-identical — got: ${mIns}`)
+
+// BP7 — mergeBlocks MOVE b3 to the top (after:''): order becomes b3, b1, b2; all byte-identical
+const mMove = mergeBlocks(bpBlocks, [{ op: 'move', targetId: 'b3', after: '' }], {})
+assert.ok(mMove.indexOf(bpBlocks[2].html) < mMove.indexOf(bpBlocks[0].html), `FAIL BP7: b3 must move before b1 — got: ${mMove}`)
+assert.ok(mMove.indexOf(bpBlocks[0].html) < mMove.indexOf(bpBlocks[1].html), `FAIL BP7: b1 must stay before b2 after move — got: ${mMove}`)
+assert.ok(mMove.includes(bpBlocks[0].html) && mMove.includes(bpBlocks[1].html) && mMove.includes(bpBlocks[2].html), `FAIL BP7: move must keep blocks byte-identical — got: ${mMove}`)
+
+// BP8 — mergeBlocks no-op (empty ops) → the original blocks rejoined, every block byte-identical
+const mNoop = mergeBlocks(bpBlocks, [], {})
+for (const b of bpBlocks) assert.ok(mNoop.includes(b.html), `FAIL BP8: block ${b.id} not byte-identical on no-op merge`)
+
+// BP9 — nextBlockId mints a fresh non-colliding bN
+assert.strictEqual(nextBlockId(['b1', 'b2', 'b3']), 'b4', `FAIL BP9: next after b1..b3 must be b4 — got: ${nextBlockId(['b1', 'b2', 'b3'])}`)
+assert.strictEqual(nextBlockId(['b1', 'b3']), 'b2', `FAIL BP9: must fill the first gap (b2) — got: ${nextBlockId(['b1', 'b3'])}`)
+assert.strictEqual(nextBlockId([]), 'b1', `FAIL BP9: empty → b1 — got: ${nextBlockId([])}`)
+
+// ---- patchPlanner validator (the SECURITY gate) ----
+const knownBpIds = ['b1', 'b2', 'b3']
+
+// BPV1 — invalid targetId is DROPPED (security: unknown block can never be mutated)
+const v1 = validateOps([{ op: 'edit', targetId: 'bX' }, { op: 'edit', targetId: 'b2' }], knownBpIds)
+assert.strictEqual(v1.ops.length, 1, `FAIL BPV1: unknown-target op must be dropped — got: ${JSON.stringify(v1.ops)}`)
+assert.strictEqual(v1.ops[0].targetId, 'b2', `FAIL BPV1: only the valid op survives — got: ${JSON.stringify(v1.ops)}`)
+assert.strictEqual(v1.fallback, false, `FAIL BPV1: a valid op remains → no fallback`)
+
+// BPV2 — NO valid op → fallback:true (caller full-regenerates)
+const v2 = validateOps([{ op: 'edit', targetId: 'bX' }, { op: 'delete', targetId: 'bY' }], knownBpIds)
+assert.deepStrictEqual(v2.ops, [], `FAIL BPV2: all-invalid → empty ops — got: ${JSON.stringify(v2.ops)}`)
+assert.strictEqual(v2.fallback, true, `FAIL BPV2: all-invalid → fallback:true`)
+
+// BPV2b — empty / garbage planner output → fallback:true
+assert.strictEqual(validateOps([], knownBpIds).fallback, true, `FAIL BPV2b: empty ops → fallback`)
+assert.strictEqual(validateOps(null, knownBpIds).fallback, true, `FAIL BPV2b: null ops → fallback`)
+assert.strictEqual(validateOps([{ op: 'frobnicate', targetId: 'b1' }], knownBpIds).fallback, true, `FAIL BPV2b: unknown op kind → dropped → fallback`)
+
+// BPV3 — OP CAP: more than MAX_OPS valid ops are capped at MAX_OPS
+const manyOps = Array.from({ length: MAX_OPS + 5 }, () => ({ op: 'edit', targetId: 'b1' }))
+const v3 = validateOps(manyOps, knownBpIds)
+assert.strictEqual(v3.ops.length, MAX_OPS, `FAIL BPV3: ops must be capped at MAX_OPS (${MAX_OPS}) — got: ${v3.ops.length}`)
+
+// BPV4 — insert: a colliding/blank id is MINTED fresh (cannot overwrite a real block);
+// a known `after` is kept, an unknown `after` is DROPPED (append), never injected.
+const v4 = validateOps(
+  [
+    { op: 'insert', targetId: 'b1', after: 'b2' },      // collides with real b1 → minted
+    { op: 'insert', targetId: '', after: 'nope' },      // blank id → minted; unknown after → dropped
+  ],
+  knownBpIds,
+)
+assert.strictEqual(v4.ops.length, 2, `FAIL BPV4: both inserts must survive — got: ${JSON.stringify(v4.ops)}`)
+assert.ok(!knownBpIds.includes(v4.ops[0].targetId), `FAIL BPV4: insert id must be fresh (not a real block) — got: ${v4.ops[0].targetId}`)
+assert.strictEqual(v4.ops[0].after, 'b2', `FAIL BPV4: known after must be kept — got: ${JSON.stringify(v4.ops[0])}`)
+assert.notStrictEqual(v4.ops[0].targetId, v4.ops[1].targetId, `FAIL BPV4: two inserts must mint distinct ids — got: ${JSON.stringify(v4.ops)}`)
+assert.ok(!('after' in v4.ops[1]) || v4.ops[1].after === '', `FAIL BPV4: unknown after must be dropped (not injected) — got: ${JSON.stringify(v4.ops[1])}`)
+
+// BPV5 — ALLOWED_OPS is exactly the four atomic ops; MAX_OPS is a sane positive cap
+assert.deepStrictEqual([...ALLOWED_OPS].sort(), ['delete', 'edit', 'insert', 'move'], `FAIL BPV5: ALLOWED_OPS drifted — got: ${JSON.stringify(ALLOWED_OPS)}`)
+assert.ok(Number.isInteger(MAX_OPS) && MAX_OPS > 0 && MAX_OPS <= 20, `FAIL BPV5: MAX_OPS must be a sane cap — got: ${MAX_OPS}`)
+
+// BPV6 — tolerant parse: {"ops":[...]}, bare [...], and fenced/prose-wrapped all parse;
+// junk → [] (validator then signals fallback)
+assert.strictEqual(parsePlannerOps('{"ops":[{"op":"edit","targetId":"b1"}]}').length, 1, `FAIL BPV6: object form parse`)
+assert.strictEqual(parsePlannerOps('[{"op":"edit","targetId":"b1"}]').length, 1, `FAIL BPV6: bare array parse`)
+assert.strictEqual(parsePlannerOps('```json\n{"ops":[{"op":"delete","targetId":"b2"}]}\n```').length, 1, `FAIL BPV6: fenced parse`)
+assert.strictEqual(parsePlannerOps('Sure! {"ops":[{"op":"move","targetId":"b3","after":"b1"}]} done').length, 1, `FAIL BPV6: prose-wrapped parse`)
+assert.strictEqual(parsePlannerOps('no json here').length, 0, `FAIL BPV6: junk → []`)
+assert.strictEqual(parsePlannerOps(null).length, 0, `FAIL BPV6: null → []`)
+
+// BPV7 — END-TO-END: planner output → validate → merge keeps untouched blocks byte-identical,
+// and the merged body PASSES the publish gate (sanitize + structure) just like the full page.
+const e2eRaw = parsePlannerOps('{"ops":[{"op":"edit","targetId":"b2"}]}')
+const { ops: e2eOps, fallback: e2eFallback } = validateOps(e2eRaw, knownBpIds)
+assert.strictEqual(e2eFallback, false, `FAIL BPV7: a valid edit must not fall back`)
+const e2eMerged = mergeBlocks(bpBlocks, e2eOps, { b2: editedB2 })
+assert.ok(e2eMerged.includes(bpBlocks[0].html) && e2eMerged.includes(bpBlocks[2].html), `FAIL BPV7: untouched blocks byte-identical end-to-end`)
+const e2eGate = gateSiteHtml(e2eMerged)
+assert.ok(e2eGate.ok === true, `FAIL BPV7: merged body must pass the gate (one h1 + landmarks) — got: ${JSON.stringify(e2eGate)}`)
+assert.ok(!e2eGate.html.includes('<script'), `FAIL BPV7: gated merged body must be sanitized`)
+
+// BPV8 — planner prompt builders are non-empty + on-topic (id/op vocabulary present)
+const plSys = buildPlannerSystemPrompt()
+assert.ok(typeof plSys === 'string' && /JSON/i.test(plSys) && /\bedit\b/.test(plSys) && /\binsert\b/.test(plSys), `FAIL BPV8: planner system prompt must describe the JSON op shape`)
+const plUser = buildPlannerUserMessage(bpSum, 'hero bölümünü koyulaştır')
+assert.ok(plUser.includes('b1') && plUser.includes('hero bölümünü koyulaştır'), `FAIL BPV8: planner user message must carry the block list + the command`)
+
+console.log('block-patch OK')
