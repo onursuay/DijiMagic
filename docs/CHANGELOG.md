@@ -2,6 +2,11 @@
 
 ---
 
+## 2026-06-17 — Web Site Yöneticisi: buildCodegenContext (Stage 0 — prompt injection karantinası)
+- **Sorun:** Yeni kod üretim pipeline'ı için harici metin (marka profili, intelligence, referans URL taramaları) AI prompt'una doğrudan geçirilirse prompt injection açığı oluşur.
+- **Çözüm:** `wrapUntrusted(label, text)` fonksiyonu `untrusted.mjs`'te tanımlandı; `<untrusted_source>` etiketi içinde teslim edilen metindeki `<untrusted_source` ve `</untrusted_source` kalıpları FULLWIDTH `＜` ile nötralize edilir. `buildCodegenContext()` profil + intelligence'ı `getProfileByUserId`/`getIntelligenceByUserId` ile çeker (generate.ts ile aynı kapsam), her kaynağı ayrı `untrustedBlocks[]` elemanına sarar; kullanıcının `initialInstructions`'ı ayrı güvenilir `instruction` alanında tutulur. `CodegenContext` tipi `types.ts`'e eklendi. Verify script'e X1/X2/X3 assertion'ları eklendi.
+- **Dosyalar:** `lib/website/codegen/untrusted.mjs` (yeni), `lib/website/codegen/buildCodegenContext.ts` (yeni), `lib/website/codegen/types.ts` (CodegenContext eklendi), `scripts/verify-website-codegen.mjs` (context OK bölümü)
+
 ## 2026-06-17 — Web Site Yöneticisi: (sites) route group + /s/ provider izolasyonu
 - **Sorun:** Yayınlanan müşteri siteleri (`/s/<subdomain>`) root `app/layout.tsx` üzerinden render oluyor; dashboard provider'ları (NextIntlClientProvider, SubscriptionProvider, CreditProvider, RouteTracker, CookieConsent, AnalyticsScripts) bu sitelere gereksiz yere uygulanıyordu.
 - **Çözüm:** `middleware.ts`'e additive `x-pathname` request header eklendi (3 exit point). `app/layout.tsx`'e path-conditional dal eklendi: `/s/` ile başlayan path'lerde minimal tree (sıfır provider), diğerlerinde tam provider zinciri değişmeden. `app/(sites)/` route group oluşturuldu, sayfa dosyaları git mv ile taşındı.
