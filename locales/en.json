@@ -344,6 +344,13 @@
         "editTitle": "Edit Content",
         "source": "Content source",
         "sourceUpload": "Upload file",
+        "sourceAi": "Generate with AI",
+        "aiKindImage": "Image",
+        "aiKindVideo": "Video",
+        "aiPromptPlaceholder": "Describe what to create… (e.g. a modern poster for a summer sale)",
+        "generate": "Generate",
+        "generating": "Generating…",
+        "generateCost": "{count} credits",
         "sourceDesign": "From Design",
         "designComingSoon": "Coming soon",
         "uploadHint": "Drag an image or video, or choose one",
@@ -383,7 +390,8 @@
         "updated": "Content updated",
         "cancelled": "Content cancelled",
         "retried": "Rescheduled",
-        "uploadError": "Could not upload file"
+        "uploadError": "Could not upload file",
+        "generateError": "Could not generate content"
       }
     },
     "homepage": {

@@ -198,6 +198,7 @@ export default function SocialMediaPage() {
         metaConnected={metaConnected}
         onSubmit={submitComposer as any}
         onUploadError={() => addToast(t('toasts.uploadError'), 'error')}
+        onGenerateError={(msg) => addToast(msg || t('toasts.generateError'), 'error')}
       />
 
       {showGate && <AccessRequiredModal type="subscription" featureKey="social_media_management" />}

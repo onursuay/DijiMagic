@@ -344,6 +344,13 @@
         "editTitle": "İçeriği Düzenle",
         "source": "İçerik kaynağı",
         "sourceUpload": "Dosya yükle",
+        "sourceAi": "AI ile üret",
+        "aiKindImage": "Görsel",
+        "aiKindVideo": "Video",
+        "aiPromptPlaceholder": "Ne üretmek istediğini yaz… (örn. yaz indirimi için modern bir afiş)",
+        "generate": "Üret",
+        "generating": "Üretiliyor…",
+        "generateCost": "{count} kredi",
         "sourceDesign": "Tasarım'dan getir",
         "designComingSoon": "Yakında",
         "uploadHint": "Görsel veya video sürükleyin ya da seçin",
@@ -383,7 +390,8 @@
         "updated": "İçerik güncellendi",
         "cancelled": "İçerik iptal edildi",
         "retried": "Yeniden zamanlandı",
-        "uploadError": "Dosya yüklenemedi"
+        "uploadError": "Dosya yüklenemedi",
+        "generateError": "İçerik üretilemedi"
       }
     },
     "homepage": {

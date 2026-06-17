@@ -7,6 +7,7 @@ import {
   X, Upload, Sparkles, Instagram, Facebook, Check, Play, Loader2, Trash2, AlertCircle, ArrowRight, Link2Off,
 } from 'lucide-react'
 import { localePath } from '@/lib/routes'
+import { COST_PER_GENERATION } from '@/lib/subscription/types'
 import FormatTabs from './FormatTabs'
 import type {
   SocialFormat, SocialMediaType, MetaTargetAccount, SocialPostWithRelations,
@@ -44,6 +45,7 @@ export default function PostComposerModal({
   metaConnected = true,
   onSubmit,
   onUploadError,
+  onGenerateError,
 }: {
   open: boolean
   onClose: () => void
@@ -54,13 +56,14 @@ export default function PostComposerModal({
   metaConnected?: boolean
   onSubmit: (payload: ComposerSubmit, editId: string | null) => Promise<boolean>
   onUploadError: () => void
+  onGenerateError?: (msg?: string) => void
 }) {
   const t = useTranslations('dashboard.sosyalmedya.composer')
   const locale = useLocale()
   const router = useRouter()
   const isEdit = Boolean(editPost)
 
-  const [source, setSource] = useState<'upload' | 'tasarim'>('upload')
+  const [source, setSource] = useState<'upload' | 'ai'>('upload')
   const [format, setFormat] = useState<SocialFormat>(initialFormat)
   const [media, setMedia] = useState<SelectedMedia | null>(null)
   const [uploading, setUploading] = useState(false)
@@ -69,6 +72,9 @@ export default function PostComposerModal({
   const [date, setDate] = useState('')
   const [time, setTime] = useState('')
   const [saving, setSaving] = useState(false)
+  const [aiPrompt, setAiPrompt] = useState('')
+  const [aiKind, setAiKind] = useState<SocialMediaType>('image')
+  const [generating, setGenerating] = useState(false)
   const fileRef = useRef<HTMLInputElement>(null)
 
   // Açılışta state'i kur (yeni / düzenleme)
@@ -95,6 +101,9 @@ export default function PostComposerModal({
       setTime(`${pad((future.getHours() + (d.getTime() < now.getTime() ? 0 : 0)) % 24)}:00`)
     }
     setSource('upload')
+    setAiPrompt('')
+    setAiKind(initialFormat === 'reels' ? 'video' : 'image')
+    setGenerating(false)
   }, [open, editPost, initialFormat, initialDate])
 
   // ESC kapat
@@ -124,6 +133,31 @@ export default function PostComposerModal({
       setUploading(false)
     }
   }, [onUploadError])
+
+  const generate = useCallback(async () => {
+    const p = aiPrompt.trim()
+    if (!p || generating) return
+    setGenerating(true)
+    try {
+      const kind: SocialMediaType = format === 'reels' ? 'video' : aiKind
+      const aspectRatio = format === 'feed' ? '1:1' : '9:16'
+      const res = await fetch('/api/social/media/generate', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ kind, prompt: p, aspectRatio }),
+      })
+      const json = await res.json()
+      if (json.ok) {
+        setMedia({ storagePath: json.data.storagePath, publicUrl: json.data.publicUrl, mediaType: json.data.mediaType })
+      } else {
+        onGenerateError?.(json.message)
+      }
+    } catch {
+      onGenerateError?.()
+    } finally {
+      setGenerating(false)
+    }
+  }, [aiPrompt, aiKind, format, generating, onGenerateError])
 
   if (!open) return null
 
@@ -221,15 +255,13 @@ export default function PostComposerModal({
                 </button>
                 <button
                   type="button"
-                  disabled
-                  title={t('designComingSoon')}
-                  className="relative flex cursor-not-allowed items-center justify-center gap-2 rounded-xl border border-gray-200 px-3 py-2.5 text-sm font-medium text-gray-400"
+                  onClick={() => setSource('ai')}
+                  className={`flex items-center justify-center gap-2 rounded-xl border px-3 py-2.5 text-sm font-medium transition-all ${
+                    source === 'ai' ? 'border-primary bg-primary/5 text-primary' : 'border-gray-200 text-gray-600 hover:border-gray-300'
+                  }`}
                 >
                   <Sparkles className="h-4 w-4" />
-                  {t('sourceDesign')}
-                  <span className="absolute -right-1.5 -top-1.5 rounded-full bg-gray-100 px-1.5 py-0.5 text-[9px] font-medium text-gray-500">
-                    {t('designComingSoon')}
-                  </span>
+                  {t('sourceAi')}
                 </button>
               </div>
             </div>
@@ -267,7 +299,7 @@ export default function PostComposerModal({
                     <Trash2 className="h-4 w-4" />
                   </button>
                 </div>
-              ) : (
+              ) : source === 'upload' ? (
                 <button
                   type="button"
                   onClick={() => fileRef.current?.click()}
@@ -287,6 +319,44 @@ export default function PostComposerModal({
                     </>
                   )}
                 </button>
+              ) : (
+                <div className="space-y-3 rounded-xl border border-gray-200 p-4">
+                  {format !== 'reels' && (
+                    <div className="inline-flex rounded-lg border border-gray-200 p-0.5">
+                      {(['image', 'video'] as const).map((k) => (
+                        <button
+                          key={k}
+                          type="button"
+                          onClick={() => setAiKind(k)}
+                          className={`rounded-md px-3 py-1 text-sm font-medium transition-all ${
+                            aiKind === k ? 'bg-primary text-white' : 'text-gray-600 hover:text-gray-900'
+                          }`}
+                        >
+                          {k === 'image' ? t('aiKindImage') : t('aiKindVideo')}
+                        </button>
+                      ))}
+                    </div>
+                  )}
+                  <textarea
+                    value={aiPrompt}
+                    onChange={(e) => setAiPrompt(e.target.value)}
+                    rows={3}
+                    placeholder={t('aiPromptPlaceholder')}
+                    className="w-full resize-none rounded-xl border border-gray-200 px-3 py-2.5 text-sm text-gray-900 placeholder:text-gray-400 focus:border-primary focus:outline-none focus:ring-2 focus:ring-primary/20"
+                  />
+                  <div className="flex items-center justify-between gap-2">
+                    <span className="text-xs text-gray-400">{t('generateCost', { count: COST_PER_GENERATION })}</span>
+                    <button
+                      type="button"
+                      onClick={generate}
+                      disabled={!aiPrompt.trim() || generating}
+                      className="inline-flex items-center gap-2 rounded-xl bg-primary px-4 py-2 text-sm font-semibold text-white transition-all hover:bg-primary/90 active:scale-[0.97] disabled:cursor-not-allowed disabled:opacity-40"
+                    >
+                      {generating ? <Loader2 className="h-4 w-4 animate-spin" /> : <Sparkles className="h-4 w-4" />}
+                      {generating ? t('generating') : t('generate')}
+                    </button>
+                  </div>
+                </div>
               )}
               {reelsImageConflict && (
                 <p className="mt-1.5 flex items-center gap-1 text-xs text-red-600">
