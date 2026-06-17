@@ -2,6 +2,11 @@
 
 ---
 
+## 2026-06-17 — Web Site Yöneticisi (Kod-Üretim): üretilen site dikey padding default'u kompakt-nefes-alan
+- **Sorun:** Kod-üretim motorunun ürettiği pazarlama siteleri bölümler arasında çok fazla dikey boşluk bırakıyordu (bölümler aşırı uzun/ferah hissediyordu). Owner default bölüm dikey padding'inin daha sıkı ama hâlâ nefes alan (~py-10/12, ≈40–48px) olmasını istedi — eski büyük py-20/py-24 (80–96px) değil. Premium/göz alıcı görünüm korunmalı; kullanıcı sonradan sohbet komutuyla artırabilmeli.
+- **Çözüm:** Bölüm dikey padding'i DesignSystem token'ı değil **üretim sistem prompt'u** ile kontrol ediliyor (spacingScale zaten "Tailwind utilities ile yönetilir; ileride kullanım için tutuldu" notuyla pasif). `buildHtmlSystemPrompt`'taki DESIGN ETHOS bölümünde whitespace yönergesi güncellendi: default bölüm dikey padding'i MODERATE (py-10 md:py-12, ≈40–48px); py-20/24/28/32 default olarak YASAK; nefes alma payı yatay padding (px-6 md:px-8) + iç ritim (gap-*/space-y-*) + tipografik hiyerarşiden gelir; hero biraz daha uzun olabilir. Bunun yalnız DEFAULT olduğu, kullanıcı sonradan daha ferah aralık isterse uygulanacağı belirtildi. Diğer tüm prompt direktifleri (var contract, data-yoai-*, tek h1, görseller, renk özgürlüğü, script/form yasağı) aynen korundu; spacingScale token'ına dokunulmadı (çift küçültme yok).
+- **Dosyalar:** `lib/website/codegen/htmlGenerateShared.mjs`
+
 ## 2026-06-17 — Web Site Yöneticisi: oluşturmada direkt yükleme adımı + metin
 - **Sorun:** "AI ile Oluştur" tıklanınca (`?create=ai`) önce "Site henüz oluşturulmadı" boş-durum ekranı flash ediyor, ancak sonra "AI siteni hazırlıyor" yükleme adımı çıkıyordu. Kullanıcı oluşturmada doğrudan yükleme adımına gitmek istedi.
 - **Çözüm:** `createInitiated` state'i `?create=ai|quick` parametresinden senkron (lazy init) okunuyor; oluşturma başlatılmışsa boş-durum koşulundan önce yükleme adımı render ediliyor (`busy === 'ai'|'quick' || (createInitiated && !hasPages && !genError)`). Üretim biter/başarısız olunca `createInitiated` temizlenir → gerçek boş-durum yine gösterilebilir, ilk ziyarette flash yok. Yükleme başlığı "YoAI Sihirbazı Siteni Hazırlıyor" olarak güncellendi (gövde metni korundu). EN: "YoAI Wizard is building your site".
