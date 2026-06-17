@@ -7,10 +7,16 @@ import { resolveSiteColors } from '@/lib/website/render/theme'
 import { computeGenerationCost, WEBSITE_REVISION_COST, WEBSITE_FREE_REVISIONS } from '@/lib/website/credits'
 import { summarizeSiteForRevision } from '@/lib/website/revisionContext'
 import { getProfileByUserId, getIntelligenceByUserId } from '@/lib/yoai/businessProfileStore'
-import type { WebsiteSnapshot } from '@/lib/website/types'
+import { generateHtmlSite } from '@/lib/website/codegen/generateHtmlSite'
+import type { Website, WebsiteSnapshot, ThemeTokens } from '@/lib/website/types'
 
 export const dynamic = 'force-dynamic'
 export const maxDuration = 60
+
+/** Codegen v2 (serbest HTML) motoru bayrağı. Açık değilse mevcut sections motoru aynen çalışır. */
+function isCodegenV2Enabled(): boolean {
+  return process.env.WEBSITE_CODEGEN_V2 === '1'
+}
 
 /**
  * Faz 1c — AI üretim/revizyon. Kredi düşülür (computeGenerationCost / revizyon sabiti),
@@ -45,6 +51,12 @@ export async function POST(req: NextRequest, { params }: { params: { id: string 
     cost = usedRevisions < WEBSITE_FREE_REVISIONS ? 0 : WEBSITE_REVISION_COST
   } else {
     cost = computeGenerationCost({ siteType: site.siteType, pageCount, localeCount: site.locales.length })
+  }
+
+  // ── Codegen v2 (serbest HTML) bayrağı açıksa: yeni motor. Kapalıysa aşağıdaki mevcut
+  // sections motoru AYNEN çalışır (additive — eski yol byte-byte korunur). ──────────────
+  if (isCodegenV2Enabled()) {
+    return generateWithCodegenV2({ user, site, isRevision })
   }
 
   // Krediyi düş (owner bypass + yetersiz bakiye 402 featureGuard içinde)
@@ -107,6 +119,89 @@ export async function POST(req: NextRequest, { params }: { params: { id: string 
     await access.refund()
     const message = e instanceof Error ? e.message : 'Üretilemedi'
     console.error('[website:generate]', message)
+    return NextResponse.json({ ok: false, error: message }, { status: 500 })
+  }
+}
+
+/**
+ * Codegen v2 yolu (WEBSITE_CODEGEN_V2='1'). Faz 1: tek sayfa (anasayfa), tek dil (defaultLocale).
+ *
+ * Akış: kredi düş (üretimden ÖNCE; owner bypass + yetersiz bakiye 402) → generateHtmlSite →
+ *   • başarı  → replacePages([page]) (html + format='html' DB'ye yazılır) +
+ *               theme.designVars/compiledCssVersion yansıt + createVersion(initial|revision) →
+ *               mevcut yanıt şekliyle döner.
+ *   • gate fail (self-repair sonrası bile bozuk) → access.refund() + 422. Bozuk/boş site ASLA
+ *     persist edilmez/yayınlanmaz; sessizce deterministik motora DÜŞMEZ (brief kararı).
+ */
+async function generateWithCodegenV2({
+  user,
+  site,
+  isRevision,
+}: {
+  user: { id: string }
+  site: Website
+  isRevision: boolean
+}): Promise<NextResponse> {
+  // Faz 1 maliyeti: tek sayfa, tek dil (landing). Sabit formül — sayfa/dil çoğaltma Faz 2+.
+  const cost = computeGenerationCost({ siteType: 'landing', pageCount: 1, localeCount: 1 })
+
+  // Krediyi ÜRETİMDEN ÖNCE düş (owner bypass + yetersiz bakiye 402 featureGuard içinde).
+  const access = await chargeFeature({ featureKey: 'website_generation', creditCost: cost })
+  if (!access.ok) return NextResponse.json(access.body, { status: access.status })
+
+  let result: Awaited<ReturnType<typeof generateHtmlSite>>
+  try {
+    result = await generateHtmlSite(user.id, site)
+  } catch (e) {
+    // generateHtmlSite soft-fail sözleşmelidir; yine de beklenmedik throw olursa krediyi iade et.
+    await access.refund()
+    const message = e instanceof Error ? e.message : 'Üretilemedi'
+    console.error('[website:generate:v2]', message)
+    return NextResponse.json({ ok: false, error: message }, { status: 500 })
+  }
+
+  // Gate başarısız (self-repair sonrası bile) → iade + 422. Canlıya bozuk site çıkmaz.
+  if (result.ok === false) {
+    await access.refund()
+    console.warn('[website:generate:v2] gate fail:', result.reason)
+    return NextResponse.json(
+      { ok: false, error: 'Site oluşturulamadı, lütfen tekrar deneyin.' },
+      { status: 422 },
+    )
+  }
+
+  try {
+    // Stage-1 designVars'ı temaya yaz (servis bunu themeToDesignVars ile aynı şekilde okur:
+    // theme.designVars = Record<string,string>). compiledCssVersion bump → per-site CSS cache.
+    const theme: ThemeTokens = {
+      ...site.theme,
+      designVars: result.designVars,
+      compiledCssVersion: new Date().toISOString(),
+    }
+    await updateWebsite(user.id, site.id, { theme })
+
+    // Sayfayı yaz — page.html + page.format='html' (carry-in: store bunları kolonlara map eder).
+    const pages = await replacePages(user.id, site.id, [result.page])
+
+    const snapshot: WebsiteSnapshot = {
+      website: {
+        label: site.label,
+        siteType: site.siteType,
+        defaultLocale: site.defaultLocale,
+        locales: site.locales,
+        category: site.category,
+        theme, // designVars + compiledCssVersion dahil → rollback bunları geri yükler
+      },
+      pages, // html + format taşır (rowToPage map eder) → rollback bozulmadan geri yükler
+    }
+    await createVersion(site.id, snapshot, isRevision ? 'revision' : 'initial', access.spent)
+
+    return NextResponse.json({ ok: true, pages, creditCharged: access.spent })
+  } catch (e) {
+    // Persist aşamasında hata → krediyi iade et (üretildi ama yazılamadı; çift ücret olmasın).
+    await access.refund()
+    const message = e instanceof Error ? e.message : 'Üretilemedi'
+    console.error('[website:generate:v2]', message)
     return NextResponse.json({ ok: false, error: message }, { status: 500 })
   }
 }

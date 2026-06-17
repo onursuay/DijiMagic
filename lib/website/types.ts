@@ -35,6 +35,12 @@ export interface ThemeTokens {
    * theme jsonb'sinde tutulur — migration gerekmez.
    */
   designVars?: Record<string, string> | null
+  /**
+   * Codegen (format='html') siteleri için per-site derlenmiş CSS önbellek anahtarı. Her yeni üretim/
+   * revizyon bunu yeni bir değere (ISO zaman damgası) çevirir; tailwindCompile bunu görerek eski
+   * derlemeyi geçersiz kılar. Task 15 yazar; sections sitelerinde tanımsızdır. theme jsonb'sinde tutulur.
+   */
+  compiledCssVersion?: string | null
 }
 
 /** Faz C — bir alanın (header/body/footer) global temayı ezen tasarımı. */
