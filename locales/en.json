@@ -5988,7 +5988,11 @@
         "stagePolishing": "Adding the finishing touches…",
         "success": "Your site is ready.",
         "gateFailRefunded": "Couldn't generate the site — your credits were refunded."
-      }
+      },
+      "cardOpenEdit": "Open / Edit",
+      "cardPreviewTitle": "{label} home page preview",
+      "cardPreviewLoading": "Loading preview…",
+      "cardOpenAria": "Open and edit {label}"
     }
   },
   "sidebar": {

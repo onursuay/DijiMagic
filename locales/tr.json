@@ -5988,7 +5988,11 @@
         "stagePolishing": "Son rötuşlar yapılıyor…",
         "success": "Siteniz hazır.",
         "gateFailRefunded": "Site üretilemedi, krediniz iade edildi."
-      }
+      },
+      "cardOpenEdit": "Aç / Düzenle",
+      "cardPreviewTitle": "{label} ana sayfa önizlemesi",
+      "cardPreviewLoading": "Önizleme yükleniyor…",
+      "cardOpenAria": "{label} sitesini aç ve düzenle"
     }
   },
   "sidebar": {
