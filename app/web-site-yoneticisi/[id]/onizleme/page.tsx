@@ -103,8 +103,16 @@ export default function WebsiteReviewPage() {
         setPanel(null)
         setFeedback('')
         addToast(t('revisionDone'), 'success')
-      } else addToast(json.error || t('buildError'), 'error')
-    } catch { addToast(t('buildError'), 'error') } finally { setBusy(null) }
+      } else {
+        // Başarısız revize: girilen metni KORU — paneli geri aç ki kullanıcı
+        // textarea'daki yazısıyla tekrar deneyebilsin (aksiyon barına düşmesin).
+        setPanel(mode)
+        addToast(json.error || t('buildError'), 'error')
+      }
+    } catch {
+      setPanel(mode)
+      addToast(t('buildError'), 'error')
+    } finally { setBusy(null) }
   }
 
   const approve = async () => {
@@ -175,7 +183,7 @@ export default function WebsiteReviewPage() {
                 <span className="w-2.5 h-2.5 rounded-full bg-gray-300" />
                 <span className="w-2.5 h-2.5 rounded-full bg-gray-300" />
               </span>
-              <span className="ml-2 text-xs text-gray-500 truncate">{site?.subdomain}{activeSlugSafe !== 'home' ? `/${activeSlugSafe}` : ''}</span>
+              <span className="ml-2 text-xs text-gray-500 truncate">{site?.subdomain}</span>
               {isPublished && <span className="ml-auto inline-flex items-center rounded-full bg-emerald-50 text-emerald-700 text-xs px-2.5 py-0.5">{t('statusPublished')}</span>}
             </div>
             <div ref={frameWrapRef} className="relative bg-gray-100 flex justify-center overflow-hidden" style={{ height: DESIGN_H * scale }}>

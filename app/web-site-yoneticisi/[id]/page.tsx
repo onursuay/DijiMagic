@@ -4,7 +4,7 @@ import { useState, useEffect, useCallback, useRef } from 'react'
 import { useParams, useRouter, useSearchParams } from 'next/navigation'
 import Link from 'next/link'
 import { useTranslations, useLocale } from 'next-intl'
-import { Sparkles, RefreshCw, Globe, ExternalLink, ArrowLeft, Monitor, Smartphone, ImagePlus, History, RotateCcw, ChevronDown, Eye, AlertCircle, Palette } from 'lucide-react'
+import { Sparkles, RefreshCw, Globe, ExternalLink, ArrowLeft, Monitor, Tablet, Smartphone, ImagePlus, History, RotateCcw, ChevronDown, Eye, AlertCircle, Palette } from 'lucide-react'
 import Topbar from '@/components/Topbar'
 import { ToastContainer, type Toast } from '@/components/Toast'
 import AccessRequiredModal from '@/components/billing/AccessRequiredModal'
@@ -14,7 +14,7 @@ import WizardBuildingAnimation from '@/components/website/WizardBuildingAnimatio
 import type { Website, WebsitePage, WebsiteVersionMeta } from '@/lib/website/types'
 
 type Busy = 'ai' | 'quick' | 'publish' | 'logo' | 'rollback' | null
-type Device = 'desktop' | 'mobile'
+type Device = 'desktop' | 'tablet' | 'mobile'
 
 const LOCALE_NAMES: Record<string, string> = {
   tr: 'Türkçe', en: 'English', de: 'Deutsch', fr: 'Français', es: 'Español', ar: 'العربية', it: 'Italiano', ru: 'Русский',
@@ -30,7 +30,7 @@ const PAGE_LABELS: Record<string, Record<string, string>> = {
   es: { home: 'Inicio', about: 'Nosotros', services: 'Servicios', contact: 'Contacto' },
 }
 
-const DESIGN_W: Record<Device, number> = { desktop: 1280, mobile: 390 }
+const DESIGN_W: Record<Device, number> = { desktop: 1280, tablet: 834, mobile: 390 }
 const DESIGN_H = 760
 
 export default function WebSiteDetailPage() {
@@ -211,15 +211,20 @@ export default function WebSiteDetailPage() {
 
   return (
     <>
-      <Topbar title={site?.label ?? t('title')} description={site?.subdomain ?? ''} />
+      <Topbar title={site?.label ?? t('title')} description={t('detailSubtitle')} />
       <div className="flex-1 overflow-y-auto app-content-surface p-6">
         <div className="max-w-7xl mx-auto space-y-5">
-          <Link
-            href="/web-site-yoneticisi"
-            className="inline-flex items-center gap-1.5 text-sm text-gray-500 hover:text-gray-800 transition-colors"
-          >
-            <ArrowLeft className="w-4 h-4" /> {t('backToList')}
-          </Link>
+          <div className="flex items-center gap-3">
+            <Link
+              href="/web-site-yoneticisi"
+              aria-label={t('backToList')}
+              title={t('backToList')}
+              className="inline-flex h-9 w-9 items-center justify-center rounded-lg border border-gray-200 bg-white text-gray-600 hover:bg-gray-50/60 hover:text-gray-900 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/30 active:scale-[0.97] transition-all"
+            >
+              <ArrowLeft className="w-4 h-4" />
+            </Link>
+            <span className="text-sm font-medium text-gray-500">{t('backToList')}</span>
+          </div>
 
           {/* Üretim durumu + aksiyonlar (intake wizard'a taşındı; burada tekrar sorulmaz) */}
           <div className="bg-white rounded-xl border border-gray-200 p-5 animate-card-enter">
@@ -383,6 +388,7 @@ export default function WebSiteDetailPage() {
                 )}
                 <div className="ml-auto inline-flex items-center rounded-lg border border-gray-200 p-0.5 bg-white">
                   {deviceBtn('desktop', Monitor, t('deviceDesktop'))}
+                  {deviceBtn('tablet', Tablet, t('deviceTablet'))}
                   {deviceBtn('mobile', Smartphone, t('deviceMobile'))}
                 </div>
               </div>
@@ -396,7 +402,7 @@ export default function WebSiteDetailPage() {
                     <span className="w-2.5 h-2.5 rounded-full bg-gray-300" />
                   </span>
                   <span className="ml-2 text-xs text-gray-500 truncate">
-                    {site?.subdomain}{activeSlugSafe !== 'home' ? `/${activeSlugSafe}` : ''}
+                    {site?.subdomain}
                   </span>
                   <span className="ml-auto text-xs text-gray-400">{t('preview')}</span>
                 </div>
@@ -411,8 +417,8 @@ export default function WebSiteDetailPage() {
                       height: DESIGN_H,
                       transform: `scale(${scale})`,
                       transformOrigin: 'top center',
-                      boxShadow: device === 'mobile' ? '0 10px 40px -12px rgba(0,0,0,0.3)' : 'none',
-                      borderRadius: device === 'mobile' ? 18 : 0,
+                      boxShadow: device !== 'desktop' ? '0 10px 40px -12px rgba(0,0,0,0.3)' : 'none',
+                      borderRadius: device !== 'desktop' ? 18 : 0,
                     }}
                   />
                 </div>
