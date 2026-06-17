@@ -50,6 +50,7 @@ export default function CreateSiteWizard({ open, onClose }: CreateSiteWizardProp
   const [locales, setLocales] = useState<string[]>(['tr'])
   const [fontPairing, setFontPairing] = useState<string>('elegant')
   const [siteStyle, setSiteStyle] = useState<string>('modern')
+  const [mobileMenuAnim, setMobileMenuAnim] = useState<'left' | 'right' | 'top'>('left')
   const [refUrls, setRefUrls] = useState<string[]>(['', '', ''])
   const [instructions, setInstructions] = useState('')
   const [logoFile, setLogoFile] = useState<File | null>(null)
@@ -61,6 +62,7 @@ export default function CreateSiteWizard({ open, onClose }: CreateSiteWizardProp
   useEffect(() => {
     if (open) {
       setLabel(''); setSiteType('multipage'); setLocales(['tr']); setFontPairing('elegant'); setSiteStyle('modern')
+      setMobileMenuAnim('left')
       setRefUrls(['', '', '']); setInstructions(''); setLogoFile(null); setLogoPreview(''); setBusy(null); setError('')
     }
   }, [open])
@@ -112,6 +114,7 @@ export default function CreateSiteWizard({ open, onClose }: CreateSiteWizardProp
             referenceUrls: references,
             initialInstructions: instructions.trim() || null,
             style: siteStyle,
+            mobileMenuAnim,
           },
         }),
       })
@@ -218,6 +221,21 @@ export default function CreateSiteWizard({ open, onClose }: CreateSiteWizardProp
                   options={FONT_PAIRING_LIST.map((p) => ({ value: p.id, label: p.label }))}
                 />
               </div>
+            </div>
+
+            {/* Mobil menü açılış animasyonu */}
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-1.5">{t('mobileMenuAnimLabel')}</label>
+              <WizardSelect
+                value={mobileMenuAnim}
+                onChange={(v) => setMobileMenuAnim(v as 'left' | 'right' | 'top')}
+                options={[
+                  { value: 'left', label: t('mobileMenuAnimLeft') },
+                  { value: 'right', label: t('mobileMenuAnimRight') },
+                  { value: 'top', label: t('mobileMenuAnimTop') },
+                ]}
+              />
+              <p className="text-xs text-gray-500 mt-1.5">{t('mobileMenuAnimHint')}</p>
             </div>
 
             {/* Diller */}

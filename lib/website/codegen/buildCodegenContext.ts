@@ -44,6 +44,14 @@ const clean = (s: string | null | undefined): string =>
   typeof s === 'string' ? s.trim() : ''
 
 /**
+ * Coerce a stored mobile-menu animation choice to a known value.
+ * Any unknown/absent value (backward-compat: older sites have no field) → 'left'.
+ */
+function coerceMobileMenuAnim(v: unknown): 'left' | 'right' | 'top' {
+  return v === 'right' || v === 'top' ? v : 'left'
+}
+
+/**
  * Summarise a BusinessProfileRow into a compact text block for the AI.
  * Only includes fields that are present.
  */
@@ -196,6 +204,8 @@ export async function buildCodegenContext(
     style: theme.style ?? undefined,
     fontHref: theme.fontHref ?? null,
     logoUrl: theme.logoUrl ?? null,
+    // Mobil menü animasyon seçimi (sihirbazda seçilir) — geçersiz/yok → 'left'.
+    mobileMenuAnim: coerceMobileMenuAnim(theme.mobileMenuAnim),
     instruction,
     untrustedBlocks,
   }

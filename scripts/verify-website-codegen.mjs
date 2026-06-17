@@ -574,6 +574,24 @@ assert.ok(sys.includes('{{IMG:'), `FAIL H2: prompt missing {{IMG:}} image-placeh
 assert.ok(sys.includes('data-yoai-reveal'), `FAIL H2: prompt missing data-yoai-reveal motion hook`)
 assert.ok(sys.includes('data-yoai-block'), `FAIL H2: prompt missing data-yoai-block section hook`)
 
+// H2b — mobile-menu animation choice threads through buildHtmlSystemPrompt(ctx):
+// no arg / invalid → 'left' (backward-compat); each valid choice is emitted verbatim.
+assert.ok(
+  buildHtmlSystemPrompt().includes('data-yoai-mobile-anim="left"'),
+  `FAIL H2b: default (no ctx) must emit data-yoai-mobile-anim="left"`,
+)
+assert.ok(
+  buildHtmlSystemPrompt({ mobileMenuAnim: 'bogus' }).includes('data-yoai-mobile-anim="left"'),
+  `FAIL H2b: invalid mobileMenuAnim must coerce to "left"`,
+)
+for (const v of ['left', 'right', 'top']) {
+  const p = buildHtmlSystemPrompt({ mobileMenuAnim: v })
+  assert.ok(
+    p.includes(`data-yoai-mobile-anim="${v}"`),
+    `FAIL H2b: mobileMenuAnim="${v}" not emitted on the mobile panel`,
+  )
+}
+
 // H3 — resolveImagePlaceholders: both placeholders replaced, no raw {{IMG remains
 const h3 = await resolveImagePlaceholders(
   '<img src="{{IMG:a}}"><img src="{{IMG:b}}">',

@@ -53,7 +53,7 @@ const coreResolveImagePlaceholders = _resolveImagePlaceholders as (
   html: string,
   resolver: (query: string) => Promise<string>,
 ) => Promise<string>
-const coreBuildHtmlSystemPrompt = _buildHtmlSystemPrompt as () => string
+const coreBuildHtmlSystemPrompt = _buildHtmlSystemPrompt as (ctx?: CodegenContext) => string
 const coreBuildHtmlUserMessage = _buildHtmlUserMessage as (
   ctx: CodegenContext,
   ds: DesignSystem,
@@ -127,7 +127,7 @@ export async function generateHomePageHtml(
   ctx: CodegenContext,
   ds: DesignSystem,
 ): Promise<RawBodyHtml> {
-  return streamBodyHtml(coreBuildHtmlSystemPrompt(), coreBuildHtmlUserMessage(ctx, ds))
+  return streamBodyHtml(coreBuildHtmlSystemPrompt(ctx), coreBuildHtmlUserMessage(ctx, ds))
 }
 
 /**
@@ -152,7 +152,7 @@ export async function repairHomePageHtml(
   reason: string,
 ): Promise<RawBodyHtml> {
   const user = coreBuildRepairUserMessage(ctx, ds, previousBody, reason)
-  return streamBodyHtml(coreBuildHtmlSystemPrompt(), user)
+  return streamBodyHtml(coreBuildHtmlSystemPrompt(ctx), user)
 }
 
 /**

@@ -26,6 +26,13 @@ export interface ThemeTokens {
   initialInstructions?: string | null
   /** Faz B: site tarzı (modern|corporate|playful|luxury|minimal|vibrant). theme jsonb'sinde tutulur. */
   style?: string | null
+  /**
+   * Codegen (format='html') siteleri için mobil menü açılış animasyonu (perde yönü):
+   * 'left' (soldan), 'right' (sağdan), 'top' (yukarıdan). Üretimde
+   * `data-yoai-mobile-anim="<value>"` olarak basılır. Tanımsızsa 'left' varsayılır
+   * (geriye dönük uyumlu). theme jsonb'sinde tutulur — migration gerekmez.
+   */
+  mobileMenuAnim?: 'left' | 'right' | 'top' | null
   /** Faz C: alan bazlı tasarım override (header/body/footer). theme jsonb'sinde tutulur — migration yok. */
   areaStyles?: AreaStyles | null
   /**

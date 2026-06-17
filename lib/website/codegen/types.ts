@@ -27,6 +27,12 @@ export interface CodegenContext {
   style?: string
   fontHref?: string | null
   logoUrl?: string | null
+  /**
+   * Mobil menü açılış animasyonu (perde yönü) — kullanıcı sihirbazda seçer.
+   * 'left' (soldan), 'right' (sağdan), 'top' (yukarıdan). buildHtmlSystemPrompt
+   * bunu `data-yoai-mobile-anim="<value>"` olarak basar. Tanımsız/geçersiz → 'left'.
+   */
+  mobileMenuAnim?: 'left' | 'right' | 'top'
   instruction: string
   untrustedBlocks: string[]
 }
