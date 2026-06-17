@@ -2,7 +2,7 @@ import type { Metadata } from 'next'
 import { Inter } from 'next/font/google'
 import { NextIntlClientProvider } from 'next-intl'
 import { getMessages } from 'next-intl/server'
-import { cookies } from 'next/headers'
+import { cookies, headers } from 'next/headers'
 import { CreditProvider } from '@/components/providers/CreditProvider'
 import { SubscriptionProvider } from '@/components/providers/SubscriptionProvider'
 import RouteTracker from '@/components/analytics/RouteTracker'
@@ -29,6 +29,26 @@ export default async function RootLayout({
 }) {
   const cookieStore = await cookies()
   const locale = cookieStore.get('NEXT_LOCALE')?.value || 'tr'
+
+  // Check if this request is for a public-site path (/s/<subdomain>).
+  // Middleware sets x-pathname so we get the real pathname even after rewrites
+  // (e.g. custom-domain requests are rewritten to /s/<sub> before reaching here).
+  const h = await headers()
+  const pathname = h.get('x-pathname') || ''
+  const isPublicSite = pathname.startsWith('/s/')
+
+  // Public-site path: minimal tree — no dashboard providers, no analytics, no i18n.
+  if (isPublicSite) {
+    return (
+      <html lang={locale}>
+        <body className={`${inter.variable} ${inter.className} text-body`}>
+          {children}
+        </body>
+      </html>
+    )
+  }
+
+  // Dashboard path: full provider chain (unchanged behavior).
   const messages = await getMessages({ locale })
 
   return (

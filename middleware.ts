@@ -92,8 +92,11 @@ export async function middleware(request: NextRequest) {
         const sub = await get<string>('cd_' + host.replace(/[^a-z0-9]/g, '_'))
         if (sub) {
           const url = request.nextUrl.clone()
-          url.pathname = `/s/${sub}${pathname === '/' ? '' : pathname}`
-          return NextResponse.rewrite(url)
+          const rewrittenPathname = `/s/${sub}${pathname === '/' ? '' : pathname}`
+          url.pathname = rewrittenPathname
+          const reqHeaders = new Headers(request.headers)
+          reqHeaders.set('x-pathname', rewrittenPathname)
+          return NextResponse.rewrite(url, { request: { headers: reqHeaders } })
         }
       } catch {
         /* Edge Config yok/erişilemedi → normal akışa düş */
@@ -120,7 +123,9 @@ export async function middleware(request: NextRequest) {
     request.cookies.set('NEXT_LOCALE', 'en')
     const url = request.nextUrl.clone()
     url.pathname = rewritePath
-    const response = NextResponse.rewrite(url)
+    const reqHeadersEn = new Headers(request.headers)
+    reqHeadersEn.set('x-pathname', rewritePath)
+    const response = NextResponse.rewrite(url, { request: { headers: reqHeadersEn } })
     response.cookies.set('NEXT_LOCALE', 'en', {
       path: '/',
       maxAge: 60 * 60 * 24 * 365,
@@ -152,7 +157,9 @@ export async function middleware(request: NextRequest) {
   }
 
   // 3. Default: ensure NEXT_LOCALE cookie exists
-  const response = NextResponse.next()
+  const reqHeadersDefault = new Headers(request.headers)
+  reqHeadersDefault.set('x-pathname', pathname)
+  const response = NextResponse.next({ request: { headers: reqHeadersDefault } })
   if (!request.cookies.get('NEXT_LOCALE')) {
     response.cookies.set('NEXT_LOCALE', locale || 'tr', {
       path: '/',
