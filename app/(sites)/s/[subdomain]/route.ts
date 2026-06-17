@@ -3,7 +3,7 @@ import { getPublishedSiteBySubdomain } from '@/lib/website/store'
 import { assembleDocument } from '@/lib/website/codegen/assembleDocument'
 import { themeToDesignVars } from '@/lib/website/render/designVars'
 import { renderSectionsDocument } from '@/lib/website/render/serveSectionsDocument'
-import { pickLocale, findHomePage, collectKnownSlugs, SITE_CSP } from '@/lib/website/render/serveCommon'
+import { pickLocale, findHomePage, collectKnownSlugs, SITE_CSP, withSiteCacheHeaders } from '@/lib/website/render/serveCommon'
 
 export const dynamic = 'force-dynamic'
 
@@ -33,10 +33,15 @@ export async function GET(
   const home = findHomePage(site, locale)
   if (!home) return new NextResponse('Not Found', { status: 404 })
 
-  const headers: Record<string, string> = {
-    'content-type': 'text/html; charset=utf-8',
-    'Content-Security-Policy': SITE_CSP,
-  }
+  // ISR/CDN: WEBSITE_ISR='1' + yayınlanmış (immutable) site ise s-maxage eklenir;
+  // bayrak kapalıyken bugünkü davranışın AYNISI (cache başlığı yok). CSP korunur.
+  const headers: Record<string, string> = withSiteCacheHeaders(
+    {
+      'content-type': 'text/html; charset=utf-8',
+      'Content-Security-Policy': SITE_CSP,
+    },
+    site,
+  )
 
   if (home.format === 'html') {
     const html = await assembleDocument({

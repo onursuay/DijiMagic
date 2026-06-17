@@ -45,7 +45,7 @@ import {
   buildHtmlSystemPrompt as _buildHtmlSystemPrompt,
   buildHtmlUserMessage as _buildHtmlUserMessage,
   buildRepairUserMessage as _buildRepairUserMessage,
-  buildMultipageSystemPrompt as _buildMultipageSystemPrompt,
+  buildMultipageSystemAppendix as _buildMultipageSystemAppendix,
   buildMultipageUserMessage as _buildMultipageUserMessage,
   buildMultipageRepairUserMessage as _buildMultipageRepairUserMessage,
   cleanGeneratedHtml as _cleanGeneratedHtml,
@@ -80,7 +80,7 @@ export interface NavPage {
   slug: string
   navLabel: string
 }
-const coreBuildMultipageSystemPrompt = _buildMultipageSystemPrompt as (
+const coreBuildMultipageSystemAppendix = _buildMultipageSystemAppendix as (
   ctx: CodegenContext,
   pageSpec: PageSpec,
   allPages: NavPage[],
@@ -126,6 +126,36 @@ const MODEL = process.env.ANTHROPIC_MODEL_WEBSITE_INITIAL ?? 'claude-opus-4-8'
 const MAX_TOKENS = 16000
 
 // ---------------------------------------------------------------------------
+// Prompt caching (cost lever) — the htmlGenerate SYSTEM prefix (the long
+// anti-generic design ethos + var contract + mobile-menu + data-yoai-* rules)
+// is BYTE-IDENTICAL across every page of ONE multipage generation (same ctx /
+// same mobileMenuAnim), and identical between a page's first pass and its
+// self-repair. We send `system` as content blocks where the stable prefix
+// carries cache_control:{type:'ephemeral'}, so pages 2..N (and the repair) read
+// the cached ethos instead of re-billing it (Anthropic prompt caching, prefix
+// match). Content is UNCHANGED — we only wrap the same text as a cached block.
+//   - SINGLE-PAGE: the whole system string is the stable prefix → one cached block.
+//   - MULTIPAGE:   [ stable base ethos (CACHED) , page-specific appendix (not cached) ].
+// The ethos prompt is long (well above Opus' ~4096-token min cacheable prefix);
+// if it were ever too short it simply wouldn't cache — no error, no behavior change.
+// ---------------------------------------------------------------------------
+
+type SystemBlock = { type: 'text'; text: string; cache_control?: { type: 'ephemeral' } }
+
+/** Single stable system string → one cached text block. */
+function cachedSystem(systemText: string): SystemBlock[] {
+  return [{ type: 'text', text: systemText, cache_control: { type: 'ephemeral' } }]
+}
+
+/** Stable base ethos (CACHED) + per-page appendix (not cached). */
+function cachedSystemWithAppendix(baseText: string, appendixText: string): SystemBlock[] {
+  return [
+    { type: 'text', text: baseText, cache_control: { type: 'ephemeral' } },
+    { type: 'text', text: appendixText },
+  ]
+}
+
+// ---------------------------------------------------------------------------
 // Real stock resolver — mirrors lib/website/ai/generate.ts.
 // Honors isStockReady(); returns '' when no provider / no result so the pure
 // resolver substitutes the neutral fallback image.
@@ -161,7 +191,7 @@ export async function generateHomePageHtml(
   ctx: CodegenContext,
   ds: DesignSystem,
 ): Promise<RawBodyHtml> {
-  return streamBodyHtml(coreBuildHtmlSystemPrompt(ctx), coreBuildHtmlUserMessage(ctx, ds))
+  return streamBodyHtml(cachedSystem(coreBuildHtmlSystemPrompt(ctx)), coreBuildHtmlUserMessage(ctx, ds))
 }
 
 /**
@@ -186,7 +216,7 @@ export async function repairHomePageHtml(
   reason: string,
 ): Promise<RawBodyHtml> {
   const user = coreBuildRepairUserMessage(ctx, ds, previousBody, reason)
-  return streamBodyHtml(coreBuildHtmlSystemPrompt(ctx), user)
+  return streamBodyHtml(cachedSystem(coreBuildHtmlSystemPrompt(ctx)), user)
 }
 
 /**
@@ -211,7 +241,11 @@ export async function generatePageHtml(
   allPages: NavPage[],
 ): Promise<RawBodyHtml> {
   return streamBodyHtml(
-    coreBuildMultipageSystemPrompt(ctx, pageSpec, allPages),
+    // CACHED base ethos (shared across pages of this site) + per-page appendix.
+    cachedSystemWithAppendix(
+      coreBuildHtmlSystemPrompt(ctx),
+      coreBuildMultipageSystemAppendix(ctx, pageSpec, allPages),
+    ),
     coreBuildMultipageUserMessage(ctx, ds, pageSpec, allPages),
   )
 }
@@ -226,7 +260,10 @@ export async function repairPageHtml(
   reason: string,
 ): Promise<RawBodyHtml> {
   return streamBodyHtml(
-    coreBuildMultipageSystemPrompt(ctx, pageSpec, allPages),
+    cachedSystemWithAppendix(
+      coreBuildHtmlSystemPrompt(ctx),
+      coreBuildMultipageSystemAppendix(ctx, pageSpec, allPages),
+    ),
     coreBuildMultipageRepairUserMessage(ctx, ds, pageSpec, allPages, previousBody, reason),
   )
 }
@@ -237,7 +274,7 @@ export async function repairPageHtml(
  * from the proven constraints (no temperature/top_p/top_k/budget_tokens).
  */
 async function streamBodyHtml(
-  system: string,
+  system: SystemBlock[],
   user: string,
 ): Promise<RawBodyHtml> {
   if (!isAnthropicReady()) {
@@ -251,6 +288,8 @@ async function streamBodyHtml(
     // CRITICAL: Do NOT add temperature, top_p, top_k, or budget_tokens.
     // Opus 4.8 returns HTTP 400 for any of those. Streaming keeps the
     // long generation under server time limits and yields finalMessage().
+    // `system` is an array of content blocks; the stable prefix block carries
+    // cache_control:{type:'ephemeral'} (prompt caching) — content is identical.
     const stream = client.messages.stream({
       model: MODEL,
       max_tokens: MAX_TOKENS,

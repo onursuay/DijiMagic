@@ -28,11 +28,15 @@ for (const c of cases) {
 }
 
 // Revize kredi mantığı (generate route portu): ilk WEBSITE_FREE_REVISIONS revize ÜCRETSİZ.
+// Bu kural HEM legacy HEM v2 (generateWithCodegenV2) yolunda AYNIDIR — v2 artık
+// listVersions(reason==='revision') sayımıyla bu mantığı uygular (eskiden her revizyonda
+// tam üretim maliyetini düşürüp "ilk 3 ücretsiz" politikasını yok sayıyordu — B düzeltmesi).
 const WEBSITE_FREE_REVISIONS = 3
 const WEBSITE_REVISION_COST = 10
 const revisionCost = (usedRevisions) => (usedRevisions < WEBSITE_FREE_REVISIONS ? 0 : WEBSITE_REVISION_COST)
 const revCases = [
-  { used: 0, want: 0 },  // ilk revize ücretsiz
+  { used: 0, want: 0 },  // 1. revize ücretsiz
+  { used: 1, want: 0 },  // 2. revize ücretsiz
   { used: 2, want: 0 },  // 3. revize (used=2) ücretsiz
   { used: 3, want: 10 }, // 4. revize kredili
   { used: 7, want: 10 },

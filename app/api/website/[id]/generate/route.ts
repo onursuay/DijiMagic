@@ -155,13 +155,22 @@ async function generateWithCodegenV2({
   /** 'edit' | 'reject' | undefined — legacy revize modu semantiği. */
   revisionMode: 'edit' | 'reject' | undefined
 }): Promise<NextResponse> {
-  // Maliyet: landing → tek sayfa; multipage → planlanan sayfa sayısı (üretimden ÖNCE
-  // kesin bilinmez; ortalama 4 sayfa varsayılır — orchestrator 3..6 üretir). Çoklu dil:
-  // varsayılan dil sıfırdan üretilir, ek diller yapı-koruyan çeviriyle (ucuz Sonnet)
-  // üretilir — yine de dil sayısıyla ücretlendirilir. Sabit formül computeGenerationCost ile.
-  const pageCount = site.siteType === 'multipage' ? 4 : 1
-  const localeCount = site.locales.length || 1
-  const cost = computeGenerationCost({ siteType: site.siteType, pageCount, localeCount })
+  // Maliyet — legacy yolla PARİTE:
+  //   • İlk üretim → computeGenerationCost (landing: tek sayfa; multipage: ort. 4 sayfa,
+  //     orchestrator 3..6 üretir; çoklu dil ek diller dahil dil sayısıyla ücretlendirilir).
+  //   • Revizyon → ilk WEBSITE_FREE_REVISIONS adet ÜCRETSİZ, sonrası WEBSITE_REVISION_COST.
+  //     (Eskiden v2 her revizyonda tam üretim maliyetini düşürüyordu — "ilk 3 revize
+  //     ücretsiz" politikasını yok sayıyordu. Legacy ile aynı listVersions sayımına geçildi.)
+  let cost: number
+  if (isRevision) {
+    const versions = await listVersions(user.id, site.id)
+    const usedRevisions = versions.filter((v) => v.reason === 'revision').length
+    cost = usedRevisions < WEBSITE_FREE_REVISIONS ? 0 : WEBSITE_REVISION_COST
+  } else {
+    const pageCount = site.siteType === 'multipage' ? 4 : 1
+    const localeCount = site.locales.length || 1
+    cost = computeGenerationCost({ siteType: site.siteType, pageCount, localeCount })
+  }
 
   // Krediyi ÜRETİMDEN ÖNCE düş (owner bypass + yetersiz bakiye 402 featureGuard içinde).
   const access = await chargeFeature({ featureKey: 'website_generation', creditCost: cost })

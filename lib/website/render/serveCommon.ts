@@ -76,3 +76,41 @@ export const SITE_CSP = [
   "base-uri 'none'",
   "form-action 'self'",
 ].join('; ')
+
+/**
+ * ISR/CDN performans bayrağı (perf lever, DEFAULT-OFF). WEBSITE_ISR='1' DEĞİLSE
+ * davranış BUGÜNKÜYLE BİREBİR aynıdır — hiçbir cache başlığı eklenmez (route
+ * `dynamic='force-dynamic'`; Next.js dinamik route handler'a no-store uygular →
+ * hiç cache YOK). Açıkken yalnız YAYINLANMIŞ + DEĞİŞMEZ (`published_version_id`
+ * mevcut) site yanıtına CDN s-maxage başlığı eklenir. Mekanizma HEADER-TABANLI:
+ * Response'a açıkça yazılan `Cache-Control` Next'in varsayılan no-store'unu ezer,
+ * `dynamic` export'una dokunmadan (flag-off byte-identik kalsın diye). Taslak /
+ * yayınlanmamış / preview yanıtları bayrak açık olsa BİLE s-maxage ALMAZ.
+ */
+function isWebsiteIsrEnabled(): boolean {
+  return process.env.WEBSITE_ISR === '1'
+}
+
+/**
+ * Yayınlanmış bir site yanıtı için CDN cache başlığını (varsa) base header'lara ekler.
+ *
+ * @param baseHeaders  content-type + CSP gibi her yanıtta olan başlıklar
+ * @param site         servis edilen YAYINLANMIŞ site (getPublishedSiteBySubdomain → status='published')
+ * @returns yeni headers nesnesi. Bayrak kapalı VEYA site immutable-published değilse base'in AYNISI.
+ */
+export function withSiteCacheHeaders(
+  baseHeaders: Record<string, string>,
+  site: PublishedSite,
+): Record<string, string> {
+  // Bayrak kapalı → bugünkü davranış (cache başlığı YOK). Immutable değilse de (yayın
+  // sürümü işaretlenmemiş) güvenli tarafta kal → cache etme.
+  if (!isWebsiteIsrEnabled() || !site.website.publishedVersionId) return baseHeaders
+  return {
+    ...baseHeaders,
+    // public: CDN cache'leyebilir; s-maxage=300: edge 5dk taze tutar; SWR=1g: süre dolunca
+    // bayat içeriği anında verip arka planda tazeler. published_version_id DEĞİŞMEZ olduğundan
+    // yayınlanmış çıktıyı cache'lemek güvenli; yeniden yayında URL aynı/kalır içerik değişir →
+    // s-maxage + stale-while-revalidate kademeli-rollout (default-off) bayrağı için kabul edilebilir.
+    'Cache-Control': 'public, s-maxage=300, stale-while-revalidate=86400',
+  }
+}
