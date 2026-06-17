@@ -35,6 +35,15 @@ export interface CodegenContext {
   mobileMenuAnim?: 'left' | 'right' | 'top'
   instruction: string
   untrustedBlocks: string[]
+  /**
+   * Veri önceliği = 'reference' seçildiğinde üretim prompt'larına eklenen TRUSTED
+   * yönerge (referans verisinin nasıl kullanılacağını söyler; referans içeriğinin
+   * KENDİSİ hâlâ untrustedBlocks içinde karantinada kalır — talimat olarak çalıştırılmaz).
+   * buildPlanUserMessage (multipage sitemap) + buildHtmlUserMessage (sayfa HTML'i)
+   * bu yönergeyi untrusted bloklardan ÖNCE basar → referans hem sayfa setini hem
+   * içeriği gerçekten yönlendirir. 'manual'/auto modlarında boş/tanımsız (davranış değişmez).
+   */
+  referenceDirective?: string
 }
 
 /**

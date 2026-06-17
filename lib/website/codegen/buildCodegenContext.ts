@@ -39,6 +39,25 @@ import type { CodegenContext } from './types'
 // eslint-disable-next-line @typescript-eslint/ban-ts-comment
 // @ts-ignore — .mjs imported from TS; Next.js bundler resolves it fine at runtime
 import { wrapUntrusted } from './untrusted.mjs'
+// eslint-disable-next-line @typescript-eslint/ban-ts-comment
+// @ts-ignore — .mjs imported from TS; Next.js bundler resolves it fine at runtime
+import { resolveSourceUsage, buildReferenceDirective } from './sourcePriority.mjs'
+
+type SourceUsage = {
+  useReference: boolean
+  useProfile: boolean
+  resolved: 'reference' | 'manual' | 'auto'
+  note: string
+}
+const coreResolveSourceUsage = resolveSourceUsage as (
+  priority: 'reference' | 'manual' | null | undefined,
+  hasReferenceContent: boolean,
+) => SourceUsage
+const coreBuildReferenceDirective = buildReferenceDirective as (
+  resolved: 'reference' | 'manual' | 'auto',
+  hasReferenceContent: boolean,
+  locale?: string,
+) => string
 
 const clean = (s: string | null | undefined): string =>
   typeof s === 'string' ? s.trim() : ''
@@ -158,27 +177,44 @@ export async function buildCodegenContext(
 ): Promise<CodegenContext> {
   const theme = website.theme ?? {}
 
+  // ── Veri önceliği (data-source priority) — FUNCTIONAL toggle ───────────
+  // The wizard's "Veri Önceliği" choice decides which source is authoritative.
+  // null/undefined → AUTO (legacy): reference-content-if-present-else-profile.
+  const dataSourcePriority = theme.dataSourcePriority ?? null
+
   // Reference-URL scrape summaries — SITE-SCOPED (scraped from this site's own URLs).
-  // We run this first because it determines whether the global profile is needed.
+  // For 'manual' priority we still skip the (potentially slow) scan entirely:
+  // reference content is ignored for content there, so scanning would be wasted work.
   const referenceUrls = theme.referenceUrls ?? []
-  const refSummaries: string[] = referenceUrls.length
-    ? await scanReferences(referenceUrls)
-    : []
+  const refSummaries: string[] =
+    dataSourcePriority !== 'manual' && referenceUrls.length
+      ? await scanReferences(referenceUrls)
+      : []
 
-  // Does this site have usable site-specific brand content?
-  // At least one non-blank reference-URL block = site speaks for itself.
-  const hasSiteSpecificContent = refSummaries.some((s) => s.trim())
+  // Does this site have usable site-specific reference content?
+  // At least one non-blank reference-URL block = the reference can speak for itself.
+  const hasReferenceContent = refSummaries.some((s) => s.trim())
 
-  // ── Global profile / intelligence (last-resort fallback only) ──────────
-  // Only fetched when the site has NO site-specific reference-URL content.
-  // Skipped when site content exists to prevent cross-business brand leak
-  // (CLAUDE.md: "SEO Makale Üretimi — Bağlam Kapsamı / KRİTİK").
-  const [profile, intelligence] = hasSiteSpecificContent
-    ? [null, null]
-    : await Promise.all([
+  // Decide, via the pure helper, which sources actually drive generation:
+  //   'reference' → reference authoritative, profile NOT pulled (even if thin)
+  //   'manual'    → profile authoritative, reference NOT injected
+  //   auto/null   → reference-if-present-else-profile (unchanged legacy behavior)
+  // The verify script asserts every branch of resolveSourceUsage.
+  const usage = coreResolveSourceUsage(dataSourcePriority, hasReferenceContent)
+  if (usage.note) console.warn('[buildCodegenContext] source-priority:', usage.note)
+
+  // ── Global profile / intelligence ──────────────────────────────────────
+  // Fetched ONLY when usage.useProfile is true:
+  //   - 'manual' priority (profile is authoritative), or
+  //   - auto + NO reference content (last-resort fallback).
+  // Skipped for 'reference' priority (and for auto-with-reference) to prevent
+  // cross-business brand leak (CLAUDE.md: "SEO Makale Üretimi — Bağlam Kapsamı / KRİTİK").
+  const [profile, intelligence] = usage.useProfile
+    ? await Promise.all([
         getProfileByUserId(userId),
         getIntelligenceByUserId(userId),
       ])
+    : [null, null]
 
   // ── Trusted instruction (user's own intent) ────────────────────────────
   // Revize talimatı (opts.instructions) varsa initialInstructions'ın ÖNÜNE geçer →
@@ -207,12 +243,26 @@ export async function buildCodegenContext(
     untrustedBlocks.push(wrapUntrusted('brand_intelligence', intelText))
   }
 
-  // Site-specific reference-URL scrape blocks (always site-scoped)
-  refSummaries.forEach((summary, idx) => {
-    if (summary.trim()) {
-      untrustedBlocks.push(wrapUntrusted(`reference_url_${idx + 1}`, summary))
-    }
-  })
+  // Site-specific reference-URL scrape blocks (always site-scoped) — injected
+  // ONLY when usage.useReference is true ('reference' priority, or auto-with-content).
+  // For 'manual' priority these are intentionally NOT injected (refUrls ignored).
+  if (usage.useReference) {
+    refSummaries.forEach((summary, idx) => {
+      if (summary.trim()) {
+        untrustedBlocks.push(wrapUntrusted(`reference_url_${idx + 1}`, summary))
+      }
+    })
+  }
+
+  // ── Trusted reference-priority directive ────────────────────────────────
+  // When priority='reference', thread a directive telling the model to derive the
+  // PAGE SET + content FROM the reference site (so multipage plan + per-page copy
+  // genuinely reflect it). Empty for 'manual'/auto → those prompts are unchanged.
+  const referenceDirective = coreBuildReferenceDirective(
+    usage.resolved,
+    hasReferenceContent,
+    website.defaultLocale,
+  )
 
   return {
     brandName,
@@ -224,5 +274,6 @@ export async function buildCodegenContext(
     mobileMenuAnim: coerceMobileMenuAnim(theme.mobileMenuAnim),
     instruction,
     untrustedBlocks,
+    referenceDirective: referenceDirective || undefined,
   }
 }

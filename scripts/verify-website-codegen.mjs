@@ -406,6 +406,47 @@ assert.ok(x3b.includes('evil'), `FAIL X3b: 'evil' content must remain as data �
 assert.ok(x3b.includes('before'), `FAIL X3b: 'before' content must remain as data — got: ${x3b}`)
 assert.ok(x3b.includes('after'), `FAIL X3b: 'after' content must remain as data — got: ${x3b}`)
 
+// ---------------------------------------------------------------------------
+// SOURCE-PRIORITY section — the FUNCTIONAL "Veri Önceliği" toggle (#7)
+// Pure decision helper used by buildCodegenContext.ts to choose which content
+// source is authoritative (reference vs manual vs auto). Asserts every branch
+// WITHOUT a live DB so the toggle is provably functional, not decorative.
+// ---------------------------------------------------------------------------
+const sourcePriorityPath = path.join(__dirname, '../lib/website/codegen/sourcePriority.mjs')
+const { resolveSourceUsage, buildReferenceDirective } = await import(sourcePriorityPath)
+
+// SP1 — 'reference' WITH content → reference authoritative, profile NOT pulled.
+const sp1 = resolveSourceUsage('reference', true)
+assert.ok(sp1.useReference === true, `FAIL SP1: reference-priority must use reference — got: ${JSON.stringify(sp1)}`)
+assert.ok(sp1.useProfile === false, `FAIL SP1: reference-priority must NOT pull the profile — got: ${JSON.stringify(sp1)}`)
+assert.strictEqual(sp1.resolved, 'reference', `FAIL SP1: resolved must be 'reference'`)
+
+// SP2 — 'reference' with NO content → still no profile (honor the choice) + a note.
+const sp2 = resolveSourceUsage('reference', false)
+assert.ok(sp2.useProfile === false, `FAIL SP2: reference-priority must NEVER fall back to the profile, even with no reference content — got: ${JSON.stringify(sp2)}`)
+assert.ok(sp2.note && sp2.note.length > 0, `FAIL SP2: thin reference-priority must carry a graceful note — got: ${JSON.stringify(sp2)}`)
+
+// SP3 — 'manual' → profile authoritative, reference NOT injected (even if present).
+const sp3 = resolveSourceUsage('manual', true)
+assert.ok(sp3.useReference === false, `FAIL SP3: manual-priority must NOT inject reference — got: ${JSON.stringify(sp3)}`)
+assert.ok(sp3.useProfile === true, `FAIL SP3: manual-priority must pull the profile — got: ${JSON.stringify(sp3)}`)
+assert.strictEqual(sp3.resolved, 'manual', `FAIL SP3: resolved must be 'manual'`)
+
+// SP4 — auto (null/undefined) → legacy: reference-if-present-else-profile.
+const sp4a = resolveSourceUsage(null, true)
+assert.ok(sp4a.useReference === true && sp4a.useProfile === false, `FAIL SP4: auto WITH content → reference only — got: ${JSON.stringify(sp4a)}`)
+const sp4b = resolveSourceUsage(undefined, false)
+assert.ok(sp4b.useReference === false && sp4b.useProfile === true, `FAIL SP4: auto WITHOUT content → profile only — got: ${JSON.stringify(sp4b)}`)
+assert.strictEqual(sp4a.resolved, 'auto', `FAIL SP4: resolved must be 'auto' for null priority`)
+
+// SP5 — directive: emitted ONLY in reference mode; empty for manual/auto.
+const dir1 = buildReferenceDirective('reference', true, 'tr')
+assert.ok(dir1 && /reference/i.test(dir1) && /(sitemap|page set|structure)/i.test(dir1), `FAIL SP5: reference directive must steer the page set — got: ${dir1}`)
+assert.strictEqual(buildReferenceDirective('manual', true, 'tr'), '', `FAIL SP5: manual mode must emit NO directive`)
+assert.strictEqual(buildReferenceDirective('auto', true, 'tr'), '', `FAIL SP5: auto mode must emit NO directive (backward-compatible)`)
+
+console.log('source-priority OK')
+
 console.log('context OK')
 
 // ---------------------------------------------------------------------------
@@ -804,6 +845,17 @@ assert.ok(p5en[0].navLabel === 'Home', `FAIL MP5: en locale home label — got: 
 assert.ok(typeof buildPlanSystemPrompt() === 'string' && /JSON/i.test(buildPlanSystemPrompt()), `FAIL MP6: plan system prompt`)
 const planUser = buildPlanUserMessage({ brandName: 'Acme', locale: 'tr', instruction: '', untrustedBlocks: [] })
 assert.ok(planUser.includes('Acme') && /JSON/i.test(planUser), `FAIL MP6: plan user message must mention brand + JSON`)
+
+// MP6b — SOURCE PRIORITY: the reference directive genuinely reaches the MULTIPAGE
+// PLAN prompt (so 'reference' priority drives the page set / sitemap), and is
+// ABSENT for manual/auto (backward-compatible — no behavior change).
+const planUserRef = buildPlanUserMessage({
+  brandName: 'Acme', locale: 'tr', instruction: '',
+  untrustedBlocks: ['<untrusted_source name="reference_url_1">demo</untrusted_source>'],
+  referenceDirective: buildReferenceDirective('reference', true, 'tr'),
+})
+assert.ok(/DATA-SOURCE PRIORITY = REFERENCE/i.test(planUserRef), `FAIL MP6b: multipage PLAN prompt must carry the reference directive — got: ${planUserRef}`)
+assert.ok(!/DATA-SOURCE PRIORITY/i.test(planUser), `FAIL MP6b: plan prompt WITHOUT a directive (manual/auto) must be unchanged`)
 
 // MP7 — resolveNavHref: path mode (serve) builds /base, /base/slug; query mode (preview)
 assert.strictEqual(resolveNavHref('hakkimizda', { linkBase: '/s/acme', navMode: 'path' }), '/s/acme/hakkimizda', `FAIL MP7: sub-page path`)

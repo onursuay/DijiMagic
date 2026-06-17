@@ -52,6 +52,10 @@ export default function CreateSiteWizard({ open, onClose }: CreateSiteWizardProp
   const [siteStyle, setSiteStyle] = useState<string>('modern')
   const [mobileMenuAnim, setMobileMenuAnim] = useState<'left' | 'right' | 'top'>('left')
   const [refUrls, setRefUrls] = useState<string[]>(['', '', ''])
+  // Veri önceliği — kullanıcı açıkça seçti mi? Seçmediyse referans URL durumuna göre
+  // otomatik türetilir (en az 1 referans URL varsa 'reference', yoksa 'manual').
+  const [dataSourcePriority, setDataSourcePriority] = useState<'reference' | 'manual'>('reference')
+  const [priorityTouched, setPriorityTouched] = useState(false)
   const [instructions, setInstructions] = useState('')
   const [logoFile, setLogoFile] = useState<File | null>(null)
   const [logoPreview, setLogoPreview] = useState<string>('')
@@ -63,9 +67,17 @@ export default function CreateSiteWizard({ open, onClose }: CreateSiteWizardProp
     if (open) {
       setLabel(''); setSiteType('multipage'); setLocales(['tr']); setFontPairing('elegant'); setSiteStyle('modern')
       setMobileMenuAnim('left')
-      setRefUrls(['', '', '']); setInstructions(''); setLogoFile(null); setLogoPreview(''); setBusy(null); setError('')
+      setRefUrls(['', '', '']); setDataSourcePriority('reference'); setPriorityTouched(false)
+      setInstructions(''); setLogoFile(null); setLogoPreview(''); setBusy(null); setError('')
     }
   }, [open])
+
+  // Kullanıcı önceliği elle değiştirmediyse, referans URL durumuna göre otomatik türet:
+  // en az bir referans URL girilmişse 'reference', hiç yoksa 'manual'.
+  const hasAnyRef = refUrls.some((u) => u.trim().length > 0)
+  useEffect(() => {
+    if (!priorityTouched) setDataSourcePriority(hasAnyRef ? 'reference' : 'manual')
+  }, [hasAnyRef, priorityTouched])
 
   useEffect(() => {
     if (!open) return
@@ -112,6 +124,8 @@ export default function CreateSiteWizard({ open, onClose }: CreateSiteWizardProp
             fontBody: pair.body,
             fontHref: pair.href,
             referenceUrls: references,
+            // Veri önceliği — üretimde HANGİ kaynağın yetkili olacağı (referans / manuel).
+            dataSourcePriority,
             initialInstructions: instructions.trim() || null,
             style: siteStyle,
             mobileMenuAnim,
@@ -324,6 +338,22 @@ export default function CreateSiteWizard({ open, onClose }: CreateSiteWizardProp
                 <Info className="w-4 h-4 text-gray-500 shrink-0 mt-0.5" />
                 <p className="text-xs leading-relaxed text-gray-600">{t('refWizardHint')}</p>
               </div>
+            </div>
+
+            {/* Veri önceliği — üretim hangi kaynağa göre inşa edilsin? */}
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-1.5">{t('dataPriorityLabel')}</label>
+              <WizardSelect
+                value={dataSourcePriority}
+                onChange={(v) => { setPriorityTouched(true); setDataSourcePriority(v as 'reference' | 'manual') }}
+                options={[
+                  { value: 'reference', label: t('dataPriorityReference') },
+                  { value: 'manual', label: t('dataPriorityManual') },
+                ]}
+              />
+              <p className="text-xs text-gray-500 mt-1.5 leading-relaxed">
+                {dataSourcePriority === 'reference' ? t('dataPriorityReferenceHint') : t('dataPriorityManualHint')}
+              </p>
             </div>
 
             {error && (

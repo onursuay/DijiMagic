@@ -20,6 +20,16 @@ export interface ThemeTokens {
   logoUrl?: string | null
   /** AI üretiminde ilham alınacak referans site URL'leri (birebir kopya DEĞİL). theme jsonb'sinde tutulur. */
   referenceUrls?: string[] | null
+  /**
+   * Veri önceliği (sihirbazda seçilir) — üretimin HANGİ kaynağı yetkili sayacağı:
+   *   'reference' → site, referans/örnek siteler taranarak ona göre inşa edilir;
+   *                 global işletme profili/zekâsı kullanılMAZ (referans yönlendirir).
+   *   'manual'    → site, işletme profilin/girdiğin bilgilerle inşa edilir;
+   *                 referans özetleri içeriğe ENJEKTE EDİLMEZ (refUrls içerik için yok sayılır).
+   *   null/undefined → otomatik (geriye dönük): referans içeriği varsa onu kullan,
+   *                 yoksa global profile düş. theme jsonb'sinde tutulur — migration gerekmez.
+   */
+  dataSourcePriority?: 'reference' | 'manual' | null
   /** Faz 3: siteye bağlı kullanıcı domaini (ör. firma.com). theme jsonb'sinde tutulur. */
   customDomain?: string | null
   /** Wizard'da girilen ilk marka açıklaması/tarif (ilk AI üretim talimatı). theme jsonb'sinde tutulur. */
