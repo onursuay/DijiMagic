@@ -127,3 +127,66 @@ const rM2 = sanitizeSiteHtml('<div style="@import url(https://evil.com/x.css)">x
 assert.ok(!rM2.includes('@import'), `FAIL m2: @import in style not stripped — got: ${rM2}`)
 
 console.log('sanitize OK')
+
+// ---------------------------------------------------------------------------
+// TAILWIND section — per-site JIT compile
+// ---------------------------------------------------------------------------
+
+// Load the core compile module directly (single source of truth)
+const tailwindCompilePath = path.join(__dirname, '../lib/website/codegen/tailwindCompile.mjs')
+const { compileSiteCss } = await import(tailwindCompilePath)
+
+// T1 — compile produces .flex, .p-4, and :root with custom var
+const css = await compileSiteCss('<div class="flex p-4 text-3xl"></div>', { '--x': '1' })
+
+assert.ok(
+  typeof css === 'string' && css.length > 0,
+  `FAIL T1: compileSiteCss returned empty — got: ${css}`
+)
+assert.ok(
+  css.includes(':root'),
+  `FAIL T1: :root block missing in compiled CSS — got first 500: ${css.slice(0, 500)}`
+)
+assert.ok(
+  css.includes('--x: 1'),
+  `FAIL T1: designVar --x missing in :root — got first 500: ${css.slice(0, 500)}`
+)
+assert.ok(
+  css.includes('.flex'),
+  `FAIL T1: .flex not in compiled CSS — Tailwind JIT may not have picked up the class`
+)
+assert.ok(
+  css.includes('.p-4'),
+  `FAIL T1: .p-4 not in compiled CSS — Tailwind JIT may not have picked up the class`
+)
+
+// T2 — empty html still returns valid CSS (preflight + :root)
+const cssEmpty = await compileSiteCss('', { '--brand': '#059669' })
+assert.ok(
+  typeof cssEmpty === 'string',
+  `FAIL T2: compileSiteCss with empty html threw or returned non-string`
+)
+assert.ok(
+  cssEmpty.includes(':root'),
+  `FAIL T2: :root missing when html is empty — got: ${cssEmpty.slice(0, 200)}`
+)
+assert.ok(
+  cssEmpty.includes('--brand: #059669'),
+  `FAIL T2: designVar --brand missing when html is empty`
+)
+
+// T3 — empty designVars: no :root block prepended (empty object = no :root)
+const cssNoVars = await compileSiteCss('<p class="text-sm"></p>', {})
+assert.ok(
+  typeof cssNoVars === 'string' && cssNoVars.length > 0,
+  `FAIL T3: compileSiteCss with empty designVars returned empty`
+)
+// :root from preflight may or may not appear; our custom :root block should NOT
+// (no vars means buildRootBlock returns '' — we don't prepend anything)
+// Just assert the utility class is present
+assert.ok(
+  cssNoVars.includes('.text-sm'),
+  `FAIL T3: .text-sm missing in compiled CSS`
+)
+
+console.log('tailwind OK')
