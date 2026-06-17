@@ -898,3 +898,130 @@ assert.ok(!rwSet.includes('href="/s/acme/blog"'), `FAIL MP12: unknown slug must 
 assert.ok(/data-yoai-href="blog" href="\/s\/acme"/.test(rwSet), `FAIL MP12: unknown 'blog' anchor must resolve to home base /s/acme — got: ${rwSet}`)
 
 console.log('multipage OK')
+
+// ---------------------------------------------------------------------------
+// MULTILANG section — translatePageHtml structure-preserving translation
+//
+// Load the shared translation core directly (single source of truth — also used
+// by translateHtml.ts via dynamic import). Inject a FAKE translator so no live API
+// call is made: it prefixes each string with '[EN] ' (and a length-mismatch variant
+// returns one fewer item to prove the caller can fall back).
+// ---------------------------------------------------------------------------
+
+const translateHtmlPath = path.join(__dirname, '../lib/website/codegen/translateHtml.mjs')
+const {
+  translatePageHtml,
+  translateStrings,
+  parseTranslationArray,
+  localeToLanguageName,
+  TRANSLATABLE_ATTRS,
+} = await import(translateHtmlPath)
+
+// A faithful structure-preserving sample: text nodes, translatable attrs (alt,
+// aria-label, title, placeholder) AND structural bits that must NOT change
+// (classes, data-yoai-*, href, src, inline style).
+const mlBody =
+  '<header class="site-head" data-yoai-block="header">' +
+  '<a href="/contact" class="cta" data-yoai-href="contact" title="Bize ulaşın">İletişim</a>' +
+  '<nav aria-label="Ana menü"><a href="#x">Anasayfa</a></nav>' +
+  '</header>' +
+  '<main><h1 class="text-4xl" data-yoai-reveal>Merhaba Dünya</h1>' +
+  '<img src="https://cdn.example.com/a.jpg" class="hero" alt="Bir kahve fincanı">' +
+  '<input type="email" placeholder="E-posta adresiniz" class="field">' +
+  '<p>Hoş geldiniz.</p></main>'
+
+// Fake translator: returns each string prefixed with '[EN] ' (same length/order).
+const fakeTranslator = async (strings) => strings.map((s) => `[EN] ${s}`)
+
+const mlOut = await translatePageHtml(mlBody, 'tr', 'en', fakeTranslator)
+
+// (a) TEXT NODES are translated
+assert.ok(mlOut.includes('[EN] Merhaba Dünya'), `FAIL ML1: h1 text not translated — got: ${mlOut}`)
+assert.ok(mlOut.includes('[EN] İletişim'), `FAIL ML1: anchor text not translated — got: ${mlOut}`)
+assert.ok(mlOut.includes('[EN] Hoş geldiniz.'), `FAIL ML1: paragraph text not translated — got: ${mlOut}`)
+assert.ok(mlOut.includes('[EN] Anasayfa'), `FAIL ML1: nav text not translated — got: ${mlOut}`)
+
+// (a) TRANSLATABLE ATTRIBUTES are translated (alt / aria-label / title / placeholder)
+assert.ok(mlOut.includes('alt="[EN] Bir kahve fincanı"'), `FAIL ML2: alt not translated — got: ${mlOut}`)
+assert.ok(mlOut.includes('aria-label="[EN] Ana menü"'), `FAIL ML2: aria-label not translated — got: ${mlOut}`)
+assert.ok(mlOut.includes('title="[EN] Bize ulaşın"'), `FAIL ML2: title not translated — got: ${mlOut}`)
+assert.ok(mlOut.includes('placeholder="[EN] E-posta adresiniz"'), `FAIL ML2: placeholder not translated — got: ${mlOut}`)
+
+// (b) STRUCTURE PRESERVED: tags / classes / data-yoai-* / href / src / type UNCHANGED
+assert.ok(mlOut.includes('class="site-head"'), `FAIL ML3: class changed — got: ${mlOut}`)
+assert.ok(mlOut.includes('class="text-4xl"'), `FAIL ML3: h1 class changed — got: ${mlOut}`)
+assert.ok(mlOut.includes('data-yoai-block="header"'), `FAIL ML3: data-yoai-block changed — got: ${mlOut}`)
+assert.ok(mlOut.includes('data-yoai-href="contact"'), `FAIL ML3: data-yoai-href changed — got: ${mlOut}`)
+assert.ok(mlOut.includes('data-yoai-reveal'), `FAIL ML3: data-yoai-reveal stripped — got: ${mlOut}`)
+assert.ok(mlOut.includes('href="/contact"'), `FAIL ML3: href changed — got: ${mlOut}`)
+assert.ok(mlOut.includes('href="#x"'), `FAIL ML3: nav href changed — got: ${mlOut}`)
+assert.ok(mlOut.includes('src="https://cdn.example.com/a.jpg"'), `FAIL ML3: img src changed — got: ${mlOut}`)
+assert.ok(mlOut.includes('type="email"'), `FAIL ML3: input type changed — got: ${mlOut}`)
+// The {{IMG}}-resolved URL host must not be prefixed/mangled by translation
+assert.ok(!mlOut.includes('[EN] https://'), `FAIL ML3: a URL was translated — got: ${mlOut}`)
+// Tag set preserved: still exactly one <h1>, one <img>, one <nav>
+assert.strictEqual((mlOut.match(/<h1\b/g) || []).length, 1, `FAIL ML3: <h1> count changed`)
+assert.strictEqual((mlOut.match(/<img\b/g) || []).length, 1, `FAIL ML3: <img> count changed`)
+assert.strictEqual((mlOut.match(/<nav\b/g) || []).length, 1, `FAIL ML3: <nav> count changed`)
+
+// (c) LENGTH-MISMATCH translator → THROWS (so the orchestrator can fall back)
+const badTranslator = async (strings) => strings.slice(1).map((s) => `[EN] ${s}`) // one fewer item
+let threw = false
+try {
+  await translatePageHtml(mlBody, 'tr', 'en', badTranslator)
+} catch {
+  threw = true
+}
+assert.ok(threw, `FAIL ML4: length-mismatch translator must THROW so caller can fall back`)
+
+// Non-array translator → THROWS too
+let threw2 = false
+try {
+  await translatePageHtml(mlBody, 'tr', 'en', async () => 'not-an-array')
+} catch {
+  threw2 = true
+}
+assert.ok(threw2, `FAIL ML4: non-array translator must THROW`)
+
+// Nothing translatable → translator NOT called, original returned unchanged
+let called = false
+const noTextHtml = '<main><img src="https://x/y.jpg"><hr></main>'
+const mlNoText = await translatePageHtml(noTextHtml, 'tr', 'en', async (s) => {
+  called = true
+  return s
+})
+assert.strictEqual(mlNoText, noTextHtml, `FAIL ML5: no-translatable html must return unchanged`)
+assert.ok(!called, `FAIL ML5: translator must NOT be called when nothing is translatable`)
+
+// translateStrings (SEO) — same length/order contract, fall-back on empty
+const [t1, t2] = await translateStrings(['Markanız', 'Resmi web sitesi'], fakeTranslator)
+assert.strictEqual(t1, '[EN] Markanız', `FAIL ML6: seo title not translated — got: ${t1}`)
+assert.strictEqual(t2, '[EN] Resmi web sitesi', `FAIL ML6: seo description not translated — got: ${t2}`)
+
+// parseTranslationArray tolerant parse: bare array + array embedded in prose
+assert.deepStrictEqual(parseTranslationArray('["a","b"]'), ['a', 'b'], `FAIL ML7: bare JSON array parse`)
+assert.deepStrictEqual(
+  parseTranslationArray('Here you go: ["a","b"] done'),
+  ['a', 'b'],
+  `FAIL ML7: embedded JSON array parse`,
+)
+assert.strictEqual(parseTranslationArray('no array here'), null, `FAIL ML7: no array → null`)
+
+// localeToLanguageName: known → name, unknown → bare code (never throws)
+assert.strictEqual(localeToLanguageName('en'), 'English', `FAIL ML8: en → English`)
+assert.strictEqual(localeToLanguageName('TR'), 'Turkish', `FAIL ML8: TR → Turkish (case-insensitive)`)
+assert.strictEqual(localeToLanguageName('xx'), 'xx', `FAIL ML8: unknown → bare code`)
+
+// Attr allowlist is the small intended set (no data-*/class/href etc.)
+assert.deepStrictEqual(
+  [...TRANSLATABLE_ATTRS].sort(),
+  ['alt', 'aria-label', 'placeholder', 'title'],
+  `FAIL ML9: TRANSLATABLE_ATTRS drifted — got: ${JSON.stringify(TRANSLATABLE_ATTRS)}`,
+)
+
+// (b, extra) translated output survives the shared sanitizer (structure-safe by construction)
+const mlClean = sanitizeSiteHtml(mlOut)
+assert.ok(mlClean.includes('data-yoai-href="contact"'), `FAIL ML10: data-yoai-* stripped by sanitizer`)
+assert.ok(mlClean.includes('[EN] Merhaba Dünya'), `FAIL ML10: translated text lost after sanitize`)
+
+console.log('multilang OK')

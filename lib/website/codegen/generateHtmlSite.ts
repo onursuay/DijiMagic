@@ -40,6 +40,7 @@ import {
 } from './htmlGenerate'
 import { planSitePages, type PlannedPage } from './multipagePlan'
 import { gateSiteHtml } from './renderGate'
+import { translatePageHtml, translateStrings } from './translateHtml'
 import type { CodegenContext } from './types'
 
 // ---------------------------------------------------------------------------
@@ -162,6 +163,95 @@ export async function generateHtmlSite(
 }
 
 // ---------------------------------------------------------------------------
+// MULTI-LANGUAGE — translate the default-locale pages for every EXTRA locale.
+//
+// The default-locale page(s) are generated ONCE (Opus). For each additional
+// locale we produce a TRANSLATED copy of each page — same slug/pageRole/orderIndex/
+// html STRUCTURE, only the human-readable text + SEO is translated (cheap Sonnet
+// call, structure preserved). Best-effort: if translation OR the re-gate fails for
+// a page+locale, we FALL BACK to the original default-locale html (so the locale
+// still renders, just untranslated) — a miss NEVER fails the whole generation.
+// Returns ONLY the extra-locale pages (the caller already has the default ones).
+// ---------------------------------------------------------------------------
+
+/**
+ * @param ctx           Stage-0 context
+ * @param website       the Website (for defaultLocale + locales)
+ * @param defaultPages  the gated default-locale pages (already built)
+ * @returns the translated pages for every extra locale (default-locale pages NOT included)
+ */
+async function buildExtraLocalePages(
+  ctx: CodegenContext,
+  website: Website,
+  defaultPages: WebsitePageInput[],
+): Promise<WebsitePageInput[]> {
+  const from = website.defaultLocale
+  const extraLocales = (website.locales || []).filter(
+    (l, i, arr) => l && l !== from && arr.indexOf(l) === i,
+  )
+  if (extraLocales.length === 0) return []
+
+  const out: WebsitePageInput[] = []
+
+  for (const locale of extraLocales) {
+    for (const page of defaultPages) {
+      const sourceHtml = page.html ?? ''
+      let html = sourceHtml // fall back to original (untranslated) by default
+      let seo = page.seo ?? { title: '', description: '' }
+
+      // 1. Translate the page HTML (structure preserved). On any miss → keep original.
+      try {
+        const translated = await translatePageHtml(sourceHtml, from, locale)
+        // Re-gate: structure is preserved so it should pass; if it doesn't, keep the
+        // original (already-gated) html for this locale rather than ship something broken.
+        const gate = gateSiteHtml(translated)
+        if (gate.ok === true) {
+          html = gate.html
+        } else {
+          console.warn(
+            `[generateHtmlSite] translated page failed re-gate (slug="${page.slug}", locale="${locale}"): ${gate.reason} — falling back to default-locale html`,
+          )
+        }
+      } catch (e) {
+        console.warn(
+          `[generateHtmlSite] translation failed (slug="${page.slug}", locale="${locale}"):`,
+          e instanceof Error ? e.message : e,
+        )
+        // html stays = sourceHtml (the default-locale, already-gated copy).
+      }
+
+      // 2. Translate the SEO title + description (short). On any miss → keep originals.
+      try {
+        const [title, description] = await translateStrings(
+          [seo.title ?? '', seo.description ?? ''],
+          from,
+          locale,
+        )
+        seo = { title: title || seo.title, description: description || seo.description }
+      } catch (e) {
+        console.warn(
+          `[generateHtmlSite] seo translation failed (slug="${page.slug}", locale="${locale}"):`,
+          e instanceof Error ? e.message : e,
+        )
+      }
+
+      out.push({
+        locale,
+        slug: page.slug,
+        pageRole: page.pageRole,
+        sections: [],
+        seo,
+        orderIndex: page.orderIndex,
+        html,
+        format: 'html',
+      })
+    }
+  }
+
+  return out
+}
+
+// ---------------------------------------------------------------------------
 // LANDING (single-page) — UNCHANGED behavior (one home page, anchor nav).
 // ---------------------------------------------------------------------------
 
@@ -210,8 +300,12 @@ async function generateLanding(
     format: 'html',
   }
 
+  // Multi-language: append a TRANSLATED copy of the home page for every extra
+  // locale (best-effort, structure preserved; falls back to original on a miss).
+  const extraPages = await buildExtraLocalePages(ctx, website, [page])
+
   const designVars = await toDesignVars(ds)
-  return { ok: true, page, pages: [page], designVars }
+  return { ok: true, page, pages: [page, ...extraPages], designVars }
 }
 
 // ---------------------------------------------------------------------------
@@ -302,6 +396,11 @@ async function generateMultipage(
     return { ok: false, reason: 'generation_failed' }
   }
 
+  // Multi-language: append TRANSLATED copies of EVERY page for each extra locale
+  // (best-effort, structure preserved; per-page fall-back on a miss). The default-
+  // locale pages above are the source of truth and are returned unchanged.
+  const extraPages = await buildExtraLocalePages(ctx, website, pages)
+
   const designVars = await toDesignVars(ds)
-  return { ok: true, page: home, pages, designVars }
+  return { ok: true, page: home, pages: [...pages, ...extraPages], designVars }
 }

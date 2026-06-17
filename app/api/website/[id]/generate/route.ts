@@ -148,10 +148,12 @@ async function generateWithCodegenV2({
   isRevision: boolean
 }): Promise<NextResponse> {
   // Maliyet: landing → tek sayfa; multipage → planlanan sayfa sayısı (üretimden ÖNCE
-  // kesin bilinmez; ortalama 4 sayfa varsayılır — orchestrator 3..6 üretir). Tek dil
-  // (defaultLocale); çoklu dil Faz 2+. Sabit formül computeGenerationCost ile.
+  // kesin bilinmez; ortalama 4 sayfa varsayılır — orchestrator 3..6 üretir). Çoklu dil:
+  // varsayılan dil sıfırdan üretilir, ek diller yapı-koruyan çeviriyle (ucuz Sonnet)
+  // üretilir — yine de dil sayısıyla ücretlendirilir. Sabit formül computeGenerationCost ile.
   const pageCount = site.siteType === 'multipage' ? 4 : 1
-  const cost = computeGenerationCost({ siteType: site.siteType, pageCount, localeCount: 1 })
+  const localeCount = site.locales.length || 1
+  const cost = computeGenerationCost({ siteType: site.siteType, pageCount, localeCount })
 
   // Krediyi ÜRETİMDEN ÖNCE düş (owner bypass + yetersiz bakiye 402 featureGuard içinde).
   const access = await chargeFeature({ featureKey: 'website_generation', creditCost: cost })
