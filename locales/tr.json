@@ -5969,7 +5969,15 @@
       "designAccentColor": "Vurgu rengi",
       "designBgOpacity": "Zemin opaklığı",
       "designBgOpacityHint": "Opaklık yalnızca bir zemin rengi seçildiğinde etkilidir (örn. üst alanda cam/saydam görünüm).",
-      "designAccentContrastWarn": "Bu vurgu rengi üzerindeki buton yazısı yeterince okunaklı değil; biraz daha koyu veya daha açık bir ton seçin."
+      "designAccentContrastWarn": "Bu vurgu rengi üzerindeki buton yazısı yeterince okunaklı değil; biraz daha koyu veya daha açık bir ton seçin.",
+      "codegen": {
+        "generating": "Yapay zekâ siteni kodluyor…",
+        "stageDesignSystem": "Tasarım sistemi hazırlanıyor…",
+        "stageBuildingPage": "Sayfa oluşturuluyor…",
+        "stagePolishing": "Son rötuşlar yapılıyor…",
+        "success": "Siteniz hazır.",
+        "gateFailRefunded": "Site üretilemedi, krediniz iade edildi."
+      }
     }
   },
   "sidebar": {

@@ -5969,7 +5969,15 @@
       "designAccentColor": "Accent color",
       "designBgOpacity": "Background opacity",
       "designBgOpacityHint": "Opacity applies only when a background color is set (e.g. a glass/translucent header).",
-      "designAccentContrastWarn": "The button text on this accent color isn't readable enough; pick a slightly darker or lighter tone."
+      "designAccentContrastWarn": "The button text on this accent color isn't readable enough; pick a slightly darker or lighter tone.",
+      "codegen": {
+        "generating": "AI is coding your site…",
+        "stageDesignSystem": "Designing the visual system…",
+        "stageBuildingPage": "Building the page…",
+        "stagePolishing": "Adding the finishing touches…",
+        "success": "Your site is ready.",
+        "gateFailRefunded": "Couldn't generate the site — your credits were refunded."
+      }
     }
   },
   "sidebar": {
