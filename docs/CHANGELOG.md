@@ -2,6 +2,11 @@
 
 ---
 
+## 2026-06-17 — Web Site Yöneticisi: birleşik Route Handler servisi (dual-read html + sections)
+- **Sorun:** Codegen (`format='html'`) siteleri kendi tam `<html>` belgesini içerir; App Router sayfasında basmak çift `<html>` üretir. Aynı yolda hem yeni HTML hem eski sections formatı servis edilmeli.
+- **Çözüm:** `/s/<subdomain>` ve `/s/<subdomain>/<slug>` `page.tsx`'leri Route Handler'a (`route.ts`) çevrildi (git mv). `GET` `page.format`'a göre dallanır: `'html'` → `assembleDocument({…, designVars: themeToDesignVars(theme), mode:'serve'})`; `'sections'` (mevcut tüm siteler) → `renderToStaticMarkup(<SiteRenderer/>)` + per-site Tailwind JIT (`compileSiteCss`) ile eski belgeye birebir sarılır (regresyon yok). Layout bypass edildiğinden tam belge (`<!doctype html>…<head>title/desc/lang…</head><body>`) burada üretilir. `force-dynamic` + 404 + locale seçimi eski page.tsx ile birebir. CSP defense-in-depth olarak response başlığına da eklendi (next.config string'i birebir). `ThemeTokens.designVars` (jsonb, migration yok) eklendi — Task 15 yazacak, yoksa `{}` fallback.
+- **Dosyalar:** `app/(sites)/s/[subdomain]/route.ts` (← page.tsx), `app/(sites)/s/[subdomain]/[slug]/route.ts` (← page.tsx), `lib/website/render/serveSectionsDocument.ts` (yeni), `lib/website/render/serveCommon.ts` (yeni), `lib/website/render/designVars.ts` (yeni), `lib/website/types.ts` (designVars alanı)
+
 ## 2026-06-17 — Web Site Yöneticisi: buildCodegenContext (Stage 0 — prompt injection karantinası)
 - **Sorun:** Yeni kod üretim pipeline'ı için harici metin (marka profili, intelligence, referans URL taramaları) AI prompt'una doğrudan geçirilirse prompt injection açığı oluşur.
 - **Çözüm:** `wrapUntrusted(label, text)` fonksiyonu `untrusted.mjs`'te tanımlandı; `<untrusted_source>` etiketi içinde teslim edilen metindeki `<untrusted_source` ve `</untrusted_source` kalıpları FULLWIDTH `＜` ile nötralize edilir. `buildCodegenContext()` profil + intelligence'ı `getProfileByUserId`/`getIntelligenceByUserId` ile çeker (generate.ts ile aynı kapsam), her kaynağı ayrı `untrustedBlocks[]` elemanına sarar; kullanıcının `initialInstructions`'ı ayrı güvenilir `instruction` alanında tutulur. `CodegenContext` tipi `types.ts`'e eklendi. Verify script'e X1/X2/X3 assertion'ları eklendi.

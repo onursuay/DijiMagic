@@ -28,6 +28,13 @@ export interface ThemeTokens {
   style?: string | null
   /** Faz C: alan bazlı tasarım override (header/body/footer). theme jsonb'sinde tutulur — migration yok. */
   areaStyles?: AreaStyles | null
+  /**
+   * Codegen (format='html') siteleri için Stage-1 DesignSystem'den türetilen CSS custom property
+   * haritası (`--ink`, `--accent`, … → değer). assembleDocument'in `:root` bloğuna yazılır.
+   * Task 15 (generate/persist) tarafından yazılır; sections sitelerinde tanımsızdır (kullanılmaz).
+   * theme jsonb'sinde tutulur — migration gerekmez.
+   */
+  designVars?: Record<string, string> | null
 }
 
 /** Faz C — bir alanın (header/body/footer) global temayı ezen tasarımı. */
