@@ -382,3 +382,123 @@ assert.ok(x3b.includes('before'), `FAIL X3b: 'before' content must remain as dat
 assert.ok(x3b.includes('after'), `FAIL X3b: 'after' content must remain as data — got: ${x3b}`)
 
 console.log('context OK')
+
+// ---------------------------------------------------------------------------
+// DESIGNSYSTEM section — CSS-safe token validation
+// ---------------------------------------------------------------------------
+
+// Load the pure validator (single source of truth — also used by designSystem.ts)
+const designSystemValidatePath = path.join(__dirname, '../lib/website/codegen/designSystemValidate.mjs')
+const { validateDesignSystem, SAFE_DEFAULT_DESIGN_SYSTEM } = await import(designSystemValidatePath)
+
+// D1 — Malicious DesignSystem: accent with CSS injection, spacingScale with } injection
+const malicious = {
+  palette: {
+    ink: '#1a1a2e',
+    accent: 'red; } </style><script>alert(1)',  // injection attempt
+    accentSoft: '#d1fae5',
+    surface: '#ffffff',
+    onAccent: '#ffffff',
+    muted: '#6b7280',
+    border: '#e5e7eb',
+  },
+  fonts: {
+    headingHref: null,
+    heading: '"DM Serif Display", serif',
+    body: 'Inter, sans-serif',
+  },
+  spacingScale: ['1rem', '}evil', '2rem'],
+  radiusScale: ['0.5rem', '<script>', '1rem'],
+  shadowRecipes: ['0 1px 3px rgba(0,0,0,0.1)'],
+  gradientRecipes: ['linear-gradient(135deg, #059669 0%, #065f46 100%)'],
+  motion: {
+    easing: 'cubic-bezier(0.34, 1.56, 0.64, 1)',
+    durations: [150, 250, 400],
+  },
+}
+
+const d1 = validateDesignSystem(malicious)
+
+// accent injection must be replaced with safe default — no } < > or </style>
+assert.ok(
+  !d1.palette.accent.includes('}'),
+  `FAIL D1: accent contains } — got: ${d1.palette.accent}`,
+)
+assert.ok(
+  !d1.palette.accent.includes('<'),
+  `FAIL D1: accent contains < — got: ${d1.palette.accent}`,
+)
+assert.ok(
+  !d1.palette.accent.includes('</style>'),
+  `FAIL D1: accent contains </style> — got: ${d1.palette.accent}`,
+)
+assert.ok(
+  !d1.palette.accent.includes('alert(1)'),
+  `FAIL D1: accent contains alert(1) — got: ${d1.palette.accent}`,
+)
+
+// spacingScale: '}evil' must be replaced with safe default
+const badSpacing = d1.spacingScale.find((v) => v.includes('}'))
+assert.ok(
+  !badSpacing,
+  `FAIL D1: spacingScale still contains } — values: ${JSON.stringify(d1.spacingScale)}`,
+)
+
+// radiusScale: '<script>' must be replaced
+const badRadius = d1.radiusScale.find((v) => v.includes('<'))
+assert.ok(
+  !badRadius,
+  `FAIL D1: radiusScale still contains < — values: ${JSON.stringify(d1.radiusScale)}`,
+)
+
+// D2 — Safe default passes validation unchanged
+const d2 = validateDesignSystem(SAFE_DEFAULT_DESIGN_SYSTEM)
+assert.strictEqual(
+  d2.palette.accent,
+  SAFE_DEFAULT_DESIGN_SYSTEM.palette.accent,
+  `FAIL D2: safe default accent changed after validation — got: ${d2.palette.accent}`,
+)
+assert.strictEqual(
+  d2.palette.ink,
+  SAFE_DEFAULT_DESIGN_SYSTEM.palette.ink,
+  `FAIL D2: safe default ink changed — got: ${d2.palette.ink}`,
+)
+assert.deepStrictEqual(
+  d2.spacingScale,
+  SAFE_DEFAULT_DESIGN_SYSTEM.spacingScale,
+  `FAIL D2: safe default spacingScale changed — got: ${JSON.stringify(d2.spacingScale)}`,
+)
+assert.deepStrictEqual(
+  d2.motion.durations,
+  SAFE_DEFAULT_DESIGN_SYSTEM.motion.durations,
+  `FAIL D2: safe default motion.durations changed — got: ${JSON.stringify(d2.motion.durations)}`,
+)
+
+// D3 — null/undefined input returns a complete DesignSystem (the safe default shape)
+const d3 = validateDesignSystem(null)
+assert.ok(d3.palette && typeof d3.palette.accent === 'string', `FAIL D3: null input didn't return safe default shape`)
+assert.ok(d3.spacingScale.length > 0, `FAIL D3: null input returned empty spacingScale`)
+
+// D4 — amber/gold colors are ACCEPTED (color freedom — no amber ban on generated sites)
+const withAmber = {
+  palette: {
+    ink: '#1c1917',
+    accent: '#d97706',        // amber-600 — must be accepted
+    accentSoft: '#fef3c7',    // amber-100 — must be accepted
+    surface: '#fffbeb',
+    onAccent: '#ffffff',
+    muted: '#78716c',
+    border: '#e7e5e4',
+  },
+  fonts: { headingHref: null, heading: '"Playfair Display", serif', body: 'Inter, sans-serif' },
+  spacingScale: ['0.25rem', '0.5rem', '1rem', '1.5rem', '2rem', '3rem', '4rem', '6rem'],
+  radiusScale: ['0.25rem', '0.5rem', '0.75rem', '1rem', '1.5rem', '9999px'],
+  shadowRecipes: ['0 1px 3px rgba(0,0,0,0.08)'],
+  gradientRecipes: ['linear-gradient(135deg, #d97706 0%, #92400e 100%)'],
+  motion: { easing: 'cubic-bezier(0.34,1.56,0.64,1)', durations: [150, 250, 400] },
+}
+const d4 = validateDesignSystem(withAmber)
+assert.strictEqual(d4.palette.accent, '#d97706', `FAIL D4: amber accent was rejected — got: ${d4.palette.accent}`)
+assert.strictEqual(d4.palette.accentSoft, '#fef3c7', `FAIL D4: amber accentSoft was rejected — got: ${d4.palette.accentSoft}`)
+
+console.log('designsystem OK')
