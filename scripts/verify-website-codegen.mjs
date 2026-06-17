@@ -4,9 +4,10 @@
  * Verify the sanitizeHtml codegen module behaviour.
  *
  * TS-loading approach: instead of transpiling sanitizeHtml.ts, this script
- * imports `sanitize-html` directly and the SAME allowlist from the shared
+ * imports `sanitize-html` directly and the SAME options factory from the shared
  * `lib/website/codegen/sanitizeAllowlist.mjs` (single source of truth).
- * This avoids any TS build step and guarantees no allowlist duplication.
+ * This avoids any TS build step and guarantees no allowlist duplication —
+ * the security fixes exercised here are EXACTLY the same ones used at runtime.
  *
  * Run: node scripts/verify-website-codegen.mjs
  */
@@ -22,76 +23,15 @@ const require = createRequire(import.meta.url)
 // Load sanitize-html (CommonJS package)
 const sanitizeHtml = require('sanitize-html')
 
-// Load shared allowlist (ESM .mjs — single source of truth)
+// Load shared allowlist factory (ESM .mjs — single source of truth)
 const allowlistPath = path.join(__dirname, '../lib/website/codegen/sanitizeAllowlist.mjs')
-const {
-  SAFE_TAGS,
-  SAFE_ATTRS,
-  DANGEROUS_STYLE_PATTERNS,
-  SAFE_HREF_SCHEMES,
-  SAFE_IMG_SRC_RE,
-} = await import(allowlistPath)
+const { buildSanitizeOptions } = await import(allowlistPath)
 
 // ---------------------------------------------------------------------------
-// Build the same options object as sanitizeHtml.ts (kept in sync via shared constants)
+// Build options via the shared factory — no logic duplication
 // ---------------------------------------------------------------------------
 
-const sanitizeOptions = {
-  allowedTags: SAFE_TAGS,
-  allowedAttributes: SAFE_ATTRS,
-  allowedSchemes: SAFE_HREF_SCHEMES,
-  allowedSchemesByTag: {
-    img: ['https', 'data'],
-    source: ['https', 'data'],
-  },
-  allowedSchemesAppliedToAttributes: ['href', 'src', 'action', 'cite'],
-  nonTextTags: ['style', 'script', 'textarea', 'option', 'noscript'],
-
-  transformTags: {
-    a(tagName, attribs) {
-      const href = attribs['href'] ?? ''
-      const isRelative = href.startsWith('#') || href.startsWith('/')
-      const hasSafeScheme = SAFE_HREF_SCHEMES.some(
-        (s) => href.toLowerCase().startsWith(s + ':'),
-      )
-      if (!isRelative && !hasSafeScheme && href !== '') {
-        const { href: _removed, ...rest } = attribs
-        return { tagName, attribs: rest }
-      }
-      const finalAttribs = { ...attribs }
-      if (href.startsWith('http') && !finalAttribs['target']) {
-        finalAttribs['target'] = '_blank'
-        finalAttribs['rel'] = 'noopener noreferrer'
-      }
-      return { tagName, attribs: finalAttribs }
-    },
-    img(tagName, attribs) {
-      const src = attribs['src'] ?? ''
-      if (src && !SAFE_IMG_SRC_RE.test(src)) {
-        const { src: _removed, ...rest } = attribs
-        return { tagName, attribs: rest }
-      }
-      return { tagName, attribs }
-    },
-    '*'(tagName, attribs) {
-      if (attribs['style']) {
-        const styleVal = attribs['style']
-        const isDangerous = DANGEROUS_STYLE_PATTERNS.some((re) => re.test(styleVal))
-        if (isDangerous) {
-          const { style: _removed, ...rest } = attribs
-          return { tagName, attribs: rest }
-        }
-      }
-      return { tagName, attribs }
-    },
-  },
-
-  exclusiveFilter(frame) {
-    return Object.keys(frame.attribs).some((attr) =>
-      attr.toLowerCase().startsWith('on'),
-    )
-  },
-}
+const sanitizeOptions = buildSanitizeOptions()
 
 function sanitizeSiteHtml(bodyHtml) {
   if (!bodyHtml || typeof bodyHtml !== 'string') return ''
@@ -150,5 +90,40 @@ assert.ok(!r9.includes('data:text/html'), `FAIL: non-image data: URI not strippe
 // 10. Safe data:image/ src on img is preserved
 const r10 = sanitizeSiteHtml('<img src="data:image/png;base64,abc123" alt="test">')
 assert.ok(r10.includes('data:image/png;base64,abc123'), `FAIL: data:image/ stripped — got: ${r10}`)
+
+// ---------------------------------------------------------------------------
+// NEW SECURITY REGRESSION TESTS
+// ---------------------------------------------------------------------------
+
+// C1 — <svg><use> with external href is stripped (sprite-injection XSS)
+const rC1 = sanitizeSiteHtml('<svg><use href="https://evil.com/x.svg#a"/></svg>')
+assert.ok(!rC1.includes('<use'), `FAIL C1: <use> tag not stripped — got: ${rC1}`)
+assert.ok(!rC1.includes('evil.com'), `FAIL C1: external href not stripped — got: ${rC1}`)
+
+// I1 — <meta http-equiv=refresh> is stripped (open redirect / exec vector)
+const rI1 = sanitizeSiteHtml('<meta http-equiv="refresh" content="0;url=javascript:alert(1)">')
+assert.ok(!rI1.includes('<meta'), `FAIL I1: <meta> tag not stripped — got: ${rI1}`)
+assert.ok(!rI1.includes('javascript:'), `FAIL I1: javascript: leaked via meta — got: ${rI1}`)
+
+// I2 — <link rel="stylesheet"> is stripped (CSS injection / UI-redress)
+const rI2 = sanitizeSiteHtml('<link rel="stylesheet" href="https://evil.com/x.css"><p>safe</p>')
+assert.ok(!rI2.includes('<link'), `FAIL I2: <link> tag not stripped — got: ${rI2}`)
+assert.ok(rI2.includes('<p>safe</p>'), `FAIL I2: <p> stripped alongside <link> — got: ${rI2}`)
+
+// I3 — SVG <image> with external non-image href is stripped (tracking/CSRF)
+const rI3a = sanitizeSiteHtml('<svg><image href="https://evil.com/track.gif"/></svg>')
+assert.ok(!rI3a.includes('evil.com'), `FAIL I3a: external SVG image href not stripped — got: ${rI3a}`)
+
+// I3 — SVG <image> with data:image/ href is preserved (legitimate inline use)
+const rI3b = sanitizeSiteHtml('<svg><image href="data:image/png;base64,abc123" width="10" height="10"/></svg>')
+assert.ok(rI3b.includes('data:image/png;base64,abc123'), `FAIL I3b: data:image/ SVG image href stripped — got: ${rI3b}`)
+
+// I3 — SVG <image> with data:text/html is blocked
+const rI3c = sanitizeSiteHtml('<svg><image href="data:text/html,<script>bad</script>"/></svg>')
+assert.ok(!rI3c.includes('data:text/html'), `FAIL I3c: data:text/html SVG image href not stripped — got: ${rI3c}`)
+
+// m2 — @import in style attr is stripped
+const rM2 = sanitizeSiteHtml('<div style="@import url(https://evil.com/x.css)">x</div>')
+assert.ok(!rM2.includes('@import'), `FAIL m2: @import in style not stripped — got: ${rM2}`)
 
 console.log('sanitize OK')
