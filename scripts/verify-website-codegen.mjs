@@ -258,3 +258,42 @@ assert.ok(escapedDoc.includes('&lt;b&gt;'), `FAIL A3: title must contain &lt;b&g
 assert.ok(escapedDoc.includes('&amp;'), `FAIL A3: title must escape & as &amp;`)
 
 console.log('assemble OK')
+
+// ---------------------------------------------------------------------------
+// GATE section — renderGate publish gate
+// ---------------------------------------------------------------------------
+
+// Load the core gate module directly (single source of truth)
+const renderGatePath = path.join(__dirname, '../lib/website/codegen/renderGate.mjs')
+const { gateSiteHtml } = await import(renderGatePath)
+
+// G1 — Valid HTML (one h1 + landmark, small) → ok:true, returns sanitized html
+const validBody = '<header><nav><a href="/">Home</a></nav></header><main><h1>Welcome</h1><p>Hello world.</p></main><footer>Footer</footer>'
+const g1 = gateSiteHtml(validBody)
+assert.ok(g1.ok === true, `FAIL G1: expected ok:true — got: ${JSON.stringify(g1)}`)
+assert.ok(typeof g1.html === 'string' && g1.html.length > 0, `FAIL G1: html should be non-empty string — got: ${JSON.stringify(g1)}`)
+// Returned html must not contain raw <script (sanitizer ran)
+assert.ok(!g1.html.includes('<script'), `FAIL G1: sanitized html still contains <script — got: ${g1.html}`)
+
+// G2 — HTML with NO <h1> → ok:false, reason no_h1
+const g2 = gateSiteHtml('<main><p>No heading here.</p></main>')
+assert.ok(g2.ok === false, `FAIL G2: expected ok:false — got: ${JSON.stringify(g2)}`)
+assert.ok(!g2.ok && g2.reason === 'no_h1', `FAIL G2: expected reason no_h1 — got: ${JSON.stringify(g2)}`)
+
+// G3 — HTML with TWO <h1> → ok:false, reason multiple_h1
+const g3 = gateSiteHtml('<main><h1>First</h1><h1>Second</h1></main>')
+assert.ok(g3.ok === false, `FAIL G3: expected ok:false — got: ${JSON.stringify(g3)}`)
+assert.ok(!g3.ok && g3.reason === 'multiple_h1', `FAIL G3: expected reason multiple_h1 — got: ${JSON.stringify(g3)}`)
+
+// G4 — HTML missing landmarks → ok:false, reason no_landmark
+const g4 = gateSiteHtml('<div><h1>Only a div</h1><p>No landmarks.</p></div>')
+assert.ok(g4.ok === false, `FAIL G4: expected ok:false — got: ${JSON.stringify(g4)}`)
+assert.ok(!g4.ok && g4.reason === 'no_landmark', `FAIL G4: expected reason no_landmark — got: ${JSON.stringify(g4)}`)
+
+// G5 — Gate sanitizes: <script> in input → sanitized, but then fails no_h1 (no h1 in this input)
+const g5 = gateSiteHtml('<main><script>alert(1)</script><h1>Safe</h1></main>')
+// After sanitize: <script> is stripped; one <h1> present; main is a landmark → should pass
+assert.ok(g5.ok === true, `FAIL G5: expected ok:true after sanitize strips script — got: ${JSON.stringify(g5)}`)
+assert.ok(!g5.ok || !g5.html.includes('<script'), `FAIL G5: script survived gate — got: ${g5.ok ? g5.html : ''}`)
+
+console.log('gate OK')
