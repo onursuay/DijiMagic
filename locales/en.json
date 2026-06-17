@@ -345,6 +345,8 @@
         "source": "Content source",
         "sourceUpload": "Upload file",
         "sourceAi": "Generate with AI",
+        "sourceLibrary": "Library",
+        "libraryEmpty": "Your design library is empty",
         "aiKindImage": "Image",
         "aiKindVideo": "Video",
         "aiPromptPlaceholder": "Describe what to create… (e.g. a modern poster for a summer sale)",

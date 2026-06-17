@@ -4,7 +4,7 @@ import { useState, useEffect, useRef, useCallback } from 'react'
 import { useRouter } from 'next/navigation'
 import { useTranslations, useLocale } from 'next-intl'
 import {
-  X, Upload, Sparkles, Instagram, Facebook, Check, Play, Loader2, Trash2, AlertCircle, ArrowRight, Link2Off, Plus,
+  X, Upload, Sparkles, Instagram, Facebook, Check, Play, Loader2, Trash2, AlertCircle, ArrowRight, Link2Off, Plus, FolderOpen,
 } from 'lucide-react'
 import { localePath } from '@/lib/routes'
 import { COST_PER_GENERATION } from '@/lib/subscription/types'
@@ -68,7 +68,7 @@ export default function PostComposerModal({
   const router = useRouter()
   const isEdit = Boolean(editPost)
 
-  const [source, setSource] = useState<'upload' | 'ai'>('upload')
+  const [source, setSource] = useState<'upload' | 'ai' | 'library'>('upload')
   const [format, setFormat] = useState<SocialFormat>(initialFormat)
   const [mediaList, setMediaList] = useState<SelectedMedia[]>([])
   const [uploading, setUploading] = useState(false)
@@ -80,7 +80,23 @@ export default function PostComposerModal({
   const [aiPrompt, setAiPrompt] = useState('')
   const [aiKind, setAiKind] = useState<SocialMediaType>('image')
   const [generating, setGenerating] = useState(false)
+  const [library, setLibrary] = useState<{ url: string; type: SocialMediaType }[]>([])
+  const [importing, setImporting] = useState(false)
   const fileRef = useRef<HTMLInputElement>(null)
+
+  // Tasarım kütüphanesini (localStorage) oku.
+  useEffect(() => {
+    if (!open) return
+    try {
+      const raw = localStorage.getItem('yoai-tasarim-library')
+      const arr = raw ? JSON.parse(raw) : []
+      setLibrary(
+        Array.isArray(arr)
+          ? arr.map((x: any) => ({ url: x?.url, type: (x?.type === 'video' ? 'video' : 'image') as SocialMediaType })).filter((x: any) => typeof x.url === 'string')
+          : [],
+      )
+    } catch { setLibrary([]) }
+  }, [open])
 
   // Açılışta state'i kur (yeni / düzenleme)
   useEffect(() => {
@@ -174,6 +190,25 @@ export default function PostComposerModal({
     }
   }, [aiPrompt, aiKind, format, generating, addMedia, onGenerateError])
 
+  const importFromLibrary = useCallback(async (url: string) => {
+    if (importing) return
+    setImporting(true)
+    try {
+      const res = await fetch('/api/social/media/import', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ sourceUrl: url }),
+      })
+      const json = await res.json()
+      if (json.ok) addMedia({ storagePath: json.data.storagePath, publicUrl: json.data.publicUrl, mediaType: json.data.mediaType })
+      else onUploadError()
+    } catch {
+      onUploadError()
+    } finally {
+      setImporting(false)
+    }
+  }, [importing, addMedia, onUploadError])
+
   const changeFormat = (f: SocialFormat) => {
     setFormat(f)
     if (f !== 'feed') setMediaList((prev) => prev.slice(0, 1))
@@ -265,27 +300,24 @@ export default function PostComposerModal({
           {!isEdit && (
             <div>
               <label className="mb-2 block text-sm font-medium text-gray-700">{t('source')}</label>
-              <div className="grid grid-cols-2 gap-2">
-                <button
-                  type="button"
-                  onClick={() => setSource('upload')}
-                  className={`flex items-center justify-center gap-2 rounded-xl border px-3 py-2.5 text-sm font-medium transition-all ${
-                    source === 'upload' ? 'border-primary bg-primary/5 text-primary' : 'border-gray-200 text-gray-600 hover:border-gray-300'
-                  }`}
-                >
-                  <Upload className="h-4 w-4" />
-                  {t('sourceUpload')}
-                </button>
-                <button
-                  type="button"
-                  onClick={() => setSource('ai')}
-                  className={`flex items-center justify-center gap-2 rounded-xl border px-3 py-2.5 text-sm font-medium transition-all ${
-                    source === 'ai' ? 'border-primary bg-primary/5 text-primary' : 'border-gray-200 text-gray-600 hover:border-gray-300'
-                  }`}
-                >
-                  <Sparkles className="h-4 w-4" />
-                  {t('sourceAi')}
-                </button>
+              <div className="grid grid-cols-3 gap-2">
+                {([
+                  { id: 'upload' as const, Icon: Upload, label: t('sourceUpload') },
+                  { id: 'ai' as const, Icon: Sparkles, label: t('sourceAi') },
+                  { id: 'library' as const, Icon: FolderOpen, label: t('sourceLibrary') },
+                ]).map(({ id, Icon, label }) => (
+                  <button
+                    key={id}
+                    type="button"
+                    onClick={() => setSource(id)}
+                    className={`flex flex-col items-center justify-center gap-1 rounded-xl border px-2 py-2.5 text-xs font-medium transition-all ${
+                      source === id ? 'border-primary bg-primary/5 text-primary' : 'border-gray-200 text-gray-600 hover:border-gray-300'
+                    }`}
+                  >
+                    <Icon className="h-4 w-4" />
+                    <span className="text-center leading-tight">{label}</span>
+                  </button>
+                ))}
               </div>
             </div>
           )}
@@ -348,8 +380,8 @@ export default function PostComposerModal({
                 </div>
               )}
 
-              {/* Ekleme alanı (boşken veya AI ile çoğaltırken) */}
-              {canAddMore && (source === 'ai' || mediaList.length === 0) && (
+              {/* Ekleme alanı (boşken veya AI/kütüphane ile çoğaltırken) */}
+              {canAddMore && (source !== 'upload' || mediaList.length === 0) && (
                 source === 'upload' ? (
                   <button
                     type="button"
@@ -370,7 +402,7 @@ export default function PostComposerModal({
                       </>
                     )}
                   </button>
-                ) : (
+                ) : source === 'ai' ? (
                   <div className="space-y-3 rounded-xl border border-gray-200 p-4">
                     {format !== 'reels' && (
                       <div className="inline-flex rounded-lg border border-gray-200 p-0.5">
@@ -407,6 +439,36 @@ export default function PostComposerModal({
                         {generating ? t('generating') : t('generate')}
                       </button>
                     </div>
+                  </div>
+                ) : (
+                  <div className="rounded-xl border border-gray-200 p-3">
+                    {library.length === 0 ? (
+                      <p className="py-6 text-center text-sm text-gray-500">{t('libraryEmpty')}</p>
+                    ) : (
+                      <div className="grid grid-cols-3 gap-2">
+                        {library.slice(0, 12).map((item, i) => (
+                          <button
+                            key={i}
+                            type="button"
+                            disabled={importing}
+                            onClick={() => importFromLibrary(item.url)}
+                            className="group relative aspect-square overflow-hidden rounded-lg border border-gray-200 transition-colors hover:border-primary/40 disabled:opacity-60"
+                          >
+                            {item.type === 'video' ? (
+                              <video src={item.url} className="h-full w-full object-cover" muted preload="metadata" />
+                            ) : (
+                              // eslint-disable-next-line @next/next/no-img-element
+                              <img src={item.url} alt="" className="h-full w-full object-cover" />
+                            )}
+                            {importing && (
+                              <span className="absolute inset-0 flex items-center justify-center bg-white/60">
+                                <Loader2 className="h-4 w-4 animate-spin text-primary" />
+                              </span>
+                            )}
+                          </button>
+                        ))}
+                      </div>
+                    )}
                   </div>
                 )
               )}

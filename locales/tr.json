@@ -345,6 +345,8 @@
         "source": "İçerik kaynağı",
         "sourceUpload": "Dosya yükle",
         "sourceAi": "AI ile üret",
+        "sourceLibrary": "Kütüphane",
+        "libraryEmpty": "Tasarım kütüphaneniz boş",
         "aiKindImage": "Görsel",
         "aiKindVideo": "Video",
         "aiPromptPlaceholder": "Ne üretmek istediğini yaz… (örn. yaz indirimi için modern bir afiş)",
