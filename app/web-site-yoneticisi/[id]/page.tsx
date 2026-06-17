@@ -40,6 +40,13 @@ export default function WebSiteDetailPage() {
   const t = useTranslations('dashboard.webSiteYoneticisi')
   const uiLocale = useLocale()
 
+  // Wizard'dan ?create=ai|quick ile gelindiyse oluşturma BAŞLAMIŞ kabul edilir:
+  // boş-durum ("Site henüz oluşturulmadı") ekranı asla flash etmez, direkt yükleme adımı gösterilir.
+  const [createInitiated, setCreateInitiated] = useState(() => {
+    const mode = search.get('create')
+    return mode === 'ai' || mode === 'quick'
+  })
+
   const [site, setSite] = useState<Website | null>(null)
   const [pages, setPages] = useState<WebsitePage[]>([])
   const [activeSlug, setActiveSlug] = useState<string>('home')
@@ -117,7 +124,7 @@ export default function WebSiteDetailPage() {
       const json = await res.json()
       if (json.ok) { setPages(json.pages ?? []); setActiveSlug('home'); setReloadKey((k) => k + 1); fetchVersions() }
       else { const m = json.error || t('buildError'); setGenError(m); addToast(m, 'error') }
-    } catch { setGenError(t('buildError')); addToast(t('buildError'), 'error') } finally { setBusy(null) }
+    } catch { setGenError(t('buildError')); addToast(t('buildError'), 'error') } finally { setBusy(null); setCreateInitiated(false) }
   }
 
   const handleQuick = async () => {
@@ -127,20 +134,23 @@ export default function WebSiteDetailPage() {
       const json = await res.json()
       if (json.ok) { setPages(json.pages ?? []); setActiveSlug('home'); setReloadKey((k) => k + 1); fetchVersions() }
       else { setGenError(t('buildError')); addToast(t('buildError'), 'error') }
-    } catch { setGenError(t('buildError')); addToast(t('buildError'), 'error') } finally { setBusy(null) }
+    } catch { setGenError(t('buildError')); addToast(t('buildError'), 'error') } finally { setBusy(null); setCreateInitiated(false) }
   }
 
   // Wizard'dan ?create=ai|quick ile gelince ilk üretimi otomatik başlat (yalnız bir kez, sayfa boşsa).
   const autoStarted = useRef(false)
   useEffect(() => {
     if (autoStarted.current || !site || busy) return
-    if (pages.length > 0) { autoStarted.current = true; return }
+    if (pages.length > 0) { autoStarted.current = true; setCreateInitiated(false); return }
     const mode = search.get('create')
     if (mode === 'ai' || mode === 'quick') {
       autoStarted.current = true
+      setCreateInitiated(true) // boş-durum ekranı arada flash etmesin (URL temizlendikten sonra da)
       router.replace(`/web-site-yoneticisi/${id}`, { scroll: false }) // ?create temizle → reload'da tekrar tetiklenmez
       if (mode === 'ai') void handleAi(site.theme?.initialInstructions ?? '')
       else void handleQuick()
+    } else {
+      setCreateInitiated(false) // create param yok → gerçek boş-durum gösterilebilir
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [site, pages.length])
@@ -212,7 +222,7 @@ export default function WebSiteDetailPage() {
 
           {/* Üretim durumu + aksiyonlar (intake wizard'a taşındı; burada tekrar sorulmaz) */}
           <div className="bg-white rounded-xl border border-gray-200 p-5 animate-card-enter">
-            {busy === 'ai' || busy === 'quick' ? (
+            {busy === 'ai' || busy === 'quick' || (createInitiated && !hasPages && !genError) ? (
               <div className="py-8 flex flex-col items-center text-center gap-3">
                 <Sparkles className="w-8 h-8 text-primary animate-pulse" />
                 <h2 className="text-base font-semibold text-gray-900">{t('preparingTitle')}</h2>

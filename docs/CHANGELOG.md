@@ -2,6 +2,11 @@
 
 ---
 
+## 2026-06-17 — Web Site Yöneticisi: oluşturmada direkt yükleme adımı + metin
+- **Sorun:** "AI ile Oluştur" tıklanınca (`?create=ai`) önce "Site henüz oluşturulmadı" boş-durum ekranı flash ediyor, ancak sonra "AI siteni hazırlıyor" yükleme adımı çıkıyordu. Kullanıcı oluşturmada doğrudan yükleme adımına gitmek istedi.
+- **Çözüm:** `createInitiated` state'i `?create=ai|quick` parametresinden senkron (lazy init) okunuyor; oluşturma başlatılmışsa boş-durum koşulundan önce yükleme adımı render ediliyor (`busy === 'ai'|'quick' || (createInitiated && !hasPages && !genError)`). Üretim biter/başarısız olunca `createInitiated` temizlenir → gerçek boş-durum yine gösterilebilir, ilk ziyarette flash yok. Yükleme başlığı "YoAI Sihirbazı Siteni Hazırlıyor" olarak güncellendi (gövde metni korundu). EN: "YoAI Wizard is building your site".
+- **Dosyalar:** `app/web-site-yoneticisi/[id]/page.tsx`, `locales/tr.json`, `locales/en.json`
+
 ## 2026-06-17 — Web Site Yöneticisi: Kod-Üretim Motoru (Faz 0-1) — bayrak arkası, default OFF
 - **Sorun:** Mevcut motor sabit JSON şablon dolduruyordu → her site "aynı iskelet"; Lovable/Bolt seviyesinde göz alıcı, markaya özgü site üretemiyordu.
 - **Çözüm:** AI'nın serbest HTML/CSS/JS yazdığı yeni kod-üretim motoru kuruldu (`WEBSITE_CODEGEN_V2` bayrağı, **default kapalı → prod riski sıfır**). Pipeline: marka bağlamı + prompt-injection karantinası → Opus 4.8 DesignSystem (siteye özgü palet/font/gölge/animasyon) → Opus 4.8 serbest HTML üretimi (streaming) → görsel çözümleme → **renderGate** (bozuk/güvensiz site asla canlıya çıkmaz) → 1 self-repair → gate-fail'de kredi iadesi. Güvenlik: `app/(sites)/` provider'sız izolasyon + sıkı CSP (`script-src 'self'`) + deny-by-default HTML sanitize (script/on*/iframe/svg-use/meta/link strip). Yayın: dual-read Route Handler (`html`→assembleDocument, `sections`→eski SiteRenderer; eski siteler bozulmaz). Önizleme: sandboxed iframe srcDoc. Her görev bağımsız yaz→denetle→düzelt→yeniden-denetle döngüsünden geçti.
