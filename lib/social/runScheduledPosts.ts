@@ -25,8 +25,7 @@ export async function runScheduledPosts(limit = 25): Promise<RunResult> {
   let failed = 0
 
   for (const post of posts) {
-    const media = post.media[0] // MVP: tek medya
-    if (!media) {
+    if (post.media.length === 0) {
       await markPostFailed(post, 'Medya bulunamadı')
       failed++
       continue
@@ -49,8 +48,7 @@ export async function runScheduledPosts(limit = 25): Promise<RunResult> {
         pageId: target.page_id,
         igUserId: target.ig_user_id,
         format: post.format,
-        mediaUrl: media.public_url,
-        mediaType: media.media_type,
+        media: post.media.map((m) => ({ url: m.public_url, type: m.media_type })),
         caption: post.caption,
       })
       await markTargetResult(target.id, res)

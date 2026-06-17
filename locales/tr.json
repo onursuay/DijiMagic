@@ -357,6 +357,7 @@
         "uploadButton": "Dosya seç",
         "uploading": "Yükleniyor…",
         "removeMedia": "Kaldır",
+        "carouselHint": "{count} öğe carousel olarak paylaşılır",
         "format": "Biçim",
         "targets": "Hedef hesaplar",
         "targetsHint": "Bir veya birden fazla hesap seçin",

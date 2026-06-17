@@ -52,6 +52,11 @@ export default function PostCard({
             <img src={media.public_url} alt="" className="h-full w-full object-cover" />
           )
         ) : null}
+        {post.media.length > 1 && (
+          <span className="absolute right-0.5 top-0.5 rounded bg-black/60 px-1 text-[9px] font-medium text-white">
+            {post.media.length}
+          </span>
+        )}
       </div>
 
       {/* Gövde */}

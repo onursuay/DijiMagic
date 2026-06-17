@@ -357,6 +357,7 @@
         "uploadButton": "Choose file",
         "uploading": "Uploading…",
         "removeMedia": "Remove",
+        "carouselHint": "{count} items shared as a carousel",
         "format": "Format",
         "targets": "Target accounts",
         "targetsHint": "Select one or more accounts",
