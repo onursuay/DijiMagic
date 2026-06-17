@@ -305,6 +305,85 @@
     "loading": "Yükleniyor…"
   },
   "dashboard": {
+    "sosyalmedya": {
+      "title": "Sosyal Medya Yönetimi",
+      "pageDescription": "İçeriklerinizi planlayın, tarih verin; sistem zamanı gelince Instagram ve Facebook'ta otomatik paylaşsın.",
+      "newPost": "Yeni İçerik Planla",
+      "loading": "Yükleniyor…",
+      "tabs": { "feed": "Akış", "reels": "Reels", "story": "Hikaye" },
+      "project": {
+        "all": "Tüm Projeler",
+        "new": "Yeni Proje",
+        "namePlaceholder": "Proje adı (örn. Haziran Kampanyası)",
+        "create": "Oluştur",
+        "cancel": "Vazgeç",
+        "created": "Proje oluşturuldu",
+        "createError": "Proje oluşturulamadı",
+        "empty": "Henüz proje yok"
+      },
+      "calendar": {
+        "today": "Bugün",
+        "prevMonth": "Önceki ay",
+        "nextMonth": "Sonraki ay",
+        "weekdays": ["Pzt", "Sal", "Çar", "Per", "Cum", "Cmt", "Paz"],
+        "months": ["Ocak", "Şubat", "Mart", "Nisan", "Mayıs", "Haziran", "Temmuz", "Ağustos", "Eylül", "Ekim", "Kasım", "Aralık"],
+        "noPostsThisDay": "Bu gün için planlanmış içerik yok",
+        "addContent": "İçerik ekle",
+        "postCount": "{count} içerik"
+      },
+      "status": {
+        "draft": "Taslak",
+        "scheduled": "Planlandı",
+        "publishing": "Yayınlanıyor",
+        "published": "Yayında",
+        "failed": "Başarısız",
+        "cancelled": "İptal edildi"
+      },
+      "composer": {
+        "newTitle": "İçerik Planla",
+        "editTitle": "İçeriği Düzenle",
+        "source": "İçerik kaynağı",
+        "sourceUpload": "Dosya yükle",
+        "sourceDesign": "Tasarım'dan getir",
+        "designComingSoon": "Yakında",
+        "uploadHint": "Görsel veya video sürükleyin ya da seçin",
+        "uploadButton": "Dosya seç",
+        "uploading": "Yükleniyor…",
+        "removeMedia": "Kaldır",
+        "format": "Biçim",
+        "targets": "Hedef hesaplar",
+        "targetsHint": "Bir veya birden fazla hesap seçin",
+        "noTargets": "Bağlı hesap bulunamadı",
+        "connectMeta": "Meta hesabınızı bağlayın",
+        "caption": "Açıklama",
+        "captionPlaceholder": "Gönderi açıklaması yazın…",
+        "storyNoCaption": "Hikaye gönderilerinde açıklama kullanılmaz.",
+        "scheduleAt": "Yayın zamanı",
+        "date": "Tarih",
+        "time": "Saat",
+        "schedule": "Planla",
+        "saveChanges": "Değişiklikleri kaydet",
+        "cancel": "Vazgeç",
+        "reelsNeedsVideo": "Reels için video gerekli",
+        "fbNoStory": "Facebook Hikaye desteklemez; bu hesabı kaldırın veya biçimi değiştirin."
+      },
+      "post": {
+        "edit": "Düzenle",
+        "cancel": "İptal et",
+        "retry": "Tekrar dene",
+        "cancelConfirm": "Bu planlanmış içeriği iptal etmek istiyor musunuz?",
+        "publishedAt": "{time} yayınlandı"
+      },
+      "toasts": {
+        "loadError": "İçerikler yüklenemedi",
+        "created": "İçerik planlandı",
+        "createError": "İçerik planlanamadı",
+        "updated": "İçerik güncellendi",
+        "cancelled": "İçerik iptal edildi",
+        "retried": "Yeniden zamanlandı",
+        "uploadError": "Dosya yüklenemedi"
+      }
+    },
     "homepage": {
       "title": "Genel Bakış",
       "description": "Tüm platform ve araçlarınızın özeti",

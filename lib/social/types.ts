@@ -129,3 +129,15 @@ export interface ListPostsRange {
   projectId?: string | null
   format?: SocialFormat
 }
+
+/** /api/social/targets yanıtı — içerik planlarken hedef seçimi. */
+export interface MetaTargetAccount {
+  pageId: string
+  pageName: string
+  pageImageUrl: string | null
+  instagram: {
+    igUserId: string
+    username: string
+    profilePictureUrl: string | null
+  } | null
+}
