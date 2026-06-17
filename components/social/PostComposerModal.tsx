@@ -45,6 +45,7 @@ export default function PostComposerModal({
   editPost,
   targets,
   metaConnected = true,
+  bestHour = null,
   onSubmit,
   onUploadError,
   onGenerateError,
@@ -56,11 +57,13 @@ export default function PostComposerModal({
   editPost: SocialPostWithRelations | null
   targets: MetaTargetAccount[]
   metaConnected?: boolean
+  bestHour?: number | null
   onSubmit: (payload: ComposerSubmit, editId: string | null) => Promise<boolean>
   onUploadError: () => void
   onGenerateError?: (msg?: string) => void
 }) {
   const t = useTranslations('dashboard.sosyalmedya.composer')
+  const tA = useTranslations('dashboard.sosyalmedya.analytics')
   const locale = useLocale()
   const router = useRouter()
   const isEdit = Boolean(editPost)
@@ -522,6 +525,15 @@ export default function PostComposerModal({
                 className="rounded-xl border border-gray-200 px-3 py-2.5 text-sm text-gray-900 focus:border-primary focus:outline-none focus:ring-2 focus:ring-primary/20"
               />
             </div>
+            {!isEdit && bestHour != null && (
+              <button
+                type="button"
+                onClick={() => setTime(`${pad(bestHour)}:00`)}
+                className="mt-2 text-xs font-medium text-primary transition-colors hover:underline"
+              >
+                {tA('suggestedTime', { hour: bestHour })} · {tA('useSuggested')}
+              </button>
+            )}
           </div>
         </div>
 

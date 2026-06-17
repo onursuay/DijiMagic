@@ -384,6 +384,18 @@
         "cancelConfirm": "Do you want to cancel this scheduled content?",
         "publishedAt": "Published at {time}"
       },
+      "analytics": {
+        "title": "Performance",
+        "published": "Published",
+        "likes": "Likes",
+        "comments": "Comments",
+        "engagement": "Engagement",
+        "bestHour": "Best time",
+        "bestHourValue": "{hour}:00",
+        "notEnoughData": "Not enough data",
+        "suggestedTime": "Suggested time: {hour}:00",
+        "useSuggested": "Apply"
+      },
       "toasts": {
         "loadError": "Could not load content",
         "created": "Content scheduled",

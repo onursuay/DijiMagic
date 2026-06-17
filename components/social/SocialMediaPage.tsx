@@ -10,9 +10,11 @@ import ProjectBar from './ProjectBar'
 import FormatTabs from './FormatTabs'
 import SocialCalendar from './SocialCalendar'
 import PostComposerModal from './PostComposerModal'
+import AnalyticsBar from './AnalyticsBar'
 import type {
   SocialFormat, SocialProject, SocialPostWithRelations, MetaTargetAccount,
 } from '@/lib/social/types'
+import type { AnalyticsSummary } from '@/lib/social/insights'
 
 export default function SocialMediaPage() {
   const t = useTranslations('dashboard.sosyalmedya')
@@ -21,6 +23,7 @@ export default function SocialMediaPage() {
   const [projects, setProjects] = useState<SocialProject[]>([])
   const [targets, setTargets] = useState<MetaTargetAccount[]>([])
   const [metaConnected, setMetaConnected] = useState(true)
+  const [analytics, setAnalytics] = useState<AnalyticsSummary | null>(null)
   const [posts, setPosts] = useState<SocialPostWithRelations[]>([])
   const [activeProjectId, setActiveProjectId] = useState<string | null>(null)
   const [format, setFormat] = useState<SocialFormat>('feed')
@@ -74,8 +77,23 @@ export default function SocialMediaPage() {
     }
   }, [monthCursor, activeProjectId, format, addToast, t])
 
+  const fetchAnalytics = useCallback(async () => {
+    const year = monthCursor.getFullYear()
+    const month = monthCursor.getMonth()
+    const from = new Date(year, month, 1).toISOString()
+    const to = new Date(year, month + 1, 0, 23, 59, 59).toISOString()
+    const params = new URLSearchParams({ from, to })
+    if (activeProjectId) params.set('projectId', activeProjectId)
+    try {
+      const res = await fetch(`/api/social/analytics?${params.toString()}`)
+      const json = await res.json()
+      if (json.ok) setAnalytics(json.data)
+    } catch { /* sessiz */ }
+  }, [monthCursor, activeProjectId])
+
   useEffect(() => { if (!showGate) { fetchProjects(); fetchTargets() } }, [showGate, fetchProjects, fetchTargets])
   useEffect(() => { if (!showGate) fetchPosts() }, [showGate, fetchPosts])
+  useEffect(() => { if (!showGate) fetchAnalytics() }, [showGate, fetchAnalytics])
 
   const createProject = useCallback(async (name: string, color: string) => {
     try {
@@ -172,6 +190,8 @@ export default function SocialMediaPage() {
             <FormatTabs value={format} onChange={setFormat} />
           </div>
 
+          {analytics && analytics.publishedCount > 0 && <AnalyticsBar summary={analytics} />}
+
           <SocialCalendar
             monthCursor={monthCursor}
             selectedDate={selectedDate}
@@ -196,6 +216,7 @@ export default function SocialMediaPage() {
         editPost={editPost}
         targets={targets}
         metaConnected={metaConnected}
+        bestHour={analytics?.bestHour ?? null}
         onSubmit={submitComposer as any}
         onUploadError={() => addToast(t('toasts.uploadError'), 'error')}
         onGenerateError={(msg) => addToast(msg || t('toasts.generateError'), 'error')}

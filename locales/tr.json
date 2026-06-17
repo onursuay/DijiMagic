@@ -384,6 +384,18 @@
         "cancelConfirm": "Bu planlanmış içeriği iptal etmek istiyor musunuz?",
         "publishedAt": "{time} yayınlandı"
       },
+      "analytics": {
+        "title": "Performans",
+        "published": "Yayınlanan",
+        "likes": "Beğeni",
+        "comments": "Yorum",
+        "engagement": "Etkileşim",
+        "bestHour": "En iyi saat",
+        "bestHourValue": "{hour}:00",
+        "notEnoughData": "Yeterli veri yok",
+        "suggestedTime": "Önerilen saat: {hour}:00",
+        "useSuggested": "Uygula"
+      },
       "toasts": {
         "loadError": "İçerikler yüklenemedi",
         "created": "İçerik planlandı",
