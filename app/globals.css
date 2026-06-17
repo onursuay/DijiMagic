@@ -677,3 +677,35 @@ table tbody tr {
 @media (prefers-reduced-motion: reduce) {
   .wizard-snake-border, .wizard-snake-border::after { animation: none; }
 }
+
+/* Web Site Yöneticisi — "AI siteni kuruyor" yükleme animasyonu (WizardBuildingAnimation) */
+@keyframes wsy-assemble { from { opacity: 0; transform: translateY(9px) scale(0.97); } to { opacity: 1; transform: none; } }
+.wsy-build .wsy-block { animation: wsy-assemble 0.5s cubic-bezier(0.22, 1, 0.36, 1) both; animation-delay: calc(var(--i, 0) * 0.11s); }
+@keyframes wsy-shimmer { 0% { background-position: 220% 0; } 100% { background-position: -120% 0; } }
+.wsy-build .wsy-shimmer {
+  background-color: rgba(43, 182, 115, 0.08);
+  background-image: linear-gradient(100deg, rgba(43, 182, 115, 0.06) 20%, rgba(43, 182, 115, 0.20) 42%, rgba(43, 182, 115, 0.06) 64%);
+  background-size: 220% 100%;
+  animation: wsy-shimmer 1.9s linear infinite;
+}
+@keyframes wsy-scan { 0% { transform: translateY(-110%); opacity: 0; } 12% { opacity: 1; } 86% { opacity: 1; } 100% { transform: translateY(820%); opacity: 0; } }
+.wsy-build .wsy-scan { background: linear-gradient(to bottom, transparent, rgba(43, 182, 115, 0.22), transparent); animation: wsy-scan 2.6s cubic-bezier(0.4, 0, 0.2, 1) infinite; }
+@keyframes wsy-glow { 0%, 100% { opacity: 0.42; transform: translateX(-50%) scale(1); } 50% { opacity: 0.78; transform: translateX(-50%) scale(1.08); } }
+.wsy-build .wsy-glow { background: radial-gradient(circle, rgba(43, 182, 115, 0.20), transparent 70%); animation: wsy-glow 3.4s ease-in-out infinite; }
+@keyframes wsy-ping { 0% { transform: scale(1); opacity: 0.55; } 75%, 100% { transform: scale(2.4); opacity: 0; } }
+.wsy-build .wsy-ping { animation: wsy-ping 1.6s cubic-bezier(0, 0, 0.2, 1) infinite; }
+@keyframes wsy-progress { 0% { transform: translateX(-120%); } 100% { transform: translateX(360%); } }
+.wsy-build .wsy-progress { animation: wsy-progress 1.4s ease-in-out infinite; }
+@keyframes wsy-stage { from { opacity: 0; transform: translateY(4px); } to { opacity: 1; transform: none; } }
+.wsy-build .wsy-stage { display: inline-block; animation: wsy-stage 0.45s ease both; }
+@media (prefers-reduced-motion: reduce) {
+  .wsy-build .wsy-block,
+  .wsy-build .wsy-shimmer,
+  .wsy-build .wsy-glow,
+  .wsy-build .wsy-ping,
+  .wsy-build .wsy-progress,
+  .wsy-build .wsy-stage { animation: none !important; }
+  .wsy-build .wsy-shimmer { background-image: none; background-color: rgba(43, 182, 115, 0.10); }
+  .wsy-build .wsy-scan { display: none; }
+  .wsy-build .wsy-progress { width: 100%; }
+}

@@ -10,6 +10,7 @@ import { ToastContainer, type Toast } from '@/components/Toast'
 import AccessRequiredModal from '@/components/billing/AccessRequiredModal'
 import DomainPanel from '@/components/website/DomainPanel'
 import DesignPanel from '@/components/website/DesignPanel'
+import WizardBuildingAnimation from '@/components/website/WizardBuildingAnimation'
 import type { Website, WebsitePage, WebsiteVersionMeta } from '@/lib/website/types'
 
 type Busy = 'ai' | 'quick' | 'publish' | 'logo' | 'rollback' | null
@@ -223,11 +224,7 @@ export default function WebSiteDetailPage() {
           {/* Üretim durumu + aksiyonlar (intake wizard'a taşındı; burada tekrar sorulmaz) */}
           <div className="bg-white rounded-xl border border-gray-200 p-5 animate-card-enter">
             {busy === 'ai' || busy === 'quick' || (createInitiated && !hasPages && !genError) ? (
-              <div className="py-8 flex flex-col items-center text-center gap-3">
-                <Sparkles className="w-8 h-8 text-primary animate-pulse" />
-                <h2 className="text-base font-semibold text-gray-900">{t('preparingTitle')}</h2>
-                <p className="text-sm leading-relaxed text-gray-500 max-w-md">{t('preparingDesc')}</p>
-              </div>
+              <WizardBuildingAnimation />
             ) : !hasPages ? (
               <div className="py-6 flex flex-col items-center text-center gap-3">
                 <div className="w-12 h-12 rounded-xl bg-primary/5 flex items-center justify-center">
