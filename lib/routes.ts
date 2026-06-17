@@ -14,6 +14,7 @@ export const ROUTES = {
   BUSINESS_PROFILE: '/isletme-profili',
   HELP_CENTER: '/yardim-merkezi',
   WEBSITE_MANAGER: '/web-site-yoneticisi',
+  SOCIAL_MEDIA: '/sosyal-medya',
 } as const
 
 /** TR slug → EN slug mapping (all translatable paths) */
@@ -37,6 +38,7 @@ export const SLUG_TR_TO_EN: Record<string, string> = {
   'kullanim-kosullari': 'terms-of-service',
   'veri-silme': 'data-deletion',
   'web-site-yoneticisi': 'website-manager',
+  'sosyal-medya': 'social-media',
 }
 
 /** EN slug → TR slug (reverse, for language switcher path mapping) */
@@ -60,6 +62,7 @@ export const SLUG_EN_TO_TR: Record<string, string> = {
   'cookie-policy': 'cerez-politikasi',
   'data-deletion': 'veri-silme',
   'website-manager': 'web-site-yoneticisi',
+  'social-media': 'sosyal-medya',
 }
 
 /** Convert a TR href to locale-aware path */
