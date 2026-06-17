@@ -516,7 +516,7 @@ console.log('designsystem OK')
 
 // Load the shared Stage-3 core directly (single source of truth — also used by
 // htmlGenerate.ts via dynamic import).
-const htmlGeneratePath = path.join(__dirname, '../lib/website/codegen/htmlGenerate.mjs')
+const htmlGeneratePath = path.join(__dirname, '../lib/website/codegen/htmlGenerateShared.mjs')
 const {
   toDesignVars,
   resolveImagePlaceholders,

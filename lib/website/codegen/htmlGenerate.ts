@@ -21,8 +21,9 @@
      fallback. We never return junk.
 
    The var-name contract (prompt list ↔ toDesignVars keys) lives in the shared
-   htmlGenerate.mjs module — single source of truth, identical for the .ts call
-   and the .mjs verify assertions.
+   htmlGenerateShared.mjs module — single source of truth, identical for the .ts
+   call and the .mjs verify assertions. (Distinct basename from htmlGenerate.ts so
+   the extensionless './htmlGenerate' import unambiguously resolves to the .ts.)
    ────────────────────────────────────────────────────────── */
 
 import path from 'path'
@@ -62,7 +63,7 @@ async function loadCore(): Promise<HtmlGenCore> {
   if (_core !== null) return _core
   const __filename = fileURLToPath(import.meta.url)
   const __dirname = path.dirname(__filename)
-  const corePath = path.join(__dirname, 'htmlGenerate.mjs')
+  const corePath = path.join(__dirname, 'htmlGenerateShared.mjs')
   const mod = await import(corePath)
   _core = {
     toDesignVars: mod.toDesignVars as HtmlGenCore['toDesignVars'],
@@ -78,7 +79,7 @@ async function loadCore(): Promise<HtmlGenCore> {
 
 // ---------------------------------------------------------------------------
 // Re-export the testable glue so app code can import from the .ts surface.
-// (The real implementations live in htmlGenerate.mjs.)
+// (The real implementations live in htmlGenerateShared.mjs.)
 // ---------------------------------------------------------------------------
 
 /** DesignSystem → :root CSS custom-property map (Task 13/14 designVars). */
