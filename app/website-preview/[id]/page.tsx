@@ -52,6 +52,13 @@ export default async function WebsitePreviewPage({
       lang: locale || site.defaultLocale,
       fontHref: site.theme?.fontHref ?? null,
       mode: 'preview',
+      // MULTIPAGE nav (preview): rewrite data-yoai-href="<slug>" →
+      // /website-preview/<id>?slug=<slug>&locale=<locale>. The iframe page reads
+      // ?slug and re-renders, so multipage nav works WITHIN the preview without
+      // 404ing the dashboard. Landing pages have no data-yoai-href → no-op.
+      linkBase: `/website-preview/${params.id}`,
+      navMode: 'query',
+      localeQuery: locale ? `&locale=${encodeURIComponent(locale)}` : '',
     })
     return (
       <iframe

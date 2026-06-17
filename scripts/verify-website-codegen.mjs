@@ -705,3 +705,141 @@ assert.ok(
 )
 
 console.log('orchestrator OK')
+
+// ---------------------------------------------------------------------------
+// MULTIPAGE section — page-list validation + data-yoai-href → href rewrite
+//
+// (a) validatePagePlan: valid list passes; invalid slugs are coerced/dropped;
+//     home + contact enforced; cap at 6; unique url-safe slugs; home first.
+// (b) rewriteNavLinks / resolveNavHref: data-yoai-href resolves to a safe path;
+//     home → base; no double slash; arbitrary/non-listed slug not injected.
+// ---------------------------------------------------------------------------
+
+// Load the pure multipage planner core (single source of truth — also used by
+// multipagePlan.ts).
+const multipagePlanPath = path.join(__dirname, '../lib/website/codegen/multipagePlanShared.mjs')
+const {
+  validatePagePlan,
+  slugify,
+  isSafeSlug,
+  HOME_SLUG,
+  buildPlanSystemPrompt,
+  buildPlanUserMessage,
+} = await import(multipagePlanPath)
+
+// Load the rewrite glue from the assemble core (already imported assembleDocument above;
+// re-import to grab the named rewrite exports).
+const { rewriteNavLinks, resolveNavHref } = await import(assembleDocumentPath)
+
+// MP1 — slugify coerces Turkish/spaces/uppercase to url-safe lowercase-ascii-hyphen
+assert.strictEqual(slugify('Hakkımızda'), 'hakkimizda', `FAIL MP1: slugify('Hakkımızda') — got: ${slugify('Hakkımızda')}`)
+assert.strictEqual(slugify('  İletişim '), 'iletisim', `FAIL MP1: slugify('İletişim') — got: ${slugify('  İletişim ')}`)
+assert.strictEqual(slugify('Ürün & Hizmetler!'), 'urun-hizmetler', `FAIL MP1: slugify special chars — got: ${slugify('Ürün & Hizmetler!')}`)
+assert.strictEqual(slugify('___'), '', `FAIL MP1: slugify all-symbols should be empty — got: ${slugify('___')}`)
+assert.ok(isSafeSlug('hakkimizda') && !isSafeSlug('Hak Kı') && !isSafeSlug('-bad-'), `FAIL MP1: isSafeSlug behaviour`)
+
+// MP2 — a clean, valid AI plan passes: home first, contact present, 3..6 pages, unique safe slugs
+const validPlan = {
+  pages: [
+    { slug: 'home', title: 'Anasayfa', navLabel: 'Anasayfa', role: 'home', purpose: 'Açılış' },
+    { slug: 'hakkimizda', title: 'Hakkımızda', navLabel: 'Hakkımızda', role: 'about', purpose: 'Hikaye' },
+    { slug: 'hizmetler', title: 'Hizmetler', navLabel: 'Hizmetler', role: 'services', purpose: 'Hizmetler' },
+    { slug: 'iletisim', title: 'İletişim', navLabel: 'İletişim', role: 'contact', purpose: 'İletişim' },
+  ],
+}
+const p2 = validatePagePlan(validPlan, 'tr')
+assert.ok(Array.isArray(p2) && p2.length >= 3 && p2.length <= 6, `FAIL MP2: page count out of 3..6 — got: ${p2.length}`)
+assert.strictEqual(p2[0].slug, HOME_SLUG, `FAIL MP2: home must be first — got: ${p2[0].slug}`)
+assert.strictEqual(p2[0].role, 'home', `FAIL MP2: first page role must be home — got: ${p2[0].role}`)
+assert.ok(p2.some((p) => p.role === 'contact'), `FAIL MP2: a contact page must be present`)
+const slugs2 = p2.map((p) => p.slug)
+assert.strictEqual(new Set(slugs2).size, slugs2.length, `FAIL MP2: slugs must be unique — got: ${JSON.stringify(slugs2)}`)
+assert.ok(slugs2.every(isSafeSlug), `FAIL MP2: every slug must be url-safe — got: ${JSON.stringify(slugs2)}`)
+// orderIndex sequential from 0
+assert.deepStrictEqual(p2.map((p) => p.orderIndex), p2.map((_, i) => i), `FAIL MP2: orderIndex must be sequential`)
+
+// MP3 — invalid slugs coerced; duplicates de-duped; missing contact ENFORCED
+const messyPlan = {
+  pages: [
+    { slug: 'Home Page', title: 'Anasayfa', navLabel: 'Anasayfa', role: 'home', purpose: 'x' }, // becomes the forced home
+    { slug: 'Hakkı Mızda!!', title: 'Hakkımızda', navLabel: 'Hakkımızda', role: 'about', purpose: 'x' }, // coerced
+    { slug: 'hizmetler', title: 'Hizmetler', navLabel: 'Hizmetler', role: 'services', purpose: 'x' },
+    { slug: 'hizmetler', title: 'Dup', navLabel: 'Dup', role: 'custom', purpose: 'x' }, // duplicate → renamed
+  ],
+}
+const p3 = validatePagePlan(messyPlan, 'tr')
+assert.strictEqual(p3[0].slug, HOME_SLUG, `FAIL MP3: home forced first even when AI gave 'Home Page'`)
+assert.ok(p3.every((p) => isSafeSlug(p.slug)), `FAIL MP3: messy slugs not coerced — got: ${JSON.stringify(p3.map((p) => p.slug))}`)
+assert.strictEqual(new Set(p3.map((p) => p.slug)).size, p3.length, `FAIL MP3: duplicates not de-duped — got: ${JSON.stringify(p3.map((p) => p.slug))}`)
+assert.ok(p3.some((p) => p.role === 'contact'), `FAIL MP3: contact must be enforced when AI omitted it`)
+
+// MP4 — cap at 6: an over-long list is capped, home stays first, contact survives
+const bigPlan = {
+  pages: [
+    { slug: 'home', title: 'H', navLabel: 'H', role: 'home', purpose: 'x' },
+    { slug: 'a', title: 'A', navLabel: 'A', role: 'about', purpose: 'x' },
+    { slug: 'b', title: 'B', navLabel: 'B', role: 'services', purpose: 'x' },
+    { slug: 'c', title: 'C', navLabel: 'C', role: 'products', purpose: 'x' },
+    { slug: 'd', title: 'D', navLabel: 'D', role: 'gallery', purpose: 'x' },
+    { slug: 'e', title: 'E', navLabel: 'E', role: 'blog', purpose: 'x' },
+    { slug: 'f', title: 'F', navLabel: 'F', role: 'faq', purpose: 'x' },
+    { slug: 'iletisim', title: 'İletişim', navLabel: 'İletişim', role: 'contact', purpose: 'x' },
+  ],
+}
+const p4 = validatePagePlan(bigPlan, 'tr')
+assert.ok(p4.length <= 6, `FAIL MP4: list not capped at 6 — got: ${p4.length}`)
+assert.strictEqual(p4[0].slug, HOME_SLUG, `FAIL MP4: home must remain first after cap`)
+assert.ok(p4.some((p) => p.role === 'contact'), `FAIL MP4: contact must survive the cap (re-inserted)`)
+
+// MP5 — garbage/null input → deterministic default plan (still valid: home + contact, 3..6)
+const p5 = validatePagePlan(null, 'tr')
+assert.ok(p5.length >= 3 && p5.length <= 6, `FAIL MP5: null input must yield a valid bounded default — got: ${p5.length}`)
+assert.strictEqual(p5[0].slug, HOME_SLUG, `FAIL MP5: null default must start with home`)
+assert.ok(p5.some((p) => p.role === 'contact'), `FAIL MP5: null default must include contact`)
+const p5en = validatePagePlan('not-an-object', 'en')
+assert.ok(p5en[0].navLabel === 'Home', `FAIL MP5: en locale home label — got: ${p5en[0].navLabel}`)
+
+// MP6 — planning prompt builders are non-empty and on-topic
+assert.ok(typeof buildPlanSystemPrompt() === 'string' && /JSON/i.test(buildPlanSystemPrompt()), `FAIL MP6: plan system prompt`)
+const planUser = buildPlanUserMessage({ brandName: 'Acme', locale: 'tr', instruction: '', untrustedBlocks: [] })
+assert.ok(planUser.includes('Acme') && /JSON/i.test(planUser), `FAIL MP6: plan user message must mention brand + JSON`)
+
+// MP7 — resolveNavHref: path mode (serve) builds /base, /base/slug; query mode (preview)
+assert.strictEqual(resolveNavHref('hakkimizda', { linkBase: '/s/acme', navMode: 'path' }), '/s/acme/hakkimizda', `FAIL MP7: sub-page path`)
+assert.strictEqual(resolveNavHref('home', { linkBase: '/s/acme', navMode: 'path' }), '/s/acme', `FAIL MP7: home → base (no trailing slash)`)
+assert.strictEqual(resolveNavHref('', { linkBase: '/s/acme', navMode: 'path' }), '/s/acme', `FAIL MP7: empty slug → base`)
+// no double slash when base already ends with '/'
+assert.strictEqual(resolveNavHref('x', { linkBase: '/s/acme/', navMode: 'path' }), '/s/acme/x', `FAIL MP7: no double slash`)
+// custom-domain root base: home → '/', slug → '/x'
+assert.strictEqual(resolveNavHref('home', { linkBase: '', navMode: 'path' }), '/', `FAIL MP7: empty base home → '/'`)
+assert.strictEqual(resolveNavHref('x', { linkBase: '', navMode: 'path' }), '/x', `FAIL MP7: empty base slug → '/x'`)
+// query (preview) mode
+assert.strictEqual(resolveNavHref('hakkimizda', { linkBase: '/website-preview/abc', navMode: 'query', localeQuery: '&locale=tr' }), '/website-preview/abc?slug=hakkimizda&locale=tr', `FAIL MP7: preview query href`)
+assert.strictEqual(resolveNavHref('home', { linkBase: '/website-preview/abc', navMode: 'query' }), '/website-preview/abc?slug=home', `FAIL MP7: preview home href`)
+// arbitrary/unsafe slug NOT injected — falls back to base (path) / home (query)
+assert.strictEqual(resolveNavHref('../../etc/passwd', { linkBase: '/s/acme', navMode: 'path' }), '/s/acme', `FAIL MP7: unsafe slug must NOT be injected (path)`)
+assert.strictEqual(resolveNavHref('a"onmouseover=alert(1)', { linkBase: '/s/acme', navMode: 'query' }), '/s/acme?slug=home', `FAIL MP7: unsafe slug must NOT be injected (query)`)
+
+// MP8 — rewriteNavLinks: injects real href on data-yoai-href anchors; keeps data attr
+const navBody =
+  '<header><nav>' +
+  '<a data-yoai-href="home">Anasayfa</a>' +
+  '<a data-yoai-href="hakkimizda" aria-current="page">Hakkımızda</a>' +
+  '</nav></header>'
+const rw = rewriteNavLinks(navBody, { linkBase: '/s/acme', navMode: 'path' })
+assert.ok(rw.includes('href="/s/acme"'), `FAIL MP8: home anchor must get href="/s/acme" — got: ${rw}`)
+assert.ok(rw.includes('href="/s/acme/hakkimizda"'), `FAIL MP8: sub-page anchor href — got: ${rw}`)
+assert.ok(rw.includes('aria-current="page"'), `FAIL MP8: aria-current must be preserved — got: ${rw}`)
+assert.ok(rw.includes('data-yoai-href="hakkimizda"'), `FAIL MP8: data-yoai-href kept — got: ${rw}`)
+
+// MP9 — rewriteNavLinks no-op when linkBase absent (landing single-page path)
+const landingBody = '<a data-yoai-href="x">x</a>'
+assert.strictEqual(rewriteNavLinks(landingBody, {}), landingBody, `FAIL MP9: no linkBase must be a no-op`)
+assert.strictEqual(rewriteNavLinks(landingBody, undefined), landingBody, `FAIL MP9: undefined opts must be a no-op`)
+
+// MP10 — rewritten + then SANITIZED: injected internal href survives the sanitizer
+const rwClean = sanitizeSiteHtml(rewriteNavLinks(navBody, { linkBase: '/s/acme', navMode: 'path' }))
+assert.ok(rwClean.includes('href="/s/acme/hakkimizda"'), `FAIL MP10: internal href stripped by sanitizer — got: ${rwClean}`)
+assert.ok(!rwClean.includes('javascript:'), `FAIL MP10: no unsafe scheme present`)
+
+console.log('multipage OK')

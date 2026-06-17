@@ -43,6 +43,9 @@ export async function GET(
       lang: locale,
       fontHref: site.website.theme?.fontHref ?? null,
       mode: 'serve',
+      // MULTIPAGE nav: rewrite data-yoai-href="<slug>" → /s/<subdomain>[/<slug>].
+      linkBase: `/s/${params.subdomain}`,
+      navMode: 'path',
     })
     return new NextResponse(html, { headers })
   }

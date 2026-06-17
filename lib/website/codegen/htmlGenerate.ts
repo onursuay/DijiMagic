@@ -45,6 +45,9 @@ import {
   buildHtmlSystemPrompt as _buildHtmlSystemPrompt,
   buildHtmlUserMessage as _buildHtmlUserMessage,
   buildRepairUserMessage as _buildRepairUserMessage,
+  buildMultipageSystemPrompt as _buildMultipageSystemPrompt,
+  buildMultipageUserMessage as _buildMultipageUserMessage,
+  buildMultipageRepairUserMessage as _buildMultipageRepairUserMessage,
   cleanGeneratedHtml as _cleanGeneratedHtml,
 } from './htmlGenerateShared.mjs'
 
@@ -65,6 +68,37 @@ const coreBuildRepairUserMessage = _buildRepairUserMessage as (
   reason: string,
 ) => string
 const coreCleanGeneratedHtml = _cleanGeneratedHtml as (raw: string) => string
+
+// MULTIPAGE prompt builders (page-aware: page-specific content + shared nav).
+export interface PageSpec {
+  slug: string
+  title: string
+  purpose: string
+  role?: string
+}
+export interface NavPage {
+  slug: string
+  navLabel: string
+}
+const coreBuildMultipageSystemPrompt = _buildMultipageSystemPrompt as (
+  ctx: CodegenContext,
+  pageSpec: PageSpec,
+  allPages: NavPage[],
+) => string
+const coreBuildMultipageUserMessage = _buildMultipageUserMessage as (
+  ctx: CodegenContext,
+  ds: DesignSystem,
+  pageSpec: PageSpec,
+  allPages: NavPage[],
+) => string
+const coreBuildMultipageRepairUserMessage = _buildMultipageRepairUserMessage as (
+  ctx: CodegenContext,
+  ds: DesignSystem,
+  pageSpec: PageSpec,
+  allPages: NavPage[],
+  previousBody: string,
+  reason: string,
+) => string
 
 // ---------------------------------------------------------------------------
 // Re-export the testable glue so app code can import from the .ts surface.
@@ -153,6 +187,48 @@ export async function repairHomePageHtml(
 ): Promise<RawBodyHtml> {
   const user = coreBuildRepairUserMessage(ctx, ds, previousBody, reason)
   return streamBodyHtml(coreBuildHtmlSystemPrompt(ctx), user)
+}
+
+/**
+ * MULTIPAGE: generate ONE page of a multi-page site.
+ *
+ * Same Opus 4.8 streaming call + same constraints as generateHomePageHtml, but
+ * the prompt is page-aware: the content is SPECIFIC to `pageSpec.purpose`, the
+ * single <h1> is the page title, and the shared header/footer nav links to
+ * EVERY page in `allPages` via <a data-yoai-href="<slug>">. The home page is
+ * generated through this SAME path (role 'home', its own pageSpec).
+ *
+ * @param ctx       Stage-0 context (shared across all pages)
+ * @param ds        Stage-1 DesignSystem (generated ONCE, shared across all pages)
+ * @param pageSpec  { slug, title, purpose, role } for THIS page
+ * @param allPages  the full nav list (slug + navLabel), in nav order
+ * @returns the page's body-only HTML (images resolved). Throws on call failure.
+ */
+export async function generatePageHtml(
+  ctx: CodegenContext,
+  ds: DesignSystem,
+  pageSpec: PageSpec,
+  allPages: NavPage[],
+): Promise<RawBodyHtml> {
+  return streamBodyHtml(
+    coreBuildMultipageSystemPrompt(ctx, pageSpec, allPages),
+    coreBuildMultipageUserMessage(ctx, ds, pageSpec, allPages),
+  )
+}
+
+/** MULTIPAGE self-repair — ONE targeted retry for a single page (page-aware prompt). */
+export async function repairPageHtml(
+  ctx: CodegenContext,
+  ds: DesignSystem,
+  pageSpec: PageSpec,
+  allPages: NavPage[],
+  previousBody: string,
+  reason: string,
+): Promise<RawBodyHtml> {
+  return streamBodyHtml(
+    coreBuildMultipageSystemPrompt(ctx, pageSpec, allPages),
+    coreBuildMultipageRepairUserMessage(ctx, ds, pageSpec, allPages, previousBody, reason),
+  )
 }
 
 /**

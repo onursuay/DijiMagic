@@ -46,6 +46,12 @@ export async function GET(
       lang: locale,
       fontHref: site.website.theme?.fontHref ?? null,
       mode: 'serve',
+      // MULTIPAGE nav: rewrite data-yoai-href="<slug>" → /s/<subdomain>[/<slug>].
+      // Landing (single-page) html has no data-yoai-href → no-op. Custom-domain
+      // base differs (root vs /s/<sub>) — see lib/website/codegen TODO; subdomain
+      // serving is the reliable path implemented here.
+      linkBase: `/s/${params.subdomain}`,
+      navMode: 'path',
     })
     return new NextResponse(html, { headers })
   }

@@ -142,8 +142,11 @@ async function generateWithCodegenV2({
   site: Website
   isRevision: boolean
 }): Promise<NextResponse> {
-  // Faz 1 maliyeti: tek sayfa, tek dil (landing). Sabit formül — sayfa/dil çoğaltma Faz 2+.
-  const cost = computeGenerationCost({ siteType: 'landing', pageCount: 1, localeCount: 1 })
+  // Maliyet: landing → tek sayfa; multipage → planlanan sayfa sayısı (üretimden ÖNCE
+  // kesin bilinmez; ortalama 4 sayfa varsayılır — orchestrator 3..6 üretir). Tek dil
+  // (defaultLocale); çoklu dil Faz 2+. Sabit formül computeGenerationCost ile.
+  const pageCount = site.siteType === 'multipage' ? 4 : 1
+  const cost = computeGenerationCost({ siteType: site.siteType, pageCount, localeCount: 1 })
 
   // Krediyi ÜRETİMDEN ÖNCE düş (owner bypass + yetersiz bakiye 402 featureGuard içinde).
   const access = await chargeFeature({ featureKey: 'website_generation', creditCost: cost })
@@ -180,8 +183,9 @@ async function generateWithCodegenV2({
     }
     await updateWebsite(user.id, site.id, { theme })
 
-    // Sayfayı yaz — page.html + page.format='html' (carry-in: store bunları kolonlara map eder).
-    const pages = await replacePages(user.id, site.id, [result.page])
+    // Sayfaları yaz — landing → [home]; multipage → tüm sayfalar (result.pages).
+    // page.html + page.format='html' (carry-in: store bunları kolonlara map eder).
+    const pages = await replacePages(user.id, site.id, result.pages)
 
     const snapshot: WebsiteSnapshot = {
       website: {

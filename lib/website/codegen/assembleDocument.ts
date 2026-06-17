@@ -36,6 +36,17 @@ export interface AssembleDocumentArgs {
    *          (srcdoc iframe has no same-origin fetch)
    */
   mode: 'serve' | 'preview'
+  /**
+   * MULTIPAGE: base path used to rewrite shared-nav `data-yoai-href="<slug>"`
+   * links into real hrefs. Absent/empty → no rewrite (single-page 'landing').
+   *   serve:   '/s/<subdomain>'        (navMode 'path'  → base/slug)
+   *   preview: '/website-preview/<id>' (navMode 'query' → base?slug=…)
+   */
+  linkBase?: string
+  /** How to build the nav href. Default 'path' (serve). Preview uses 'query'. */
+  navMode?: 'path' | 'query'
+  /** Extra query string appended in 'query' (preview) nav mode, e.g. '&locale=tr'. */
+  localeQuery?: string
 }
 
 /**
