@@ -90,6 +90,8 @@ export interface WebsitePage {
   sections: SectionBlock[]
   seo: PageSeo
   orderIndex: number
+  html?: string | null
+  format: 'sections' | 'html'
 }
 
 export interface WebsiteSnapshot {
@@ -143,6 +145,8 @@ export interface WebsitePageInput {
   sections: SectionBlock[]
   seo?: PageSeo
   orderIndex?: number
+  html?: string | null
+  format?: 'sections' | 'html'
 }
 
 /** Public render için: yayınlanmış site + sayfaları. */
@@ -196,6 +200,8 @@ export interface WebsitePageRow {
   sections: SectionBlock[] | null
   seo: PageSeo | null
   order_index: number
+  html?: string | null
+  format?: string
 }
 
 export function rowToPage(r: WebsitePageRow): WebsitePage {
@@ -208,5 +214,7 @@ export function rowToPage(r: WebsitePageRow): WebsitePage {
     sections: r.sections ?? [],
     seo: r.seo ?? {},
     orderIndex: r.order_index,
+    html: r.html ?? null,
+    format: (r.format as 'sections' | 'html') ?? 'sections',
   }
 }

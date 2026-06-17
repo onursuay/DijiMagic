@@ -179,6 +179,8 @@ export async function replacePages(
     sections: p.sections,
     seo: p.seo ?? {},
     order_index: p.orderIndex ?? i,
+    html: p.html ?? null,
+    format: p.format ?? 'sections',
   }))
   const { data, error } = await db.from('website_pages').insert(rows).select('*')
   if (error) throw error
@@ -249,6 +251,8 @@ export async function rollbackToVersion(
     sections: p.sections,
     seo: p.seo,
     orderIndex: p.orderIndex,
+    html: p.html ?? null,
+    format: p.format,
   }))
   const pages = await replacePages(userId, websiteId, pageInputs)
   await createVersion(websiteId, { website: snapshot.website, pages }, 'rollback', 0)
