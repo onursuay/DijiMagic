@@ -46,7 +46,13 @@ import {
 // ---------------------------------------------------------------------------
 
 export type BlockSummary = { id: string; role: string; snippet: string }
-export type Block = { id: string; role: string; html: string }
+/**
+ * A block extracted from the page body. `start`/`end` are the byte offsets of the
+ * block's outerHTML in the ORIGINAL body string (htmlparser2 indices) — used by
+ * mergeBlocks to splice the original body in place. Optional so the per-block
+ * regeneration path (which fabricates a bare { id, role, html }) still type-checks.
+ */
+export type Block = { id: string; role: string; html: string; start?: number; end?: number }
 export type PatchOp = { op: 'edit' | 'insert' | 'delete' | 'move'; targetId: string; after?: string }
 export type ValidatedOps = { ops: PatchOp[]; fallback: boolean }
 

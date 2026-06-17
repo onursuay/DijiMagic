@@ -1155,79 +1155,151 @@ const {
   buildPlannerUserMessage,
 } = await import(patchPlannerPath)
 
-// A realistic generated body: three top-level sections, sequential data-yoai-id,
-// with attribute order/spacing/void-element quirks that cheerio re-serialization
-// would normalize — proving the BYTE-EXACT slice (not re-serialization).
+// A REALISTIC generated body — the EXACT shape htmlGenerateShared mandates: a
+// <header> (b1=hero) ABOVE a single <main> that WRAPS the content sections (b2, b3),
+// then a <footer> (b4) below. The content blocks live INSIDE <main> — the H Critical
+// bug was that extraction only saw the direct children (header/footer) and merge
+// rebuilt the body from that incomplete list, silently deleting <main> + b2 + b3.
+// Attribute order/spacing/void-element/single-quote quirks prove the BYTE-EXACT slice
+// (not cheerio re-serialization).
 const bpBody =
   '<header data-yoai-block="hero" data-yoai-id="b1" class="hero"><h1>Merhaba</h1>' +
   '<img src="https://cdn.example.com/a.jpg" alt="x" width="800" height="600" loading="lazy"></header>\n' +
-  '<section data-yoai-id="b2"  data-yoai-block="services" class="grid"><h2>Hizmetler</h2><p>İçerik bir iki üç dört beş.</p></section>\n' +
-  "<footer data-yoai-block='footer' data-yoai-id=\"b3\"><p>Alt bilgi</p></footer>"
+  '<main>\n' +
+  '  <section data-yoai-id="b2"  data-yoai-block="services" class="grid"><h2>Hizmetler</h2><p>İçerik bir iki üç dört beş.</p></section>\n' +
+  '  <section data-yoai-id="b3" data-yoai-block="proof"><h2>Kanıt</h2><p>Mutlu müşteriler bir iki üç.</p></section>\n' +
+  '</main>\n' +
+  "<footer data-yoai-block='footer' data-yoai-id=\"b4\"><p>Alt bilgi</p></footer>"
 
-// BP1 — extractBlocks: three blocks, ids+roles in order, BYTE-EXACT outerHTML slices
+// BP1 — extractBlocks: FOUR blocks found — incl. b2+b3 INSIDE <main> (the H bug only
+// found header/footer). ids+roles in document order, BYTE-EXACT outerHTML slices.
 const bpBlocks = extractBlocks(bpBody)
-assert.strictEqual(bpBlocks.length, 3, `FAIL BP1: expected 3 blocks — got: ${bpBlocks.length}`)
-assert.deepStrictEqual(bpBlocks.map((b) => b.id), ['b1', 'b2', 'b3'], `FAIL BP1: block ids/order — got: ${JSON.stringify(bpBlocks.map((b) => b.id))}`)
-assert.deepStrictEqual(bpBlocks.map((b) => b.role), ['hero', 'services', 'footer'], `FAIL BP1: roles — got: ${JSON.stringify(bpBlocks.map((b) => b.role))}`)
-// each block's html must be a verbatim substring of the source (byte-exact slice)
+assert.strictEqual(bpBlocks.length, 4, `FAIL BP1: expected 4 blocks (incl. inside <main>) — got: ${bpBlocks.length}`)
+assert.deepStrictEqual(bpBlocks.map((b) => b.id), ['b1', 'b2', 'b3', 'b4'], `FAIL BP1: block ids/order — got: ${JSON.stringify(bpBlocks.map((b) => b.id))}`)
+assert.deepStrictEqual(bpBlocks.map((b) => b.role), ['hero', 'services', 'proof', 'footer'], `FAIL BP1: roles — got: ${JSON.stringify(bpBlocks.map((b) => b.role))}`)
+// the two sections nested inside <main> MUST be found (the whole point of the fix)
+assert.ok(bpBlocks.some((b) => b.id === 'b2') && bpBlocks.some((b) => b.id === 'b3'), `FAIL BP1: sections inside <main> (b2,b3) must be extracted — got: ${JSON.stringify(bpBlocks.map((b) => b.id))}`)
+// each block's html must be a verbatim substring at its reported byte range
 for (const b of bpBlocks) {
+  assert.ok(typeof b.start === 'number' && typeof b.end === 'number' && b.end > b.start, `FAIL BP1: block ${b.id} must carry a byte range — got: ${JSON.stringify({ start: b.start, end: b.end })}`)
+  assert.strictEqual(bpBody.slice(b.start, b.end), b.html, `FAIL BP1: block ${b.id} html must equal the source slice at [start,end) — got: ${b.html}`)
   assert.ok(bpBody.includes(b.html), `FAIL BP1: block ${b.id} html is not a verbatim slice of the source — got: ${b.html}`)
 }
 // the services block must keep its ODD double-space between attributes (no normalization)
 assert.ok(bpBlocks[1].html.includes('data-yoai-id="b2"  data-yoai-block'), `FAIL BP1: byte-exact slice lost the original attribute spacing — got: ${bpBlocks[1].html}`)
 // the footer block must keep its single-quoted attribute (cheerio would re-quote it)
-assert.ok(bpBlocks[2].html.includes("data-yoai-block='footer'"), `FAIL BP1: byte-exact slice normalized the single-quoted attr — got: ${bpBlocks[2].html}`)
+assert.ok(bpBlocks[3].html.includes("data-yoai-block='footer'"), `FAIL BP1: byte-exact slice normalized the single-quoted attr — got: ${bpBlocks[3].html}`)
+// neither <main> nor its open/close tags are themselves blocks (no data-yoai-id on them)
+assert.ok(!bpBlocks.some((b) => b.html.startsWith('<main')), `FAIL BP1: <main> wrapper must NOT be treated as a block`)
 
 // BP2 — extractBlocks on empty / id-less input → []
 assert.deepStrictEqual(extractBlocks(''), [], `FAIL BP2: empty input must yield []`)
-assert.deepStrictEqual(extractBlocks('<section class="x"><p>no id</p></section>'), [], `FAIL BP2: id-less blocks must yield []`)
+assert.deepStrictEqual(extractBlocks('<main><section class="x"><p>no id</p></section></main>'), [], `FAIL BP2: id-less blocks must yield []`)
+// TOP-MOST only: a data-yoai-id nested INSIDE another block is not double-counted
+const nested = extractBlocks('<section data-yoai-id="b1"><div data-yoai-id="bX">inner</div></section>')
+assert.strictEqual(nested.length, 1, `FAIL BP2: nested data-yoai-id must NOT be double-counted — got: ${nested.length}`)
+assert.strictEqual(nested[0].id, 'b1', `FAIL BP2: only the top-most block survives — got: ${nested[0].id}`)
 
 // BP3 — summarizeBlocks: id + role + short visible-text snippet (no markup)
 const bpSum = summarizeBlocks(bpBlocks)
-assert.strictEqual(bpSum.length, 3, `FAIL BP3: summary count`)
-assert.deepStrictEqual(bpSum.map((s) => s.id), ['b1', 'b2', 'b3'], `FAIL BP3: summary ids`)
+assert.strictEqual(bpSum.length, 4, `FAIL BP3: summary count`)
+assert.deepStrictEqual(bpSum.map((s) => s.id), ['b1', 'b2', 'b3', 'b4'], `FAIL BP3: summary ids`)
 assert.ok(bpSum[0].snippet.includes('Merhaba'), `FAIL BP3: snippet must carry visible text — got: ${bpSum[0].snippet}`)
 assert.ok(!bpSum[0].snippet.includes('<'), `FAIL BP3: snippet must not contain markup — got: ${bpSum[0].snippet}`)
 
-// BP4 — mergeBlocks EDIT only the target: b2 changes, b1+b3 BYTE-IDENTICAL, order kept
+// BP4 — mergeBlocks EDIT the HERO (b1, above <main>): ONLY b1 changes; <main>, b2, b3, b4
+// stay BYTE-IDENTICAL (this is the exact scenario that USED to silently delete <main>).
+const editedB1 = '<header data-yoai-block="hero" data-yoai-id="b1" class="hero hero--dark"><h1>YENİ Başlık</h1></header>'
+const mEdit = mergeBlocks(bpBody, bpBlocks, [{ op: 'edit', targetId: 'b1' }], { b1: editedB1 })
+assert.ok(mEdit.includes(editedB1), `FAIL BP4: edited b1 html missing — got: ${mEdit}`)
+assert.ok(mEdit.includes('<main>'), `FAIL BP4: <main> wrapper MUST survive a hero edit (the H bug deleted it) — got: ${mEdit}`)
+assert.ok(mEdit.includes(bpBlocks[1].html), `FAIL BP4: b2 (inside <main>) must be byte-identical after a hero edit — got: ${mEdit}`)
+assert.ok(mEdit.includes(bpBlocks[2].html), `FAIL BP4: b3 (inside <main>) must be byte-identical after a hero edit — got: ${mEdit}`)
+assert.ok(mEdit.includes(bpBlocks[3].html), `FAIL BP4: b4 (footer) must be byte-identical after a hero edit — got: ${mEdit}`)
+assert.ok(!mEdit.includes('<h1>Merhaba</h1>'), `FAIL BP4: old b1 headline must be gone — got: ${mEdit}`)
+// the ENTIRE original body from <main> onward is preserved byte-for-byte (splice only touched b1)
+const mainOnward = bpBody.slice(bpBody.indexOf('<main'))
+assert.ok(mEdit.includes(mainOnward), `FAIL BP4: everything from <main> onward must be byte-identical — got: ${mEdit}`)
+
+// BP4b — mergeBlocks EDIT a section INSIDE <main> (b2): only b2 changes; <main>, b1, b3, b4 intact
 const editedB2 = '<section data-yoai-block="services" data-yoai-id="b2"><h2>YENİ Hizmetler</h2></section>'
-const mEdit = mergeBlocks(bpBlocks, [{ op: 'edit', targetId: 'b2' }], { b2: editedB2 })
-assert.ok(mEdit.includes(editedB2), `FAIL BP4: edited b2 html missing — got: ${mEdit}`)
-assert.ok(mEdit.includes(bpBlocks[0].html), `FAIL BP4: b1 must be byte-identical after editing b2 — got: ${mEdit}`)
-assert.ok(mEdit.includes(bpBlocks[2].html), `FAIL BP4: b3 must be byte-identical after editing b2 — got: ${mEdit}`)
-assert.ok(!mEdit.includes('İçerik bir iki üç'), `FAIL BP4: old b2 content must be gone — got: ${mEdit}`)
-// b1 then (edited)b2 then b3 — order preserved
-assert.ok(mEdit.indexOf(bpBlocks[0].html) < mEdit.indexOf(editedB2) && mEdit.indexOf(editedB2) < mEdit.indexOf(bpBlocks[2].html), `FAIL BP4: order not preserved — got: ${mEdit}`)
+const mEdit2 = mergeBlocks(bpBody, bpBlocks, [{ op: 'edit', targetId: 'b2' }], { b2: editedB2 })
+assert.ok(mEdit2.includes(editedB2), `FAIL BP4b: edited b2 html missing — got: ${mEdit2}`)
+assert.ok(mEdit2.includes('<main>') && mEdit2.includes('</main>'), `FAIL BP4b: <main> wrapper must survive editing a block inside it — got: ${mEdit2}`)
+assert.ok(mEdit2.includes(bpBlocks[0].html), `FAIL BP4b: b1 must be byte-identical — got: ${mEdit2}`)
+assert.ok(mEdit2.includes(bpBlocks[2].html), `FAIL BP4b: b3 must be byte-identical — got: ${mEdit2}`)
+assert.ok(mEdit2.includes(bpBlocks[3].html), `FAIL BP4b: b4 must be byte-identical — got: ${mEdit2}`)
+assert.ok(!mEdit2.includes('İçerik bir iki üç'), `FAIL BP4b: old b2 content must be gone — got: ${mEdit2}`)
+// b2 stays INSIDE <main> (between the open and close tags) after the splice
+assert.ok(mEdit2.indexOf('<main>') < mEdit2.indexOf(editedB2) && mEdit2.indexOf(editedB2) < mEdit2.indexOf('</main>'), `FAIL BP4b: edited b2 must remain inside <main> — got: ${mEdit2}`)
 
-// BP5 — mergeBlocks DELETE: b2 removed, b1+b3 byte-identical, no b2 remnant
-const mDel = mergeBlocks(bpBlocks, [{ op: 'delete', targetId: 'b2' }], {})
-assert.ok(mDel.includes(bpBlocks[0].html) && mDel.includes(bpBlocks[2].html), `FAIL BP5: surviving blocks must stay byte-identical — got: ${mDel}`)
-assert.ok(!mDel.includes('data-yoai-id="b2"'), `FAIL BP5: deleted b2 must be gone — got: ${mDel}`)
+// BP5 — mergeBlocks DELETE b3 (inside <main>): only b3 removed; <main>, b1, b2, b4 byte-identical
+const mDel = mergeBlocks(bpBody, bpBlocks, [{ op: 'delete', targetId: 'b3' }], {})
+assert.ok(mDel.includes('<main>') && mDel.includes('</main>'), `FAIL BP5: <main> must survive deleting a block inside it — got: ${mDel}`)
+assert.ok(mDel.includes(bpBlocks[0].html) && mDel.includes(bpBlocks[1].html) && mDel.includes(bpBlocks[3].html), `FAIL BP5: surviving blocks must stay byte-identical — got: ${mDel}`)
+assert.ok(!mDel.includes('data-yoai-id="b3"'), `FAIL BP5: deleted b3 must be gone — got: ${mDel}`)
+assert.ok(!mDel.includes('Mutlu müşteriler'), `FAIL BP5: deleted b3 content must be gone — got: ${mDel}`)
 
-// BP6 — mergeBlocks INSERT after b1: new block lands between b1 and b2, others byte-identical
+// BP6 — mergeBlocks INSERT after b1: new block lands between b1 (header) and <main>, others byte-identical
 const newBlock = '<section data-yoai-block="cta" data-yoai-id="b9"><h2>Yeni CTA</h2></section>'
-const mIns = mergeBlocks(bpBlocks, [{ op: 'insert', targetId: 'b9', after: 'b1' }], { b9: newBlock })
+const mIns = mergeBlocks(bpBody, bpBlocks, [{ op: 'insert', targetId: 'b9', after: 'b1' }], { b9: newBlock })
 assert.ok(mIns.includes(newBlock), `FAIL BP6: inserted block missing — got: ${mIns}`)
-assert.ok(mIns.indexOf(bpBlocks[0].html) < mIns.indexOf(newBlock) && mIns.indexOf(newBlock) < mIns.indexOf(bpBlocks[1].html), `FAIL BP6: insert position wrong — got: ${mIns}`)
-assert.ok(mIns.includes(bpBlocks[0].html) && mIns.includes(bpBlocks[1].html) && mIns.includes(bpBlocks[2].html), `FAIL BP6: all originals must stay byte-identical — got: ${mIns}`)
+assert.ok(mIns.indexOf(bpBlocks[0].html) < mIns.indexOf(newBlock) && mIns.indexOf(newBlock) < mIns.indexOf('<main>'), `FAIL BP6: insert must land after b1 and before <main> — got: ${mIns}`)
+assert.ok(mIns.includes(bpBlocks[1].html) && mIns.includes(bpBlocks[2].html) && mIns.includes(bpBlocks[3].html), `FAIL BP6: all originals must stay byte-identical — got: ${mIns}`)
+assert.ok(mIns.includes('<main>'), `FAIL BP6: <main> must survive an insert — got: ${mIns}`)
 
-// BP7 — mergeBlocks MOVE b3 to the top (after:''): order becomes b3, b1, b2; all byte-identical
-const mMove = mergeBlocks(bpBlocks, [{ op: 'move', targetId: 'b3', after: '' }], {})
-assert.ok(mMove.indexOf(bpBlocks[2].html) < mMove.indexOf(bpBlocks[0].html), `FAIL BP7: b3 must move before b1 — got: ${mMove}`)
-assert.ok(mMove.indexOf(bpBlocks[0].html) < mMove.indexOf(bpBlocks[1].html), `FAIL BP7: b1 must stay before b2 after move — got: ${mMove}`)
-assert.ok(mMove.includes(bpBlocks[0].html) && mMove.includes(bpBlocks[1].html) && mMove.includes(bpBlocks[2].html), `FAIL BP7: move must keep blocks byte-identical — got: ${mMove}`)
+// BP7 — mergeBlocks MOVE b4 (footer) to the top (after:''): b4 first; <main>+others byte-identical
+const mMove = mergeBlocks(bpBody, bpBlocks, [{ op: 'move', targetId: 'b4', after: '' }], {})
+assert.ok(mMove.indexOf(bpBlocks[3].html) < mMove.indexOf(bpBlocks[0].html), `FAIL BP7: b4 must move before b1 — got: ${mMove}`)
+assert.ok(mMove.includes('<main>') && mMove.includes('</main>'), `FAIL BP7: <main> must survive a move — got: ${mMove}`)
+assert.ok(mMove.includes(bpBlocks[0].html) && mMove.includes(bpBlocks[1].html) && mMove.includes(bpBlocks[2].html), `FAIL BP7: move must keep other blocks byte-identical — got: ${mMove}`)
+// the footer was removed from its original position (appears exactly once, at the top)
+assert.strictEqual((mMove.match(/data-yoai-id="b4"/g) || []).length, 1, `FAIL BP7: moved block must not be duplicated — got: ${mMove}`)
 
-// BP8 — mergeBlocks no-op (empty ops) → the original blocks rejoined, every block byte-identical
-const mNoop = mergeBlocks(bpBlocks, [], {})
-for (const b of bpBlocks) assert.ok(mNoop.includes(b.html), `FAIL BP8: block ${b.id} not byte-identical on no-op merge`)
+// BP8 — mergeBlocks no-op (empty ops) → the ORIGINAL body byte-for-byte (nothing rebuilt)
+const mNoop = mergeBlocks(bpBody, bpBlocks, [], {})
+assert.strictEqual(mNoop, bpBody, `FAIL BP8: empty ops must return the original body byte-identical`)
 
 // BP9 — nextBlockId mints a fresh non-colliding bN
-assert.strictEqual(nextBlockId(['b1', 'b2', 'b3']), 'b4', `FAIL BP9: next after b1..b3 must be b4 — got: ${nextBlockId(['b1', 'b2', 'b3'])}`)
+assert.strictEqual(nextBlockId(['b1', 'b2', 'b3', 'b4']), 'b5', `FAIL BP9: next after b1..b4 must be b5 — got: ${nextBlockId(['b1', 'b2', 'b3', 'b4'])}`)
 assert.strictEqual(nextBlockId(['b1', 'b3']), 'b2', `FAIL BP9: must fill the first gap (b2) — got: ${nextBlockId(['b1', 'b3'])}`)
 assert.strictEqual(nextBlockId([]), 'b1', `FAIL BP9: empty → b1 — got: ${nextBlockId([])}`)
 
+// BP10 — STRUCTURAL INVARIANT (defense-in-depth): a merge that dropped <main> or a
+// block must be CAUGHT so the route falls back to a full regenerate. We replicate the
+// invariant logic here (it lives in applyBlockPatch.ts, which can't be imported in this
+// API-free harness) and prove it flags exactly the H-bug shapes.
+const assertInvariant = (sourceBody, mergedBody, blocks, ops) => {
+  const deletedIds = new Set(ops.filter((o) => o.op === 'delete').map((o) => o.targetId))
+  const hasDelete = deletedIds.size > 0
+  for (const b of blocks) {
+    if (deletedIds.has(b.id)) continue
+    const re = new RegExp(`data-yoai-id\\s*=\\s*["']${b.id}["']`)
+    if (!re.test(mergedBody)) return { ok: false, reason: 'invariant_block_lost' }
+  }
+  for (const tag of ['<main', '<header', '<footer']) {
+    if (sourceBody.includes(tag) && !mergedBody.includes(tag)) return { ok: false, reason: 'invariant_wrapper_lost' }
+  }
+  if (!hasDelete && sourceBody.length > 0 && mergedBody.length < sourceBody.length * 0.5) {
+    return { ok: false, reason: 'invariant_shrunk' }
+  }
+  return { ok: true }
+}
+// a healthy hero edit passes the invariant
+assert.ok(assertInvariant(bpBody, mEdit, bpBlocks, [{ op: 'edit', targetId: 'b1' }]).ok === true, `FAIL BP10: a valid hero edit must pass the invariant`)
+// the H-bug wreck (header + footer only — <main> and b2/b3 dropped) is CAUGHT → fallback
+const gutted = bpBlocks[0].html + '\n' + bpBlocks[3].html
+const guttedCheck = assertInvariant(bpBody, gutted, bpBlocks, [{ op: 'edit', targetId: 'b1' }])
+assert.strictEqual(guttedCheck.ok, false, `FAIL BP10: a merge that dropped <main>+sections MUST fail the invariant → fallback`)
+assert.ok(guttedCheck.reason === 'invariant_block_lost' || guttedCheck.reason === 'invariant_wrapper_lost' || guttedCheck.reason === 'invariant_shrunk', `FAIL BP10: invariant must report a structural reason — got: ${guttedCheck.reason}`)
+// dropping ONLY the <main> wrapper (keeping the ids text) is still caught by the wrapper rule
+const noMain = bpBody.replace('<main>\n', '').replace('</main>\n', '')
+assert.strictEqual(assertInvariant(bpBody, noMain, bpBlocks, [{ op: 'edit', targetId: 'b1' }]).ok, false, `FAIL BP10: dropping the <main> wrapper MUST fail the invariant`)
+// a legitimate delete that removes a block is NOT a false-positive (b3 deleted → allowed)
+assert.ok(assertInvariant(bpBody, mDel, bpBlocks, [{ op: 'delete', targetId: 'b3' }]).ok === true, `FAIL BP10: a legitimate delete must NOT trip the invariant`)
+
 // ---- patchPlanner validator (the SECURITY gate) ----
-const knownBpIds = ['b1', 'b2', 'b3']
+const knownBpIds = ['b1', 'b2', 'b3', 'b4']
 
 // BPV1 — invalid targetId is DROPPED (security: unknown block can never be mutated)
 const v1 = validateOps([{ op: 'edit', targetId: 'bX' }, { op: 'edit', targetId: 'b2' }], knownBpIds)
@@ -1278,13 +1350,15 @@ assert.strictEqual(parsePlannerOps('Sure! {"ops":[{"op":"move","targetId":"b3","
 assert.strictEqual(parsePlannerOps('no json here').length, 0, `FAIL BPV6: junk → []`)
 assert.strictEqual(parsePlannerOps(null).length, 0, `FAIL BPV6: null → []`)
 
-// BPV7 — END-TO-END: planner output → validate → merge keeps untouched blocks byte-identical,
-// and the merged body PASSES the publish gate (sanitize + structure) just like the full page.
+// BPV7 — END-TO-END: planner output → validate → byte-splice merge keeps untouched blocks
+// AND the <main> wrapper byte-identical, and the merged body PASSES the publish gate
+// (sanitize + structure: one h1 + landmarks) just like the full page.
 const e2eRaw = parsePlannerOps('{"ops":[{"op":"edit","targetId":"b2"}]}')
 const { ops: e2eOps, fallback: e2eFallback } = validateOps(e2eRaw, knownBpIds)
 assert.strictEqual(e2eFallback, false, `FAIL BPV7: a valid edit must not fall back`)
-const e2eMerged = mergeBlocks(bpBlocks, e2eOps, { b2: editedB2 })
-assert.ok(e2eMerged.includes(bpBlocks[0].html) && e2eMerged.includes(bpBlocks[2].html), `FAIL BPV7: untouched blocks byte-identical end-to-end`)
+const e2eMerged = mergeBlocks(bpBody, bpBlocks, e2eOps, { b2: editedB2 })
+assert.ok(e2eMerged.includes(bpBlocks[0].html) && e2eMerged.includes(bpBlocks[2].html) && e2eMerged.includes(bpBlocks[3].html), `FAIL BPV7: untouched blocks byte-identical end-to-end`)
+assert.ok(e2eMerged.includes('<main>') && e2eMerged.includes('</main>'), `FAIL BPV7: <main> wrapper must survive end-to-end`)
 const e2eGate = gateSiteHtml(e2eMerged)
 assert.ok(e2eGate.ok === true, `FAIL BPV7: merged body must pass the gate (one h1 + landmarks) — got: ${JSON.stringify(e2eGate)}`)
 assert.ok(!e2eGate.html.includes('<script'), `FAIL BPV7: gated merged body must be sanitized`)

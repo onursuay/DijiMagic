@@ -45,7 +45,8 @@ const coreSummarizeBlocks = _summarizeBlocks as (
   blocks: Block[],
 ) => { id: string; role: string; snippet: string }[]
 const coreMergeBlocks = _mergeBlocks as (
-  originalBlocks: Block[],
+  originalBody: string,
+  blocks: Block[],
   ops: PatchOp[],
   newHtmlById: Record<string, string>,
 ) => string
@@ -101,12 +102,12 @@ export async function applyBlockPatch(
     const ds = await generateDesignSystem(ctx)
 
     // 4 + 5 + 6. Regenerate changed blocks → merge → gate, with ONE self-repair.
-    const first = await buildAndGate(ctx, ds, blocks, ops, instruction)
+    const first = await buildAndGate(ctx, ds, sourceBody, blocks, ops, instruction)
     if (first.ok) return finalize(target, first.html)
 
     // ONE self-repair: re-regenerate the changed blocks once + re-merge + re-gate.
     // (A second model pass can fix a transient bad block; we never loop further.)
-    const second = await buildAndGate(ctx, ds, blocks, ops, instruction)
+    const second = await buildAndGate(ctx, ds, sourceBody, blocks, ops, instruction)
     if (second.ok) return finalize(target, second.html)
 
     return { ok: false, reason: second.reason || first.reason || 'gate_failed' }
@@ -130,6 +131,7 @@ export async function applyBlockPatch(
 async function buildAndGate(
   ctx: CodegenContext,
   ds: DesignSystem,
+  sourceBody: string,
   blocks: Block[],
   ops: PatchOp[],
   instruction: string,
@@ -165,13 +167,77 @@ async function buildAndGate(
     // delete / move need no new HTML.
   }
 
-  const merged = coreMergeBlocks(blocks, ops, newHtmlById)
-  if (!merged || merged.length < 40) return { ok: false, reason: 'empty_merge' }
+  // Splice the ops onto the ORIGINAL body — the <main> wrapper, inter-block
+  // whitespace and any untouched block stay BYTE-IDENTICAL (never re-assembled).
+  const merged = coreMergeBlocks(sourceBody, blocks, ops, newHtmlById)
+  if (!merged) return { ok: false, reason: 'empty_merge' }
+
+  // Structural invariant (defense-in-depth): a gutted page can NEVER persist even
+  // if extraction/merge has an edge case. Fail → ok:false → route full-regenerates.
+  const inv = assertStructuralInvariants(sourceBody, merged, blocks, ops)
+  if (!inv.ok) return { ok: false, reason: inv.reason }
 
   // Same publish gate as the full-page path (sanitize → parse → structure → size).
   const gate = gateSiteHtml(merged)
   if (gate.ok === false) return { ok: false, reason: gate.reason }
   return { ok: true, html: gate.html }
+}
+
+/**
+ * STRUCTURAL INVARIANT — defense-in-depth guard run after merge, before persist.
+ * Guarantees the merge did not silently gut the page (the H Critical data-loss bug).
+ *
+ * Asserts, against the ORIGINAL source body:
+ *   1. NO SILENT DISAPPEARANCE — every data-yoai-id present in the source is still
+ *      present in the merged body UNLESS an explicit `delete` op targeted that id.
+ *   2. WRAPPER PRESERVED — every top-level structural wrapper the source had
+ *      (<main>, <header>, <footer>) is still opened in the merged body. The H bug
+ *      dropped the <main> wrapper + all its sections; this catches exactly that.
+ *   3. NO IMPLAUSIBLE SHRINK — when there is NO delete op, the merged body must not
+ *      collapse to a small fraction of the source (catches a wholesale gutting that
+ *      somehow kept the wrappers/ids text but lost everything else).
+ *
+ * @returns { ok:true } or { ok:false, reason }
+ */
+function assertStructuralInvariants(
+  sourceBody: string,
+  mergedBody: string,
+  blocks: Block[],
+  ops: PatchOp[],
+): { ok: true } | { ok: false; reason: string } {
+  const deletedIds = new Set(
+    ops.filter((o) => o.op === 'delete').map((o) => o.targetId),
+  )
+  const hasDelete = deletedIds.size > 0
+
+  // 1. Every source block id survives unless explicitly deleted. Quote-agnostic so a
+  //    model-rewritten edit that re-quotes the attribute still passes (it keeps the id).
+  for (const b of blocks) {
+    if (deletedIds.has(b.id)) continue
+    const idRe = new RegExp(`data-yoai-id\\s*=\\s*["']${escapeRegExp(b.id)}["']`)
+    if (!idRe.test(mergedBody)) {
+      return { ok: false, reason: 'invariant_block_lost' }
+    }
+  }
+
+  // 2. Top-level structural wrappers preserved (open tag must survive).
+  for (const tag of ['<main', '<header', '<footer'] as const) {
+    if (sourceBody.includes(tag) && !mergedBody.includes(tag)) {
+      return { ok: false, reason: 'invariant_wrapper_lost' }
+    }
+  }
+
+  // 3. No implausible shrink when nothing was explicitly deleted.
+  if (!hasDelete && sourceBody.length > 0 && mergedBody.length < sourceBody.length * 0.5) {
+    return { ok: false, reason: 'invariant_shrunk' }
+  }
+
+  return { ok: true }
+}
+
+/** Escape a string for safe literal use inside a RegExp (block ids are simple "bN"). */
+function escapeRegExp(s: string): string {
+  return s.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')
 }
 
 /** Build the updated WebsitePageInput — same identity fields, new html, format html. */
