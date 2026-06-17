@@ -91,6 +91,13 @@ assert.ok(!r9.includes('data:text/html'), `FAIL: non-image data: URI not strippe
 const r10 = sanitizeSiteHtml('<img src="data:image/png;base64,abc123" alt="test">')
 assert.ok(r10.includes('data:image/png;base64,abc123'), `FAIL: data:image/ stripped — got: ${r10}`)
 
+// 11. 'hidden' boolean global attr SURVIVES sanitize (runtime contract — mobile
+//     nav menu starts hidden and yoai-site-runtime.js toggles it). Without this
+//     the menu would render OPEN by default on the live site.
+const r11 = sanitizeSiteHtml('<nav id="m" hidden><a href="#x">x</a></nav>')
+assert.ok(r11.includes('hidden'), `FAIL: hidden attr stripped — runtime nav contract broken — got: ${r11}`)
+assert.ok(/<nav[^>]*\bhidden\b/i.test(r11), `FAIL: hidden not present on <nav> — got: ${r11}`)
+
 // ---------------------------------------------------------------------------
 // NEW SECURITY REGRESSION TESTS
 // ---------------------------------------------------------------------------
