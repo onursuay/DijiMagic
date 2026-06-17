@@ -2,6 +2,19 @@
 
 ---
 
+## 2026-06-17 — Yeni modül: Sosyal Medya Yönetimi (içerik takvimi + otomatik yayın)
+- **İstek:** Kullanıcıların görsel/video içeriklerini proje (kampanya) bazında planlayıp ileri bir tarih-saate zamanlayabildiği; zamanı gelince sistemin otomatik Instagram/Facebook'a (Akış/Reels/Hikaye) paylaştığı, Meta Business Suite "Planner" benzeri bir modül. Çoklu hedef (cross-post), başarısızlıkta yeniden deneme.
+- **Çözüm:**
+  - **Veri modeli:** 4 yeni tablo (`social_projects`, `social_scheduled_posts`, `social_post_targets`, `social_post_media`) — RLS açık, atomik claim için `(status, scheduled_at)` index'i. Migration canlı omddq'ya uygulandı; `social-media` public Storage bucket'ı oluşturuldu.
+  - **Zamanlama motoru:** Tablo + dakikalık cron (`/api/cron/social-publish`) + atomik claim deseni (mevcut `email_drip_process`/`seo-article-run` ile aynı). Başarısızlıkta sınırlı yeniden deneme (exponential backoff, maks. 3); kısmi başarıda yalnız başarısız hedefler tekrarlanır (duplicate yayın önlenir).
+  - **Yayın:** `lib/social/metaPublisher.ts` — mevcut Meta publish route'larına dokunmadan, DB'deki bağlantıdan (user_id → token) okuyan user-id parametreli IG/FB yayıncısı (cookie'siz, cron uyumlu).
+  - **API:** `/api/social/{projects,posts,media/upload,targets}` — hepsi `chargeFeature(subscription)` guard + owner bypass.
+  - **UI:** Hibrit takvim (sol ay ızgarası + sağ gün detayı), Akış/Reels/Hikaye sekmeleri, renk etiketli projeler, yükleme + çoklu hedef + tarih-saat composer'ı. Proje UI standardına tam uyum (max-w-7xl, animate-card-enter, amber yok, primary/emerald/red).
+  - **Erişim:** Modül abonelik gerektirir (`AccessRequiredModal type=subscription`); AI üretim Tasarım kredisinde kalır (hibrit).
+  - **i18n:** `sidebar.sosyalmedya` + `dashboard.sosyalmedya.*` (tr+en, parite tam). nav/routes kayıtları eklendi.
+  - **Doğrulama:** `npm run build` temiz; tsc 0 hata; DB smoke testi (due→claim→yarış koruması→cascade) geçti.
+- **Dosyalar:** supabase/migrations/20260617000000_create_social_media_tables.sql, scripts/apply-social-media-migration.mjs, scripts/setup-social-media-storage.mjs, lib/social/*, app/api/social/**, app/api/cron/social-publish/route.ts, app/sosyal-medya/*, components/social/*, lib/nav.ts, lib/routes.ts, lib/billing/featureAccessMap.ts, locales/tr.json, locales/en.json, vercel.json
+
 ## 2026-06-16 — Web Site Yöneticisi: detay sayfası çift durum kartı fix
 - **Sorun:** AI üretim sürerken detay sayfasında üstte "AI siteni hazırlıyor" kartı doğru çıkarken, alttaki önizleme bloğu yalnız `!hasPages`'e baktığı (üretim/`busy` durumunu bilmediği) için aynı anda "Site henüz oluşturulmadı" ikinci kartını basıyordu → ekranda çelişkili iki kart. (Prod'da gözle yakalandı; kod-varlık denetimi bu görsel çelişkiyi kaçırmıştı.)
 - **Çözüm:** Alt önizleme bloğu artık yalnız `hasPages` iken render ediliyor. Boş ve "üretiliyor" durumu **tek** üst durum kartından gösteriliyor (tek kaynak); ikinci boş-durum kartı kaldırıldı. Her durumda tek kart kalır (üretiliyor / oluşturulmadı+buton / hata+yeniden dene / sayfa-var aksiyon barı).
