@@ -26,56 +26,45 @@
    the extensionless './htmlGenerate' import unambiguously resolves to the .ts.)
    ────────────────────────────────────────────────────────── */
 
-import path from 'path'
-import { fileURLToPath } from 'url'
-
 import { getAnthropicClient, isAnthropicReady } from '@/lib/anthropic/client'
 import { pickStockImage, isStockReady } from '@/lib/website/stock'
 import type { CodegenContext, DesignSystem, RawBodyHtml } from './types'
 
 // ---------------------------------------------------------------------------
-// Lazy-load the shared .mjs core (same pattern as designSystem.ts).
-// Keeps toDesignVars / resolveImagePlaceholders / the prompt as ONE source of
-// truth shared with scripts/verify-website-codegen.mjs.
+// Import the shared .mjs core (same pattern as designSystem.ts ↔
+// assembleDocument.ts). STATIC literal specifier so Turbopack/webpack can
+// resolve it. Keeps toDesignVars / resolveImagePlaceholders / the prompt as
+// ONE source of truth shared with scripts/verify-website-codegen.mjs.
 // ---------------------------------------------------------------------------
 
-interface HtmlGenCore {
-  toDesignVars: (ds: DesignSystem) => Record<string, string>
-  resolveImagePlaceholders: (
-    html: string,
-    resolver: (query: string) => Promise<string>,
-  ) => Promise<string>
-  buildHtmlSystemPrompt: () => string
-  buildHtmlUserMessage: (ctx: CodegenContext, ds: DesignSystem) => string
-  buildRepairUserMessage: (
-    ctx: CodegenContext,
-    ds: DesignSystem,
-    previousBody: string,
-    reason: string,
-  ) => string
-  cleanGeneratedHtml: (raw: string) => string
-  FALLBACK_IMAGE: string
-}
+// eslint-disable-next-line @typescript-eslint/ban-ts-comment
+// @ts-ignore — .mjs imported from TS; Next.js bundler resolves it fine at runtime
+import {
+  toDesignVars as _toDesignVars,
+  resolveImagePlaceholders as _resolveImagePlaceholders,
+  buildHtmlSystemPrompt as _buildHtmlSystemPrompt,
+  buildHtmlUserMessage as _buildHtmlUserMessage,
+  buildRepairUserMessage as _buildRepairUserMessage,
+  cleanGeneratedHtml as _cleanGeneratedHtml,
+} from './htmlGenerateShared.mjs'
 
-let _core: HtmlGenCore | null = null
-
-async function loadCore(): Promise<HtmlGenCore> {
-  if (_core !== null) return _core
-  const __filename = fileURLToPath(import.meta.url)
-  const __dirname = path.dirname(__filename)
-  const corePath = path.join(__dirname, 'htmlGenerateShared.mjs')
-  const mod = await import(corePath)
-  _core = {
-    toDesignVars: mod.toDesignVars as HtmlGenCore['toDesignVars'],
-    resolveImagePlaceholders: mod.resolveImagePlaceholders as HtmlGenCore['resolveImagePlaceholders'],
-    buildHtmlSystemPrompt: mod.buildHtmlSystemPrompt as HtmlGenCore['buildHtmlSystemPrompt'],
-    buildHtmlUserMessage: mod.buildHtmlUserMessage as HtmlGenCore['buildHtmlUserMessage'],
-    buildRepairUserMessage: mod.buildRepairUserMessage as HtmlGenCore['buildRepairUserMessage'],
-    cleanGeneratedHtml: mod.cleanGeneratedHtml as HtmlGenCore['cleanGeneratedHtml'],
-    FALLBACK_IMAGE: mod.FALLBACK_IMAGE as string,
-  }
-  return _core
-}
+const coreToDesignVars = _toDesignVars as (ds: DesignSystem) => Record<string, string>
+const coreResolveImagePlaceholders = _resolveImagePlaceholders as (
+  html: string,
+  resolver: (query: string) => Promise<string>,
+) => Promise<string>
+const coreBuildHtmlSystemPrompt = _buildHtmlSystemPrompt as () => string
+const coreBuildHtmlUserMessage = _buildHtmlUserMessage as (
+  ctx: CodegenContext,
+  ds: DesignSystem,
+) => string
+const coreBuildRepairUserMessage = _buildRepairUserMessage as (
+  ctx: CodegenContext,
+  ds: DesignSystem,
+  previousBody: string,
+  reason: string,
+) => string
+const coreCleanGeneratedHtml = _cleanGeneratedHtml as (raw: string) => string
 
 // ---------------------------------------------------------------------------
 // Re-export the testable glue so app code can import from the .ts surface.
@@ -84,8 +73,7 @@ async function loadCore(): Promise<HtmlGenCore> {
 
 /** DesignSystem → :root CSS custom-property map (Task 13/14 designVars). */
 export async function toDesignVars(ds: DesignSystem): Promise<Record<string, string>> {
-  const core = await loadCore()
-  return core.toDesignVars(ds)
+  return coreToDesignVars(ds)
 }
 
 /** Replace {{IMG:query}} placeholders via an injected resolver (DI, pure). */
@@ -93,8 +81,7 @@ export async function resolveImagePlaceholders(
   html: string,
   resolver: (query: string) => Promise<string>,
 ): Promise<string> {
-  const core = await loadCore()
-  return core.resolveImagePlaceholders(html, resolver)
+  return coreResolveImagePlaceholders(html, resolver)
 }
 
 // ---------------------------------------------------------------------------
@@ -140,8 +127,7 @@ export async function generateHomePageHtml(
   ctx: CodegenContext,
   ds: DesignSystem,
 ): Promise<RawBodyHtml> {
-  const core = await loadCore()
-  return streamBodyHtml(core.buildHtmlSystemPrompt(), core.buildHtmlUserMessage(ctx, ds), core)
+  return streamBodyHtml(coreBuildHtmlSystemPrompt(), coreBuildHtmlUserMessage(ctx, ds))
 }
 
 /**
@@ -165,9 +151,8 @@ export async function repairHomePageHtml(
   previousBody: string,
   reason: string,
 ): Promise<RawBodyHtml> {
-  const core = await loadCore()
-  const user = core.buildRepairUserMessage(ctx, ds, previousBody, reason)
-  return streamBodyHtml(core.buildHtmlSystemPrompt(), user, core)
+  const user = coreBuildRepairUserMessage(ctx, ds, previousBody, reason)
+  return streamBodyHtml(coreBuildHtmlSystemPrompt(), user)
 }
 
 /**
@@ -178,7 +163,6 @@ export async function repairHomePageHtml(
 async function streamBodyHtml(
   system: string,
   user: string,
-  core: HtmlGenCore,
 ): Promise<RawBodyHtml> {
   if (!isAnthropicReady()) {
     throw new Error('[htmlGenerate] Anthropic not configured (ANTHROPIC_API_KEY missing)')
@@ -213,13 +197,13 @@ async function streamBodyHtml(
     )
   }
 
-  const bodyHtml = core.cleanGeneratedHtml(rawText)
+  const bodyHtml = coreCleanGeneratedHtml(rawText)
   if (!bodyHtml || bodyHtml.length < 40) {
     throw new Error('[htmlGenerate] model returned empty/too-short HTML')
   }
 
   // Resolve {{IMG:query}} → real stock URLs (or neutral fallback). Never leaves
   // a raw placeholder behind, never ships a broken/unsafe src.
-  const resolved = await core.resolveImagePlaceholders(bodyHtml, makeStockResolver())
+  const resolved = await coreResolveImagePlaceholders(bodyHtml, makeStockResolver())
   return resolved
 }

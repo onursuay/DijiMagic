@@ -17,41 +17,26 @@
      designSystemValidate.mjs). Values are safe for :root{ --x: VALUE }.
    ────────────────────────────────────────────────────────── */
 
-import path from 'path'
-import { fileURLToPath } from 'url'
-
 import { getAnthropicClient, isAnthropicReady } from '@/lib/anthropic/client'
 import { extractJsonObject } from '@/lib/anthropic/text'
 import type { CodegenContext, DesignSystem } from './types'
 
 // ---------------------------------------------------------------------------
 // Import pure validate helpers from the shared .mjs module
-// (the same module used by verify-website-codegen.mjs — single source of truth)
+// (the same module used by verify-website-codegen.mjs — single source of truth).
+// STATIC literal specifier so Turbopack/webpack can resolve it (mirrors
+// assembleDocument.ts ↔ assembleDocument.mjs).
 // ---------------------------------------------------------------------------
 
-// Dynamic import — loaded lazily on first call so the .mjs module works in
-// both the Node CJS build and ESM contexts.
+// eslint-disable-next-line @typescript-eslint/ban-ts-comment
+// @ts-ignore — .mjs imported from TS; Next.js bundler resolves it fine at runtime
+import {
+  validateDesignSystem as _validateDesignSystem,
+  SAFE_DEFAULT_DESIGN_SYSTEM as _SAFE_DEFAULT_DESIGN_SYSTEM,
+} from './designSystemValidate.mjs'
 
-interface Validators {
-  validateDesignSystem: (raw: unknown) => DesignSystem
-  safeDefault: DesignSystem
-}
-
-let _validators: Validators | null = null
-
-async function loadValidators(): Promise<Validators> {
-  if (_validators !== null) return _validators
-  // Resolve relative to this file regardless of CWD
-  const __filename = fileURLToPath(import.meta.url)
-  const __dirname = path.dirname(__filename)
-  const validatorPath = path.join(__dirname, 'designSystemValidate.mjs')
-  const mod = await import(validatorPath)
-  _validators = {
-    validateDesignSystem: mod.validateDesignSystem as (raw: unknown) => DesignSystem,
-    safeDefault: mod.SAFE_DEFAULT_DESIGN_SYSTEM as DesignSystem,
-  }
-  return _validators
-}
+const validateDesignSystem = _validateDesignSystem as (raw: unknown) => DesignSystem
+const safeDefault = _SAFE_DEFAULT_DESIGN_SYSTEM as DesignSystem
 
 // ---------------------------------------------------------------------------
 // Model constant
@@ -156,8 +141,6 @@ function parseDesignSystemText(text: string | null): unknown {
  * - Soft-fails to SAFE_DEFAULT_DESIGN_SYSTEM on any error.
  */
 export async function generateDesignSystem(ctx: CodegenContext): Promise<DesignSystem> {
-  const { validateDesignSystem, safeDefault } = await loadValidators()
-
   if (!isAnthropicReady()) {
     console.warn('[designSystem] Anthropic not ready — using safe default')
     return { ...safeDefault, palette: { ...safeDefault.palette }, fonts: { ...safeDefault.fonts }, motion: { ...safeDefault.motion } }
