@@ -1646,3 +1646,268 @@ assert.ok(/data-yoai-form-success/.test(cfSys), `FAIL CF-P1: prompt must describ
 assert.ok(/password/i.test(cfSys) && /payment|checkout/i.test(cfSys) && /upload|file/i.test(cfSys), `FAIL CF-P1: prompt must still forbid password/payment/upload`)
 
 console.log('contact-form OK')
+
+// ---------------------------------------------------------------------------
+// LIBRARY section — Component Library foundation (#builder-1).
+//
+// The library is the "design vocabulary" + deterministic FALLBACK renderer
+// (HİBRİT — the free-form engine stays). Each ComponentDef.deterministicRender
+// produces an HTML STRING that MUST flow through the EXISTING pipeline UNCHANGED:
+//   - passes sanitizeSiteHtml without structural stripping,
+//   - carries data-yoai-block + data-yoai-id on its top-level element,
+//   - uses ONLY var-token color classes (no raw hex / default Tailwind palette),
+//   - the quality-critical components honour their hard rules (navbar opaque +
+//     nowrap + the runtime mobile-menu contract; footer current-year server-side;
+//     contact-form the data-yoai-form contract with no action),
+//   - and a composed mini-page (navbar+hero+services+cta+contact+footer) passes
+//     gateSiteHtml.
+// ---------------------------------------------------------------------------
+
+const componentsLibPath = path.join(__dirname, '../lib/website/codegen/library/components.mjs')
+const {
+  COMPONENTS,
+  listComponentKeys,
+  getComponent,
+  renderComponent,
+  listComponents,
+} = await import(componentsLibPath)
+
+// A representative DesignSystem for the renders (reuse the validated safe default).
+const libDs = SAFE_DEFAULT_DESIGN_SYSTEM
+
+// Sample content per component (covers every required field).
+const SAMPLE_CONTENT = {
+  'navbar.standard': {
+    brandName: 'Acme Studio',
+    links: [
+      { label: 'Hizmetler', href: '#services' },
+      { label: 'Hakkımızda', href: '#about' },
+      { label: 'SSS', href: '#faq' },
+      { label: 'İletişim', href: '#contact' },
+    ],
+    ctaLabel: 'Teklif Al',
+    ctaHref: '#contact',
+  },
+  'hero.minimal': {
+    eyebrow: 'Yeni',
+    heading: 'Markanız için göz alıcı bir web sitesi',
+    subheading: 'Hızlı, modern ve markaya uygun.',
+    ctaLabel: 'Başlayın',
+    ctaHref: '#contact',
+    secondaryLabel: 'Hizmetleri gör',
+    secondaryHref: '#services',
+  },
+  'hero.split-image': {
+    heading: 'Markanızı öne çıkaran tasarım',
+    subheading: 'Editoryal bir his, net bir mesaj.',
+    ctaLabel: 'Teklif alın',
+    ctaHref: '#contact',
+    imageQuery: 'modern brand studio workspace warm light',
+    imageAlt: 'Stüdyo çalışma alanı',
+  },
+  'services.grid': {
+    heading: 'Hizmetlerimiz',
+    subheading: 'Uçtan uca dijital üretim.',
+    items: [
+      { title: 'Strateji', body: 'Net bir yol haritası.' },
+      { title: 'Tasarım', body: 'Markaya uygun arayüzler.' },
+      { title: 'Geliştirme', body: 'Hızlı ve güvenli altyapı.' },
+    ],
+  },
+  'cta.band': {
+    heading: 'Projenize bugün başlayalım',
+    subheading: 'Birkaç dakikada iletişime geçin.',
+    ctaLabel: 'İletişime geçin',
+    ctaHref: '#contact',
+  },
+  'faq.accordion': {
+    heading: 'Sıkça sorulan sorular',
+    items: [
+      { question: 'Süreç nasıl ilerliyor?', answer: 'Keşifle başlıyoruz.' },
+      { question: 'Teslim süresi nedir?', answer: 'Birkaç hafta içinde.' },
+    ],
+  },
+  'contact-form.standard': {
+    heading: 'İletişime geçin',
+    subheading: 'Size en kısa sürede dönüş yapalım.',
+    submitLabel: 'Gönder',
+  },
+  'footer.standard': {
+    brandName: 'Acme Studio',
+    tagline: 'Dijital üretim stüdyosu.',
+    links: [
+      { label: 'Hizmetler', href: '#services' },
+      { label: 'İletişim', href: '#contact' },
+      { label: 'Gizlilik', href: '#privacy' },
+    ],
+  },
+}
+
+// LIB1 — the registry is non-empty + every key resolves to a ComponentDef with the
+// full contract shape (key, category, blockTag, contentFields, promptHint, render).
+const libKeys = listComponentKeys()
+assert.ok(Array.isArray(libKeys) && libKeys.length >= 8, `FAIL LIB1: expected >=8 registered components — got: ${JSON.stringify(libKeys)}`)
+for (const key of libKeys) {
+  const def = getComponent(key)
+  assert.ok(def && def.key === key, `FAIL LIB1: getComponent('${key}') mismatch`)
+  assert.ok(typeof def.category === 'string' && def.category, `FAIL LIB1: ${key} missing category`)
+  assert.ok(['header', 'footer', 'nav', 'section'].includes(def.blockTag), `FAIL LIB1: ${key} bad blockTag '${def.blockTag}'`)
+  assert.ok(Array.isArray(def.contentFields) && def.contentFields.length > 0, `FAIL LIB1: ${key} missing contentFields`)
+  for (const f of def.contentFields) {
+    assert.ok(f && typeof f.name === 'string' && f.name, `FAIL LIB1: ${key} field missing name`)
+    assert.ok(['text', 'richtext', 'image', 'href', 'list'].includes(f.type), `FAIL LIB1: ${key} field '${f.name}' bad type '${f.type}'`)
+    assert.ok(typeof f.required === 'boolean', `FAIL LIB1: ${key} field '${f.name}' missing required:boolean`)
+    assert.ok(typeof f.label === 'string' && f.label, `FAIL LIB1: ${key} field '${f.name}' missing label`)
+  }
+  assert.ok(typeof def.promptHint === 'string' && def.promptHint.length > 30, `FAIL LIB1: ${key} promptHint too short`)
+  assert.ok(typeof def.deterministicRender === 'function', `FAIL LIB1: ${key} missing deterministicRender`)
+}
+
+// LIB2 — the required quality-critical + proof-set keys are all present.
+for (const key of [
+  'navbar.standard', 'footer.standard', 'contact-form.standard',
+  'hero.minimal', 'hero.split-image', 'services.grid', 'cta.band', 'faq.accordion',
+]) {
+  assert.ok(getComponent(key), `FAIL LIB2: required component '${key}' is not registered`)
+}
+
+// Default-Tailwind-palette color classes that are FORBIDDEN in every render
+// (color must trace back to a --var). Matches the prompt's forbidden list.
+const FORBIDDEN_PALETTE_RE =
+  /\b(?:bg|text|border|from|via|to|ring|fill|stroke)-(?:slate|gray|zinc|neutral|stone|red|orange|amber|yellow|lime|green|emerald|teal|cyan|sky|blue|indigo|violet|purple|fuchsia|pink|rose)-\d{2,3}\b/
+
+// LIB3 — for EVERY component: deterministicRender(sample, ds, {id:'b1'}) →
+//   (a) carries data-yoai-block="<key>" + data-yoai-id="b1" on its top-level element,
+//   (b) uses NO default Tailwind palette color class + NO raw hex in a color context,
+//   (c) survives sanitizeSiteHtml with its structural top-level tag intact (no strip),
+//   (d) leaves NO raw {{IMG: placeholder unresolved-detection aside (placeholders are
+//       expected to remain until resolveImagePlaceholders runs; we only assert the
+//       {{IMG: form is well-formed when present).
+for (const key of libKeys) {
+  const def = getComponent(key)
+  const html = renderComponent(key, SAMPLE_CONTENT[key] || {}, libDs, { id: 'b1' })
+  assert.ok(typeof html === 'string' && html.length > 0, `FAIL LIB3: ${key} rendered empty`)
+
+  // (a) block identity on the top-level element.
+  assert.ok(html.includes(`data-yoai-block="${key}"`), `FAIL LIB3: ${key} missing data-yoai-block="${key}" — got: ${html.slice(0, 160)}`)
+  assert.ok(html.includes('data-yoai-id="b1"'), `FAIL LIB3: ${key} missing data-yoai-id="b1"`)
+  // the top-level tag must be the declared landmark + carry the block attrs.
+  const topTagRe = new RegExp(`^<${def.blockTag}\\b[^>]*data-yoai-block="${key.replace(/[.\\]/g, '\\$&')}"`)
+  assert.ok(topTagRe.test(html), `FAIL LIB3: ${key} top-level element must be <${def.blockTag}> carrying data-yoai-block — got: ${html.slice(0, 200)}`)
+
+  // (b) no default Tailwind palette anywhere.
+  const palette = html.match(FORBIDDEN_PALETTE_RE)
+  assert.ok(!palette, `FAIL LIB3: ${key} uses a forbidden default Tailwind palette class '${palette}' — color must use var() tokens`)
+  // no raw hex used as a Tailwind color value (e.g. text-[#fff]); var() refs are fine.
+  assert.ok(!/-\[#[0-9a-fA-F]{3,8}\]/.test(html), `FAIL LIB3: ${key} uses a raw hex color in an arbitrary class — must use var() tokens`)
+
+  // (c) sanitize must NOT strip the structural top-level tag.
+  const clean = sanitizeSiteHtml(html)
+  assert.ok(clean.includes(`<${def.blockTag}`), `FAIL LIB3: ${key} top-level <${def.blockTag}> stripped by sanitize — got: ${clean.slice(0, 160)}`)
+  assert.ok(clean.includes(`data-yoai-block="${key}"`), `FAIL LIB3: ${key} data-yoai-block stripped by sanitize`)
+  assert.ok(clean.includes('data-yoai-id="b1"'), `FAIL LIB3: ${key} data-yoai-id stripped by sanitize`)
+  // no <script> / inline handler ever produced.
+  assert.ok(!/<script/i.test(clean) && !/\son[a-z]+\s*=/i.test(clean), `FAIL LIB3: ${key} produced a forbidden script/handler`)
+}
+
+// LIB4 — listComponents(category) filters correctly.
+assert.ok(listComponents('hero').length === 2, `FAIL LIB4: expected 2 hero components — got: ${listComponents('hero').map((d) => d.key).join(',')}`)
+assert.ok(listComponents().length === libKeys.length, `FAIL LIB4: listComponents() must return all components`)
+
+// LIB5 — NAVBAR is OPAQUE (bg-[var(--surface)]) + NEVER transparent on the header
+// root, desktop nav is single-line (whitespace-nowrap + flex-nowrap), and the
+// mobile panel uses the runtime contract (data-yoai-mobile-nav + a close control +
+// opaque panel background).
+const navHtml = renderComponent('navbar.standard', SAMPLE_CONTENT['navbar.standard'], libDs, { id: 'b1', mobileMenuAnim: 'left' })
+const navRootTag = (navHtml.match(/^<header\b[^>]*>/i) || [''])[0]
+assert.ok(/bg-\[var\(--surface\)\]/.test(navRootTag), `FAIL LIB5: navbar header root must be OPAQUE bg-[var(--surface)] — got: ${navRootTag}`)
+assert.ok(!/\bbg-transparent\b/.test(navRootTag) && !/bg-\[var\(--surface\)\]\/\d/.test(navRootTag), `FAIL LIB5: navbar header root must NOT be transparent / translucent fill — got: ${navRootTag}`)
+assert.ok(/whitespace-nowrap/.test(navHtml), `FAIL LIB5: navbar desktop links must be whitespace-nowrap (never wrap)`)
+assert.ok(/flex-nowrap/.test(navHtml), `FAIL LIB5: navbar nav must be flex-nowrap (single line)`)
+// mobile-menu runtime contract — toggle button + opaque panel + close control + anim.
+assert.ok(/data-yoai-nav-toggle="mobilenav"/.test(navHtml), `FAIL LIB5: navbar missing data-yoai-nav-toggle="mobilenav" hamburger`)
+assert.ok(/aria-controls="mobilenav"/.test(navHtml) && /aria-expanded="false"/.test(navHtml), `FAIL LIB5: navbar hamburger missing aria-controls/aria-expanded`)
+const mobilePanelTag = (navHtml.match(/<nav\b[^>]*data-yoai-mobile-nav[^>]*>/i) || [''])[0]
+assert.ok(mobilePanelTag, `FAIL LIB5: navbar missing data-yoai-mobile-nav panel`)
+assert.ok(/id="mobilenav"/.test(mobilePanelTag), `FAIL LIB5: mobile panel must carry id="mobilenav" (matches aria-controls)`)
+assert.ok(/data-yoai-mobile-anim="left"/.test(mobilePanelTag), `FAIL LIB5: mobile panel must carry the chosen data-yoai-mobile-anim`)
+assert.ok(/bg-\[var\(--surface\)\]/.test(mobilePanelTag), `FAIL LIB5: mobile panel must be OPAQUE bg-[var(--surface)] — got: ${mobilePanelTag}`)
+// a close (X) control INSIDE the panel — a 2nd toggle button targeting mobilenav.
+const panelStart = navHtml.indexOf(mobilePanelTag)
+const panelHtml = navHtml.slice(panelStart)
+const closeControls = (panelHtml.match(/data-yoai-nav-toggle="mobilenav"/g) || []).length
+assert.ok(closeControls >= 1, `FAIL LIB5: mobile panel must include a close control (data-yoai-nav-toggle) — got ${closeControls}`)
+// anim choice threads through: 'right' flips the panel anchor.
+const navRight = renderComponent('navbar.standard', SAMPLE_CONTENT['navbar.standard'], libDs, { id: 'b1', mobileMenuAnim: 'right' })
+assert.ok(/data-yoai-mobile-anim="right"/.test(navRight), `FAIL LIB5: navbar must honour mobileMenuAnim='right'`)
+// the navbar survives sanitize with the full mobile-nav hook contract intact.
+const navClean = sanitizeSiteHtml(navHtml)
+assert.ok(/data-yoai-mobile-nav/.test(navClean) && /data-yoai-mobile-anim="left"/.test(navClean) && /data-yoai-nav-toggle="mobilenav"/.test(navClean), `FAIL LIB5: navbar mobile-nav hooks stripped by sanitize`)
+
+// LIB6 — FOOTER injects the CURRENT year SERVER-SIDE (computed in the renderer),
+// keeps the "YoAi ile üretildi" mark, and its nav wraps gracefully (flex-wrap).
+const currentYear = String(new Date().getFullYear())
+const footHtml = renderComponent('footer.standard', SAMPLE_CONTENT['footer.standard'], libDs, { id: 'b9' })
+assert.ok(footHtml.includes(currentYear), `FAIL LIB6: footer must contain the CURRENT year ${currentYear} — got: ${footHtml.slice(0, 400)}`)
+// no stale/hardcoded years from prior calendar years.
+const staleYear = String(new Date().getFullYear() - 1)
+assert.ok(!new RegExp('&copy;\\s*' + staleYear + '\\b').test(footHtml), `FAIL LIB6: footer must not hardcode a stale year (${staleYear})`)
+assert.ok(/YoAi ile üretildi/.test(footHtml), `FAIL LIB6: footer must keep the "YoAi ile üretildi" mark`)
+const footNavTag = (footHtml.match(/<nav\b[^>]*>/i) || [''])[0]
+assert.ok(/flex-wrap/.test(footNavTag), `FAIL LIB6: footer nav must use flex-wrap (wrap gracefully, never overflow) — got: ${footNavTag}`)
+
+// LIB7 — CONTACT FORM uses the data-yoai-form contract: data-yoai-form marker,
+// name/email/phone/message fields, a honeypot input[name="company"], the
+// data-yoai-form-success element, a submit <button>, and NO action= (the server
+// injects it post-sanitize). It must also survive sanitize byte-clean.
+const cfHtml = renderComponent('contact-form.standard', SAMPLE_CONTENT['contact-form.standard'], libDs, { id: 'b8' })
+assert.ok(/<form\b[^>]*\bdata-yoai-form\b/.test(cfHtml), `FAIL LIB7: contact form missing <form data-yoai-form>`)
+assert.ok(!/\baction\s*=/.test(cfHtml), `FAIL LIB7: contact form must NOT set an action (server injects it post-sanitize)`)
+assert.ok(/<input[^>]+type="text"[^>]+name="name"/.test(cfHtml), `FAIL LIB7: contact form missing name (text) field`)
+assert.ok(/<input[^>]+type="email"[^>]+name="email"/.test(cfHtml), `FAIL LIB7: contact form missing email field`)
+assert.ok(/<input[^>]+type="tel"[^>]+name="phone"/.test(cfHtml), `FAIL LIB7: contact form missing phone (tel) field`)
+assert.ok(/<textarea[^>]+name="message"/.test(cfHtml), `FAIL LIB7: contact form missing message textarea`)
+assert.ok(/name="company"/.test(cfHtml) && /tabindex="-1"/.test(cfHtml), `FAIL LIB7: contact form missing honeypot input[name="company"]`)
+assert.ok(/data-yoai-form-success/.test(cfHtml), `FAIL LIB7: contact form missing data-yoai-form-success`)
+assert.ok(/<button[^>]+type="submit"/.test(cfHtml), `FAIL LIB7: contact form missing submit <button>`)
+const cfGate = gateSiteHtml('<header><nav></nav></header><main><h1>x</h1>' + cfHtml + '</main><footer>f</footer>')
+assert.ok(cfGate.ok === true, `FAIL LIB7: a page with the contact form must pass the gate — got: ${JSON.stringify(cfGate)}`)
+
+// LIB8 — FAQ uses the EXISTING data-yoai-toggle hook: each question button targets
+// an answer panel id, and each answer panel starts `hidden` (the runtime opens it).
+const faqHtml = renderComponent('faq.accordion', SAMPLE_CONTENT['faq.accordion'], libDs, { id: 'b6' })
+assert.ok(/data-yoai-toggle="b6-faq-0"/.test(faqHtml), `FAIL LIB8: FAQ button missing data-yoai-toggle targeting the answer id`)
+assert.ok(/<div id="b6-faq-0"[^>]*\bhidden\b/.test(faqHtml), `FAIL LIB8: FAQ answer panel must start hidden (runtime toggles it)`)
+
+// LIB9 — A COMPOSED mini-page (navbar + hero + services + cta + contact + footer)
+// passes gateSiteHtml: exactly ONE <h1> (only the hero), landmarks present, sanitize
+// clean, under the size cap. This is the end-to-end proof the library contributes to
+// a gate-passing page through the EXISTING pipeline.
+const heroHtml = renderComponent('hero.minimal', SAMPLE_CONTENT['hero.minimal'], libDs, { id: 'b2' })
+const servicesHtml = renderComponent('services.grid', SAMPLE_CONTENT['services.grid'], libDs, { id: 'b3' })
+const ctaHtml = renderComponent('cta.band', SAMPLE_CONTENT['cta.band'], libDs, { id: 'b4' })
+const miniPage =
+  navHtml +
+  '<main>' +
+  heroHtml +
+  servicesHtml +
+  ctaHtml +
+  cfHtml +
+  '</main>' +
+  footHtml
+const pageGate = gateSiteHtml(miniPage)
+assert.ok(pageGate.ok === true, `FAIL LIB9: composed mini-page must pass the gate — got: ${JSON.stringify(pageGate)}`)
+// exactly one <h1> in the composed page (only the hero carries it).
+const $mini = load(pageGate.html)
+assert.strictEqual($mini('h1').length, 1, `FAIL LIB9: composed page must have exactly ONE <h1> (hero) — got ${$mini('h1').length}`)
+assert.ok($mini('header').length >= 1 && $mini('footer').length >= 1 && $mini('main').length >= 1, `FAIL LIB9: composed page missing landmarks`)
+
+// LIB10 — split-image hero is an alternative single-<h1> hero AND emits a well-formed
+// {{IMG: placeholder that resolveImagePlaceholders can later swap (no invented URL).
+const splitHero = renderComponent('hero.split-image', SAMPLE_CONTENT['hero.split-image'], libDs, { id: 'b2' })
+assert.ok(/\{\{IMG:[^}]+\}\}/.test(splitHero), `FAIL LIB10: split-image hero must use a {{IMG:query}} placeholder (never an invented URL)`)
+assert.ok(/<h1\b/.test(splitHero) && ($mini, true), `FAIL LIB10: split-image hero must carry the page <h1>`)
+const splitPageGate = gateSiteHtml(navHtml + '<main>' + splitHero + cfHtml + '</main>' + footHtml)
+assert.ok(splitPageGate.ok === true, `FAIL LIB10: split-image hero page must pass the gate — got: ${JSON.stringify(splitPageGate)}`)
+
+console.log('library OK')
