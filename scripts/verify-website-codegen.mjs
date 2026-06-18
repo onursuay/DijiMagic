@@ -1378,16 +1378,24 @@ console.log('block-patch OK')
 //   (CF-S) sanitize: <form data-yoai-form> + text/email/tel inputs + <textarea>
 //          SURVIVE; password/file/hidden/image inputs are COERCED to type=text;
 //          native action/method/onsubmit/formaction are STRIPPED; the honeypot
-//          (type=text) survives; data-yoai-form-action survives (serving sets it).
-//   (CF-A) assembleDocument: rewriteFormAction injects data-yoai-form-action in
-//          serve mode (formActionBase) and NOT in preview (no formActionBase).
-//   (CF-G) gate: a page with a sensitive input OR an external form action/formaction
-//          → ok:false (suspicious_form); the safe contact form PASSES.
+//          (type=text) survives. CRITICAL #3: an AI-authored data-yoai-form-action
+//          (single-quoted, double-quoted OR unquoted, any tag) is STRIPPED — the
+//          submit URL is SERVER-OWNED and can NEVER be authored by the AI.
+//   (CF-A) assembleDocument: injectFormAction adds the trusted same-origin action
+//          POST-sanitize in serve mode (formActionBase) and NOT in preview.
+//   (CF-G) gate: a page with a sensitive input, an external native action/formaction,
+//          OR a NON-same-origin data-yoai-form-action → ok:false (suspicious_form);
+//          the safe contact form (+ server same-origin action) PASSES.
+//   (CF-X) EXFILTRATION: an AI body with single-quoted AND unquoted external
+//          data-yoai-form-action → after sanitize NO external action survives;
+//          after SERVE injection the ONLY action is the same-origin /s/<sub>/lead
+//          (exactly once per form); PREVIEW injects nothing; the gate rejects a
+//          surviving non-'/' action.
 // ---------------------------------------------------------------------------
 
-// Re-grab the form-action rewrite from the assemble core (assembleDocument core
-// already imported above as assembleDocumentPath).
-const { rewriteFormAction } = await import(assembleDocumentPath)
+// Re-grab the POST-sanitize form-action injector from the assemble core
+// (assembleDocument core already imported above as assembleDocumentPath).
+const { injectFormAction } = await import(assembleDocumentPath)
 
 // A canonical, safe contact form exactly as the prompt instructs the model to emit.
 const safeForm =
@@ -1453,20 +1461,41 @@ assert.ok(!/formaction/i.test(cfActions), `FAIL CF-S3: formaction not stripped �
 assert.ok(/<form\b[^>]*data-yoai-form/i.test(cfActions), `FAIL CF-S3: form tag must survive (only attrs stripped) — got: ${cfActions}`)
 assert.ok(/<input\b[^>]*type="text"/i.test(cfActions), `FAIL CF-S3: safe input must survive — got: ${cfActions}`)
 
-// CF-S4 — data-yoai-form-action (set by the serving layer) survives sanitize.
-const cfFA = sanitizeSiteHtml('<form data-yoai-form data-yoai-form-action="/s/acme/lead"><input type="text" name="name"></form>')
-assert.ok(cfFA.includes('data-yoai-form-action="/s/acme/lead"'), `FAIL CF-S4: data-yoai-form-action stripped — got: ${cfFA}`)
+// CF-S4 — CRITICAL #3: an AI-authored data-yoai-form-action is STRIPPED by sanitize
+// (the submit URL is SERVER-OWNED, injected POST-sanitize — the AI can never set it).
+// data-yoai-form (the inert marker) is KEPT. Every quoting variant is neutralised.
+const cfFAdouble = sanitizeSiteHtml('<form data-yoai-form data-yoai-form-action="https://evil/x"><input type="text" name="name"></form>')
+assert.ok(!/data-yoai-form-action/i.test(cfFAdouble), `FAIL CF-S4: double-quoted AI form-action survived sanitize — got: ${cfFAdouble}`)
+assert.ok(/<form\b[^>]*data-yoai-form/i.test(cfFAdouble), `FAIL CF-S4: data-yoai-form marker must be KEPT — got: ${cfFAdouble}`)
+const cfFAsingle = sanitizeSiteHtml("<form data-yoai-form data-yoai-form-action='https://evil/x'><input type=\"text\" name=\"name\"></form>")
+assert.ok(!/data-yoai-form-action/i.test(cfFAsingle), `FAIL CF-S4: single-quoted AI form-action survived sanitize — got: ${cfFAsingle}`)
+const cfFAunq = sanitizeSiteHtml('<form data-yoai-form data-yoai-form-action=https://evil/x><input type="text" name="name"></form>')
+assert.ok(!/data-yoai-form-action/i.test(cfFAunq), `FAIL CF-S4: unquoted AI form-action survived sanitize — got: ${cfFAunq}`)
+// even on a non-form element (the global data-* glob must not re-permit it)
+const cfFAdiv = sanitizeSiteHtml('<div data-yoai-form-action="https://evil/x">x</div>')
+assert.ok(!/data-yoai-form-action/i.test(cfFAdiv), `FAIL CF-S4: AI form-action survived on a <div> — got: ${cfFAdiv}`)
+// OTHER data-yoai-* hooks must still survive (we only strip the action attr)
+const cfOtherData = sanitizeSiteHtml('<section data-yoai-reveal data-yoai-block="hero">x</section>')
+assert.ok(/data-yoai-reveal/.test(cfOtherData) && /data-yoai-block="hero"/.test(cfOtherData), `FAIL CF-S4: unrelated data-yoai-* hooks were stripped — got: ${cfOtherData}`)
 
-// CF-A1 — rewriteFormAction: serve mode injects data-yoai-form-action; preview does not.
-const rwForm = rewriteFormAction('<form data-yoai-form class="x"><input type="text" name="name"></form>', '/s/acme/lead')
+// CF-A1 — injectFormAction (POST-sanitize): serve injects the trusted action; empty
+// base is a no-op; result carries EXACTLY ONE same-origin action per form.
+const rwForm = injectFormAction('<form data-yoai-form class="x"><input type="text" name="name"></form>', '/s/acme/lead')
 assert.ok(rwForm.includes('data-yoai-form-action="/s/acme/lead"'), `FAIL CF-A1: action not injected in serve — got: ${rwForm}`)
-assert.ok(rwForm.includes('class="x"'), `FAIL CF-A1: existing attrs must be preserved — got: ${rwForm}`)
-// empty/undefined base → no-op (preview/thumb → optimistic success)
-assert.strictEqual(rewriteFormAction('<form data-yoai-form></form>', ''), '<form data-yoai-form></form>', `FAIL CF-A1: empty base must be a no-op`)
-assert.strictEqual(rewriteFormAction('<form data-yoai-form></form>', undefined), '<form data-yoai-form></form>', `FAIL CF-A1: undefined base must be a no-op`)
-// idempotent: a pre-existing action is replaced, not duplicated
-const rwTwice = rewriteFormAction(rwForm, '/s/acme/lead')
-assert.strictEqual((rwTwice.match(/data-yoai-form-action=/g) || []).length, 1, `FAIL CF-A1: action must not be duplicated on re-rewrite — got: ${rwTwice}`)
+assert.ok(/class="x"/.test(rwForm), `FAIL CF-A1: existing attrs must be preserved — got: ${rwForm}`)
+assert.strictEqual((rwForm.match(/data-yoai-form-action=/g) || []).length, 1, `FAIL CF-A1: exactly one action expected — got: ${rwForm}`)
+// empty/undefined base → no-op (preview/thumb → optimistic success); markup unchanged
+assert.strictEqual(injectFormAction('<form data-yoai-form></form>', ''), '<form data-yoai-form></form>', `FAIL CF-A1: empty base must be a no-op`)
+assert.strictEqual(injectFormAction('<form data-yoai-form></form>', undefined), '<form data-yoai-form></form>', `FAIL CF-A1: undefined base must be a no-op`)
+// a non-same-origin base is refused (defense-in-depth) → no-op
+assert.ok(!/data-yoai-form-action/i.test(injectFormAction('<form data-yoai-form></form>', 'https://evil/x')), `FAIL CF-A1: absolute base must NOT be injected`)
+assert.ok(!/data-yoai-form-action/i.test(injectFormAction('<form data-yoai-form></form>', '//evil/x')), `FAIL CF-A1: protocol-relative base must NOT be injected`)
+// idempotent: re-injecting yields exactly one action (no duplicate)
+const rwTwice = injectFormAction(rwForm, '/s/acme/lead')
+assert.strictEqual((rwTwice.match(/data-yoai-form-action=/g) || []).length, 1, `FAIL CF-A1: action must not be duplicated on re-inject — got: ${rwTwice}`)
+// pages WITHOUT a form are returned byte-for-byte unchanged (no cheerio reserialise)
+const noForm = '<main><h1>x</h1><p>no form here</p></main>'
+assert.strictEqual(injectFormAction(noForm, '/s/acme/lead'), noForm, `FAIL CF-A1: form-less body must be unchanged`)
 
 // CF-A2 — assembleDocument serve mode (formActionBase) injects the action;
 // preview mode (no formActionBase) leaves the form action-less.
@@ -1518,10 +1547,94 @@ assert.ok(cfGateAction.ok === false && cfGateAction.reason === 'suspicious_form'
 const cfGateFormAction = gateSiteHtml('<main><h1>x</h1><form data-yoai-form><button type="submit" formaction="https://evil.com/x">Go</button></form></main>')
 assert.ok(cfGateFormAction.ok === false && cfGateFormAction.reason === 'suspicious_form', `FAIL CF-G3: formaction must fail with suspicious_form — got: ${JSON.stringify(cfGateFormAction)}`)
 
-// CF-G4 — the gate's data-yoai-form-action (hyphenated) must NOT trip the formaction check
-// (it is the safe declarative hook, not a native formaction). Belt-and-suspenders.
+// CF-G4 — the SERVER's same-origin data-yoai-form-action (hyphenated) must NOT trip
+// the formaction check NOR the same-origin backstop (it is the safe declarative hook,
+// not a native formaction; '/s/acme/lead' is same-origin). Belt-and-suspenders.
 const cfGateHook = gateSiteHtml('<header><nav></nav></header><main><h1>x</h1><form data-yoai-form data-yoai-form-action="/s/acme/lead"><input type="text" name="name"></form></main><footer>f</footer>')
-assert.ok(cfGateHook.ok === true, `FAIL CF-G4: data-yoai-form-action must NOT be mistaken for a native formaction — got: ${JSON.stringify(cfGateHook)}`)
+assert.ok(cfGateHook.ok === true, `FAIL CF-G4: same-origin data-yoai-form-action must NOT be mistaken for a native/exfil action — got: ${JSON.stringify(cfGateHook)}`)
+
+// ---------------------------------------------------------------------------
+// CF-X — EXFILTRATION DEFENSE (CRITICAL #3): the AI tries to point the contact
+// form at an attacker URL via data-yoai-form-action. The server FULLY OWNS the
+// action: sanitize strips ANY AI value (every quoting variant); the server injects
+// the ONLY action (same-origin) POST-sanitize; preview injects nothing; the gate
+// rejects any surviving non-same-origin action.
+// ---------------------------------------------------------------------------
+
+// An AI body that emits the exfil attribute BOTH single-quoted AND unquoted, plus a
+// stray duplicate on a non-form element — the classic duplicate-attribute bypass.
+const exfilBody =
+  '<header><nav></nav></header><main><h1>İletişim</h1>' +
+  "<form data-yoai-form data-yoai-form-action='https://evil/single' data-yoai-form-action=https://evil/unquoted class=\"grid\">" +
+  '<input type="text" name="name"><input type="email" name="email">' +
+  '<textarea name="message"></textarea>' +
+  '<button type="submit">Gönder</button>' +
+  '</form>' +
+  '<div data-yoai-form-action="https://evil/div">x</div>' +
+  '</main><footer>f</footer>'
+
+// CF-X1 — after SANITIZE alone: NO external (evil) action survives anywhere.
+const exfilClean = sanitizeSiteHtml(exfilBody)
+assert.ok(!/data-yoai-form-action/i.test(exfilClean), `FAIL CF-X1: an AI form-action survived sanitize — got: ${exfilClean}`)
+assert.ok(!/evil/i.test(exfilClean), `FAIL CF-X1: an attacker URL survived sanitize — got: ${exfilClean}`)
+assert.ok(/<form\b[^>]*data-yoai-form/i.test(exfilClean), `FAIL CF-X1: the form marker must survive — got: ${exfilClean}`)
+
+// CF-X2 — after assembleDocument SERVE injection: the ONLY data-yoai-form-action is
+// the SERVER's same-origin /s/acme/lead, appearing EXACTLY ONCE (one form), no evil.
+const exfilServe = await assembleDocument({
+  bodyHtml: exfilBody,
+  designVars: {},
+  seo: { title: 'İletişim' },
+  lang: 'tr',
+  fontHref: null,
+  mode: 'serve',
+  formActionBase: '/s/acme/lead',
+})
+const exfilActions = exfilServe.match(/data-yoai-form-action="[^"]*"/gi) || []
+assert.strictEqual(exfilActions.length, 1, `FAIL CF-X2: expected exactly ONE data-yoai-form-action, got ${exfilActions.length} — ${JSON.stringify(exfilActions)}`)
+assert.strictEqual(exfilActions[0], 'data-yoai-form-action="/s/acme/lead"', `FAIL CF-X2: the ONLY action must be the server same-origin path — got: ${exfilActions[0]}`)
+assert.ok(!/evil/i.test(exfilServe), `FAIL CF-X2: an attacker URL leaked into the served document — got (excerpt): ${exfilServe.slice(exfilServe.indexOf('<body'), exfilServe.indexOf('<body') + 600)}`)
+
+// CF-X3 — PREVIEW mode (no formActionBase): NO data-yoai-form-action injected on the
+// form tag (runtime → optimistic success, no fetch). (Preview INLINES the runtime,
+// whose comment mentions the attribute name, so assert on the <form> TAG itself.)
+const exfilPreview = await assembleDocument({
+  bodyHtml: exfilBody,
+  designVars: {},
+  seo: { title: 'İletişim' },
+  lang: 'tr',
+  fontHref: null,
+  mode: 'preview',
+})
+const exfilPreviewFormTag = (exfilPreview.match(/<form\b[^>]*>/i) || [''])[0]
+assert.ok(!/data-yoai-form-action/i.test(exfilPreviewFormTag), `FAIL CF-X3: preview <form> must carry NO action (optimistic) — got tag: ${exfilPreviewFormTag}`)
+assert.ok(!/evil/i.test(exfilPreview), `FAIL CF-X3: an attacker URL leaked into the preview document`)
+
+// CF-X4 — the GATE rejects an AI body that authored a NON-same-origin form action
+// (single-quoted / double-quoted / unquoted — every classic quoting bypass).
+for (const evilForm of [
+  '<form data-yoai-form data-yoai-form-action="https://evil/x"><input type="text" name="n"></form>',
+  "<form data-yoai-form data-yoai-form-action='https://evil/x'><input type=\"text\" name=\"n\"></form>",
+  '<form data-yoai-form data-yoai-form-action=https://evil/x><input type="text" name="n"></form>',
+  '<form data-yoai-form data-yoai-form-action="//evil/x"><input type="text" name="n"></form>',
+]) {
+  const g = gateSiteHtml('<header><nav></nav></header><main><h1>x</h1>' + evilForm + '</main><footer>f</footer>')
+  assert.ok(g.ok === false && g.reason === 'suspicious_form', `FAIL CF-X4: external/exfil form-action must be rejected as suspicious_form — got: ${JSON.stringify(g)} for: ${evilForm}`)
+}
+
+// CF-X5 — BACKSTOP: even if a future allowlist regression let a non-same-origin
+// data-yoai-form-action SURVIVE into the gated (post-sanitize) body, the gate's
+// post-sanitize same-origin check rejects it. We import the gate's pure helper by
+// replicating its contract: a same-origin '/…' passes (CF-G4), a '//evil' / absolute
+// value is suspicious. (Asserted end-to-end via CF-X4 raw path; here we additionally
+// confirm the server same-origin action injected POST-sanitize PASSES the gate when
+// the gate is run on the SANITIZED-then-injected body.)
+const injectedThenGated = gateSiteHtml(
+  '<header><nav></nav></header><main><h1>x</h1>' +
+  injectFormAction(sanitizeSiteHtml('<form data-yoai-form><input type="text" name="n"></form>'), '/s/acme/lead') +
+  '</main><footer>f</footer>',
+)
+assert.ok(injectedThenGated.ok === true, `FAIL CF-X5: server same-origin injected action must PASS the gate — got: ${JSON.stringify(injectedThenGated)}`)
 
 // CF-P1 — the generation prompt now instructs a FUNCTIONAL form (data-yoai-form +
 // the field set) and STILL forbids credentials/payment/upload.
