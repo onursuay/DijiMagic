@@ -198,10 +198,10 @@ export default function WebsiteReviewPage() {
               {working && busy !== 'approve' && (
                 <div className="absolute inset-0 z-10 flex flex-col items-center justify-center bg-white/75 backdrop-blur-sm gap-4">
                   <div className="relative flex items-center justify-center">
-                    <span className="absolute inset-0 -m-6 rounded-full wsy-revising-glow" aria-hidden="true" />
-                    <Sparkles className="relative w-12 h-12 text-primary wsy-revising" />
+                    <span className="absolute inset-0 -m-9 rounded-full wsy-revising-glow" aria-hidden="true" />
+                    <Sparkles strokeWidth={1.25} className="relative w-[4.5rem] h-[4.5rem] text-primary wsy-revising" />
                   </div>
-                  <p className="text-base font-semibold text-primary wsy-revising">{t('revising')}</p>
+                  <p className="text-2xl font-light text-primary wsy-revising">{t('revising')}</p>
                 </div>
               )}
               <iframe
@@ -291,8 +291,8 @@ export default function WebsiteReviewPage() {
                   <button onClick={() => { setPanel(null); setFeedback('') }} disabled={working} className="rounded-lg px-4 py-2.5 text-sm font-medium text-gray-600 hover:bg-gray-100 transition-colors disabled:opacity-50">
                     {t('cancel')}
                   </button>
-                  <button onClick={() => revise(panel)} disabled={working || !feedback.trim()} className="inline-flex items-center gap-2 rounded-lg bg-primary px-5 py-2.5 text-sm font-semibold text-white active:scale-[0.97] transition-all disabled:opacity-50">
-                    <Send className="w-4 h-4" /> {working ? t('revising') : t('sendRevision')}
+                  <button onClick={() => revise(panel)} disabled={panel === 'reject' ? working : (working || !feedback.trim())} className="inline-flex items-center gap-2 rounded-lg bg-primary px-5 py-2.5 text-sm font-semibold text-white active:scale-[0.97] transition-all disabled:opacity-50">
+                    <Send className="w-4 h-4" /> {working ? t('revising') : (panel === 'reject' ? t('rejectAction') : t('sendRevision'))}
                   </button>
                 </div>
               </div>
