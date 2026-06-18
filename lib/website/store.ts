@@ -289,6 +289,22 @@ export async function unpublishWebsite(userId: string, id: string): Promise<Webs
 }
 
 /**
+ * PUBLIC iletişim formu için: bir kullanıcının (site sahibinin) e-postası.
+ * Site sahibinin user_id'sinden `signups.email` okunur — iletişim formu mesajı
+ * bu adrese yollanır. Bulunamazsa null (form yine başarı gösterir, e-posta no-op).
+ */
+export async function getOwnerEmailByUserId(userId: string): Promise<string | null> {
+  const db = requireClient()
+  const { data, error } = await db
+    .from('signups')
+    .select('email')
+    .eq('id', userId)
+    .maybeSingle()
+  if (error || !data) return null
+  return ((data as { email: string | null }).email) ?? null
+}
+
+/**
  * PUBLIC: alt alan adına göre YAYINLANMIŞ siteyi + sayfalarını döner.
  * Sahiplik gerektirmez; yalnız status='published' siteleri görünür.
  */

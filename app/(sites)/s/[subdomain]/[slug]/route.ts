@@ -54,6 +54,9 @@ export async function GET(
       // SLUG-SET-AWARE: nav links to a page that does not exist resolve to the
       // home base (/s/<sub>) instead of 404ing on /s/<sub>/<missing-slug>.
       knownSlugs: collectKnownSlugs(site),
+      // CONTACT FORM: a form on ANY page POSTs to the site's single lead endpoint
+      // /s/<sub>/lead (it lives at the subdomain root, not under the slug).
+      formActionBase: `/s/${params.subdomain}/lead`,
     })
     return new NextResponse(html, { headers })
   }

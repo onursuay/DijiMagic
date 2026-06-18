@@ -54,6 +54,13 @@ export interface AssembleDocumentArgs {
    * Omitted (back-compat) → legacy shape-only url-safe check.
    */
   knownSlugs?: string[]
+  /**
+   * CONTACT FORM: same-origin lead path injected as `data-yoai-form-action` on
+   * every `<form data-yoai-form>` (e.g. `/s/<sub>/lead`). Set ONLY in real serve
+   * mode (the `/s/` routes). Omitted in preview/thumb → the runtime falls back to
+   * OPTIMISTIC success (reveal, no real send). Server-controlled string; escaped.
+   */
+  formActionBase?: string
 }
 
 /**

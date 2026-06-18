@@ -54,8 +54,24 @@
  *   Intercepts click and smooth-scrolls to the target element.
  *   Falls back to instant scroll if prefers-reduced-motion.
  *
+ * CONTACT FORM  [data-yoai-form]  (declarative — NO AI script, NO native POST)
+ *   On submit the runtime preventDefaults and handles it itself:
+ *     1. HONEYPOT: reads the hidden input [data-yoai-honeypot] (or [name="company"]).
+ *        If non-empty → it's a bot: silently reveal the success element + drop (no send).
+ *     2. VALIDATION: name + email + message are required; email matches a simple regex.
+ *        On invalid → reveal [data-yoai-form-error] (or focus the offending field) and stop.
+ *     3. SUBMIT: collects {name,email,phone,message} by input `name`, disables the submit
+ *        button, and POSTs JSON to the action read from [data-yoai-form-action].
+ *        On 2xx → hide the form, reveal [data-yoai-form-success].
+ *        On non-2xx / network error → reveal [data-yoai-form-error] + re-enable.
+ *     4. PREVIEW (no data-yoai-form-action) → OPTIMISTIC: just reveal success, no fetch.
+ *   The action attribute is set by the SERVING layer (assembleDocument, serve mode) to a
+ *   same-origin path (/s/<sub>/lead). connect-src 'self' + form-action 'self' allow it.
+ *   Fail-open, no throw, no leaked globals; reduced-motion fine.
+ *
  * CSP NOTES
- *   No external requests. No eval. No dynamic script injection.
+ *   No external requests. No eval. No dynamic script injection. The contact form
+ *   POSTs to a SAME-ORIGIN path only (connect-src 'self').
  *   Safe for script-src 'self'; connect-src 'self'.
  */
 
@@ -354,6 +370,119 @@
     });
   }
 
+  /* ── Contact form (declarative submit → same-origin lead endpoint) ────────
+   * No AI script: the runtime owns submit. Honeypot + simple validation guard
+   * spam; the real spam/rate defense is server-side. Fail-open: any unexpected
+   * error is caught and surfaced via the error element, never thrown.
+   */
+  var EMAIL_RE = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+
+  function fieldByName(form, name) {
+    return form.querySelector('[name="' + name + '"]');
+  }
+
+  function valueOf(form, name) {
+    var el = fieldByName(form, name);
+    return el && typeof el.value === 'string' ? el.value.trim() : '';
+  }
+
+  function showHidden(el) {
+    if (!el) return;
+    el.hidden = false;
+    el.removeAttribute('hidden');
+  }
+
+  function handleFormSubmit(form) {
+    // Honeypot: a real (human-invisible) input. If a bot filled it → silent drop.
+    var honey = form.querySelector('[data-yoai-honeypot]') || fieldByName(form, 'company');
+    var successEl = form.querySelector('[data-yoai-form-success]');
+    var errorEl = form.querySelector('[data-yoai-form-error]');
+    var submitBtn = form.querySelector('button[type="submit"], button:not([type])');
+
+    // Hide any stale error before re-trying.
+    if (errorEl) { errorEl.hidden = true; errorEl.setAttribute('hidden', ''); }
+
+    if (honey && typeof honey.value === 'string' && honey.value.trim() !== '') {
+      // Bot — show success and drop silently (no fetch).
+      form.style.display = 'none';
+      showHidden(successEl);
+      return;
+    }
+
+    var name = valueOf(form, 'name');
+    var email = valueOf(form, 'email');
+    var phone = valueOf(form, 'phone');
+    var message = valueOf(form, 'message');
+
+    // Basic validation: name + email + message required; simple email shape.
+    var invalidField = null;
+    if (!name) invalidField = fieldByName(form, 'name');
+    else if (!email || !EMAIL_RE.test(email)) invalidField = fieldByName(form, 'email');
+    else if (!message) invalidField = fieldByName(form, 'message');
+
+    if (invalidField) {
+      if (errorEl) { showHidden(errorEl); }
+      try { invalidField.focus(); } catch (e) { /* ignore */ }
+      return;
+    }
+
+    var action = form.getAttribute('data-yoai-form-action');
+
+    // PREVIEW (no action wired) → optimistic success, no real send.
+    if (!action) {
+      form.style.display = 'none';
+      showHidden(successEl);
+      return;
+    }
+
+    // Disable submit during the request (re-enabled on failure).
+    if (submitBtn) submitBtn.disabled = true;
+
+    var done = false;
+    function onFailure() {
+      if (done) return;
+      done = true;
+      if (submitBtn) submitBtn.disabled = false;
+      showHidden(errorEl);
+    }
+    function onSuccess() {
+      if (done) return;
+      done = true;
+      form.style.display = 'none';
+      showHidden(successEl);
+    }
+
+    try {
+      fetch(action, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ name: name, email: email, phone: phone, message: message })
+      }).then(function (res) {
+        if (res && res.ok) onSuccess(); else onFailure();
+      }).catch(function () {
+        onFailure();
+      });
+    } catch (e) {
+      // Fail-open: if fetch is unavailable/threw synchronously, surface the error.
+      onFailure();
+    }
+  }
+
+  function initContactForm() {
+    document.addEventListener('submit', function (e) {
+      var form = e.target && e.target.closest
+        ? e.target.closest('[data-yoai-form]')
+        : null;
+      if (!form) return;
+      e.preventDefault();
+      try {
+        handleFormSubmit(form);
+      } catch (err) {
+        // Never let a handler error block the page.
+      }
+    });
+  }
+
   /* ── Init ─────────────────────────────────────────────────────────────── */
   function init() {
     // Fix 1: signal that JS is running so reveal elements can be safely hidden
@@ -362,6 +491,7 @@
     initToggle();
     initMobileNav();
     initSmoothScroll();
+    initContactForm();
   }
 
   if (document.readyState === 'loading') {

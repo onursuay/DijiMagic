@@ -60,6 +60,9 @@ export async function GET(
       // SLUG-SET-AWARE: nav links to a page that does not exist resolve to the
       // home base (/s/<sub>) instead of 404ing on /s/<sub>/<missing-slug>.
       knownSlugs: collectKnownSlugs(site),
+      // CONTACT FORM: <form data-yoai-form> POSTs to this same-origin lead path
+      // (connect-src 'self' + form-action 'self' allow it). The runtime reads it.
+      formActionBase: `/s/${params.subdomain}/lead`,
     })
     return new NextResponse(html, { headers })
   }

