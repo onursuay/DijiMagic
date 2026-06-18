@@ -13,7 +13,8 @@ import type { Website, WebsitePage } from '@/lib/website/types'
 
 type Device = 'desktop' | 'tablet' | 'mobile'
 const DESIGN_W: Record<Device, number> = { desktop: 1280, tablet: 834, mobile: 390 }
-const DESIGN_H = 820
+// Daha uzun tasarım yüksekliği → "tam ekran" hissi (önizleme görünür alanın çoğunu doldurur).
+const DESIGN_H = 960
 
 const LOCALE_NAMES: Record<string, string> = {
   tr: 'Türkçe', en: 'English', de: 'Deutsch', fr: 'Français', es: 'Español', ar: 'العربية', it: 'Italiano', ru: 'Русский',
@@ -130,8 +131,12 @@ export default function WebsiteReviewPage() {
         method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ action: 'publish' }),
       })
       const json = await res.json()
-      if (json.ok && json.website) { setSite(json.website); addToast(t('publishSuccess'), 'success') }
-      else addToast(json.error || t('publishError'), 'error')
+      if (json.ok && json.website) {
+        setSite(json.website)
+        // Yayın sonrası önizlemeyi de tazele (durum/içerik güncel görünsün).
+        setReloadKey((k) => k + 1)
+        addToast(t('publishSuccess'), 'success')
+      } else addToast(json.error || t('publishError'), 'error')
     } catch { addToast(t('publishError'), 'error') } finally { setBusy(null) }
   }
 

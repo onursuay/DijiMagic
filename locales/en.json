@@ -5991,6 +5991,7 @@
         "gateFailRefunded": "Couldn't generate the site — your credits were refunded."
       },
       "cardOpenEdit": "Open / Edit",
+      "siteCounter": "{current} / {total}",
       "cardPreviewTitle": "{label} home page preview",
       "cardPreviewLoading": "Loading preview…",
       "cardOpenAria": "Open and edit {label}"

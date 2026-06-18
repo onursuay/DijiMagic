@@ -54,7 +54,13 @@ export default function WebSiteYoneticisiPage() {
         description={t('pageDescription')}
         actionButton={{ label: t('newSite'), onClick: () => setWizardOpen(true) }}
       />
-      <div className="flex-1 overflow-y-auto app-content-surface p-6">
+      {/* Sites varken kaydırma kabı scroll-snap olur (tam-ekran galeri); diğer
+          durumlarda standart kaydırma korunur. */}
+      <div
+        className={`flex-1 overflow-y-auto app-content-surface p-6 ${
+          !loading && sites.length > 0 ? 'snap-y snap-mandatory scroll-smooth' : ''
+        }`}
+      >
         <div className="max-w-7xl mx-auto space-y-6">
           {loading ? (
             <p className="text-sm text-gray-500">…</p>

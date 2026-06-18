@@ -5991,6 +5991,7 @@
         "gateFailRefunded": "Site üretilemedi, krediniz iade edildi."
       },
       "cardOpenEdit": "Aç / Düzenle",
+      "siteCounter": "{current} / {total}",
       "cardPreviewTitle": "{label} ana sayfa önizlemesi",
       "cardPreviewLoading": "Önizleme yükleniyor…",
       "cardOpenAria": "{label} sitesini aç ve düzenle"
