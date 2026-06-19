@@ -6013,7 +6013,7 @@
         "aiPanelHint": "Doğal komutla siteyi düzenleyin. Bu panel yakında etkin olacak.",
         "aiPanelSoon": "Yakında",
         "inspectorTitle": "Müfettiş",
-        "inspectorHint": "Seçili bölümün özelliklerini buradan düzenleyeceksiniz. Yakında etkin olacak.",
+        "inspectorHint": "Tuvalde bir bölüme tıklayın; içeriğini buradan düzenleyin.",
         "inspectorSoon": "Yakında",
         "manageTitle": "Site Ayarları",
         "manageHint": "Alan adı, tasarım ve sürüm geçmişi yakında bu panelden yönetilecek.",
@@ -6023,7 +6023,40 @@
         "undoTooltip": "Geri Al (yakında)",
         "redoTooltip": "İleri Al (yakında)",
         "reviseTitle": "Revize",
-        "designSettings": "Tasarım ve Ayarlar"
+        "designSettings": "Tasarım ve Ayarlar",
+        "visualEdit": {
+          "toolbarLabel": "Bölüm araçları",
+          "editContent": "Metni düzenle",
+          "aiRewrite": "AI ile yeniden yaz",
+          "delete": "Sil",
+          "moveUp": "Yukarı taşı",
+          "moveDown": "Aşağı taşı",
+          "selectedBlock": "Seçili bölüm",
+          "unknownBlock": "Bölüm",
+          "editFieldsTitle": "İçeriği düzenle",
+          "fieldPlaceholder": "Yeni metni yazın (boş bırakılan alanlar korunur)",
+          "noEditableFields": "Bu bölümde düzenlenebilir metin alanı yok. AI ile yeniden yazmayı deneyin.",
+          "apply": "Uygula",
+          "aiRewriteTitle": "AI ile yeniden yaz",
+          "aiRewritePlaceholder": "Bu bölümü nasıl değiştirmek istediğinizi yazın…",
+          "clearSelection": "Seçimi temizle",
+          "applied": "Değişiklik uygulandı",
+          "category": {
+            "navigation": "Menü ve gezinme",
+            "hero": "Vitrin (hero)",
+            "content": "İçerik",
+            "form": "İletişim formu",
+            "features": "Özellikler",
+            "services": "Hizmetler",
+            "testimonials": "Yorumlar",
+            "pricing": "Fiyatlandırma",
+            "cta": "Eylem çağrısı",
+            "faq": "Sıkça sorulanlar",
+            "gallery": "Galeri",
+            "stats": "İstatistikler",
+            "team": "Ekip"
+          }
+        }
       }
     }
   },

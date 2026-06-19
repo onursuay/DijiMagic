@@ -6013,7 +6013,7 @@
         "aiPanelHint": "Edit the site with natural commands. This panel is coming soon.",
         "aiPanelSoon": "Coming soon",
         "inspectorTitle": "Inspector",
-        "inspectorHint": "Edit the selected section's properties here. Coming soon.",
+        "inspectorHint": "Click a section on the canvas to edit its content here.",
         "inspectorSoon": "Coming soon",
         "manageTitle": "Site Settings",
         "manageHint": "Domain, design and version history will be managed from this panel soon.",
@@ -6023,7 +6023,40 @@
         "undoTooltip": "Undo (coming soon)",
         "redoTooltip": "Redo (coming soon)",
         "reviseTitle": "Revise",
-        "designSettings": "Design & Settings"
+        "designSettings": "Design & Settings",
+        "visualEdit": {
+          "toolbarLabel": "Section tools",
+          "editContent": "Edit text",
+          "aiRewrite": "Rewrite with AI",
+          "delete": "Delete",
+          "moveUp": "Move up",
+          "moveDown": "Move down",
+          "selectedBlock": "Selected section",
+          "unknownBlock": "Section",
+          "editFieldsTitle": "Edit content",
+          "fieldPlaceholder": "Type the new text (blank fields are kept)",
+          "noEditableFields": "This section has no editable text fields. Try rewriting it with AI.",
+          "apply": "Apply",
+          "aiRewriteTitle": "Rewrite with AI",
+          "aiRewritePlaceholder": "Describe how you want this section changed…",
+          "clearSelection": "Clear selection",
+          "applied": "Change applied",
+          "category": {
+            "navigation": "Menu & navigation",
+            "hero": "Hero",
+            "content": "Content",
+            "form": "Contact form",
+            "features": "Features",
+            "services": "Services",
+            "testimonials": "Testimonials",
+            "pricing": "Pricing",
+            "cta": "Call to action",
+            "faq": "FAQ",
+            "gallery": "Gallery",
+            "stats": "Statistics",
+            "team": "Team"
+          }
+        }
       }
     }
   },

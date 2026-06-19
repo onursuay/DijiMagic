@@ -1,9 +1,11 @@
 'use client'
 
-import { useEffect, useRef, useState } from 'react'
+import { useCallback, useEffect, useRef, useState } from 'react'
 import { useTranslations } from 'next-intl'
 import { Sparkles } from 'lucide-react'
 import { DESIGN_W, type Device } from './DeviceSwitcher'
+import VisualEditLayer from './VisualEditLayer'
+import { parseSelectMessage, parseRect, type VisualEditOp, type VisualSelection } from './visualEditTypes'
 
 interface PreviewCanvasProps {
   websiteId: string
@@ -14,6 +16,23 @@ interface PreviewCanvasProps {
   reloadKey: number
   /** AI revize/işlem sürüyor → tuvalin üstüne "revize ediliyor" perdesi. */
   revising?: boolean
+  /**
+   * #builder-8b — VISUAL EDIT modu. Açıksa iframe `builder=1` ile yüklenir (assemble
+   * 'builder' → tuval içi seçim katmanı), postMessage ile blok seçimi dinlenir ve
+   * seçili bloğun üstüne overlay + araç çubuğu çizilir. Kapalıysa davranış AYNEN korunur.
+   */
+  builder?: boolean
+  selection?: VisualSelection | null
+  onSelect?: (sel: VisualSelection) => void
+  /** Patch sürüyor mu (araç çubuğu butonlarını devre dışı bırakır). */
+  busy?: VisualEditOp | null
+  canMoveUp?: boolean
+  canMoveDown?: boolean
+  onEditContent?: () => void
+  onAiRewrite?: () => void
+  onDelete?: () => void
+  onMoveUp?: () => void
+  onMoveDown?: () => void
 }
 
 /**
@@ -38,9 +57,21 @@ export default function PreviewCanvas({
   device,
   reloadKey,
   revising = false,
+  builder = false,
+  selection = null,
+  onSelect,
+  busy = null,
+  canMoveUp = false,
+  canMoveDown = false,
+  onEditContent,
+  onAiRewrite,
+  onDelete,
+  onMoveUp,
+  onMoveDown,
 }: PreviewCanvasProps) {
   const t = useTranslations('dashboard.webSiteYoneticisi')
   const areaRef = useRef<HTMLDivElement>(null)
+  const frameRef = useRef<HTMLIFrameElement>(null)
   const [area, setArea] = useState({ w: 0, h: 0 })
 
   // Merkez alanın gerçek boyutunu ölç → iframe'i bu alana sığacak (FILL) biçimde ölçekle.
@@ -52,6 +83,64 @@ export default function PreviewCanvas({
     setArea({ w: el.clientWidth, h: el.clientHeight })
     return () => ro.disconnect()
   }, [])
+
+  // #builder-8b — send a command to the in-iframe builder runtime (highlight/clear).
+  const postToFrame = useCallback((msg: Record<string, unknown>) => {
+    const win = frameRef.current?.contentWindow
+    if (!win) return
+    // The canvas inner iframe is sandboxed (opaque origin) → target '*'. The runtime
+    // only acts on commands from its parent window (e.source check), and the payload
+    // carries NO secrets (just a block id). No same-origin access is granted.
+    try { win.postMessage(msg, '*') } catch { /* ignore */ }
+  }, [])
+
+  // #builder-8b — live rect override (the runtime re-emits 'yoai:rect' on scroll/resize
+  // so the overlay tracks the block). Keyed off the selected block id; cleared on change.
+  const [liveRect, setLiveRect] = useState<VisualSelection['rect'] | null>(null)
+
+  // #builder-8b — listen for postMessage from the canvas iframe (select layer). The
+  // iframe is sandboxed (opaque origin → event.origin === 'null'); the robust channel
+  // check is event.source === the iframe's contentWindow. We additionally VALIDATE the
+  // payload shape (parseSelectMessage / parseRect) before acting — never trust raw data.
+  useEffect(() => {
+    if (!builder) return
+    const onMessage = (e: MessageEvent) => {
+      // SECURITY: only accept messages from OUR canvas iframe window (not any frame/tab).
+      if (!frameRef.current || e.source !== frameRef.current.contentWindow) return
+      const data = e.data as Record<string, unknown> | null
+      if (!data || typeof data !== 'object' || typeof data.type !== 'string') return
+
+      if (data.type === 'yoai:select') {
+        const sel = parseSelectMessage(data)
+        if (sel) { setLiveRect(null); onSelect?.(sel) }
+        return
+      }
+      if (data.type === 'yoai:rect') {
+        // Only refresh the rect of the CURRENTLY selected block (ignore stale ids).
+        const id = typeof data.blockId === 'string' ? data.blockId.trim() : ''
+        if (selection && id === selection.blockId) {
+          const r = parseRect(data.rect)
+          if (r) setLiveRect(r)
+        }
+        return
+      }
+      // 'yoai:ready' → re-assert the current selection so the in-iframe highlight matches
+      // the parent state after a reload (the parent state survives an iframe refresh).
+      if (data.type === 'yoai:ready' && selection) {
+        postToFrame({ type: 'yoai:highlight', blockId: selection.blockId })
+      }
+    }
+    window.addEventListener('message', onMessage)
+    return () => window.removeEventListener('message', onMessage)
+  }, [builder, onSelect, selection, postToFrame])
+
+  // Mirror the parent selection into the iframe highlight (and clear when deselected).
+  useEffect(() => {
+    if (!builder) return
+    if (selection) postToFrame({ type: 'yoai:highlight', blockId: selection.blockId })
+    else postToFrame({ type: 'yoai:clear' })
+    setLiveRect(null)
+  }, [builder, selection, postToFrame, reloadKey])
 
   const designW = DESIGN_W[device]
   // Tasarım yüksekliği: masaüstünde alanı dolduracak kadar uzun; mobil/tablette cihaz hissi için
@@ -67,6 +156,18 @@ export default function PreviewCanvas({
   const scale = Math.min(1.2, Math.max(0.1, Math.min(scaleW, scaleH)))
 
   const isMobileLike = device !== 'desktop'
+
+  // #builder-8b — the iframe's VISUAL top-left within the area, for overlay mapping.
+  // The iframe is horizontally centered (justify-center) at PADDING top, and scaled
+  // with transformOrigin 'top center', so the scaled box (designW*scale wide) is
+  // centered in the available width. left = PADDING + (availW - designW*scale)/2.
+  const iframeLeft = PADDING + Math.max(0, (availW - designW * scale) / 2)
+  const iframeTop = PADDING
+  // Use the live (scroll-updated) rect when present, else the selection's own rect.
+  const overlaySelection = selection
+    ? { ...selection, rect: liveRect ?? selection.rect }
+    : null
+  const showOverlay = builder && !!overlaySelection && !revising
 
   return (
     <div
@@ -89,9 +190,10 @@ export default function PreviewCanvas({
           Dış iframe SANDBOX'SUZ (same-origin owner preview sayfası — cookie gerekir); izolasyon
           o sayfanın İÇİNDEKİ sandbox'lı iframe'de (yukarıdaki nota bakın). */}
       <iframe
+        ref={frameRef}
         data-builder-frame
         key={`${locale}-${slug}-${reloadKey}`}
-        src={`/website-preview/${websiteId}?locale=${encodeURIComponent(locale)}&slug=${encodeURIComponent(slug)}`}
+        src={`/website-preview/${websiteId}?locale=${encodeURIComponent(locale)}&slug=${encodeURIComponent(slug)}${builder ? '&builder=1' : ''}`}
         title={t('builder.preview')}
         className="border-0 bg-white shrink-0"
         style={{
@@ -103,6 +205,26 @@ export default function PreviewCanvas({
           borderRadius: isMobileLike ? 28 : 12,
         }}
       />
+
+      {/* #builder-8b — seçili bloğun üstüne çizilen highlight + inline araç çubuğu.
+          Sandbox/izolasyon korunur: kutu, postMessage ile gelen rect'in (iframe koordinatı)
+          ölçek + ortalama ile parent koordinatına eşlenmesiyle çizilir; iç DOM'a erişilmez. */}
+      {showOverlay && (
+        <VisualEditLayer
+          selection={overlaySelection}
+          scale={scale}
+          iframeLeft={iframeLeft}
+          iframeTop={iframeTop}
+          busy={busy}
+          canMoveUp={canMoveUp}
+          canMoveDown={canMoveDown}
+          onEditContent={() => onEditContent?.()}
+          onAiRewrite={() => onAiRewrite?.()}
+          onDelete={() => onDelete?.()}
+          onMoveUp={() => onMoveUp?.()}
+          onMoveDown={() => onMoveDown?.()}
+        />
+      )}
     </div>
   )
 }

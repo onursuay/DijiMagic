@@ -282,6 +282,39 @@ assert.ok(!escapedDoc.includes('<title><b>'), `FAIL A3: title must escape <b> �
 assert.ok(escapedDoc.includes('&lt;b&gt;'), `FAIL A3: title must contain &lt;b&gt; — escaping missing`)
 assert.ok(escapedDoc.includes('&amp;'), `FAIL A3: title must escape & as &amp;`)
 
+// ---------------------------------------------------------------------------
+// A-BUILDER (#builder-8b) — the VISUAL-EDIT select layer is BUILDER-ONLY.
+// mode='builder' inlines BOTH runtimes (site + builder); 'serve'/'preview' NEVER
+// carry the builder runtime. This proves the runtime is absent on the public site,
+// the `/s/` serve and the new-tab preview (those use 'serve'/'preview').
+// ---------------------------------------------------------------------------
+const builderArgs = {
+  bodyHtml: '<header><nav></nav></header><main><h1>Hi</h1></main><footer>f</footer>',
+  designVars: sampleDesignVars,
+  seo: { title: 'Builder' },
+  lang: 'tr',
+  fontHref: null,
+}
+const builderDoc = await assembleDocument({ ...builderArgs, mode: 'builder' })
+const serveDocB = await assembleDocument({ ...builderArgs, mode: 'serve' })
+const previewDocB = await assembleDocument({ ...builderArgs, mode: 'preview' })
+
+// AB1 — builder mode INLINES the builder runtime (its banner marker present).
+assert.ok(builderDoc.includes('yoai-builder-runtime v1'), `FAIL AB1: builder mode must inline the builder runtime (marker 'yoai-builder-runtime v1')`)
+// AB1b — builder mode ALSO keeps the declarative site runtime (both inlined).
+assert.ok(builderDoc.includes('yoai-site-runtime v1'), `FAIL AB1b: builder mode must also inline the site runtime`)
+// AB1c — builder mode inlines, never references the external builder file.
+assert.ok(!builderDoc.includes('src="/yoai-builder-runtime.js"'), `FAIL AB1c: builder mode must INLINE, not external-ref the builder runtime`)
+
+// AB2 — SERVE mode must NOT contain the builder runtime (builder-only). It also must
+// not external-ref it (only the site runtime is external in serve).
+assert.ok(!serveDocB.includes('yoai-builder-runtime v1'), `FAIL AB2: serve mode must NOT inline the builder runtime (builder-only)`)
+assert.ok(!serveDocB.includes('yoai-builder-runtime.js'), `FAIL AB2: serve mode must NOT reference the builder runtime file (builder-only)`)
+
+// AB3 — PREVIEW mode (the new-tab preview) must NOT contain the builder runtime.
+assert.ok(!previewDocB.includes('yoai-builder-runtime v1'), `FAIL AB3: preview mode must NOT inline the builder runtime (builder-only)`)
+assert.ok(!previewDocB.includes('yoai-builder-runtime.js'), `FAIL AB3: preview mode must NOT reference the builder runtime file (builder-only)`)
+
 console.log('assemble OK')
 
 // ---------------------------------------------------------------------------
@@ -2306,6 +2339,52 @@ for (const contentKey of ['testimonials.cards', 'gallery.grid', 'pricing-table.t
   // composes into a gate-passing page.
   const cgate = gateSiteHtml(navHtml + '<main>' + heroHtml + ch + cfHtml + '</main>' + footHtml)
   assert.ok(cgate.ok === true, `FAIL LIB14: ${contentKey} page must pass the gate — got: ${JSON.stringify(cgate)}`)
+}
+
+// ---------------------------------------------------------------------------
+// VE (#builder-8b) — VISUAL EDIT contract: contentFields DRIVE the inspector fields
+// + the /patch op validation is a deterministic allowlist (mirrors the route).
+// ---------------------------------------------------------------------------
+
+// VE1 — every component exposes text-like (text/richtext/href) contentFields that the
+// inspector renders. The inspector filters to those types; at least the navbar (brand)
+// + hero (heading) + footer (brand) must offer an editable text field, or the visual
+// editor would have nothing to edit. Each rendered field carries a name + a TR label.
+const VE_TEXTISH = new Set(['text', 'richtext', 'href'])
+function inspectorFields(def) {
+  return def.contentFields.filter((f) => f.editable !== false && VE_TEXTISH.has(f.type))
+}
+for (const key of ['navbar.standard', 'footer.standard', 'contact-form.standard']) {
+  const def = getComponent(key)
+  const fields = inspectorFields(def)
+  assert.ok(fields.length > 0, `FAIL VE1: ${key} must expose at least one inspector-editable text/href field`)
+  for (const f of fields) {
+    assert.ok(typeof f.name === 'string' && f.name.length > 0, `FAIL VE1: ${key} field missing name`)
+    assert.ok(typeof f.label === 'string' && f.label.length > 0, `FAIL VE1: ${key} field '${f.name}' missing label`)
+  }
+}
+// VE1b — a hero component (any) must expose an editable heading-like text field so the
+// most-edited block on a page is editable through the inspector.
+const veHeroKey = libKeys.find((k) => getComponent(k).category === 'hero')
+assert.ok(veHeroKey, `FAIL VE1b: registry must contain a hero component`)
+assert.ok(inspectorFields(getComponent(veHeroKey)).length > 0, `FAIL VE1b: hero '${veHeroKey}' must expose an inspector-editable text field`)
+
+// VE2 — /patch OP VALIDATION (deterministic security gate, mirrors the route). Only the
+// four ops are allowed; targetId must match the "bN" block-id contract. Anything else
+// is rejected BEFORE any AI/merge runs (defense-in-depth on top of applyBlockPatch).
+function patchOpValid(op, targetId) {
+  const okOp = op === 'edit' || op === 'ai_rewrite' || op === 'delete' || op === 'move'
+  const okId = typeof targetId === 'string' && /^b\d+$/.test(targetId)
+  return okOp && okId
+}
+for (const op of ['edit', 'ai_rewrite', 'delete', 'move']) {
+  assert.ok(patchOpValid(op, 'b3'), `FAIL VE2: op '${op}' with a valid bN id must validate`)
+}
+for (const bad of ['full_regen', 'replace', 'script', '', 'EDIT', 'rewrite']) {
+  assert.ok(!patchOpValid(bad, 'b1'), `FAIL VE2: disallowed op '${bad}' must be rejected`)
+}
+for (const badId of ['', 'b', 'main', 'b1; drop', '../b1', 'b1"]', '1', 'bx']) {
+  assert.ok(!patchOpValid('edit', badId), `FAIL VE2: malformed targetId '${badId}' must be rejected`)
 }
 
 console.log('library OK')

@@ -17,6 +17,7 @@ import RightInspectorPanel from './RightInspectorPanel'
 import ManageDrawer from './ManageDrawer'
 import RevisePanel from './RevisePanel'
 import type { Device } from './DeviceSwitcher'
+import type { VisualEditOp, VisualSelection } from './visualEditTypes'
 
 type Busy = 'ai' | 'quick' | 'publish' | 'logo' | 'rollback' | 'reject' | 'edit' | 'approve' | null
 type RevisePanelMode = 'reject' | 'edit' | null
@@ -69,6 +70,10 @@ export default function BuilderWorkspace({ websiteId }: { websiteId: string }) {
   // Revize paneli (Onayla/Reddet/Düzenle)
   const [panel, setPanel] = useState<RevisePanelMode>(null)
   const [feedback, setFeedback] = useState('')
+
+  // #builder-8b — VISUAL EDIT: tuvalde tıkla-seç ile seçilen blok + patch durumu.
+  const [selection, setSelection] = useState<VisualSelection | null>(null)
+  const [editBusy, setEditBusy] = useState<VisualEditOp | null>(null)
 
   const fileInputRef = useRef<HTMLInputElement>(null)
 
@@ -183,6 +188,80 @@ export default function BuilderWorkspace({ websiteId }: { websiteId: string }) {
       addToast(t('buildError'), 'error')
     } finally { setBusy(null) }
   }
+
+  // ---- #builder-8b — VISUAL EDIT: cerrahi PATCH dispatcher (full regen YASAK) -------------
+  // Tüm görsel düzenleme op'ları tek endpoint'ten geçer: /api/website/<id>/patch.
+  // Başarı → setPages + reloadKey (tuval tazelenir, seçim korunur). 402 → kredi modali.
+  const dispatchPatch = useCallback(
+    async (
+      op: VisualEditOp,
+      extra: { content?: Record<string, string>; instruction?: string; after?: string } = {},
+    ) => {
+      if (!selection || editBusy) return
+      setEditBusy(op)
+      try {
+        const res = await fetch(`/api/website/${websiteId}/patch`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            op,
+            targetId: selection.blockId,
+            targetSlug: activeSlugSafe,
+            targetLocale: previewLocale,
+            ...extra,
+          }),
+        })
+        if (res.status === 402) { setCreditReason('website_revision_gate'); setShowCredit(true); return }
+        const json = await res.json().catch(() => null)
+        if (json?.ok) {
+          setPages(json.pages ?? [])
+          setReloadKey((k) => k + 1)
+          fetchVersions()
+          if (op === 'delete') setSelection(null) // silinen blok artık yok
+          addToast(t('builder.visualEdit.applied'), 'success')
+        } else {
+          addToast(json?.error || t('buildError'), 'error')
+        }
+      } catch {
+        addToast(t('buildError'), 'error')
+      } finally {
+        setEditBusy(null)
+      }
+    },
+    // activeSlugSafe/previewLocale değişkenleri render başında türetilir; bağımlılığa
+    // selection + editBusy + websiteId yeterli (slug/locale closure'dan okunur).
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+    [selection, editBusy, websiteId, t, fetchVersions],
+  )
+
+  // Move up/down — `order` (runtime'dan gelen blok sırası) ile `after` anchor hesaplanır.
+  const moveSelected = useCallback(
+    (dir: 'up' | 'down') => {
+      if (!selection) return
+      const order = selection.order
+      const idx = order.indexOf(selection.blockId)
+      if (idx === -1) return
+      if (dir === 'up') {
+        if (idx <= 0) return
+        // Önceki bloğun ÖNÜNE taşı = ondan-önceki bloğun ardına (ilk ise en başa).
+        const after = idx - 2 >= 0 ? order[idx - 2] : '__start__'
+        void dispatchPatch('move', { after })
+      } else {
+        if (idx >= order.length - 1) return
+        // Sonraki bloğun ARDINA taşı.
+        void dispatchPatch('move', { after: order[idx + 1] })
+      }
+    },
+    [selection, dispatchPatch],
+  )
+
+  const selIdx = selection ? selection.order.indexOf(selection.blockId) : -1
+  const canMoveUp = selIdx > 0
+  const canMoveDown = selIdx >= 0 && selIdx < (selection?.order.length ?? 0) - 1
+
+  // Tuval seçim olayları → seçimi parent'a al; sayfa/dil değişince seçimi temizle.
+  const handleSelect = useCallback((sel: VisualSelection) => setSelection(sel), [])
+  useEffect(() => { setSelection(null) }, [activeSlugSafe, previewLocale])
 
   const approve = async () => {
     setBusy('approve')
@@ -371,6 +450,17 @@ export default function BuilderWorkspace({ websiteId }: { websiteId: string }) {
               device={device}
               reloadKey={reloadKey}
               revising={isRevising}
+              builder
+              selection={selection}
+              onSelect={handleSelect}
+              busy={editBusy}
+              canMoveUp={canMoveUp}
+              canMoveDown={canMoveDown}
+              onEditContent={() => { /* inspector zaten sağ panelde açık */ }}
+              onAiRewrite={() => dispatchPatch('ai_rewrite', { instruction: '' })}
+              onDelete={() => dispatchPatch('delete')}
+              onMoveUp={() => moveSelected('up')}
+              onMoveDown={() => moveSelected('down')}
             />
             <div className="shrink-0 border-t border-gray-200 bg-white p-4">
               <RevisePanel
@@ -389,9 +479,16 @@ export default function BuilderWorkspace({ websiteId }: { websiteId: string }) {
             </div>
           </main>
 
-          {/* SAĞ — müfettiş (8b placeholder) */}
+          {/* SAĞ — müfettiş (#builder-8b — contentFields editörü + AI/sil aksiyonları) */}
           <aside className="hidden xl:flex w-80 shrink-0 flex-col border-l border-gray-200 bg-white p-4 overflow-y-auto">
-            <RightInspectorPanel />
+            <RightInspectorPanel
+              selection={selection}
+              busy={editBusy}
+              onApply={(content) => dispatchPatch('edit', { content })}
+              onAiRewrite={(instruction) => dispatchPatch('ai_rewrite', { instruction })}
+              onDelete={() => dispatchPatch('delete')}
+              onClear={() => setSelection(null)}
+            />
           </aside>
         </div>
       </div>
