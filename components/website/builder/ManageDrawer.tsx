@@ -1,8 +1,9 @@
 'use client'
 
-import { useTranslations, useLocale } from 'next-intl'
-import { X, Palette, ImagePlus, RefreshCw, History, RotateCcw, Settings } from 'lucide-react'
+import { useTranslations } from 'next-intl'
+import { X, Palette, ImagePlus, RefreshCw, Settings } from 'lucide-react'
 import DomainPanel from '@/components/website/DomainPanel'
+import VersionHistoryPanel from './VersionHistoryPanel'
 import type { WebsiteVersionMeta } from '@/lib/website/types'
 
 interface ManageDrawerProps {
@@ -37,18 +38,7 @@ export default function ManageDrawer({
   working,
 }: ManageDrawerProps) {
   const t = useTranslations('dashboard.webSiteYoneticisi')
-  const uiLocale = useLocale()
   if (!open) return null
-
-  const reasonLabel = (r: string) =>
-    r === 'revision' ? t('reasonRevision') : r === 'rollback' ? t('reasonRollback') : t('reasonInitial')
-  const fmtDate = (s: string) => {
-    try {
-      return new Date(s).toLocaleString(uiLocale === 'en' ? 'en-US' : 'tr-TR', { dateStyle: 'medium', timeStyle: 'short' })
-    } catch {
-      return s
-    }
-  }
 
   return (
     <div className="fixed inset-0 z-50 flex justify-end" role="dialog" aria-modal="true" aria-label={t('builder.manageTitle')}>
@@ -90,39 +80,13 @@ export default function ManageDrawer({
           {/* Kendi alan adı */}
           <DomainPanel websiteId={websiteId} />
 
-          {/* Sürüm geçmişi / geri al */}
-          {versions.length > 0 && (
-            <div className="rounded-xl border border-gray-200 overflow-hidden">
-              <div className="flex items-center gap-2 px-4 py-3 border-b border-gray-100">
-                <History className="w-4 h-4 text-gray-500" />
-                <span className="text-base font-medium text-gray-700">{t('historyTitle')}</span>
-                <span className="text-caption text-gray-400">({versions.length})</span>
-              </div>
-              <ul className="divide-y divide-gray-100">
-                {versions.map((v, i) => (
-                  <li key={v.id} className="flex items-center gap-3 px-4 py-2.5">
-                    <span className="inline-flex items-center rounded-full bg-gray-100 text-gray-700 text-caption px-2 py-0.5">
-                      {reasonLabel(v.reason)}
-                    </span>
-                    <span className="text-caption text-gray-500">{fmtDate(v.createdAt)}</span>
-                    {i === 0 ? (
-                      <span className="ml-auto w-2 h-2 rounded-full bg-emerald-500" title={t('currentVersion')} />
-                    ) : (
-                      <button
-                        type="button"
-                        onClick={() => onRollback(v.id)}
-                        disabled={working}
-                        className="ml-auto inline-flex items-center gap-1.5 rounded-lg border border-gray-200 px-2.5 py-1.5 text-caption font-medium text-gray-700 hover:bg-gray-50/60 transition-colors disabled:opacity-50"
-                      >
-                        <RotateCcw className="w-3.5 h-3.5" />
-                        {rollbackBusy ? t('rollingBack') : t('rollback')}
-                      </button>
-                    )}
-                  </li>
-                ))}
-              </ul>
-            </div>
-          )}
+          {/* Sürüm geçmişi / geri al (#builder-8c — onaylı geri-al) */}
+          <VersionHistoryPanel
+            versions={versions}
+            rollbackBusy={rollbackBusy}
+            working={working}
+            onRollback={onRollback}
+          />
         </div>
       </div>
     </div>

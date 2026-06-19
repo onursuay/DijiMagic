@@ -15,6 +15,7 @@ import {
   Settings,
 } from 'lucide-react'
 import DeviceSwitcher, { type Device } from './DeviceSwitcher'
+import CreditBalanceIndicator from './CreditBalanceIndicator'
 
 interface BuilderTopbarProps {
   websiteId: string
@@ -121,6 +122,9 @@ export default function BuilderTopbar({
 
         <span className="mx-1 hidden sm:block h-6 w-px bg-gray-200" aria-hidden="true" />
 
+        {/* #builder-8c — kredi bakiyesi (useCredits) */}
+        <CreditBalanceIndicator />
+
         <button
           type="button"
           onClick={onOpenPreview}
@@ -167,7 +171,7 @@ export default function BuilderTopbar({
           className="inline-flex items-center gap-1.5 rounded-lg bg-emerald-600 px-4 h-9 text-sm font-semibold text-white hover:bg-emerald-700 active:scale-[0.97] transition-all disabled:opacity-50"
         >
           <Globe className="w-4 h-4" />
-          {publishing ? t('publishing') : isPublished ? t('unpublish') : t('builder.publish')}
+          {publishing ? t('publishing') : isPublished ? t('builder.managePublish') : t('builder.publish')}
         </button>
       </div>
     </header>

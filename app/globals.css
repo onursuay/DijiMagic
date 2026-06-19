@@ -737,3 +737,12 @@ table tbody tr {
 @media (prefers-reduced-motion: reduce) {
   .animate-\[wsy-drawer-in_\.25s_ease\] { animation: none !important; }
 }
+
+/* #builder-8c — Yayınla popup'ı yumuşak açılış. */
+@keyframes wsy-pop-in {
+  from { transform: translateY(8px) scale(.98); opacity: 0; }
+  to   { transform: translateY(0)   scale(1);   opacity: 1; }
+}
+@media (prefers-reduced-motion: reduce) {
+  .animate-\[wsy-pop-in_\.2s_ease\] { animation: none !important; }
+}

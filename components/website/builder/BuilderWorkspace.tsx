@@ -9,13 +9,16 @@ import AccessRequiredModal from '@/components/billing/AccessRequiredModal'
 import DesignPanel from '@/components/website/DesignPanel'
 import WizardBuildingAnimation from '@/components/website/WizardBuildingAnimation'
 import type { Website, WebsitePage, WebsiteVersionMeta } from '@/lib/website/types'
+import { COMPONENTS } from '@/lib/website/codegen/library'
 import BuilderTopbar from './BuilderTopbar'
 import PreviewCanvas from './PreviewCanvas'
 import PageNavigator from './PageNavigator'
-import AiChatPanel from './AiChatPanel'
+import AiChatPanel, { type ChatMessage } from './AiChatPanel'
 import RightInspectorPanel from './RightInspectorPanel'
 import ManageDrawer from './ManageDrawer'
 import RevisePanel from './RevisePanel'
+import CreditUsageTimeline from './CreditUsageTimeline'
+import PublishPopup from './PublishPopup'
 import type { Device } from './DeviceSwitcher'
 import type { VisualEditOp, VisualSelection } from './visualEditTypes'
 
@@ -42,6 +45,8 @@ export default function BuilderWorkspace({ websiteId }: { websiteId: string }) {
   const router = useRouter()
   const search = useSearchParams()
   const t = useTranslations('dashboard.webSiteYoneticisi')
+  const tChat = useTranslations('dashboard.webSiteYoneticisi.builder.chat')
+  const tCat = useTranslations('dashboard.webSiteYoneticisi.builder.visualEdit')
 
   // Wizard'dan ?create=ai|quick ile gelindiyse üretim BAŞLAMIŞ kabul edilir (boş-durum flash etmez).
   const [createInitiated, setCreateInitiated] = useState(() => {
@@ -74,6 +79,12 @@ export default function BuilderWorkspace({ websiteId }: { websiteId: string }) {
   // #builder-8b — VISUAL EDIT: tuvalde tıkla-seç ile seçilen blok + patch durumu.
   const [selection, setSelection] = useState<VisualSelection | null>(null)
   const [editBusy, setEditBusy] = useState<VisualEditOp | null>(null)
+
+  // #builder-8c — AI sohbet thread'i + Yayınla popup'ı + markalı önizleme URL'i.
+  const [chatMessages, setChatMessages] = useState<ChatMessage[]>([])
+  const [showPublish, setShowPublish] = useState(false)
+  const [previewUrl, setPreviewUrl] = useState<string | null>(null)
+  const [loadingPreviewUrl, setLoadingPreviewUrl] = useState(false)
 
   const fileInputRef = useRef<HTMLInputElement>(null)
 
@@ -111,6 +122,10 @@ export default function BuilderWorkspace({ websiteId }: { websiteId: string }) {
   const working = busy !== null
   const reviseBusy = busy === 'reject' || busy === 'edit' || busy === 'approve' ? busy : null
   const pagePath = activeSlugSafe === 'home' ? '/' : `/${activeSlugSafe}`
+  // #builder-8c — sohbet komutu işleniyor mu (input + butonları kilitle); kredi timeline'ı
+  // hangi durumlarda canlı yoklasın (üretim/revizyon/blok-edit sürerken).
+  const chatBusy = busy === 'edit' || busy === 'reject' || editBusy === 'ai_rewrite'
+  const generationActive = busy === 'ai' || busy === 'quick' || busy === 'edit' || busy === 'reject' || editBusy !== null
 
   // ---- Üretim (build) + create-flow (wizard'dan otomatik başlatma) --------------------------
   const handleAi = async (override?: string) => {
@@ -263,6 +278,121 @@ export default function BuilderWorkspace({ websiteId }: { websiteId: string }) {
   const handleSelect = useCallback((sel: VisualSelection) => setSelection(sel), [])
   useEffect(() => { setSelection(null) }, [activeSlugSafe, previewLocale])
 
+  // ---- #builder-8c — AI SOHBET: seçili blok varsa /patch (ai_rewrite), yoksa /generate revize -----
+  // Seçili bloğun sade TR/EN etiketi (sohbet hedef satırı için; ham blockKey ASLA gösterilmez).
+  const selectedLabel = (() => {
+    if (!selection?.blockKey) return null
+    const def = COMPONENTS[selection.blockKey]
+    if (!def) return tCat('unknownBlock')
+    const label = tCat(`category.${def.category}`)
+    return label.startsWith('category.') ? tCat('unknownBlock') : label
+  })()
+
+  const pushChat = useCallback((role: ChatMessage['role'], text: string, pending = false) => {
+    const id = crypto.randomUUID()
+    setChatMessages((prev) => [...prev, { id, role, text, pending }])
+    return id
+  }, [])
+  const settleChat = useCallback((id: string, text: string) => {
+    setChatMessages((prev) => prev.map((m) => (m.id === id ? { ...m, text, pending: false } : m)))
+  }, [])
+
+  // Sohbet komutu — DÜZENLE modu. Blok seçiliyse cerrahi /patch (ai_rewrite, targetId),
+  // değilse sayfa-düzey /generate revize (revisionMode 'edit'). Tek charge yolu korunur.
+  const handleChatSubmit = useCallback(
+    async (text: string) => {
+      if (busy || editBusy) return
+      pushChat('user', text)
+      const asst = pushChat('assistant', tChat('applying'), true)
+      try {
+        if (selection) {
+          // Hedefli blok düzenleme → mevcut /patch (ai_rewrite).
+          setEditBusy('ai_rewrite')
+          const res = await fetch(`/api/website/${websiteId}/patch`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+              op: 'ai_rewrite',
+              targetId: selection.blockId,
+              targetSlug: activeSlugSafe,
+              targetLocale: previewLocale,
+              instruction: text,
+            }),
+          })
+          if (res.status === 402) { setCreditReason('website_revision_gate'); setShowCredit(true); settleChat(asst, tChat('needCredit')); return }
+          const json = await res.json().catch(() => null)
+          if (json?.ok) {
+            setPages(json.pages ?? [])
+            setReloadKey((k) => k + 1)
+            fetchVersions()
+            settleChat(asst, tChat('doneBlock', { block: selectedLabel ?? tCat('unknownBlock') }))
+          } else {
+            settleChat(asst, json?.error || tChat('failed'))
+          }
+        } else {
+          // Sayfa-düzey revize → mevcut /generate (revisionMode 'edit', hedef sayfa+dil).
+          setBusy('edit')
+          const res = await fetch(`/api/website/${websiteId}/generate`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ instructions: text, revisionMode: 'edit', targetSlug: activeSlugSafe, targetLocale: previewLocale }),
+          })
+          if (res.status === 402) { setCreditReason('website_revision_gate'); setShowCredit(true); settleChat(asst, tChat('needCredit')); return }
+          const json = await res.json().catch(() => null)
+          if (json?.ok) {
+            setPages(json.pages ?? [])
+            setReloadKey((k) => k + 1)
+            fetchVersions()
+            settleChat(asst, tChat('donePage'))
+          } else {
+            settleChat(asst, json?.error || tChat('failed'))
+          }
+        }
+      } catch {
+        settleChat(asst, tChat('failed'))
+      } finally {
+        setEditBusy(null); setBusy(null)
+      }
+    },
+    // activeSlugSafe/previewLocale render başında türetilir; closure'dan okunur.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+    [busy, editBusy, websiteId, selection, selectedLabel, pushChat, settleChat, fetchVersions, tChat, tCat],
+  )
+
+  // "Baştan üret" (reject) — seçimden bağımsız tüm sayfayı yeniden üretir (/generate revisionMode 'reject').
+  const handleChatRegenerate = useCallback(
+    async (text: string) => {
+      if (busy || editBusy) return
+      pushChat('user', text)
+      const asst = pushChat('assistant', tChat('regenerating'), true)
+      setBusy('reject')
+      try {
+        const res = await fetch(`/api/website/${websiteId}/generate`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ instructions: text, revisionMode: 'reject' }),
+        })
+        if (res.status === 402) { setCreditReason('website_revision_gate'); setShowCredit(true); settleChat(asst, tChat('needCredit')); return }
+        const json = await res.json().catch(() => null)
+        if (json?.ok) {
+          setPages(json.pages ?? [])
+          setActiveSlug('home')
+          setReloadKey((k) => k + 1)
+          fetchVersions()
+          settleChat(asst, tChat('doneRegenerate'))
+        } else {
+          settleChat(asst, json?.error || tChat('failed'))
+        }
+      } catch {
+        settleChat(asst, tChat('failed'))
+      } finally {
+        setBusy(null)
+      }
+    },
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+    [busy, editBusy, websiteId, pushChat, settleChat, fetchVersions, tChat],
+  )
+
   const approve = async () => {
     setBusy('approve')
     try {
@@ -271,19 +401,6 @@ export default function BuilderWorkspace({ websiteId }: { websiteId: string }) {
       })
       const json = await res.json()
       if (json.ok && json.website) { setSite(json.website); setReloadKey((k) => k + 1); addToast(t('publishSuccess'), 'success') }
-      else addToast(json.error || t('publishError'), 'error')
-    } catch { addToast(t('publishError'), 'error') } finally { setBusy(null) }
-  }
-
-  const handlePublishToggle = async () => {
-    const action = isPublished ? 'unpublish' : 'publish'
-    setBusy('publish')
-    try {
-      const res = await fetch(`/api/website/${websiteId}/publish`, {
-        method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ action }),
-      })
-      const json = await res.json()
-      if (json.ok && json.website) { setSite(json.website); if (action === 'publish') addToast(t('publishSuccess'), 'success') }
       else addToast(json.error || t('publishError'), 'error')
     } catch { addToast(t('publishError'), 'error') } finally { setBusy(null) }
   }
@@ -325,6 +442,46 @@ export default function BuilderWorkspace({ websiteId }: { websiteId: string }) {
         else window.open(res.url, '_blank', 'noopener,noreferrer')
       } else { tab?.close(); addToast(t('buildError'), 'error') }
     } catch { tab?.close(); addToast(t('buildError'), 'error') } finally { setOpeningPreview(false) }
+  }
+
+  // #builder-8c — Yayınla popup'ını aç + markalı önizleme URL'ini çek (.vercel.app ASLA).
+  const openPublishPopup = useCallback(async () => {
+    setShowPublish(true)
+    if (previewUrl || loadingPreviewUrl) return
+    setLoadingPreviewUrl(true)
+    try {
+      const res = await fetch(`/api/website/${websiteId}/preview-url`).then((r) => r.json()).catch(() => null)
+      if (res?.ok && res.url) setPreviewUrl(res.url)
+    } catch {
+      /* fail-soft — popup yine açılır, URL boş gösterilir */
+    } finally {
+      setLoadingPreviewUrl(false)
+    }
+  }, [websiteId, previewUrl, loadingPreviewUrl])
+
+  // Popup'tan yayınla — başarı toast + popup açık kalır (canlı URL görünür).
+  const publishFromPopup = async () => {
+    setBusy('publish')
+    try {
+      const res = await fetch(`/api/website/${websiteId}/publish`, {
+        method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ action: 'publish' }),
+      })
+      const json = await res.json()
+      if (json.ok && json.website) { setSite(json.website); setReloadKey((k) => k + 1); addToast(t('publishSuccess'), 'success') }
+      else addToast(json.error || t('publishError'), 'error')
+    } catch { addToast(t('publishError'), 'error') } finally { setBusy(null) }
+  }
+
+  const unpublishFromPopup = async () => {
+    setBusy('publish')
+    try {
+      const res = await fetch(`/api/website/${websiteId}/publish`, {
+        method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ action: 'unpublish' }),
+      })
+      const json = await res.json()
+      if (json.ok && json.website) setSite(json.website)
+      else addToast(json.error || t('publishError'), 'error')
+    } catch { addToast(t('publishError'), 'error') } finally { setBusy(null) }
   }
 
   // ESC → tam ekrandan çık
@@ -406,7 +563,7 @@ export default function BuilderWorkspace({ websiteId }: { websiteId: string }) {
           isPublished={isPublished}
           liveHref={liveHref}
           onManage={() => setShowManage(true)}
-          onPublish={handlePublishToggle}
+          onPublish={openPublishPopup}
           publishing={busy === 'publish'}
           working={working}
         />
@@ -437,8 +594,17 @@ export default function BuilderWorkspace({ websiteId }: { websiteId: string }) {
               activeSlug={activeSlugSafe}
               onSelect={setActiveSlug}
             />
+            {/* #builder-8c — kredi kullanım zaman çizelgesi (üretim/revizyon sürerken canlı) */}
+            <CreditUsageTimeline websiteId={websiteId} active={generationActive} reloadKey={reloadKey} />
             <div className="h-px bg-gray-100" />
-            <AiChatPanel />
+            {/* #builder-8c — doğal-dil sohbet ile düzenleme (seçili blok → /patch, yoksa sayfa revize) */}
+            <AiChatPanel
+              messages={chatMessages}
+              onSubmit={handleChatSubmit}
+              onRegenerate={handleChatRegenerate}
+              busy={chatBusy}
+              selectedLabel={selectedLabel}
+            />
           </aside>
 
           {/* ORTA — BÜYÜK canvas + alt aksiyon/revize barı */}
@@ -505,6 +671,19 @@ export default function BuilderWorkspace({ websiteId }: { websiteId: string }) {
         onRollback={handleRollback}
         rollbackBusy={busy === 'rollback'}
         working={working}
+      />
+
+      {/* #builder-8c — Yayınla popup'ı (markalı URL, .vercel.app ASLA; domain bağlama = Faz 2 stub) */}
+      <PublishPopup
+        open={showPublish}
+        onClose={() => setShowPublish(false)}
+        onPublish={publishFromPopup}
+        onUnpublish={unpublishFromPopup}
+        publishing={busy === 'publish'}
+        isPublished={isPublished}
+        liveHref={liveHref}
+        previewUrl={previewUrl}
+        loadingPreview={loadingPreviewUrl}
       />
 
       {showCredit && (
