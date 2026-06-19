@@ -124,6 +124,31 @@ export default function WebsiteReviewPage() {
     } finally { setBusy(null) }
   }
 
+  // #builder-7 — markalı yeni-sekme önizleme: /preview-url'den gerçek (markalı veya owner-gated)
+  // URL alınır ve YENİ sekmede açılır (sıkışık iframe yerine gerçek bir ziyaretçi görünümü).
+  // .vercel.app asla dönmez. Pop-up engelini aşmak için önce sekme açılır, sonra konumu set edilir.
+  const [openingPreview, setOpeningPreview] = useState(false)
+  const openNewTabPreview = async () => {
+    if (openingPreview) return
+    setOpeningPreview(true)
+    const tab = window.open('about:blank', '_blank', 'noopener,noreferrer')
+    try {
+      const res = await fetch(`/api/website/${id}/preview-url`).then((r) => r.json()).catch(() => null)
+      if (res?.ok && res.url) {
+        if (tab) tab.location.href = res.url
+        else window.open(res.url, '_blank', 'noopener,noreferrer')
+      } else {
+        tab?.close()
+        addToast(t('buildError'), 'error')
+      }
+    } catch {
+      tab?.close()
+      addToast(t('buildError'), 'error')
+    } finally {
+      setOpeningPreview(false)
+    }
+  }
+
   const approve = async () => {
     setBusy('approve')
     try {
@@ -181,7 +206,14 @@ export default function WebsiteReviewPage() {
                 ))}
               </div>
             )}
-            <div className="ml-auto inline-flex items-center rounded-lg border border-gray-200 p-0.5 bg-white">
+            <button
+              onClick={openNewTabPreview}
+              disabled={!site || openingPreview}
+              className="ml-auto inline-flex items-center gap-2 rounded-lg border border-gray-200 bg-white px-4 py-2 text-sm font-medium text-gray-700 hover:shadow-md transition-all duration-300 disabled:opacity-50"
+            >
+              <ExternalLink className="w-4 h-4" /> {t('openInNewTab')}
+            </button>
+            <div className="inline-flex items-center rounded-lg border border-gray-200 p-0.5 bg-white">
               {deviceBtn('desktop', Monitor)}
               {deviceBtn('tablet', Tablet)}
               {deviceBtn('mobile', Smartphone)}

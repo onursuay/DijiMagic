@@ -32,6 +32,12 @@ export interface ThemeTokens {
   dataSourcePriority?: 'reference' | 'manual' | null
   /** Faz 3: siteye bağlı kullanıcı domaini (ör. firma.com). theme jsonb'sinde tutulur. */
   customDomain?: string | null
+  /**
+   * #builder-7: markalı yeni-sekme TASLAK önizleme için tahmini-zor token (rastgele, kısa).
+   * `<token>.preview.<root>` host'unu siteye eşler (token = kapı → erişim sahip oturumu GEREKTİRMEZ
+   * ama tahmin edilemez). İlk istekte üretilir (migration yok); theme jsonb'sinde tutulur.
+   */
+  previewToken?: string | null
   /** Wizard'da girilen ilk marka açıklaması/tarif (ilk AI üretim talimatı). theme jsonb'sinde tutulur. */
   initialInstructions?: string | null
   /** Faz B: site tarzı (modern|corporate|playful|luxury|minimal|vibrant). theme jsonb'sinde tutulur. */
