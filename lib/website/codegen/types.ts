@@ -96,3 +96,77 @@ export interface DesignSystem {
     durations: number[]
   }
 }
+
+// ---------------------------------------------------------------------------
+// Stage 1.5 — SITE BLUEPRINT (Bölüm 4.7 / 5.1 of the master plan).
+//
+// The blueprint is the single decree of generation: it extends the multipage
+// page plan (multipagePlan.ts) with PER-PAGE BLOCK assignments — each block is a
+// named library component (componentKey ∈ the real registry) + a preset + a
+// layout archetype + the editable content. The composition engine
+// (compositionEngine.mjs) and renderer consume this; htmlGenerate / the
+// deterministic fallback render each block from it.
+//
+// Anti-clone (Bölüm 5): two sites of the SAME industry differ because the
+// composition engine picks a DIFFERENT subset/order of components+presets from
+// the industry template's pool (seed-driven). The blueprint is the data those
+// rules operate on.
+// ---------------------------------------------------------------------------
+
+/**
+ * One renderable block on a page. The atom the composition engine orders and the
+ * renderer (free-form Opus OR the deterministic fallback) materialises.
+ */
+export interface BlueprintBlock {
+  /** Stable per-page id → data-yoai-id (e.g. 'b1'). Sequential within a page. */
+  id: string
+  /** Library registry key → data-yoai-block (e.g. 'hero.split-image'). MUST exist in COMPONENTS. */
+  componentKey: string
+  /**
+   * Named composition variation of the component (e.g. 'split-image', 'tiers').
+   * Defaults to the componentKey's suffix when the generator omits it; purely a
+   * label that travels with the block (the renderer keys off componentKey).
+   */
+  presetKey: string
+  /**
+   * Layout archetype carried for the anti-generic post-checks (e.g.
+   * 'asymmetric-split', 'full-bleed', 'card-grid', 'centered-stack', 'band').
+   * The composition engine forbids two CONSECUTIVE blocks sharing an archetype.
+   */
+  archetype: string
+  /**
+   * The block's editable content — shaped to the component's contentFields.
+   * Images stay as {{IMG:query}} placeholders (the model never invents URLs).
+   */
+  content: Record<string, unknown>
+}
+
+/**
+ * A single page of the blueprint — mirrors a PlannedPage (multipagePlan) plus
+ * the ordered block list that fills it.
+ */
+export interface BlueprintPage {
+  /** BCP47-ish locale this page is authored in (the site default locale). */
+  locale: string
+  /** url-safe slug (home === 'home'); unique within the site. */
+  slug: string
+  /** Coerced PageRole (home | about | services | products | contact | …). */
+  pageRole: string
+  /** 0-based order in the sitemap (home === 0). */
+  orderIndex: number
+  /** The ordered blocks that compose this page (navbar … content … footer). */
+  blocks: BlueprintBlock[]
+}
+
+/**
+ * THE SITE BLUEPRINT — the enriched output of blueprintGenerator (replaces the
+ * bare multipagePlan output downstream). One per generation.
+ */
+export interface SiteBlueprint {
+  /** Chosen industry template key (industryTemplates.mjs) or null (free / unmatched). */
+  industryTemplateKey: string | null
+  /** Stage-1 DesignSystem (palette/font/spacing/motion) — half of the anti-clone signature. */
+  designSystem: DesignSystem
+  /** The site's pages, home first, each with its block list. */
+  pages: BlueprintPage[]
+}

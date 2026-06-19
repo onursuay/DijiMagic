@@ -153,3 +153,62 @@ export const renderComponent: (
 
 /** HTML-escape helper (shared with the renderers). */
 export const esc: (value: unknown) => string = _esc as (value: unknown) => string
+
+// ---------------------------------------------------------------------------
+// Industry templates (Bölüm 4.3) — typed wrapper over industryTemplates.mjs.
+// ---------------------------------------------------------------------------
+
+// eslint-disable-next-line @typescript-eslint/ban-ts-comment
+// @ts-ignore — .mjs imported from TS; Next.js/Turbopack resolves it fine at runtime
+import {
+  INDUSTRY_TEMPLATES as _INDUSTRY_TEMPLATES,
+  SHARED_POOLS as _SHARED_POOLS,
+  listIndustryTemplateKeys as _listIndustryTemplateKeys,
+  getIndustryTemplate as _getIndustryTemplate,
+  allPooledComponentKeys as _allPooledComponentKeys,
+} from './industryTemplates.mjs'
+
+/** A booking shape a template leans on (mock flows — Bölüm 4.6). */
+export type BookingMode = 'reservation' | 'ticket' | 'none'
+/** A commerce shape a template leans on (mock flows — Bölüm 4.6). */
+export type CommerceMode = 'ecommerce' | 'none'
+
+/**
+ * An industry template — a page-plan SKELETON + a per-page component POOL +
+ * optional token hints. NOT fixed content; the composition engine picks a varied
+ * subset from each pool (seed-driven) → anti-clone.
+ */
+export interface IndustryTemplate {
+  /** Template key (e.g. 'otel'). */
+  key: string
+  /** Recommended PageRole set (home first, contact present). */
+  defaultPages: string[]
+  /** Per PageRole, a POOL of EXISTING registry component keys to pick from. */
+  componentPool: Record<string, string[]>
+  /** Optional palette/font/spacing hints (NOT mandatory — DesignSystem owns the real tokens). */
+  tokenSuggestions: Partial<DesignSystem>
+  /** The sector's booking shape (mock). */
+  bookingMode?: BookingMode
+  /** The sector's commerce shape (mock). */
+  commerceMode?: CommerceMode
+}
+
+/** The full industry-template registry, keyed by template key. */
+export const INDUSTRY_TEMPLATES: Record<string, IndustryTemplate> =
+  _INDUSTRY_TEMPLATES as Record<string, IndustryTemplate>
+
+/** Scaffolding pools shared across templates (navbar / footer / contact slots). */
+export const SHARED_POOLS: Record<'nav' | 'footer' | 'contact', string[]> =
+  _SHARED_POOLS as Record<'nav' | 'footer' | 'contact', string[]>
+
+/** All registered industry template keys, in registry order. */
+export const listIndustryTemplateKeys: () => string[] =
+  _listIndustryTemplateKeys as () => string[]
+
+/** Look up an IndustryTemplate by key (undefined if unknown). */
+export const getIndustryTemplate: (key: string) => IndustryTemplate | undefined =
+  _getIndustryTemplate as (key: string) => IndustryTemplate | undefined
+
+/** Every distinct component key referenced by any template's componentPool. */
+export const allPooledComponentKeys: () => string[] =
+  _allPooledComponentKeys as () => string[]

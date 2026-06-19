@@ -2125,3 +2125,298 @@ for (const contentKey of ['testimonials.cards', 'gallery.grid', 'pricing-table.t
 }
 
 console.log('library OK')
+
+// ---------------------------------------------------------------------------
+// INDUSTRY-TEMPLATES section — the sector seed (#builder-3, Bölüm 4.3).
+//
+// Every template's componentPool must reference ONLY keys that EXIST in the real
+// component registry (no invented keys — the composition engine validates against
+// it). Each of the 11 industries is present, home-first defaultPages + contact.
+// ---------------------------------------------------------------------------
+
+const industryTemplatesPath = path.join(__dirname, '../lib/website/codegen/library/industryTemplates.mjs')
+const {
+  INDUSTRY_TEMPLATES,
+  listIndustryTemplateKeys,
+  getIndustryTemplate,
+  allPooledComponentKeys,
+} = await import(industryTemplatesPath)
+
+// PAGE_ROLES lives in the multipage planner core (single source of truth).
+const { PAGE_ROLES } = await import(multipagePlanPath)
+
+const REGISTRY_KEYS = new Set(listComponentKeys())
+const EXPECTED_INDUSTRIES = [
+  'otel', 'restoran', 'feribot-bilet', 'klinik', 'ajans', 'e-ticaret',
+  'kurumsal', 'hizmet-landing', 'rezervasyon', 'egitim', 'gayrimenkul',
+]
+
+// IT1 — all 11 industries are registered.
+const itKeys = listIndustryTemplateKeys()
+assert.strictEqual(itKeys.length, 11, `FAIL IT1: expected 11 industry templates — got ${itKeys.length}: ${itKeys.join(',')}`)
+for (const ind of EXPECTED_INDUSTRIES) {
+  assert.ok(getIndustryTemplate(ind), `FAIL IT1: industry template '${ind}' is not registered`)
+}
+
+// IT2 — EVERY componentPool key EXISTS in the real registry (no invented keys).
+const pooled = allPooledComponentKeys()
+assert.ok(pooled.length > 0, `FAIL IT2: no pooled component keys found`)
+for (const key of pooled) {
+  assert.ok(REGISTRY_KEYS.has(key), `FAIL IT2: pooled component key '${key}' is NOT in the real registry — invented keys are forbidden`)
+}
+
+// IT3 — each template is well-formed: defaultPages home-first + contact, pools per
+// declared page role, optional booking/commerce modes from the allowed sets.
+for (const key of itKeys) {
+  const tpl = getIndustryTemplate(key)
+  assert.ok(tpl && tpl.key === key, `FAIL IT3: getIndustryTemplate('${key}') mismatch`)
+  assert.ok(Array.isArray(tpl.defaultPages) && tpl.defaultPages.length >= 3, `FAIL IT3: ${key} defaultPages must have >=3 roles`)
+  assert.strictEqual(tpl.defaultPages[0], 'home', `FAIL IT3: ${key} defaultPages must start with 'home'`)
+  assert.ok(tpl.defaultPages.includes('contact'), `FAIL IT3: ${key} defaultPages must include 'contact'`)
+  for (const role of tpl.defaultPages) {
+    assert.ok(PAGE_ROLES.includes(role), `FAIL IT3: ${key} defaultPages role '${role}' is not a valid PageRole`)
+  }
+  assert.ok(tpl.componentPool && typeof tpl.componentPool === 'object', `FAIL IT3: ${key} missing componentPool`)
+  // every page role MUST have a non-empty pool that includes a navbar + footer option.
+  for (const role of tpl.defaultPages) {
+    const rolePool = tpl.componentPool[role]
+    assert.ok(Array.isArray(rolePool) && rolePool.length > 0, `FAIL IT3: ${key} componentPool['${role}'] must be a non-empty pool`)
+    assert.ok(rolePool.some((k) => REGISTRY_KEYS.has(k) && getComponent(k).blockTag === 'header'), `FAIL IT3: ${key} pool['${role}'] must offer a navbar`)
+    assert.ok(rolePool.includes('footer.standard'), `FAIL IT3: ${key} pool['${role}'] must offer footer.standard`)
+  }
+  if (tpl.bookingMode !== undefined) {
+    assert.ok(['reservation', 'ticket', 'none'].includes(tpl.bookingMode), `FAIL IT3: ${key} bad bookingMode '${tpl.bookingMode}'`)
+  }
+  if (tpl.commerceMode !== undefined) {
+    assert.ok(['ecommerce', 'none'].includes(tpl.commerceMode), `FAIL IT3: ${key} bad commerceMode '${tpl.commerceMode}'`)
+  }
+}
+
+console.log('industry-templates OK')
+
+// ---------------------------------------------------------------------------
+// BLUEPRINT section — validateBlueprint + deterministic fallback (#builder-3,
+// Bölüm 4.7 / 5). A valid sample blueprint passes unchanged-in-shape; an invalid
+// one (bad componentKey / missing contact / empty) is coerced/fallback'd to a
+// VALID blueprint built from an industry template. No live API.
+// ---------------------------------------------------------------------------
+
+const blueprintSharedPath = path.join(__dirname, '../lib/website/codegen/blueprintGeneratorShared.mjs')
+const {
+  validateBlueprint,
+  buildFallbackBlueprint,
+  isUsableBlueprint,
+  buildBlueprintSystemPrompt,
+  buildBlueprintUserMessage,
+} = await import(blueprintSharedPath)
+
+const bpDs = SAFE_DEFAULT_DESIGN_SYSTEM
+const NAV = 'navbar.standard'
+const FOOT = 'footer.standard'
+
+// A clean, valid sample blueprint (home first, contact present, real keys).
+const validSampleBlueprint = {
+  industryTemplateKey: 'otel',
+  pages: [
+    {
+      slug: 'home', pageRole: 'home', blocks: [
+        { id: 'b1', componentKey: NAV, presetKey: 'standard', archetype: 'nav', content: {} },
+        { id: 'b2', componentKey: 'hero.full-background', presetKey: 'full-background', archetype: 'full-bleed', content: { heading: 'Deniz manzaralı konaklama' } },
+        { id: 'b3', componentKey: 'services.grid', presetKey: 'grid', archetype: 'card-grid', content: { heading: 'Odalarımız', items: [{ title: 'Suit', body: 'Geniş suit.' }] } },
+        { id: 'b4', componentKey: 'gallery.grid', presetKey: 'grid', archetype: 'mosaic-grid', content: { heading: 'Galeri', items: [{ imageQuery: 'hotel room sea view', caption: 'Oda' }] } },
+        { id: 'b5', componentKey: FOOT, presetKey: 'standard', archetype: 'footer', content: {} },
+      ],
+    },
+    {
+      slug: 'galeri', pageRole: 'gallery', blocks: [
+        { id: 'b1', componentKey: NAV, presetKey: 'standard', archetype: 'nav', content: {} },
+        { id: 'b2', componentKey: 'hero.minimal', presetKey: 'minimal', archetype: 'centered-stack', content: { heading: 'Galeri' } },
+        { id: 'b3', componentKey: 'gallery.grid', presetKey: 'grid', archetype: 'mosaic-grid', content: { heading: 'Çalışmalar', items: [{ imageQuery: 'hotel lobby', caption: 'Lobi' }] } },
+        { id: 'b4', componentKey: FOOT, presetKey: 'standard', archetype: 'footer', content: {} },
+      ],
+    },
+    {
+      slug: 'iletisim', pageRole: 'contact', blocks: [
+        { id: 'b1', componentKey: NAV, presetKey: 'standard', archetype: 'nav', content: {} },
+        { id: 'b2', componentKey: 'hero.minimal', presetKey: 'minimal', archetype: 'centered-stack', content: { heading: 'İletişim' } },
+        { id: 'b3', componentKey: 'contact-form.standard', presetKey: 'standard', archetype: 'form-stack', content: { heading: 'Bize ulaşın' } },
+        { id: 'b4', componentKey: FOOT, presetKey: 'standard', archetype: 'footer', content: {} },
+      ],
+    },
+  ],
+}
+
+// BP1 — a VALID blueprint passes validation + stays usable, home first, contact present.
+const bp1 = validateBlueprint(validSampleBlueprint, bpDs, COMPONENTS, INDUSTRY_TEMPLATES, { locale: 'tr', industryTemplateKey: 'otel', seed: 'site-a' })
+assert.ok(isUsableBlueprint(bp1, COMPONENTS), `FAIL BP1: a valid sample blueprint must be usable — got: ${JSON.stringify(bp1).slice(0, 300)}`)
+assert.strictEqual(bp1.pages[0].slug, 'home', `FAIL BP1: home must be first`)
+assert.strictEqual(bp1.pages[0].pageRole, 'home', `FAIL BP1: first page role must be 'home'`)
+assert.ok(bp1.pages.some((p) => p.pageRole === 'contact'), `FAIL BP1: a contact page must be present`)
+assert.ok(bp1.pages.length >= 3 && bp1.pages.length <= 6, `FAIL BP1: 3..6 pages — got ${bp1.pages.length}`)
+assert.strictEqual(bp1.designSystem, bpDs, `FAIL BP1: designSystem must be threaded through`)
+// every block key must be a real registry key.
+for (const p of bp1.pages) for (const b of p.blocks) {
+  assert.ok(COMPONENTS[b.componentKey], `FAIL BP1: block uses non-registry key '${b.componentKey}'`)
+}
+// the contact page carries the contact form.
+const bp1Contact = bp1.pages.find((p) => p.pageRole === 'contact')
+assert.ok(bp1Contact.blocks.some((b) => b.componentKey === 'contact-form.standard'), `FAIL BP1: contact page must carry the contact form`)
+
+// BP2 — INVALID blueprint: bad component keys, NO contact page, an empty page →
+// coerced/fallback to a VALID blueprint (bad keys dropped, contact added, scaffold filled).
+const invalidBlueprint = {
+  industryTemplateKey: 'klinik',
+  pages: [
+    {
+      slug: 'home', pageRole: 'home', blocks: [
+        { id: 'b1', componentKey: 'navbar.standard', presetKey: 'standard', archetype: 'nav', content: {} },
+        { id: 'b2', componentKey: 'hero.NONEXISTENT', presetKey: 'x', archetype: 'x', content: {} }, // invalid → dropped
+        { id: 'b3', componentKey: 'totally.fake', presetKey: 'x', archetype: 'x', content: {} },       // invalid → dropped
+        { id: 'b4', componentKey: 'footer.standard', presetKey: 'standard', archetype: 'footer', content: {} },
+      ],
+    },
+    { slug: 'bos', pageRole: 'about', blocks: [] }, // EMPTY page → scaffold filled
+    // NO contact page at all.
+  ],
+}
+const bp2 = validateBlueprint(invalidBlueprint, bpDs, COMPONENTS, INDUSTRY_TEMPLATES, { locale: 'tr', industryTemplateKey: 'klinik', seed: 'site-b' })
+assert.ok(isUsableBlueprint(bp2, COMPONENTS), `FAIL BP2: invalid blueprint must coerce to a usable one — got: ${JSON.stringify(bp2).slice(0, 400)}`)
+assert.ok(bp2.pages.some((p) => p.pageRole === 'contact'), `FAIL BP2: a contact page must be ADDED when missing`)
+// no fake key survived anywhere.
+const flatKeys = bp2.pages.flatMap((p) => p.blocks.map((b) => b.componentKey))
+assert.ok(!flatKeys.includes('hero.NONEXISTENT') && !flatKeys.includes('totally.fake'), `FAIL BP2: invalid component keys must be DROPPED — got: ${flatKeys.join(',')}`)
+for (const k of flatKeys) assert.ok(COMPONENTS[k], `FAIL BP2: surviving key '${k}' must be a real registry key`)
+// the previously empty page now has blocks (scaffold filled).
+for (const p of bp2.pages) assert.ok(p.blocks.length >= 1, `FAIL BP2: page '${p.slug}' must not be empty after coercion`)
+
+// BP3 — totally empty / null input → deterministic FALLBACK from the template.
+const bp3 = validateBlueprint(null, bpDs, COMPONENTS, INDUSTRY_TEMPLATES, { locale: 'tr', industryTemplateKey: 'restoran', seed: 'site-c' })
+assert.ok(isUsableBlueprint(bp3, COMPONENTS), `FAIL BP3: null input must yield a usable fallback blueprint`)
+assert.strictEqual(bp3.industryTemplateKey, 'restoran', `FAIL BP3: fallback must carry the template key`)
+assert.strictEqual(bp3.pages[0].slug, 'home', `FAIL BP3: fallback home first`)
+assert.ok(bp3.pages.some((p) => p.pageRole === 'contact'), `FAIL BP3: fallback must include contact`)
+
+// BP4 — buildFallbackBlueprint directly: every page has navbar(first)+footer(last)+
+// a hero, and every block key is real. Works even with an unknown template (→ generic).
+const fb = buildFallbackBlueprint(bpDs, getIndustryTemplate('gayrimenkul'), COMPONENTS, 'tr', 'site-d')
+assert.ok(isUsableBlueprint(fb, COMPONENTS), `FAIL BP4: buildFallbackBlueprint must be usable`)
+for (const p of fb.pages) {
+  assert.ok(getComponent(p.blocks[0].componentKey).blockTag === 'header', `FAIL BP4: page '${p.slug}' must start with a navbar`)
+  assert.ok(getComponent(p.blocks[p.blocks.length - 1].componentKey).blockTag === 'footer', `FAIL BP4: page '${p.slug}' must end with a footer`)
+  assert.ok(p.blocks.some((b) => getComponent(b.componentKey).category === 'hero'), `FAIL BP4: page '${p.slug}' must contain a hero`)
+}
+// unknown template → still usable (generic pads).
+const fbNone = buildFallbackBlueprint(bpDs, undefined, COMPONENTS, 'en', 'site-e')
+assert.ok(isUsableBlueprint(fbNone, COMPONENTS), `FAIL BP4: fallback with no template must still be usable`)
+assert.strictEqual(fbNone.industryTemplateKey, null, `FAIL BP4: no-template fallback key must be null`)
+
+// BP5 — the generation prompt advertises the JSON shape + the real-keys-only rule.
+const bpSys = buildBlueprintSystemPrompt()
+assert.ok(typeof bpSys === 'string' && bpSys.length > 400, `FAIL BP5: blueprint system prompt too short`)
+assert.ok(/componentKey/.test(bpSys) && /ONLY/i.test(bpSys), `FAIL BP5: prompt must constrain componentKey to the available list`)
+assert.ok(/\{\{IMG:/.test(bpSys), `FAIL BP5: prompt must keep the {{IMG:}} placeholder rule`)
+assert.ok(/consecutive/i.test(bpSys), `FAIL BP5: prompt must carry the no-consecutive-archetype rule`)
+const bpUser = buildBlueprintUserMessage(
+  { brandName: 'Deniz Otel', locale: 'tr', style: 'luxury', instruction: '', untrustedBlocks: [] },
+  getIndustryTemplate('otel'),
+  bpDs,
+  listComponentKeys(),
+)
+assert.ok(/Available components/.test(bpUser), `FAIL BP5: user message must list available components`)
+assert.ok(listComponentKeys().every((k) => bpUser.includes(k)), `FAIL BP5: user message must include every registry key in the available list`)
+
+console.log('blueprint OK')
+
+// ---------------------------------------------------------------------------
+// COMPOSITION section — compositionEngine determinism + anti-clone (#builder-3,
+// Bölüm 4.8 / 5). Same (blueprint, seed) → identical output; no two consecutive
+// blocks share an archetype; same industry template + TWO different seeds →
+// DIFFERENT blueprintSignature (variety proven). No live API.
+// ---------------------------------------------------------------------------
+
+const compositionPath = path.join(__dirname, '../lib/website/codegen/compositionEngine.mjs')
+const {
+  composeBlueprint,
+  blueprintSignature,
+  hasNoConsecutiveArchetype,
+  pickVariedSubset,
+  archetypeOf,
+} = await import(compositionPath)
+
+// CO1 — DETERMINISM: same (blueprint, seed) → byte-identical composed output.
+const compA1 = composeBlueprint(bp1, bpDs, 'seed-xyz')
+const compA2 = composeBlueprint(bp1, bpDs, 'seed-xyz')
+assert.deepStrictEqual(compA1, compA2, `FAIL CO1: composeBlueprint must be deterministic for the same (blueprint, seed)`)
+
+// CO2 — NO two CONSECUTIVE blocks share an archetype on any page (the invariant).
+assert.ok(hasNoConsecutiveArchetype(compA1), `FAIL CO2: composed plan must have no consecutive same-archetype blocks`)
+for (const page of compA1.pages) {
+  for (let i = 1; i < page.blocks.length; i++) {
+    assert.ok(
+      archetypeOf(page.blocks[i]) !== archetypeOf(page.blocks[i - 1]),
+      `FAIL CO2: page '${page.slug}' has consecutive archetype '${archetypeOf(page.blocks[i])}' at ${i}`,
+    )
+  }
+  // composition metadata is attached.
+  for (const b of page.blocks) {
+    assert.ok(b.composition && typeof b.composition.spacing === 'string' && typeof b.composition.contrast === 'string', `FAIL CO2: block '${b.id}' missing composition rhythm metadata`)
+  }
+}
+
+// CO2b — a blueprint that DELIBERATELY repeats an archetype is FIXED by the engine.
+const repeatBp = {
+  industryTemplateKey: null, designSystem: bpDs,
+  pages: [{
+    locale: 'tr', slug: 'home', pageRole: 'home', orderIndex: 0, blocks: [
+      { id: 'b1', componentKey: NAV, presetKey: 'standard', archetype: 'nav', content: {} },
+      { id: 'b2', componentKey: 'hero.minimal', presetKey: 'minimal', archetype: 'centered-stack', content: {} },
+      { id: 'b3', componentKey: 'services.grid', presetKey: 'grid', archetype: 'card-grid', content: {} },
+      { id: 'b4', componentKey: 'testimonials.cards', presetKey: 'cards', archetype: 'card-grid', content: {} }, // repeat!
+      { id: 'b5', componentKey: 'pricing-table.tiers', presetKey: 'tiers', archetype: 'card-grid', content: {} }, // repeat!
+      { id: 'b6', componentKey: FOOT, presetKey: 'standard', archetype: 'footer', content: {} },
+    ],
+  }],
+}
+const repeatComposed = composeBlueprint(repeatBp, bpDs, 'seed-r')
+assert.ok(hasNoConsecutiveArchetype(repeatComposed), `FAIL CO2b: engine must break a deliberate consecutive-archetype run — got: ${repeatComposed.pages[0].blocks.map(archetypeOf).join(',')}`)
+
+// CO3 — pickVariedSubset determinism + variety: same seed → same pick; subset ⊆
+// pool, no dups, count clamped. Variety = across a span of seeds the engine yields
+// MORE THAN ONE distinct pick (two arbitrary seeds may coincide — that's fine; the
+// guarantee is that the pick is seed-SENSITIVE, not that every pair differs).
+const pool = ['hero.minimal', 'hero.split-image', 'services.grid', 'gallery.grid', 'testimonials.cards', 'pricing-table.tiers']
+const pickA = pickVariedSubset(pool, 3, 'seed-1')
+const pickAagain = pickVariedSubset(pool, 3, 'seed-1')
+assert.deepStrictEqual(pickA, pickAagain, `FAIL CO3: pickVariedSubset must be deterministic for the same seed`)
+assert.strictEqual(new Set(pickA).size, pickA.length, `FAIL CO3: pick must have no duplicates`)
+assert.ok(pickA.every((k) => pool.includes(k)), `FAIL CO3: pick must be a subset of the pool`)
+assert.strictEqual(pickVariedSubset(pool, 99, 's').length, pool.length, `FAIL CO3: count clamped to pool size`)
+assert.deepStrictEqual(pickVariedSubset(pool, 0, 's'), [], `FAIL CO3: count 0 → empty`)
+// seed-sensitivity: across many seeds we see >1 distinct pick.
+const co3picks = new Set()
+for (let i = 0; i < 40; i++) co3picks.add(pickVariedSubset(pool, 3, `seed-${i}`).join('|'))
+assert.ok(co3picks.size > 1, `FAIL CO3: pickVariedSubset must be seed-sensitive (multiple distinct picks across seeds) — got only ${co3picks.size}`)
+
+// CO4 — ANTI-CLONE: SAME industry template + different seeds → DIFFERENT
+// blueprintSignature (variety proven). Built via the deterministic fallback so the
+// pool-driven variety is the only difference (palette/font identical here). The
+// signature is 8 hex chars + deterministic for the same blueprint.
+const cloneSeedA = buildFallbackBlueprint(bpDs, getIndustryTemplate('ajans'), COMPONENTS, 'tr', 'tenant-A')
+const sigA = blueprintSignature(cloneSeedA)
+assert.ok(/^[0-9a-f]{8}$/.test(sigA), `FAIL CO4: signature must be 8 hex chars — got: ${sigA}`)
+assert.strictEqual(blueprintSignature(cloneSeedA), sigA, `FAIL CO4: blueprintSignature must be deterministic for the same blueprint`)
+// Across a span of seeds for the SAME template we get MORE THAN ONE signature
+// (two arbitrary seeds may coincide; the guarantee is that variety EXISTS).
+const co4sigs = new Set()
+for (let i = 0; i < 30; i++) {
+  co4sigs.add(blueprintSignature(buildFallbackBlueprint(bpDs, getIndustryTemplate('ajans'), COMPONENTS, 'tr', `tenant-${i}`)))
+}
+assert.ok(co4sigs.size > 1, `FAIL CO4: same industry + different seeds must yield DIFFERENT signatures (anti-clone) — got only ${co4sigs.size} distinct`)
+
+// CO5 — signature also changes when the THEME (palette/font) changes, even with the
+// same composition (the other half of anti-clone).
+const altDs = { ...bpDs, palette: { ...bpDs.palette, accent: '#123456' } }
+const themed = { ...cloneSeedA, designSystem: altDs }
+assert.notStrictEqual(blueprintSignature(themed), sigA, `FAIL CO5: a palette change must change the signature`)
+
+console.log('composition OK')
