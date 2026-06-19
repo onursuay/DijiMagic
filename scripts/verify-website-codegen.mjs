@@ -1741,12 +1741,101 @@ const SAMPLE_CONTENT = {
       { label: 'Gizlilik', href: '#privacy' },
     ],
   },
+  'navbar.centered-logo': {
+    brandName: 'Acme Studio',
+    links: [
+      { label: 'Hizmetler', href: '#services' },
+      { label: 'Hakkımızda', href: '#about' },
+      { label: 'SSS', href: '#faq' },
+      { label: 'İletişim', href: '#contact' },
+    ],
+    ctaLabel: 'Teklif Al',
+    ctaHref: '#contact',
+  },
+  'navbar.left-logo-right-cta': {
+    brandName: 'Acme Studio',
+    links: [
+      { label: 'Hizmetler', href: '#services' },
+      { label: 'Hakkımızda', href: '#about' },
+      { label: 'İletişim', href: '#contact' },
+    ],
+    ctaLabel: 'Teklif Al',
+    ctaHref: '#contact',
+  },
+  'hero.full-background': {
+    eyebrow: 'Yeni sezon',
+    heading: 'Markanızı öne çıkaran dijital deneyim',
+    subheading: 'Tam ekran, sinematik bir karşılama.',
+    ctaLabel: 'Başlayın',
+    ctaHref: '#contact',
+    imageQuery: 'modern architecture dramatic light wide',
+    imageAlt: 'Mimari',
+  },
+  'hero.service-business': {
+    heading: 'Bölgenizin güvenilir hizmet ortağı',
+    subheading: 'Hızlı, şeffaf ve garantili.',
+    points: ['Hızlı dönüş', 'Şeffaf fiyatlandırma', 'Garantili işçilik'],
+    ctaLabel: 'Ücretsiz teklif alın',
+    ctaHref: '#contact',
+    phoneLabel: 'Bizi arayın',
+    phoneHref: '#contact',
+    imageQuery: 'friendly service professional at work daylight',
+    imageAlt: 'Hizmet uzmanı',
+  },
+  'hero.corporate': {
+    eyebrow: 'Kurumsal',
+    heading: 'Kurumunuzu ileriye taşıyan çözümler',
+    subheading: 'Ölçeklenebilir, güvenli ve ölçülebilir.',
+    ctaLabel: 'Görüşme planlayın',
+    ctaHref: '#contact',
+    secondaryLabel: 'Hizmetleri gör',
+    secondaryHref: '#services',
+    stats: [
+      { value: '120+', label: 'Tamamlanan proje' },
+      { value: '%98', label: 'Müşteri memnuniyeti' },
+      { value: '15 yıl', label: 'Sektör deneyimi' },
+    ],
+  },
+  'hero.luxury': {
+    eyebrow: 'Atölye',
+    heading: 'Zarafetin yeni tanımı',
+    subheading: 'Her detay özenle tasarlandı.',
+    ctaLabel: 'Koleksiyonu keşfedin',
+    ctaHref: '#contact',
+  },
+  'testimonials.cards': {
+    heading: 'Müşterilerimiz ne diyor',
+    subheading: 'Gerçek geri bildirimler.',
+    items: [
+      { quote: 'Sürecin her adımında yanımızdaydılar.', name: 'Elif Y.', role: 'Pazarlama Müdürü' },
+      { quote: 'Markamızı tam yansıtan bir site.', name: 'Murat K.', role: 'Kurucu', avatarQuery: 'portrait founder smiling' },
+      { quote: 'İletişim çok netti.', name: 'Selin A.', role: 'Operasyon' },
+    ],
+  },
+  'gallery.grid': {
+    heading: 'Çalışmalarımız',
+    subheading: 'Seçili işler.',
+    items: [
+      { imageQuery: 'brand identity flat lay studio', caption: 'Marka kimliği' },
+      { imageQuery: 'responsive website mockup laptop', caption: 'Web tasarımı' },
+      { imageQuery: 'product photography minimal', caption: 'Ürün çekimi' },
+    ],
+  },
+  'pricing-table.tiers': {
+    heading: 'Şeffaf fiyatlandırma',
+    subheading: 'Size uygun planı seçin.',
+    tiers: [
+      { name: 'Başlangıç', price: '₺2.500', period: 'aylık', features: ['Tek sayfa site', 'Mobil uyumlu'], ctaLabel: 'Başlayın', ctaHref: '#contact' },
+      { name: 'Profesyonel', price: '₺4.900', period: 'aylık', features: ['Çok sayfalı site', 'Gelişmiş SEO'], ctaLabel: 'Teklif alın', ctaHref: '#contact', featured: true, badge: 'En popüler' },
+      { name: 'Kurumsal', price: 'Özel', period: 'projeye göre', features: ['Özel geliştirme', 'Öncelikli destek'], ctaLabel: 'İletişime geçin', ctaHref: '#contact' },
+    ],
+  },
 }
 
 // LIB1 — the registry is non-empty + every key resolves to a ComponentDef with the
 // full contract shape (key, category, blockTag, contentFields, promptHint, render).
 const libKeys = listComponentKeys()
-assert.ok(Array.isArray(libKeys) && libKeys.length >= 8, `FAIL LIB1: expected >=8 registered components — got: ${JSON.stringify(libKeys)}`)
+assert.ok(Array.isArray(libKeys) && libKeys.length >= 17, `FAIL LIB1: expected >=17 registered components (builder-1 8 + builder-2 9 variants) — got: ${JSON.stringify(libKeys)}`)
 for (const key of libKeys) {
   const def = getComponent(key)
   assert.ok(def && def.key === key, `FAIL LIB1: getComponent('${key}') mismatch`)
@@ -1758,15 +1847,36 @@ for (const key of libKeys) {
     assert.ok(['text', 'richtext', 'image', 'href', 'list'].includes(f.type), `FAIL LIB1: ${key} field '${f.name}' bad type '${f.type}'`)
     assert.ok(typeof f.required === 'boolean', `FAIL LIB1: ${key} field '${f.name}' missing required:boolean`)
     assert.ok(typeof f.label === 'string' && f.label, `FAIL LIB1: ${key} field '${f.name}' missing label`)
+    // Optional editable:false marks an intentional non-inspector override (still
+    // declared so the completeness contract covers it).
+    assert.ok(f.editable === undefined || typeof f.editable === 'boolean', `FAIL LIB1: ${key} field '${f.name}' editable must be boolean when present`)
+    // Optional list item sub-shape — when present, each sub-field is well-formed.
+    if (f.item !== undefined) {
+      assert.ok(f.type === 'list', `FAIL LIB1: ${key} field '${f.name}' has item[] but is not type:'list'`)
+      assert.ok(Array.isArray(f.item) && f.item.length > 0, `FAIL LIB1: ${key} field '${f.name}' item[] must be a non-empty array`)
+      for (const sub of f.item) {
+        assert.ok(sub && typeof sub.name === 'string', `FAIL LIB1: ${key} field '${f.name}' item sub-field missing name`)
+        assert.ok(['text', 'richtext', 'image', 'href', 'list'].includes(sub.type), `FAIL LIB1: ${key} field '${f.name}' item sub-field '${sub.name}' bad type '${sub.type}'`)
+        assert.ok(typeof sub.label === 'string' && sub.label, `FAIL LIB1: ${key} field '${f.name}' item sub-field '${sub.name}' missing label`)
+      }
+    }
   }
   assert.ok(typeof def.promptHint === 'string' && def.promptHint.length > 30, `FAIL LIB1: ${key} promptHint too short`)
   assert.ok(typeof def.deterministicRender === 'function', `FAIL LIB1: ${key} missing deterministicRender`)
 }
 
-// LIB2 — the required quality-critical + proof-set keys are all present.
+// LIB2 — the required quality-critical + proof-set keys are all present
+// (builder-1 foundation + builder-2 variant expansion).
 for (const key of [
+  // builder-1 foundation
   'navbar.standard', 'footer.standard', 'contact-form.standard',
   'hero.minimal', 'hero.split-image', 'services.grid', 'cta.band', 'faq.accordion',
+  // builder-2: hero variants
+  'hero.full-background', 'hero.service-business', 'hero.corporate', 'hero.luxury',
+  // builder-2: navbar variants
+  'navbar.centered-logo', 'navbar.left-logo-right-cta',
+  // builder-2: content variants
+  'testimonials.cards', 'gallery.grid', 'pricing-table.tiers',
 ]) {
   assert.ok(getComponent(key), `FAIL LIB2: required component '${key}' is not registered`)
 }
@@ -1810,8 +1920,9 @@ for (const key of libKeys) {
   assert.ok(!/<script/i.test(clean) && !/\son[a-z]+\s*=/i.test(clean), `FAIL LIB3: ${key} produced a forbidden script/handler`)
 }
 
-// LIB4 — listComponents(category) filters correctly.
-assert.ok(listComponents('hero').length === 2, `FAIL LIB4: expected 2 hero components — got: ${listComponents('hero').map((d) => d.key).join(',')}`)
+// LIB4 — listComponents(category) filters correctly (6 heroes after builder-2).
+assert.ok(listComponents('hero').length === 6, `FAIL LIB4: expected 6 hero components — got: ${listComponents('hero').map((d) => d.key).join(',')}`)
+assert.ok(listComponents('navigation').length === 4, `FAIL LIB4: expected 4 navigation components (3 navbars + footer) — got: ${listComponents('navigation').map((d) => d.key).join(',')}`)
 assert.ok(listComponents().length === libKeys.length, `FAIL LIB4: listComponents() must return all components`)
 
 // LIB5 — NAVBAR is OPAQUE (bg-[var(--surface)]) + NEVER transparent on the header
@@ -1909,5 +2020,108 @@ assert.ok(/\{\{IMG:[^}]+\}\}/.test(splitHero), `FAIL LIB10: split-image hero mus
 assert.ok(/<h1\b/.test(splitHero) && ($mini, true), `FAIL LIB10: split-image hero must carry the page <h1>`)
 const splitPageGate = gateSiteHtml(navHtml + '<main>' + splitHero + cfHtml + '</main>' + footHtml)
 assert.ok(splitPageGate.ok === true, `FAIL LIB10: split-image hero page must pass the gate — got: ${JSON.stringify(splitPageGate)}`)
+
+// LIB11 — contentFields COMPLETENESS (builder-2 M1). The visual-edit / chat-patch
+// layer treats contentFields as the editable-field CONTRACT, so every top-level key
+// a renderer reads off `content` MUST be declared (or explicitly editable:false).
+// We render each component through a tracking Proxy that records every top-level
+// string-key GET, then assert: accessed ⊆ declared.
+for (const key of libKeys) {
+  const def = getComponent(key)
+  const declared = new Set(def.contentFields.map((f) => f.name))
+  const accessed = new Set()
+  const base = SAMPLE_CONTENT[key] || {}
+  const tracking = new Proxy(base, {
+    get(target, prop, receiver) {
+      // Only TOP-LEVEL string keys count (symbols like Symbol.iterator / 'then'
+      // and array/proto probing are framework noise, not content fields).
+      if (typeof prop === 'string') accessed.add(prop)
+      return Reflect.get(target, prop, receiver)
+    },
+    has(target, prop) {
+      if (typeof prop === 'string') accessed.add(prop)
+      return Reflect.has(target, prop)
+    },
+  })
+  // Render with the tracking content (exercises every key the renderer reads).
+  renderComponent(key, tracking, libDs, { id: 'b1', mobileMenuAnim: 'left' })
+  const undeclared = [...accessed].filter((k) => !declared.has(k))
+  assert.ok(
+    undeclared.length === 0,
+    `FAIL LIB11: ${key} reads content key(s) not declared in contentFields: ${JSON.stringify(undeclared)} — declare each (or mark editable:false). Declared: ${JSON.stringify([...declared])}`,
+  )
+}
+
+// LIB12 — the NEW NAVBAR variants obey the SAME hard rules as navbar.standard:
+// OPAQUE header root (bg-[var(--surface)], never transparent/translucent), desktop
+// nav single-line (whitespace-nowrap + flex-nowrap), and the runtime mobile contract
+// (hamburger toggle + opaque data-yoai-mobile-nav panel + close control + anim).
+for (const navKey of ['navbar.centered-logo', 'navbar.left-logo-right-cta']) {
+  const h = renderComponent(navKey, SAMPLE_CONTENT[navKey], libDs, { id: 'b1', mobileMenuAnim: 'left' })
+  const rootTag = (h.match(/^<header\b[^>]*>/i) || [''])[0]
+  assert.ok(/bg-\[var\(--surface\)\]/.test(rootTag), `FAIL LIB12: ${navKey} header root must be OPAQUE bg-[var(--surface)] — got: ${rootTag}`)
+  assert.ok(!/\bbg-transparent\b/.test(rootTag) && !/bg-\[var\(--surface\)\]\/\d/.test(rootTag), `FAIL LIB12: ${navKey} header root must NOT be transparent/translucent — got: ${rootTag}`)
+  assert.ok(/whitespace-nowrap/.test(h), `FAIL LIB12: ${navKey} desktop links must be whitespace-nowrap`)
+  assert.ok(/flex-nowrap/.test(h), `FAIL LIB12: ${navKey} nav must be flex-nowrap (single line)`)
+  // mobile contract
+  assert.ok(/data-yoai-nav-toggle="mobilenav"/.test(h), `FAIL LIB12: ${navKey} missing hamburger data-yoai-nav-toggle="mobilenav"`)
+  assert.ok(/aria-controls="mobilenav"/.test(h) && /aria-expanded="false"/.test(h), `FAIL LIB12: ${navKey} hamburger missing aria-controls/aria-expanded`)
+  const panelTag = (h.match(/<nav\b[^>]*data-yoai-mobile-nav[^>]*>/i) || [''])[0]
+  assert.ok(panelTag && /id="mobilenav"/.test(panelTag), `FAIL LIB12: ${navKey} missing data-yoai-mobile-nav panel id="mobilenav"`)
+  assert.ok(/data-yoai-mobile-anim="left"/.test(panelTag), `FAIL LIB12: ${navKey} mobile panel must carry the chosen anim`)
+  assert.ok(/bg-\[var\(--surface\)\]/.test(panelTag), `FAIL LIB12: ${navKey} mobile panel must be OPAQUE bg-[var(--surface)] — got: ${panelTag}`)
+  // close control inside the panel + anim choice threads through
+  const panelHtml = h.slice(h.indexOf(panelTag))
+  assert.ok((panelHtml.match(/data-yoai-nav-toggle="mobilenav"/g) || []).length >= 1, `FAIL LIB12: ${navKey} mobile panel must include a close control`)
+  const right = renderComponent(navKey, SAMPLE_CONTENT[navKey], libDs, { id: 'b1', mobileMenuAnim: 'right' })
+  assert.ok(/data-yoai-mobile-anim="right"/.test(right), `FAIL LIB12: ${navKey} must honour mobileMenuAnim='right'`)
+  // survives sanitize with hooks intact
+  const cleanNav = sanitizeSiteHtml(h)
+  assert.ok(/data-yoai-mobile-nav/.test(cleanNav) && /data-yoai-nav-toggle="mobilenav"/.test(cleanNav), `FAIL LIB12: ${navKey} mobile-nav hooks stripped by sanitize`)
+}
+
+// LIB13 — every NEW HERO variant is a single-<h1> hero, emits a well-formed {{IMG:}}
+// placeholder when it uses imagery (no invented URL), and composes into a gate-passing
+// page (navbar + hero + contact + footer) with EXACTLY one <h1>.
+for (const heroKey of ['hero.full-background', 'hero.service-business', 'hero.corporate', 'hero.luxury']) {
+  const hh = renderComponent(heroKey, SAMPLE_CONTENT[heroKey], libDs, { id: 'b2' })
+  assert.ok(typeof hh === 'string' && /<h1\b/.test(hh), `FAIL LIB13: ${heroKey} must carry the page <h1>`)
+  assert.strictEqual((hh.match(/<h1\b/g) || []).length, 1, `FAIL LIB13: ${heroKey} must have exactly ONE <h1>`)
+  // image-bearing heroes must use {{IMG:}} (never an invented http(s) image URL).
+  if (/imageQuery/.test(JSON.stringify(SAMPLE_CONTENT[heroKey]))) {
+    assert.ok(/\{\{IMG:[^}]+\}\}/.test(hh), `FAIL LIB13: ${heroKey} must use a {{IMG:query}} placeholder`)
+  }
+  assert.ok(!/<img[^>]+src="https?:\/\//i.test(hh), `FAIL LIB13: ${heroKey} must not hardcode an http(s) image URL`)
+  const gate = gateSiteHtml(navHtml + '<main>' + hh + cfHtml + '</main>' + footHtml)
+  assert.ok(gate.ok === true, `FAIL LIB13: ${heroKey} page must pass the gate — got: ${JSON.stringify(gate)}`)
+  const $h = load(gate.html)
+  assert.strictEqual($h('h1').length, 1, `FAIL LIB13: ${heroKey} composed page must have exactly ONE <h1> — got ${$h('h1').length}`)
+}
+
+// LIB14 — the NEW CONTENT variants are sanitize/gate-clean, var-token only, carry the
+// block identity, produce NO <h1> (only the hero owns it), and use {{IMG:}} for imagery.
+for (const contentKey of ['testimonials.cards', 'gallery.grid', 'pricing-table.tiers']) {
+  const ch = renderComponent(contentKey, SAMPLE_CONTENT[contentKey], libDs, { id: 'b5' })
+  assert.ok(typeof ch === 'string' && ch.length > 0, `FAIL LIB14: ${contentKey} rendered empty`)
+  assert.ok(ch.includes(`data-yoai-block="${contentKey}"`), `FAIL LIB14: ${contentKey} missing data-yoai-block`)
+  // NO <h1> — these are body sections (gate single-<h1> rule).
+  assert.ok(!/<h1\b/.test(ch), `FAIL LIB14: ${contentKey} must NOT emit an <h1> (only the hero does)`)
+  // var-token only (no default Tailwind palette, no raw hex color class).
+  const pal = ch.match(FORBIDDEN_PALETTE_RE)
+  assert.ok(!pal, `FAIL LIB14: ${contentKey} uses a forbidden default Tailwind palette class '${pal}'`)
+  assert.ok(!/-\[#[0-9a-fA-F]{3,8}\]/.test(ch), `FAIL LIB14: ${contentKey} uses a raw hex color in an arbitrary class`)
+  // sanitize byte-clean: top-level section + block attrs survive, no script/handler.
+  const cleanC = sanitizeSiteHtml(ch)
+  assert.ok(/<section/.test(cleanC) && cleanC.includes(`data-yoai-block="${contentKey}"`), `FAIL LIB14: ${contentKey} top-level section/block attrs stripped by sanitize`)
+  assert.ok(!/<script/i.test(cleanC) && !/\son[a-z]+\s*=/i.test(cleanC), `FAIL LIB14: ${contentKey} produced a forbidden script/handler`)
+  // imagery (gallery + testimonial avatar) uses {{IMG:}}, never an invented URL.
+  if (/<img/i.test(ch)) {
+    assert.ok(/\{\{IMG:[^}]+\}\}/.test(ch), `FAIL LIB14: ${contentKey} <img> must use a {{IMG:query}} placeholder`)
+    assert.ok(!/<img[^>]+src="https?:\/\//i.test(ch), `FAIL LIB14: ${contentKey} must not hardcode an http(s) image URL`)
+  }
+  // composes into a gate-passing page.
+  const cgate = gateSiteHtml(navHtml + '<main>' + heroHtml + ch + cfHtml + '</main>' + footHtml)
+  assert.ok(cgate.ok === true, `FAIL LIB14: ${contentKey} page must pass the gate — got: ${JSON.stringify(cgate)}`)
+}
 
 console.log('library OK')

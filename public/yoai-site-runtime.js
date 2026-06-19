@@ -44,6 +44,11 @@
  *   On init every panel is set to the CLOSED inline state, so it is reliably
  *   hidden on load regardless of any Tailwind display class. Clicking the
  *   hamburger toggles; clicking a link inside or pressing Escape closes.
+ *   While a panel is OPEN, a document pointerdown OUTSIDE that panel AND outside
+ *   any of its toggles (hamburger / close-X) closes it (outside-click / backdrop
+ *   dismiss). A pointerdown ON the toggle is ignored here so the toggle's own
+ *   click still toggles (no double-fire close→open). The listener is delegated +
+ *   permanent (no per-open add/remove → no leaked handlers).
  *   prefers-reduced-motion: skip the slide — visibility flips instantly.
  *
  * NAV TOGGLE  [data-yoai-nav-toggle] (legacy fallback)
@@ -342,6 +347,33 @@
       if (e.key !== 'Escape' && e.keyCode !== 27) return;
       var open = document.querySelectorAll('[data-yoai-mobile-nav][aria-hidden="false"]');
       for (var i = 0; i < open.length; i++) setMobilePanelState(open[i], false);
+    });
+
+    // 5) Outside-click / backdrop dismiss: a pointerdown OUTSIDE an open panel AND
+    //    outside any toggle that controls it closes the panel. A pointerdown ON a
+    //    toggle is ignored here so the toggle's own click (step 2) still toggles —
+    //    avoids a close→reopen double-fire. Delegated + permanent → no leaked
+    //    handlers, fail-open (any error caught, page never blocked).
+    document.addEventListener('pointerdown', function (e) {
+      try {
+        var open = document.querySelectorAll('[data-yoai-mobile-nav][aria-hidden="false"]');
+        if (!open.length) return;
+        var node = e.target;
+        // Was the pointer inside a toggle? If so, let the toggle handle it.
+        var onToggle = node && node.closest
+          ? node.closest('[data-yoai-nav-toggle]')
+          : null;
+        for (var i = 0; i < open.length; i++) {
+          var panel = open[i];
+          // Inside this panel? leave it open.
+          if (node && panel.contains && panel.contains(node)) continue;
+          // On a toggle that controls THIS panel? leave it (its click toggles).
+          if (onToggle && onToggle.getAttribute('data-yoai-nav-toggle') === panel.id) continue;
+          setMobilePanelState(panel, false);
+        }
+      } catch (err) {
+        // Fail-open: never block the page on an outside-click error.
+      }
     });
   }
 

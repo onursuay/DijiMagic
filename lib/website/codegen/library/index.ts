@@ -38,6 +38,20 @@ import {
 /** Editable content field kinds (visual-edit / chat-patch contract, Bölüm 4.5). */
 export type ContentFieldType = 'text' | 'richtext' | 'image' | 'href' | 'list'
 
+/**
+ * The shape of ONE item inside a `list` field (e.g. each menu link, each
+ * service card). Keeps the visual-edit inspector aware of the per-item editable
+ * sub-fields. Plain descriptor — same dependency-free contract as ContentField.
+ */
+export interface ListItemField {
+  /** Key the renderer reads on each list item (e.g. 'label', 'title'). */
+  name: string
+  /** Field kind for the sub-field. */
+  type: ContentFieldType
+  /** Human label (TR) for the inspector. */
+  label: string
+}
+
 /** A single editable field descriptor for a component's content. */
 export interface ContentField {
   /** Content key the deterministicRender reads (e.g. 'heading'). */
@@ -48,6 +62,18 @@ export interface ContentField {
   required: boolean
   /** Human label (TR) for the visual-edit inspector. */
   label: string
+  /**
+   * For `type: 'list'` — the editable shape of each item (sub-fields the
+   * renderer reads off every element). Omit for non-list fields.
+   */
+  item?: ListItemField[]
+  /**
+   * `false` marks an intentional, NON-inspector style/behaviour override the
+   * renderer reads but that should NOT appear as an editable field (e.g. a quiet
+   * label override). Default (absent) → editable. Declared so the
+   * contentFields-completeness contract still covers every key the renderer reads.
+   */
+  editable?: boolean
 }
 
 /** Components gated behind extra credit / a higher plan (Bölüm 5.6). */
