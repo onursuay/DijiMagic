@@ -12,7 +12,7 @@ import {
   Eye,
   ExternalLink,
   Globe,
-  Settings,
+  SlidersHorizontal,
 } from 'lucide-react'
 import DeviceSwitcher, { type Device } from './DeviceSwitcher'
 import CreditBalanceIndicator from './CreditBalanceIndicator'
@@ -67,12 +67,16 @@ export default function BuilderTopbar({
 }: BuilderTopbarProps) {
   const t = useTranslations('dashboard.webSiteYoneticisi')
 
+  // Sade, sessiz ikon butonu (quiet chrome) — sınırsız border yerine hover'da hafifçe belirir.
   const iconBtn =
-    'inline-flex h-9 w-9 items-center justify-center rounded-lg border border-gray-200 bg-white text-gray-600 hover:bg-gray-50/60 hover:text-gray-900 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/30 active:scale-[0.97] transition-all disabled:opacity-40 disabled:pointer-events-none'
+    'inline-flex h-8 w-8 items-center justify-center rounded-lg text-gray-500 hover:bg-gray-100 hover:text-gray-900 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/30 active:scale-[0.97] transition-colors disabled:opacity-40 disabled:pointer-events-none'
+  // İkincil aksiyon (Önizleme / Yönet) — ince border, sessiz.
+  const ghostBtn =
+    'inline-flex items-center gap-1.5 rounded-lg border border-gray-200 bg-white px-3 h-8 text-sm font-medium text-gray-700 hover:bg-gray-50 hover:text-gray-900 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/30 transition-colors disabled:opacity-50 active:scale-[0.97]'
 
   return (
-    <header className="shrink-0 flex items-center gap-3 border-b border-gray-200 bg-white px-4 h-14">
-      {/* Sol: geri + site adı */}
+    <header className="shrink-0 flex items-center gap-4 border-b border-gray-200 bg-white px-4 h-[54px]">
+      {/* Sol: geri + site adı + (alt adres) */}
       <div className="flex items-center gap-2.5 min-w-0">
         <Link
           href="/web-site-yoneticisi"
@@ -82,85 +86,70 @@ export default function BuilderTopbar({
         >
           <ArrowLeft className="w-4 h-4" />
         </Link>
-        <span className="text-sm font-semibold text-gray-900 truncate max-w-[12rem]">{siteLabel}</span>
-      </div>
-
-      {/* Geri Al / İleri Al — pasif placeholder (8c) */}
-      <div className="hidden sm:flex items-center gap-1.5 pl-1">
-        <button type="button" disabled aria-disabled title={t('builder.undoTooltip')} className={iconBtn}>
-          <Undo2 className="w-4 h-4" />
-        </button>
-        <button type="button" disabled aria-disabled title={t('builder.redoTooltip')} className={iconBtn}>
-          <Redo2 className="w-4 h-4" />
-        </button>
-      </div>
-
-      {/* Orta: cihaz seçici + sayfa yolu */}
-      <div className="flex items-center gap-3 mx-auto min-w-0">
-        <DeviceSwitcher value={device} onChange={onDeviceChange} />
-        <div className="hidden md:flex items-center gap-1.5 rounded-lg border border-gray-200 bg-gray-50/60 px-3 h-9 min-w-0">
-          <span className="text-caption text-gray-400 shrink-0">{subdomain ?? '—'}</span>
-          <span className="text-sm text-gray-700 font-medium truncate" title={pagePath}>{pagePath}</span>
+        <div className="flex flex-col min-w-0 leading-tight">
+          <span className="text-sm font-semibold text-gray-900 truncate max-w-[12rem]">{siteLabel}</span>
+          {subdomain && (
+            <span className="hidden md:block text-caption text-gray-400 truncate max-w-[12rem]" title={pagePath}>
+              {subdomain}
+            </span>
+          )}
         </div>
       </div>
 
-      {/* Sağ: aksiyonlar */}
-      <div className="flex items-center gap-1.5">
-        <button type="button" onClick={onRefresh} title={t('builder.refresh')} aria-label={t('builder.refresh')} className={iconBtn}>
-          <RefreshCw className="w-4 h-4" />
-        </button>
-        <button
-          type="button"
-          onClick={onToggleFullscreen}
-          title={fullscreen ? t('builder.exitFullscreen') : t('builder.fullscreen')}
-          aria-label={fullscreen ? t('builder.exitFullscreen') : t('builder.fullscreen')}
-          aria-pressed={fullscreen}
-          className={iconBtn}
-        >
-          {fullscreen ? <Minimize2 className="w-4 h-4" /> : <Maximize2 className="w-4 h-4" />}
-        </button>
+      {/* Orta: geri/ileri al (pasif placeholder) + cihaz seçici */}
+      <div className="flex items-center gap-2 mx-auto">
+        <div className="hidden sm:flex items-center gap-0.5">
+          <button type="button" disabled aria-disabled title={t('builder.undoTooltip')} className={iconBtn}>
+            <Undo2 className="w-4 h-4" />
+          </button>
+          <button type="button" disabled aria-disabled title={t('builder.redoTooltip')} className={iconBtn}>
+            <Redo2 className="w-4 h-4" />
+          </button>
+        </div>
+        <span className="hidden sm:block h-5 w-px bg-gray-200" aria-hidden="true" />
+        <DeviceSwitcher value={device} onChange={onDeviceChange} />
+      </div>
 
-        <span className="mx-1 hidden sm:block h-6 w-px bg-gray-200" aria-hidden="true" />
-
-        {/* #builder-8c — kredi bakiyesi (useCredits) */}
+      {/* Sağ: kredi pill + yenile/tam ekran + Önizleme + Yönet + Yayınla */}
+      <div className="flex items-center gap-2">
+        {/* #builder-8d — kredi bakiyesi pill'i (sade: spark + sayı) */}
         <CreditBalanceIndicator />
 
-        <button
-          type="button"
-          onClick={onOpenPreview}
-          disabled={openingPreview}
-          className="inline-flex items-center gap-1.5 rounded-lg border border-gray-200 bg-white px-3 h-9 text-sm font-medium text-gray-700 hover:shadow-md transition-all duration-300 disabled:opacity-50 active:scale-[0.97]"
-        >
+        <div className="flex items-center gap-0.5">
+          <button type="button" onClick={onRefresh} title={t('builder.refresh')} aria-label={t('builder.refresh')} className={iconBtn}>
+            <RefreshCw className="w-4 h-4" />
+          </button>
+          <button
+            type="button"
+            onClick={onToggleFullscreen}
+            title={fullscreen ? t('builder.exitFullscreen') : t('builder.fullscreen')}
+            aria-label={fullscreen ? t('builder.exitFullscreen') : t('builder.fullscreen')}
+            aria-pressed={fullscreen}
+            className={iconBtn}
+          >
+            {fullscreen ? <Minimize2 className="w-4 h-4" /> : <Maximize2 className="w-4 h-4" />}
+          </button>
+        </div>
+
+        <span className="hidden sm:block h-5 w-px bg-gray-200" aria-hidden="true" />
+
+        <button type="button" onClick={onOpenPreview} disabled={openingPreview} className={ghostBtn}>
           <Eye className="w-4 h-4" /> <span className="hidden lg:inline">{t('builder.preview')}</span>
         </button>
 
-        {isPublished && liveHref ? (
+        {isPublished && liveHref && (
           <a
             href={liveHref}
             target="_blank"
             rel="noopener noreferrer"
-            className="inline-flex items-center gap-1.5 rounded-lg border border-emerald-200 bg-emerald-50 px-3 h-9 text-sm font-medium text-emerald-700 hover:bg-emerald-100 transition-colors active:scale-[0.97]"
+            className="inline-flex items-center gap-1.5 rounded-lg border border-emerald-200 bg-emerald-50 px-3 h-8 text-sm font-medium text-emerald-700 hover:bg-emerald-100 transition-colors active:scale-[0.97]"
           >
             <ExternalLink className="w-4 h-4" /> <span className="hidden lg:inline">{t('builder.live')}</span>
           </a>
-        ) : (
-          <button
-            type="button"
-            disabled
-            aria-disabled
-            title={t('statusDraft')}
-            className="inline-flex items-center gap-1.5 rounded-lg border border-gray-200 bg-white px-3 h-9 text-sm font-medium text-gray-400 opacity-60 pointer-events-none"
-          >
-            <Globe className="w-4 h-4" /> <span className="hidden lg:inline">{t('builder.live')}</span>
-          </button>
         )}
 
-        <button
-          type="button"
-          onClick={onManage}
-          className="inline-flex items-center gap-1.5 rounded-lg border border-gray-200 bg-white px-3 h-9 text-sm font-medium text-gray-700 hover:shadow-md transition-all duration-300 active:scale-[0.97]"
-        >
-          <Settings className="w-4 h-4" /> <span className="hidden lg:inline">{t('builder.manage')}</span>
+        <button type="button" onClick={onManage} className={ghostBtn}>
+          <SlidersHorizontal className="w-4 h-4" /> <span className="hidden lg:inline">{t('builder.manage')}</span>
         </button>
 
         <button
@@ -168,7 +157,7 @@ export default function BuilderTopbar({
           onClick={onPublish}
           disabled={working}
           data-website-id={websiteId}
-          className="inline-flex items-center gap-1.5 rounded-lg bg-emerald-600 px-4 h-9 text-sm font-semibold text-white hover:bg-emerald-700 active:scale-[0.97] transition-all disabled:opacity-50"
+          className="inline-flex items-center gap-1.5 rounded-lg bg-emerald-600 px-4 h-8 text-sm font-semibold text-white hover:bg-emerald-700 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-emerald-600/40 active:scale-[0.97] transition-all disabled:opacity-50"
         >
           <Globe className="w-4 h-4" />
           {publishing ? t('publishing') : isPublished ? t('builder.managePublish') : t('builder.publish')}

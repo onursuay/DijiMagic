@@ -145,7 +145,9 @@ export default function PreviewCanvas({
   const designW = DESIGN_W[device]
   // Tasarım yüksekliği: masaüstünde alanı dolduracak kadar uzun; mobil/tablette cihaz hissi için
   // alan yüksekliğinden türetilir. iframe içeriği zaten kendi içinde scroll eder.
-  const PADDING = device === 'desktop' ? 0 : 40
+  // #builder-8d — masaüstünde de hafif padding: yumuşak zemin tuvalin çevresinde nefes alsın,
+  // cihaz çerçevesi gölgesi/yuvarlağı görünsün (kahraman tuval hissi).
+  const PADDING = device === 'desktop' ? 24 : 40
   const availW = Math.max(0, area.w - PADDING * 2)
   const availH = Math.max(0, area.h - PADDING * 2)
   // Masaüstü: genişliğe göre ölçekle (en boy oranı içerikten gelir, tuval tam yükseklikte).
@@ -173,7 +175,7 @@ export default function PreviewCanvas({
     <div
       ref={areaRef}
       data-builder-canvas
-      className="relative flex-1 min-h-0 flex items-start justify-center overflow-hidden bg-gradient-to-b from-gray-100 to-gray-200/70"
+      className="relative flex-1 min-h-0 flex items-start justify-center overflow-hidden bg-gradient-to-b from-emerald-50/40 via-gray-50 to-gray-100/70"
       style={{ padding: PADDING }}
     >
       {revising && (
@@ -201,8 +203,11 @@ export default function PreviewCanvas({
           height: designH,
           transform: `scale(${scale})`,
           transformOrigin: 'top center',
-          boxShadow: isMobileLike ? '0 24px 60px -20px rgba(15,23,42,0.45)' : '0 12px 40px -16px rgba(15,23,42,0.25)',
-          borderRadius: isMobileLike ? 28 : 12,
+          // Katmanlı yumuşak gölge (düz shadow-md DEĞİL) — derinlik + cihaz çerçevesi hissi.
+          boxShadow: isMobileLike
+            ? '0 24px 60px -20px rgba(15,23,42,0.45), 0 2px 6px -2px rgba(15,23,42,0.12)'
+            : '0 24px 60px -24px rgba(15,23,42,0.28), 0 6px 18px -8px rgba(15,23,42,0.10), 0 0 0 1px rgba(15,23,42,0.04)',
+          borderRadius: isMobileLike ? 28 : 14,
         }}
       />
 

@@ -6015,6 +6015,8 @@
         "inspectorTitle": "Inspector",
         "inspectorHint": "Click a section on the canvas to edit its content here.",
         "inspectorSoon": "Coming soon",
+        "collapseInspector": "Hide inspector",
+        "expandInspector": "Show inspector",
         "manageTitle": "Site Settings",
         "manageHint": "Domain, design and version history will be managed from this panel soon.",
         "openManage": "Open settings",

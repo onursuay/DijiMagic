@@ -6015,6 +6015,8 @@
         "inspectorTitle": "Müfettiş",
         "inspectorHint": "Tuvalde bir bölüme tıklayın; içeriğini buradan düzenleyin.",
         "inspectorSoon": "Yakında",
+        "collapseInspector": "Müfettişi gizle",
+        "expandInspector": "Müfettişi göster",
         "manageTitle": "Site Ayarları",
         "manageHint": "Alan adı, tasarım ve sürüm geçmişi yakında bu panelden yönetilecek.",
         "openManage": "Ayarları aç",

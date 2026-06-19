@@ -2,7 +2,7 @@
 
 import { useEffect, useMemo, useState } from 'react'
 import { useTranslations } from 'next-intl'
-import { SlidersHorizontal, MousePointerClick, Sparkles, Trash2, X, Check, Loader2 } from 'lucide-react'
+import { SlidersHorizontal, MousePointerClick, Sparkles, Trash2, X, Check, Loader2, PanelRightClose, PanelRightOpen } from 'lucide-react'
 import { COMPONENTS, type ContentField } from '@/lib/website/codegen/library'
 import type { VisualEditOp, VisualSelection } from './visualEditTypes'
 
@@ -18,6 +18,10 @@ interface RightInspectorPanelProps {
   onDelete?: () => void
   /** Seçimi temizle. */
   onClear?: () => void
+  /** #builder-8d — panel daraltıldı mı (true → ince dikey rail; tuval büyür). */
+  collapsed?: boolean
+  /** #builder-8d — daralt/genişlet aç-kapa. */
+  onToggleCollapse?: () => void
 }
 
 /**
@@ -38,6 +42,8 @@ export default function RightInspectorPanel({
   onAiRewrite,
   onDelete,
   onClear,
+  collapsed = false,
+  onToggleCollapse,
 }: RightInspectorPanelProps) {
   const t = useTranslations('dashboard.webSiteYoneticisi')
   const tv = useTranslations('dashboard.webSiteYoneticisi.builder.visualEdit')
@@ -63,6 +69,30 @@ export default function RightInspectorPanel({
 
   const working = busy !== null
 
+  // ── Collapsed rail — ince dikey şerit; genişlet ikonu (tuval büyür) ─────────────
+  if (collapsed) {
+    return (
+      <button
+        type="button"
+        onClick={() => onToggleCollapse?.()}
+        aria-label={t('builder.expandInspector')}
+        title={t('builder.expandInspector')}
+        className="group flex h-full w-full flex-col items-center gap-2.5 pt-3.5 text-gray-400 hover:text-primary transition-colors focus-visible:outline-none"
+      >
+        <span className="inline-flex h-8 w-8 items-center justify-center rounded-lg bg-gray-50 group-hover:bg-primary/10 transition-colors">
+          <PanelRightOpen className="w-4 h-4" />
+        </span>
+        <span
+          className="text-caption font-medium tracking-wide text-gray-400 group-hover:text-primary transition-colors"
+          style={{ writingMode: 'vertical-rl' }}
+        >
+          {t('builder.inspectorTitle')}
+        </span>
+        {selection && <span className="h-1.5 w-1.5 rounded-full bg-primary" aria-hidden="true" />}
+      </button>
+    )
+  }
+
   // ── Empty state — nothing selected yet ────────────────────────────────────────
   if (!selection) {
     return (
@@ -72,6 +102,17 @@ export default function RightInspectorPanel({
             <SlidersHorizontal className="w-4 h-4" />
           </span>
           <h3 className="text-base font-semibold text-gray-900">{t('builder.inspectorTitle')}</h3>
+          {onToggleCollapse && (
+            <button
+              type="button"
+              onClick={() => onToggleCollapse()}
+              aria-label={t('builder.collapseInspector')}
+              title={t('builder.collapseInspector')}
+              className="ml-auto inline-flex h-7 w-7 items-center justify-center rounded-lg text-gray-400 hover:text-gray-700 hover:bg-gray-100 transition-colors"
+            >
+              <PanelRightClose className="w-4 h-4" />
+            </button>
+          )}
         </div>
         <div className="flex-1 min-h-0 flex flex-col items-center justify-center text-center rounded-xl border border-dashed border-gray-200 bg-gray-50/40 px-5 py-8">
           <span className="inline-flex h-11 w-11 items-center justify-center rounded-xl bg-white border border-gray-200 text-primary">
@@ -93,15 +134,28 @@ export default function RightInspectorPanel({
           <SlidersHorizontal className="w-4 h-4" />
         </span>
         <h3 className="text-base font-semibold text-gray-900">{t('builder.inspectorTitle')}</h3>
-        <button
-          type="button"
-          onClick={() => onClear?.()}
-          className="ml-auto inline-flex h-7 w-7 items-center justify-center rounded-lg text-gray-400 hover:text-gray-700 hover:bg-gray-100 transition-colors"
-          aria-label={tv('clearSelection')}
-          title={tv('clearSelection')}
-        >
-          <X className="w-4 h-4" />
-        </button>
+        <div className="ml-auto flex items-center gap-0.5">
+          <button
+            type="button"
+            onClick={() => onClear?.()}
+            className="inline-flex h-7 w-7 items-center justify-center rounded-lg text-gray-400 hover:text-gray-700 hover:bg-gray-100 transition-colors"
+            aria-label={tv('clearSelection')}
+            title={tv('clearSelection')}
+          >
+            <X className="w-4 h-4" />
+          </button>
+          {onToggleCollapse && (
+            <button
+              type="button"
+              onClick={() => onToggleCollapse()}
+              aria-label={t('builder.collapseInspector')}
+              title={t('builder.collapseInspector')}
+              className="inline-flex h-7 w-7 items-center justify-center rounded-lg text-gray-400 hover:text-gray-700 hover:bg-gray-100 transition-colors"
+            >
+              <PanelRightClose className="w-4 h-4" />
+            </button>
+          )}
+        </div>
       </div>
 
       <div className="flex-1 min-h-0 overflow-y-auto pr-0.5 flex flex-col gap-4">

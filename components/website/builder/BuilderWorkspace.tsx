@@ -12,23 +12,16 @@ import type { Website, WebsitePage, WebsiteVersionMeta } from '@/lib/website/typ
 import { COMPONENTS } from '@/lib/website/codegen/library'
 import BuilderTopbar from './BuilderTopbar'
 import PreviewCanvas from './PreviewCanvas'
-import PageNavigator from './PageNavigator'
+import PageTabsStrip from './PageTabsStrip'
 import AiChatPanel, { type ChatMessage } from './AiChatPanel'
 import RightInspectorPanel from './RightInspectorPanel'
 import ManageDrawer from './ManageDrawer'
-import RevisePanel from './RevisePanel'
-import CreditUsageTimeline from './CreditUsageTimeline'
+import GenerationTimelineOverlay from './GenerationTimelineOverlay'
 import PublishPopup from './PublishPopup'
 import type { Device } from './DeviceSwitcher'
 import type { VisualEditOp, VisualSelection } from './visualEditTypes'
 
 type Busy = 'ai' | 'quick' | 'publish' | 'logo' | 'rollback' | 'reject' | 'edit' | 'approve' | null
-type RevisePanelMode = 'reject' | 'edit' | null
-
-const LOCALE_NAMES: Record<string, string> = {
-  tr: 'Türkçe', en: 'English', de: 'Deutsch', fr: 'Français', es: 'Español', ar: 'العربية', it: 'Italiano', ru: 'Русский',
-}
-const localeName = (l: string) => LOCALE_NAMES[l] ?? l.toUpperCase()
 
 /**
  * #builder-8a — Tam-ekran Builder Workspace (Promake tarzı). Dashboard içine sıkışmış dar iframe
@@ -72,13 +65,11 @@ export default function BuilderWorkspace({ websiteId }: { websiteId: string }) {
   const [fullscreen, setFullscreen] = useState(false)
   const [openingPreview, setOpeningPreview] = useState(false)
 
-  // Revize paneli (Onayla/Reddet/Düzenle)
-  const [panel, setPanel] = useState<RevisePanelMode>(null)
-  const [feedback, setFeedback] = useState('')
-
   // #builder-8b — VISUAL EDIT: tuvalde tıkla-seç ile seçilen blok + patch durumu.
   const [selection, setSelection] = useState<VisualSelection | null>(null)
   const [editBusy, setEditBusy] = useState<VisualEditOp | null>(null)
+  // #builder-8d — sağ müfettiş daraltılabilir; ilk seçime kadar kapalı (tuval büyük başlar).
+  const [inspectorCollapsed, setInspectorCollapsed] = useState(true)
 
   // #builder-8c — AI sohbet thread'i + Yayınla popup'ı + markalı önizleme URL'i.
   const [chatMessages, setChatMessages] = useState<ChatMessage[]>([])
@@ -120,7 +111,6 @@ export default function BuilderWorkspace({ websiteId }: { websiteId: string }) {
   const siteLocales = site?.locales ?? []
   const liveHref = isPublished && site?.subdomain ? `/s/${site.subdomain}` : undefined
   const working = busy !== null
-  const reviseBusy = busy === 'reject' || busy === 'edit' || busy === 'approve' ? busy : null
   const pagePath = activeSlugSafe === 'home' ? '/' : `/${activeSlugSafe}`
   // #builder-8c — sohbet komutu işleniyor mu (input + butonları kilitle); kredi timeline'ı
   // hangi durumlarda canlı yoklasın (üretim/revizyon/blok-edit sürerken).
@@ -167,42 +157,6 @@ export default function BuilderWorkspace({ websiteId }: { websiteId: string }) {
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [site, pages.length])
-
-  // ---- Revize (reddet / düzenle) — onizleme akışı birebir korunur -----------------------------
-  const revise = async (mode: 'reject' | 'edit') => {
-    const text = feedback.trim()
-    if (mode === 'edit' && !text) return
-    setPanel(null)
-    setBusy(mode)
-    try {
-      const res = await fetch(`/api/website/${websiteId}/generate`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          instructions: text,
-          revisionMode: mode,
-          ...(mode === 'edit' ? { targetSlug: activeSlugSafe, targetLocale: previewLocale } : {}),
-        }),
-      })
-      if (res.status === 402) { setCreditReason('website_revision_gate'); setShowCredit(true); setPanel(null); setFeedback(''); return }
-      const json = await res.json()
-      if (json.ok) {
-        setPages(json.pages ?? [])
-        if (mode !== 'edit') setActiveSlug('home')
-        setReloadKey((k) => k + 1)
-        setPanel(null)
-        setFeedback('')
-        fetchVersions()
-        addToast(t('revisionDone'), 'success')
-      } else {
-        setPanel(mode)
-        addToast(json.error || t('buildError'), 'error')
-      }
-    } catch {
-      setPanel(mode)
-      addToast(t('buildError'), 'error')
-    } finally { setBusy(null) }
-  }
 
   // ---- #builder-8b — VISUAL EDIT: cerrahi PATCH dispatcher (full regen YASAK) -------------
   // Tüm görsel düzenleme op'ları tek endpoint'ten geçer: /api/website/<id>/patch.
@@ -274,8 +228,12 @@ export default function BuilderWorkspace({ websiteId }: { websiteId: string }) {
   const canMoveUp = selIdx > 0
   const canMoveDown = selIdx >= 0 && selIdx < (selection?.order.length ?? 0) - 1
 
-  // Tuval seçim olayları → seçimi parent'a al; sayfa/dil değişince seçimi temizle.
-  const handleSelect = useCallback((sel: VisualSelection) => setSelection(sel), [])
+  // Tuval seçim olayları → seçimi parent'a al; ilk seçimde sağ müfettişi otomatik aç (tuval
+  // büyük başlar, kullanıcı bir öğeye dokununca alanlar görünür). Sayfa/dil değişince seçim temizlenir.
+  const handleSelect = useCallback((sel: VisualSelection) => {
+    setSelection(sel)
+    setInspectorCollapsed(false)
+  }, [])
   useEffect(() => { setSelection(null) }, [activeSlugSafe, previewLocale])
 
   // ---- #builder-8c — AI SOHBET: seçili blok varsa /patch (ai_rewrite), yoksa /generate revize -----
@@ -391,18 +349,6 @@ export default function BuilderWorkspace({ websiteId }: { websiteId: string }) {
     // Sayfa/dil değişince callback yeniden kurulur → chat her zaman GÜNCEL sayfa+locale'i hedefler.
     [busy, editBusy, websiteId, activeSlugSafe, previewLocale, pushChat, settleChat, fetchVersions, tChat],
   )
-
-  const approve = async () => {
-    setBusy('approve')
-    try {
-      const res = await fetch(`/api/website/${websiteId}/publish`, {
-        method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ action: 'publish' }),
-      })
-      const json = await res.json()
-      if (json.ok && json.website) { setSite(json.website); setReloadKey((k) => k + 1); addToast(t('publishSuccess'), 'success') }
-      else addToast(json.error || t('publishError'), 'error')
-    } catch { addToast(t('publishError'), 'error') } finally { setBusy(null) }
-  }
 
   const handleRollback = async (versionId: string) => {
     setBusy('rollback')
@@ -567,36 +513,20 @@ export default function BuilderWorkspace({ websiteId }: { websiteId: string }) {
           working={working}
         />
 
+        {/* #builder-8d — ince sayfa-sekmeleri şeridi (sol-rail "Sayfalar" bloğunun yerine) */}
+        <PageTabsStrip
+          pages={visiblePages}
+          previewLocale={previewLocale}
+          activeSlug={activeSlugSafe}
+          onSelect={setActiveSlug}
+          locales={siteLocales}
+          onLocaleChange={setPreviewLocale}
+        />
+
         <div className="flex-1 min-h-0 flex">
-          {/* SOL — sayfa gezgini + AI sohbet (8c placeholder) */}
-          <aside className="hidden lg:flex w-72 shrink-0 flex-col gap-4 border-r border-gray-200 bg-white p-4 overflow-y-auto">
-            {/* Dil seçici (çok-dilli site) */}
-            {siteLocales.length > 1 && (
-              <div className="inline-flex rounded-lg border border-gray-200 p-0.5 bg-white self-start">
-                {siteLocales.map((loc) => (
-                  <button
-                    key={loc}
-                    type="button"
-                    onClick={() => setPreviewLocale(loc)}
-                    className={`rounded-md px-3 py-1 text-xs font-medium transition-colors ${
-                      previewLocale === loc ? 'bg-primary/10 text-primary' : 'text-gray-500 hover:text-gray-800'
-                    }`}
-                  >
-                    {localeName(loc)}
-                  </button>
-                ))}
-              </div>
-            )}
-            <PageNavigator
-              pages={visiblePages}
-              previewLocale={previewLocale}
-              activeSlug={activeSlugSafe}
-              onSelect={setActiveSlug}
-            />
-            {/* #builder-8c — kredi kullanım zaman çizelgesi (üretim/revizyon sürerken canlı) */}
-            <CreditUsageTimeline websiteId={websiteId} active={generationActive} reloadKey={reloadKey} />
-            <div className="h-px bg-gray-100" />
-            {/* #builder-8c — doğal-dil sohbet ile düzenleme (seçili blok → /patch, yoksa sayfa revize) */}
+          {/* SOL — yalnız AI SOHBET (sade, ferah; birincil düzenleme yüzeyi). Kredi + sayfa
+              blokları buradan KALDIRILDI → topbar pill + sekme şeridi. */}
+          <aside className="hidden lg:flex w-[340px] xl:w-[356px] shrink-0 flex-col border-r border-gray-200 bg-white p-4 overflow-hidden">
             <AiChatPanel
               messages={chatMessages}
               onSubmit={handleChatSubmit}
@@ -606,8 +536,9 @@ export default function BuilderWorkspace({ websiteId }: { websiteId: string }) {
             />
           </aside>
 
-          {/* ORTA — BÜYÜK canvas + alt aksiyon/revize barı */}
-          <main className="flex-1 min-w-0 flex flex-col">
+          {/* ORTA — BÜYÜK canvas (kahraman). Yumuşak emerald-tonlu zemin; yüzen onay kartı YOK,
+              yalnız taslak rozeti. Üretim sürerken geçici zaman-çizelgesi overlay'i. */}
+          <main className="relative flex-1 min-w-0 flex flex-col">
             <PreviewCanvas
               websiteId={websiteId}
               locale={previewLocale}
@@ -627,25 +558,26 @@ export default function BuilderWorkspace({ websiteId }: { websiteId: string }) {
               onMoveUp={() => moveSelected('up')}
               onMoveDown={() => moveSelected('down')}
             />
-            <div className="shrink-0 border-t border-gray-200 bg-white p-4">
-              <RevisePanel
-                panel={panel}
-                setPanel={setPanel}
-                feedback={feedback}
-                setFeedback={setFeedback}
-                working={working}
-                busy={reviseBusy}
-                multiLocale={siteLocales.length > 1}
-                isPublished={isPublished}
-                liveHref={liveHref}
-                onRevise={revise}
-                onApprove={approve}
-              />
-            </div>
+
+            {/* Taslak rozeti — yayınlanmamış sitede sade, dikkat çekmeyen köşe etiketi */}
+            {!isPublished && !isRevising && (
+              <span className="pointer-events-none absolute left-4 top-4 z-10 inline-flex items-center gap-1.5 rounded-full border border-gray-200 bg-white/90 backdrop-blur-sm px-2.5 py-1 text-caption font-medium text-gray-600 shadow-[0_2px_8px_-2px_rgba(15,23,42,0.12)] animate-card-enter">
+                <span className="h-1.5 w-1.5 rounded-full bg-gray-400" aria-hidden="true" />
+                {t('statusDraft')}
+              </span>
+            )}
+
+            {/* #builder-8d — GEÇİCİ üretim zaman çizelgesi (yalnız üretim/revizyon sürerken) */}
+            <GenerationTimelineOverlay websiteId={websiteId} active={generationActive} reloadKey={reloadKey} />
           </main>
 
-          {/* SAĞ — müfettiş (#builder-8b — contentFields editörü + AI/sil aksiyonları) */}
-          <aside className="hidden xl:flex w-80 shrink-0 flex-col border-l border-gray-200 bg-white p-4 overflow-y-auto">
+          {/* SAĞ — müfettiş (#builder-8b/#builder-8d — daraltılabilir). Daraltılmışsa ince dikey
+              rail; ilk seçimde otomatik genişler (contentFields editörü + AI/sil). */}
+          <aside
+            className={`hidden xl:flex shrink-0 flex-col border-l border-gray-200 bg-white overflow-y-auto transition-[width] duration-300 ${
+              inspectorCollapsed ? 'w-12 p-0 items-center' : 'w-[300px] p-4'
+            }`}
+          >
             <RightInspectorPanel
               selection={selection}
               busy={editBusy}
@@ -653,6 +585,8 @@ export default function BuilderWorkspace({ websiteId }: { websiteId: string }) {
               onAiRewrite={(instruction) => dispatchPatch('ai_rewrite', { instruction })}
               onDelete={() => dispatchPatch('delete')}
               onClear={() => setSelection(null)}
+              collapsed={inspectorCollapsed}
+              onToggleCollapse={() => setInspectorCollapsed((c) => !c)}
             />
           </aside>
         </div>
