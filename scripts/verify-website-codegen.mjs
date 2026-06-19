@@ -2397,21 +2397,32 @@ const co3picks = new Set()
 for (let i = 0; i < 40; i++) co3picks.add(pickVariedSubset(pool, 3, `seed-${i}`).join('|'))
 assert.ok(co3picks.size > 1, `FAIL CO3: pickVariedSubset must be seed-sensitive (multiple distinct picks across seeds) — got only ${co3picks.size}`)
 
-// CO4 — ANTI-CLONE: SAME industry template + different seeds → DIFFERENT
-// blueprintSignature (variety proven). Built via the deterministic fallback so the
-// pool-driven variety is the only difference (palette/font identical here). The
-// signature is 8 hex chars + deterministic for the same blueprint.
+// CO4 — ANTI-CLONE (ALL 11 TEMPLATES): for EVERY industry template, SAME template +
+// different seeds → MORE THAN ONE distinct blueprintSignature (variety proven).
+// Built via the deterministic fallback so the pool-driven variety is the only
+// difference (palette/font identical here). The signature is 8 hex chars +
+// deterministic for the same blueprint. This loop FAILS if ANY template degenerates
+// to a single signature across the seed span (per-template anti-clone regression guard).
 const cloneSeedA = buildFallbackBlueprint(bpDs, getIndustryTemplate('ajans'), COMPONENTS, 'tr', 'tenant-A')
 const sigA = blueprintSignature(cloneSeedA)
 assert.ok(/^[0-9a-f]{8}$/.test(sigA), `FAIL CO4: signature must be 8 hex chars — got: ${sigA}`)
 assert.strictEqual(blueprintSignature(cloneSeedA), sigA, `FAIL CO4: blueprintSignature must be deterministic for the same blueprint`)
-// Across a span of seeds for the SAME template we get MORE THAN ONE signature
-// (two arbitrary seeds may coincide; the guarantee is that variety EXISTS).
-const co4sigs = new Set()
-for (let i = 0; i < 30; i++) {
-  co4sigs.add(blueprintSignature(buildFallbackBlueprint(bpDs, getIndustryTemplate('ajans'), COMPONENTS, 'tr', `tenant-${i}`)))
+// Determinism guard for the fallback itself: same (template, seed) → identical signature.
+assert.strictEqual(
+  blueprintSignature(buildFallbackBlueprint(bpDs, getIndustryTemplate('ajans'), COMPONENTS, 'tr', 'tenant-A')),
+  sigA,
+  `FAIL CO4: buildFallbackBlueprint must be deterministic — same (template, seed) → same signature`,
+)
+for (const ind of EXPECTED_INDUSTRIES) {
+  const sigs = new Set()
+  for (let i = 1; i <= 16; i++) {
+    sigs.add(blueprintSignature(buildFallbackBlueprint(bpDs, getIndustryTemplate(ind), COMPONENTS, 'tr', `tenant-${i}`)))
+  }
+  assert.ok(
+    sigs.size > 1,
+    `FAIL CO4: industry '${ind}' — same industry + different seeds (1..16) must yield DIFFERENT signatures (anti-clone) — got only ${sigs.size} distinct`,
+  )
 }
-assert.ok(co4sigs.size > 1, `FAIL CO4: same industry + different seeds must yield DIFFERENT signatures (anti-clone) — got only ${co4sigs.size} distinct`)
 
 // CO5 — signature also changes when the THEME (palette/font) changes, even with the
 // same composition (the other half of anti-clone).
