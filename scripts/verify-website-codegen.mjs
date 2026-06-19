@@ -2655,3 +2655,62 @@ assert.ok(lgBody.indexOf('<header') < lgBody.indexOf('<main>'), `FAIL LG6: navba
 assert.ok(lgBody.indexOf('<footer') > lgBody.indexOf('</main>'), `FAIL LG6: footer must follow </main>`)
 
 console.log('library-generate OK')
+
+// ---------------------------------------------------------------------------
+// CREDIT-BREAKDOWN section — step-by-step credit TELEMETRY (#builder-5b).
+//
+// website_credit_events breaks the SINGLE real charge into per-phase events for
+// the CreditUsageTimeline UI. The atomic ledger (credit_transactions via
+// chargeFeature) is UNCHANGED — this is DISPLAY telemetry, not a debit. The
+// CRITICAL invariant proven here: the per-phase credit_delta values SUM EXACTLY
+// to the charged total (no double-charge, no under/over-attribution).
+// ---------------------------------------------------------------------------
+const creditBreakdownPath = path.join(__dirname, '../lib/website/creditBreakdown.mjs')
+const { buildPhaseBreakdown, PHASE_ORDER } = await import(creditBreakdownPath)
+
+function sumDeltas(rows) {
+  return rows.reduce((acc, r) => acc + r.creditDelta, 0)
+}
+
+// CB1 — multipage, single locale, with images: deltas sum EXACTLY to the charged total.
+const cb1Total = 55
+const cb1 = buildPhaseBreakdown(cb1Total, { pageCount: 4, localeCount: 1, hasImages: true })
+assert.strictEqual(sumDeltas(cb1), cb1Total, `FAIL CB1: per-phase deltas must sum to charged total ${cb1Total} — got ${sumDeltas(cb1)} (${JSON.stringify(cb1)})`)
+assert.ok(cb1.every((r) => Number.isInteger(r.creditDelta) && r.creditDelta >= 0), `FAIL CB1: all deltas must be non-negative integers — got ${JSON.stringify(cb1)}`)
+assert.ok(cb1.some((r) => r.phase === 'render') && cb1.find((r) => r.phase === 'render').detail.pages === 4, `FAIL CB1: render phase must carry pages=4 — got ${JSON.stringify(cb1)}`)
+// translate phase excluded when there are no extra locales
+assert.ok(!cb1.some((r) => r.phase === 'translate'), `FAIL CB1: translate phase must be absent for single-locale — got ${JSON.stringify(cb1)}`)
+
+// CB2 — multipage + multi-locale (extra locales → translate phase) still sums exactly.
+const cb2Total = 130
+const cb2 = buildPhaseBreakdown(cb2Total, { pageCount: 4, localeCount: 3, hasImages: true })
+assert.strictEqual(sumDeltas(cb2), cb2Total, `FAIL CB2: multi-locale deltas must sum to ${cb2Total} — got ${sumDeltas(cb2)} (${JSON.stringify(cb2)})`)
+assert.ok(cb2.some((r) => r.phase === 'translate' && r.detail.locales === 2), `FAIL CB2: translate phase must carry locales=2 (3 - 1 default) — got ${JSON.stringify(cb2)}`)
+
+// CB3 — landing (1 page), no images: still sums exactly, images phase excluded.
+const cb3Total = 40
+const cb3 = buildPhaseBreakdown(cb3Total, { pageCount: 1, localeCount: 1, hasImages: false })
+assert.strictEqual(sumDeltas(cb3), cb3Total, `FAIL CB3: landing deltas must sum to ${cb3Total} — got ${sumDeltas(cb3)} (${JSON.stringify(cb3)})`)
+assert.ok(!cb3.some((r) => r.phase === 'images'), `FAIL CB3: images phase must be absent when hasImages=false — got ${JSON.stringify(cb3)}`)
+
+// CB4 — OWNER / zero-cost: every active phase logs creditDelta 0 (timeline still shows phases).
+const cb4 = buildPhaseBreakdown(0, { pageCount: 4, localeCount: 2, hasImages: true })
+assert.strictEqual(sumDeltas(cb4), 0, `FAIL CB4: owner/zero-cost must sum to 0 — got ${sumDeltas(cb4)}`)
+assert.ok(cb4.length > 0 && cb4.every((r) => r.creditDelta === 0), `FAIL CB4: owner must get 0-delta phase events (not empty) — got ${JSON.stringify(cb4)}`)
+
+// CB5 — odd total with rounding remainder pinned to last phase → STILL exact sum.
+for (const t of [1, 7, 13, 41, 99, 137]) {
+  const rows = buildPhaseBreakdown(t, { pageCount: 3, localeCount: 2, hasImages: true })
+  assert.strictEqual(sumDeltas(rows), t, `FAIL CB5: total ${t} must reconstruct exactly via remainder pinning — got ${sumDeltas(rows)} (${JSON.stringify(rows)})`)
+}
+
+// CB6 — every emitted phase is a known phase, in PHASE_ORDER, with no duplicates.
+const cb6 = buildPhaseBreakdown(60, { pageCount: 2, localeCount: 2, hasImages: true })
+const cb6Phases = cb6.map((r) => r.phase)
+assert.deepStrictEqual([...cb6Phases].sort(), cb6Phases.slice().sort(), `FAIL CB6: sanity`)
+assert.strictEqual(new Set(cb6Phases).size, cb6Phases.length, `FAIL CB6: phases must be unique — got ${JSON.stringify(cb6Phases)}`)
+for (const ph of cb6Phases) {
+  assert.ok(PHASE_ORDER.includes(ph), `FAIL CB6: emitted phase '${ph}' not in PHASE_ORDER`)
+}
+
+console.log('credit-breakdown OK')
