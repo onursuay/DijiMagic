@@ -37,6 +37,15 @@ export interface ThemeTokens {
   /** Faz B: site tarzı (modern|corporate|playful|luxury|minimal|vibrant). theme jsonb'sinde tutulur. */
   style?: string | null
   /**
+   * Codegen v2 üretim MODU (#builder-5a):
+   *   'library'  → VARSAYILAN — blueprint + composition + bileşen kütüphanesi yolu
+   *                (Opus blueprint üretir, kütüphaneden bileşen seçilir, deterministik
+   *                render edilir, gate'ten geçer; fallback blueprint garantili gate-geçer).
+   *   'freeform' → eski serbest-HTML motoru (custom/Pro) — byte-byte korunur.
+   *   null/undefined → 'library' (varsayılan). theme jsonb'sinde tutulur — migration gerekmez.
+   */
+  generationMode?: 'library' | 'freeform' | null
+  /**
    * Codegen (format='html') siteleri için mobil menü açılış animasyonu (perde yönü):
    * 'left' (soldan), 'right' (sağdan), 'top' (yukarıdan). Üretimde
    * `data-yoai-mobile-anim="<value>"` olarak basılır. Tanımsızsa 'left' varsayılır

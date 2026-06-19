@@ -27,6 +27,8 @@ import 'server-only'
  */
 
 import type { PageRole, Website, WebsitePageInput } from '@/lib/website/types'
+import { pickStockImage, isStockReady } from '@/lib/website/stock'
+import { listVersions } from '@/lib/website/store'
 import { buildCodegenContext } from './buildCodegenContext'
 import { generateDesignSystem } from './designSystem'
 import {
@@ -34,6 +36,7 @@ import {
   repairHomePageHtml,
   generatePageHtml,
   repairPageHtml,
+  resolveImagePlaceholders,
   toDesignVars,
   type NavPage,
   type PageSpec,
@@ -41,7 +44,39 @@ import {
 import { planSitePages, type PlannedPage } from './multipagePlan'
 import { gateSiteHtml } from './renderGate'
 import { translatePageHtml, translateStrings } from './translateHtml'
-import type { CodegenContext } from './types'
+import { generateSiteBlueprint, buildFallbackBlueprint } from './blueprintGenerator'
+import { renderComponent } from './library'
+import type { CodegenContext, DesignSystem, SiteBlueprint } from './types'
+
+// eslint-disable-next-line @typescript-eslint/ban-ts-comment
+// @ts-ignore — .mjs imported from TS; Next.js bundler resolves it fine at runtime
+import {
+  inferIndustryTemplateKey as _inferIndustryTemplateKey,
+  deriveSiteSeed as _deriveSiteSeed,
+  renderBlueprintToPages as _renderBlueprintToPages,
+} from './librarySiteShared.mjs'
+
+// Typed wrappers around the pure .mjs library glue (single source of truth).
+const inferIndustryTemplateKey = _inferIndustryTemplateKey as (signals: {
+  category?: string | null
+  siteType?: string | null
+  instruction?: string | null
+}) => string
+const deriveSiteSeed = _deriveSiteSeed as (websiteId: string, versionCount: number) => string
+type RenderedLibraryPage = {
+  locale: string
+  slug: string
+  pageRole: string
+  orderIndex: number
+  html: string
+}
+const renderBlueprintToPages = _renderBlueprintToPages as (
+  blueprint: SiteBlueprint,
+  ds: DesignSystem,
+  seed: string | number,
+  render: typeof renderComponent,
+  opts?: { mobileMenuAnim?: 'left' | 'right' | 'top'; defaultLocale?: string },
+) => RenderedLibraryPage[]
 
 // ---------------------------------------------------------------------------
 // Result type
@@ -166,24 +201,204 @@ export async function generateHtmlSite(
   try {
     // 1. Context (brand text + quarantined untrusted blocks). The revise instruction
     //    (opts.instructions), when present, becomes ctx.instruction → reaches the design
-    //    system prompt + every page's generation prompt (landing + multipage alike).
+    //    system prompt + every page's generation prompt (landing + multipage alike) AND
+    //    the blueprint generator (library mode), so revise steers either path.
     const ctx = await buildCodegenContext(userId, website, opts)
 
     // 2. Design system — generated ONCE, shared across every page (consistent look).
     //    Already soft-fails to a safe default; never throws.
     const ds = await generateDesignSystem(ctx)
 
-    // Branch on siteType: 'landing' keeps the proven single-page flow UNCHANGED;
-    // 'multipage' runs the page-planning → per-page generation → per-page gate flow.
-    if (website.siteType === 'multipage') {
-      return await generateMultipage(ctx, ds, website)
+    // ── Generation MODE (#builder-5a) ──────────────────────────────────────
+    // Default = 'library' (blueprint + composition + component library — the new,
+    // gate-by-construction path). 'freeform' = the legacy free-form HTML engine,
+    // preserved BYTE-FOR-BYTE (custom/Pro). Only an explicit 'freeform' opts out.
+    const mode = website.theme?.generationMode === 'freeform' ? 'freeform' : 'library'
+
+    if (mode === 'freeform') {
+      // FREEFORM (UNCHANGED) — branch on siteType exactly as before:
+      // 'landing' → proven single-page flow; 'multipage' → plan → per-page gen → gate.
+      if (website.siteType === 'multipage') {
+        return await generateMultipage(ctx, ds, website)
+      }
+      return await generateLanding(ctx, ds, website)
     }
-    return await generateLanding(ctx, ds, website)
+
+    // LIBRARY (DEFAULT) — blueprint → composition → renderComponent → gate.
+    return await generateLibrarySite(userId, ctx, ds, website)
   } catch (e) {
     // Belt-and-braces: nothing escapes this orchestrator as a throw.
     console.warn('[generateHtmlSite] soft-fail:', e instanceof Error ? e.message : e)
     return { ok: false, reason: 'generation_failed' }
   }
+}
+
+// ---------------------------------------------------------------------------
+// LIBRARY MODE (DEFAULT, #builder-5a) — blueprint → composition → renderComponent
+// → assemble → gate → fallback-self-repair → multilang.
+//
+// Flow (Bölüm 4.7 / 4.8 / 5):
+//   1. industry template select (infer from category/siteType/instruction).
+//   2. seed = website.id + existing version count (sites differ; regen varies).
+//   3. blueprintGenerator(ctx, template, ds, seed) → SiteBlueprint (Opus, builder-3;
+//      AI invalid/no-key → deterministic fallback blueprint via the validator).
+//   4. compose + render each page's blocks → body HTML (librarySiteShared, pure).
+//   5. per page: resolveImagePlaceholders → gateSiteHtml. On gate fail → ONE
+//      self-repair: re-render the SAME page from the deterministic FALLBACK
+//      blueprint (all-SABİT library components → guaranteed gate-pass) + re-gate;
+//      still failing → ok:false (the route refunds).
+//   6. multilang: translate each gated default-locale page for every extra locale
+//      (best-effort, structure preserved — same as the freeform path).
+//
+// Soft-fail: any throw is caught by the top-level generateHtmlSite try/catch.
+// ---------------------------------------------------------------------------
+
+/** Stock image resolver for {{IMG:query}} — mirrors htmlGenerateShared.makeStockResolver. */
+function makeStockResolver(): (query: string) => Promise<string> {
+  const stockReady = isStockReady()
+  return async (query: string): Promise<string> => {
+    const q = (query || '').trim()
+    if (!q || !stockReady) return ''
+    try {
+      const img = await pickStockImage(q)
+      return img?.url ?? ''
+    } catch {
+      return ''
+    }
+  }
+}
+
+/** SEO for a library page from its slug/pageRole (brand-derived, escaped later). */
+function deriveLibraryPageSeo(
+  ctx: CodegenContext,
+  page: RenderedLibraryPage,
+  siteSeo: { title: string; description: string },
+): { title: string; description: string } {
+  const brand = (ctx.brandName || '').trim() || (ctx.locale === 'en' ? 'Your Brand' : 'Markanız')
+  if (page.pageRole === 'home' || page.slug === 'home') return siteSeo
+  // A short, human page label from the slug (the blueprint slugs are url-safe TR/EN).
+  const label = page.slug.replace(/[-_]+/g, ' ').replace(/\b\w/g, (c) => c.toUpperCase()).trim()
+  const title = label ? clamp(`${label} — ${brand}`, 70) : siteSeo.title
+  return { title, description: siteSeo.description }
+}
+
+/**
+ * Render a blueprint's pages into GATED WebsitePageInput[] (default locale only).
+ * Each page is composed → rendered → image-resolved → gated. The per-page gate
+ * outcome drives the caller's all-or-nothing / self-repair decision.
+ *
+ * @returns { ok:true, pages } when EVERY page gates clean, else { ok:false, reason, failedSlug }.
+ */
+async function renderAndGateBlueprint(
+  ctx: CodegenContext,
+  ds: DesignSystem,
+  website: Website,
+  blueprint: SiteBlueprint,
+  seed: string,
+  resolveImg: (query: string) => Promise<string>,
+  siteSeo: { title: string; description: string },
+): Promise<
+  | { ok: true; pages: WebsitePageInput[] }
+  | { ok: false; reason: string; failedSlug: string }
+> {
+  const rendered = renderBlueprintToPages(blueprint, ds, seed, renderComponent, {
+    mobileMenuAnim: website.theme?.mobileMenuAnim ?? undefined,
+    defaultLocale: website.defaultLocale,
+  })
+  if (rendered.length === 0) {
+    return { ok: false, reason: 'generation_failed', failedSlug: '' }
+  }
+
+  const out: WebsitePageInput[] = []
+  for (const page of rendered) {
+    // {{IMG:query}} → real stock URL (existing resolver; falls back to a safe image).
+    const withImages = await resolveImagePlaceholders(page.html, resolveImg)
+    // Publish gate (builder-4 invariants). Library components pass by construction.
+    const gate = gateSiteHtml(withImages)
+    if (gate.ok === false) {
+      return { ok: false, reason: gate.reason, failedSlug: page.slug }
+    }
+    out.push({
+      locale: website.defaultLocale,
+      slug: page.slug,
+      pageRole: coercePageRole(page.pageRole),
+      sections: [],
+      seo: deriveLibraryPageSeo(ctx, page, siteSeo),
+      orderIndex: page.orderIndex,
+      html: gate.html,
+      format: 'html',
+    })
+  }
+  return { ok: true, pages: out }
+}
+
+async function generateLibrarySite(
+  userId: string,
+  ctx: CodegenContext,
+  ds: DesignSystem,
+  website: Website,
+): Promise<GenerateHtmlSiteResult> {
+  // 1. Industry template — inferred from the site's category / siteType / instruction.
+  const templateKey = inferIndustryTemplateKey({
+    category: website.category,
+    siteType: website.siteType,
+    instruction: ctx.instruction,
+  })
+
+  // 2. Seed — website.id + existing version count (different sites differ; a
+  //    regeneration of the SAME site can vary). Best-effort version count; soft-fail → 0.
+  let versionCount = 0
+  try {
+    versionCount = (await listVersions(userId, website.id)).length
+  } catch {
+    versionCount = 0
+  }
+  const seed = deriveSiteSeed(website.id, versionCount)
+
+  // 3. Blueprint — Opus selects components from the template pool + writes content
+  //    ({{IMG:}} placeholders). Generator failure/invalid → deterministic fallback
+  //    blueprint (the validator handles that inside generateSiteBlueprint).
+  const blueprint = await generateSiteBlueprint(ctx, ds, templateKey, seed)
+
+  const siteSeo = deriveSeo(ctx)
+  const resolveImg = makeStockResolver()
+
+  // 4-5. Compose + render + image-resolve + gate every page.
+  const first = await renderAndGateBlueprint(ctx, ds, website, blueprint, seed, resolveImg, siteSeo)
+
+  let gatedPages: WebsitePageInput[]
+  if (first.ok === true) {
+    gatedPages = first.pages
+  } else {
+    // ONE self-repair — re-compose from the deterministic FALLBACK blueprint
+    // (guaranteed-valid, all-SABİT library components → MUST pass the gate). No
+    // second repair: if even the fallback fails, ok:false (the route refunds).
+    console.warn(
+      `[generateHtmlSite] library gate fail (slug="${first.failedSlug}"): ${first.reason} — self-repair via fallback blueprint`,
+    )
+    const fallback = buildFallbackBlueprint(ds, templateKey, ctx.locale, seed)
+    const repaired = await renderAndGateBlueprint(ctx, ds, website, fallback, seed, resolveImg, siteSeo)
+    if (repaired.ok === false) {
+      console.warn(
+        `[generateHtmlSite] library fallback gate fail (slug="${repaired.failedSlug}"): ${repaired.reason}`,
+      )
+      return { ok: false, reason: repaired.reason }
+    }
+    gatedPages = repaired.pages
+  }
+
+  // Home MUST be present (the blueprint validator guarantees home-first).
+  const home = gatedPages.find((p) => p.slug === 'home') ?? gatedPages[0]
+  if (!home || gatedPages.length === 0) {
+    return { ok: false, reason: 'generation_failed' }
+  }
+
+  // 6. Multi-language — translate each gated default-locale page for every extra
+  //    locale (best-effort, structure preserved; per-page fall-back on a miss).
+  const extraPages = await buildExtraLocalePages(ctx, website, gatedPages)
+
+  const designVars = await toDesignVars(ds)
+  return { ok: true, page: home, pages: [...gatedPages, ...extraPages], designVars }
 }
 
 // ---------------------------------------------------------------------------

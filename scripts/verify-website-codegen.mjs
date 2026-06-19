@@ -2545,3 +2545,113 @@ const themed = { ...cloneSeedA, designSystem: altDs }
 assert.notStrictEqual(blueprintSignature(themed), sigA, `FAIL CO5: a palette change must change the signature`)
 
 console.log('composition OK')
+
+// ---------------------------------------------------------------------------
+// LIBRARY-GENERATE section — the 'library' MODE end-to-end (#builder-5a). With an
+// INJECTED deterministic blueprint (NO live API), the library path produces a
+// MULTI-PAGE site whose EVERY page passes gateSiteHtml (navbar+hero+…+footer from
+// the registry), carries block ids, and is multilang-callable. This is the proof
+// the new default mode yields a gate-passing site through the EXISTING pipeline
+// (compose → renderComponent → resolveImagePlaceholders → gate), mirroring exactly
+// what lib/website/codegen/generateHtmlSite.ts (library mode) does at runtime.
+// ---------------------------------------------------------------------------
+
+const librarySharedPath = path.join(__dirname, '../lib/website/codegen/librarySiteShared.mjs')
+const {
+  inferIndustryTemplateKey,
+  deriveSiteSeed,
+  renderBlueprintToPages,
+  renderComposedPageBody,
+  DEFAULT_TEMPLATE_KEY,
+} = await import(librarySharedPath)
+
+// LG1 — industry inference: known signals map to their template; unknown → default.
+assert.strictEqual(inferIndustryTemplateKey({ category: 'Butik Otel' }), 'otel', `FAIL LG1: 'Butik Otel' must infer 'otel'`)
+assert.strictEqual(inferIndustryTemplateKey({ category: 'Cafe & Restaurant' }), 'restoran', `FAIL LG1: restaurant must infer 'restoran'`)
+assert.strictEqual(inferIndustryTemplateKey({ instruction: 'emlak ve gayrimenkul danışmanlığı' }), 'gayrimenkul', `FAIL LG1: emlak must infer 'gayrimenkul'`)
+assert.strictEqual(inferIndustryTemplateKey({ category: 'tamamen alakasız xyzzy' }), DEFAULT_TEMPLATE_KEY, `FAIL LG1: no match must fall back to the default template`)
+assert.ok(getIndustryTemplate(inferIndustryTemplateKey({ category: 'foo' })), `FAIL LG1: the inferred default must be a REAL template key`)
+
+// LG2 — seed derivation: deterministic, sites differ, regen varies.
+const seedSiteA = deriveSiteSeed('site-AAA', 0)
+assert.strictEqual(deriveSiteSeed('site-AAA', 0), seedSiteA, `FAIL LG2: deriveSiteSeed must be deterministic`)
+assert.notStrictEqual(deriveSiteSeed('site-BBB', 0), seedSiteA, `FAIL LG2: different site id → different seed`)
+assert.notStrictEqual(deriveSiteSeed('site-AAA', 1), seedSiteA, `FAIL LG2: a later version count → different seed (regen varies)`)
+
+// LG3 — END-TO-END: a VALIDATED multi-page blueprint → compose → renderComponent →
+// resolveImagePlaceholders → gate. EVERY page must pass the gate; home is first;
+// each page carries block ids; navbar(header)+hero(<h1>)+footer present.
+const lgTemplateKey = inferIndustryTemplateKey({ category: 'butik otel' }) // → 'otel'
+const lgSeed = deriveSiteSeed('verify-site', 0)
+// Inject the deterministic blueprint via the validator (NO live API): the sample
+// 'otel' blueprint is coerced to a valid SiteBlueprint, exactly as the runtime
+// validator does to the (injected/real) generator output.
+const lgBlueprint = validateBlueprint(
+  validSampleBlueprint, bpDs, COMPONENTS, INDUSTRY_TEMPLATES,
+  { locale: 'tr', industryTemplateKey: lgTemplateKey, seed: lgSeed },
+)
+assert.ok(lgBlueprint.pages.length >= 2, `FAIL LG3: the test blueprint must be MULTI-page — got ${lgBlueprint.pages.length}`)
+
+// The injected deterministic image resolver: never a live call → a safe stock URL.
+const lgResolver = async () => 'https://example.com/stock.jpg'
+
+// Render the WHOLE blueprint to per-page bodies (pure, the same call the orchestrator makes).
+const lgRendered = renderBlueprintToPages(lgBlueprint, bpDs, lgSeed, renderComponent, {
+  mobileMenuAnim: 'left', defaultLocale: 'tr',
+})
+assert.ok(Array.isArray(lgRendered) && lgRendered.length === lgBlueprint.pages.length, `FAIL LG3: one rendered body per blueprint page`)
+assert.strictEqual(lgRendered[0].slug, 'home', `FAIL LG3: home must be the first page`)
+
+// Resolve images + GATE every page (the orchestrator's renderAndGateBlueprint loop).
+const lgGatedPages = []
+for (const page of lgRendered) {
+  assert.ok(typeof page.html === 'string' && page.html.length > 0, `FAIL LG3: page '${page.slug}' rendered empty`)
+  // block ids present (data-yoai-id) — block-patch / visual-edit contract intact.
+  assert.ok(/data-yoai-id="b\d+"/.test(page.html), `FAIL LG3: page '${page.slug}' must carry block ids (data-yoai-id) — got: ${page.html.slice(0, 160)}`)
+  // landmarks from the registry: a navbar header + a footer + exactly one hero <h1>.
+  assert.ok(/<header\b[^>]*data-yoai-block="navbar\./.test(page.html), `FAIL LG3: page '${page.slug}' must start with a registry navbar (header)`)
+  assert.ok(/<footer\b[^>]*data-yoai-block="footer\./.test(page.html), `FAIL LG3: page '${page.slug}' must end with the registry footer`)
+
+  const withImages = await resolveImagePlaceholders(page.html, lgResolver)
+  assert.ok(!/\{\{IMG:/.test(withImages), `FAIL LG3: page '${page.slug}' must have NO raw {{IMG:}} after resolution`)
+  const gate = gateSiteHtml(withImages)
+  assert.ok(gate.ok === true, `FAIL LG3: page '${page.slug}' must PASS the gate — got: ${JSON.stringify(gate)}`)
+  const $lg = load(gate.html)
+  assert.strictEqual($lg('h1').length, 1, `FAIL LG3: page '${page.slug}' must have EXACTLY one <h1> (single hero) — got ${$lg('h1').length}`)
+  assert.ok($lg('header').length >= 1 && $lg('footer').length >= 1, `FAIL LG3: page '${page.slug}' missing header/footer landmark`)
+  lgGatedPages.push({ slug: page.slug, html: gate.html })
+}
+assert.ok(lgGatedPages.some((p) => p.slug !== 'home'), `FAIL LG3: a MULTI-page library site (more than just home)`)
+
+// LG4 — the FALLBACK blueprint (the self-repair source) ALSO produces a gate-passing
+// multi-page site (it is all-SABİT library components → guaranteed gate-pass). This
+// is the invariant the orchestrator relies on for its ONE self-repair attempt.
+const lgFallback = buildFallbackBlueprint(bpDs, getIndustryTemplate(lgTemplateKey), COMPONENTS, 'tr', lgSeed)
+const lgFbRendered = renderBlueprintToPages(lgFallback, bpDs, lgSeed, renderComponent, { mobileMenuAnim: 'left', defaultLocale: 'tr' })
+assert.ok(lgFbRendered.length >= 3, `FAIL LG4: fallback blueprint must be multi-page (>=3) — got ${lgFbRendered.length}`)
+for (const page of lgFbRendered) {
+  const withImages = await resolveImagePlaceholders(page.html, lgResolver)
+  const gate = gateSiteHtml(withImages)
+  assert.ok(gate.ok === true, `FAIL LG4: FALLBACK page '${page.slug}' must PASS the gate (self-repair guarantee) — got: ${JSON.stringify(gate)}`)
+}
+
+// LG5 — MULTILANG path is callable on a gated library page (structure-preserving,
+// injected fake translator → no live API). The same translatePageHtml the
+// orchestrator's buildExtraLocalePages uses; a translated page must re-gate clean.
+const lgHomeHtml = lgGatedPages[0].html
+const lgTranslated = await translatePageHtml(lgHomeHtml, 'tr', 'en', async (strings) => strings.map((s) => `EN:${s}`))
+assert.ok(typeof lgTranslated === 'string' && lgTranslated.length > 0, `FAIL LG5: translatePageHtml must return a non-empty string`)
+const lgTransGate = gateSiteHtml(lgTranslated)
+assert.ok(lgTransGate.ok === true, `FAIL LG5: a translated library page must re-gate clean (structure preserved) — got: ${JSON.stringify(lgTransGate)}`)
+
+// LG6 — renderComposedPageBody buckets blocks into header → <main> → footer (the
+// semantic landmark shape the gate is proven to accept).
+const lgBody = renderComposedPageBody(
+  composeBlueprint(lgBlueprint, bpDs, lgSeed).pages[0],
+  bpDs, renderComponent, { mobileMenuAnim: 'left' },
+)
+assert.ok(/<main>/.test(lgBody) && /<\/main>/.test(lgBody), `FAIL LG6: composed body must wrap content in a single <main> landmark`)
+assert.ok(lgBody.indexOf('<header') < lgBody.indexOf('<main>'), `FAIL LG6: navbar (header) must precede <main>`)
+assert.ok(lgBody.indexOf('<footer') > lgBody.indexOf('</main>'), `FAIL LG6: footer must follow </main>`)
+
+console.log('library-generate OK')
