@@ -44,6 +44,28 @@ export interface CodegenContext {
    * içeriği gerçekten yönlendirir. 'manual'/auto modlarında boş/tanımsız (davranış değişmez).
    */
   referenceDirective?: string
+  /**
+   * #builder-6 — create-modal'daki TARZ seçiminin (siteStyle) zengin tasarım
+   * yönergesi. designSystem prompt'una (palet sıcaklığı / gölge derinliği / hareket
+   * enerjisi / radius hissi) ve blueprint user-message'ına basılır → seçilen tarz
+   * üretilen TOKEN'ları gerçekten şekillendirir (yalnız saklanmaz). styleProfile.mjs
+   * tarafından türetilir; ham `style` id'si geriye dönük uyum için ayrıca `style`'da kalır.
+   */
+  styleDirective?: string
+  /**
+   * #builder-6 — tarza göre TERCİH EDİLEN hero componentKey (luxury → 'hero.luxury',
+   * corporate → 'hero.corporate', …). Blueprint deterministik fallback'inde hero
+   * seçimini yönlendirir ve AI prompt'una "bu hero'yu tercih et" olarak verilir.
+   * Geçerli bir registry hero anahtarı veya '' (yapısal yönlendirme yok).
+   */
+  preferredHero?: string
+  /**
+   * #builder-6 — create-modal'daki YAZI AİLESİ seçiminin (fontPairing) çözülmüş
+   * heading/body/href değerleri. designSystem'e "bu aileyi onurlandır" olarak verilir
+   * → keyfi font seçimi yerine kullanıcının seçtiği (Google-Fonts-yüklenebilir) çift
+   * kullanılır. Yoksa undefined (designSystem kendi seçer — eski davranış).
+   */
+  fontPairing?: { heading: string; body: string; href: string | null }
 }
 
 /**

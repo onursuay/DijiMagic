@@ -54,6 +54,8 @@ interface ValidateOpts {
   locale?: string
   industryTemplateKey?: string | null
   seed?: string | number
+  /** #builder-6 — siteStyle → preferred hero key (HOME hero bias). */
+  preferredHero?: string
 }
 
 const coreValidateBlueprint = _validateBlueprint as (
@@ -69,6 +71,7 @@ const coreBuildFallbackBlueprint = _buildFallbackBlueprint as (
   registry: Registry,
   locale: string,
   seed: string | number,
+  opts?: { preferredHero?: string },
 ) => SiteBlueprint
 const coreIsUsableBlueprint = _isUsableBlueprint as (bp: unknown, registry: Registry) => boolean
 const coreBuildBlueprintSystemPrompt = _buildBlueprintSystemPrompt as () => string
@@ -93,15 +96,22 @@ export function validateBlueprint(
   return coreValidateBlueprint(raw, ds, COMPONENTS as unknown as Registry, INDUSTRY_TEMPLATES_MAP, opts)
 }
 
-/** The deterministic fallback blueprint from an industry template (never empty). */
+/**
+ * The deterministic fallback blueprint from an industry template (never empty).
+ * #builder-6 — `preferredHero` (from the wizard siteStyle) biases the HOME hero.
+ */
 export function buildFallbackBlueprint(
   ds: DesignSystem,
   templateKey: string | null,
   locale: string,
   seed: string | number,
+  preferredHero?: string,
 ): SiteBlueprint {
   const template = templateKey ? getIndustryTemplate(templateKey) : undefined
-  return coreBuildFallbackBlueprint(ds, template, COMPONENTS as unknown as Registry, locale, seed)
+  return coreBuildFallbackBlueprint(
+    ds, template, COMPONENTS as unknown as Registry, locale, seed,
+    preferredHero ? { preferredHero } : undefined,
+  )
 }
 
 /** True iff the blueprint is structurally usable against the real registry. */
@@ -189,12 +199,18 @@ export async function generateSiteBlueprint(
   generate?: BlueprintGenerateFn,
 ): Promise<SiteBlueprint> {
   const template = industryTemplateKey ? getIndustryTemplate(industryTemplateKey) : undefined
-  const opts: ValidateOpts = { locale: ctx.locale, industryTemplateKey, seed }
+  // #builder-6 — thread the siteStyle's preferred hero so BOTH the validator (AI
+  // path) and the deterministic fallback bias the HOME hero toward the chosen tarz.
+  const preferredHero = ctx.preferredHero || ''
+  const opts: ValidateOpts = { locale: ctx.locale, industryTemplateKey, seed, preferredHero }
 
   // No injected fn + no live key → go straight to the deterministic fallback.
   if (!generate && !isAnthropicReady()) {
     console.warn('[blueprintGenerator] Anthropic not ready — using fallback blueprint')
-    return coreBuildFallbackBlueprint(ds, template, COMPONENTS as unknown as Registry, ctx.locale, seed)
+    return coreBuildFallbackBlueprint(
+      ds, template, COMPONENTS as unknown as Registry, ctx.locale, seed,
+      preferredHero ? { preferredHero } : undefined,
+    )
   }
 
   const gen = generate ?? opusGenerate

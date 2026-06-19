@@ -524,6 +524,76 @@ assert.strictEqual(buildReferenceDirective('auto', true, 'tr'), '', `FAIL SP5: a
 
 console.log('source-priority OK')
 
+// ---------------------------------------------------------------------------
+// STYLE-PROFILE section (#builder-6) — the create-modal siteStyle + fontPairing +
+// reference-DNA wiring. These are the deterministic bindings that make each wizard
+// field ACTIVELY shape the LIBRARY generation (not merely get stored).
+// ---------------------------------------------------------------------------
+const styleProfilePath = path.join(__dirname, '../lib/website/codegen/styleProfile.mjs')
+const { styleProfileFor, STYLE_PROFILE_IDS, extractDesignDna, summariseDesignDna } =
+  await import(styleProfilePath)
+// Local registry import (the canonical COMPONENTS is imported later in the file; the
+// ESM module cache makes this a no-cost alias used only by the hero-existence check).
+const { COMPONENTS: STY_COMPONENTS } = await import(
+  path.join(__dirname, '../lib/website/codegen/library/components.mjs')
+)
+
+// STY1 — every wizard style id resolves to a CONCRETE directive + a REAL preferred hero.
+const STY_EXPECTED_HERO = {
+  modern: 'hero.minimal', corporate: 'hero.corporate', playful: 'hero.split-image',
+  luxury: 'hero.luxury', minimal: 'hero.minimal', vibrant: 'hero.full-background',
+}
+for (const id of ['modern', 'corporate', 'playful', 'luxury', 'minimal', 'vibrant']) {
+  assert.ok(STYLE_PROFILE_IDS.includes(id), `FAIL STY1: style '${id}' must be a known style profile`)
+  const p = styleProfileFor(id)
+  assert.ok(p.directive && p.directive.length > 20, `FAIL STY1: style '${id}' must carry a rich directive`)
+  assert.strictEqual(p.preferredHero, STY_EXPECTED_HERO[id], `FAIL STY1: style '${id}' → preferred hero ${STY_EXPECTED_HERO[id]}`)
+  // The preferred hero MUST be a REAL registry hero (else the blueprint bias is dead).
+  assert.ok(STY_COMPONENTS[p.preferredHero] && STY_COMPONENTS[p.preferredHero].category === 'hero',
+    `FAIL STY1: style '${id}' preferred hero '${p.preferredHero}' must be a REAL registry hero`)
+}
+// Unknown/absent style → the wizard default ('modern'), never a crash.
+assert.strictEqual(styleProfileFor('').id, 'modern', `FAIL STY1: empty style → 'modern' default`)
+assert.strictEqual(styleProfileFor('xyzzy').id, 'modern', `FAIL STY1: unknown style → 'modern' default`)
+assert.strictEqual(styleProfileFor(null).id, 'modern', `FAIL STY1: null style → 'modern' default`)
+
+// STY2 — luxury/corporate directives differ (the produced palette/mood truly varies).
+assert.notStrictEqual(styleProfileFor('luxury').directive, styleProfileFor('corporate').directive,
+  `FAIL STY2: distinct styles must yield distinct directives`)
+
+// STY3 — ABSTRACT reference design DNA: a scraped summary distils to a color family /
+// rhythm / sector mood line — and carries NONE of the reference's verbatim copy/URLs
+// (anti-clone §5.4). The scraped summary below mimics referenceScanner's output shape.
+const styRefSummary =
+  'URL: https://example.com | Başlık: Lux Otel Bodrum | Tema rengi: #B0894C | ' +
+  'Üst menü (header): Anasayfa, Odalar, Galeri, İletişim | Yaklaşık bölüm sayısı: 9 | ' +
+  'Bölüm/başlık akışı (layout): Konaklama / Restoran / Spa'
+const styDna = extractDesignDna(styRefSummary)
+assert.ok(styDna && styDna.length > 0, `FAIL STY3: a reference summary must distil to a DNA line — got: ${styDna}`)
+// #B0894C (champagne-bronze, warm hue ~37°) → a WARM color family (orange/amber-gold).
+assert.ok(/color family: (orange|amber\/gold)/i.test(styDna), `FAIL STY3: #B0894C → a warm (orange/amber-gold) family — got: ${styDna}`)
+assert.ok(/sector signal: hospitality/i.test(styDna), `FAIL STY3: otel/restoran headings → hospitality — got: ${styDna}`)
+// A clearly-green theme color → 'green' family (distinct buckets are real).
+assert.ok(/color family: green/i.test(extractDesignDna('Tema rengi: #2E8B57 | Yaklaşık bölüm sayısı: 5')),
+  `FAIL STY3: #2E8B57 → green family`)
+// A clearly-blue theme color → 'blue' family.
+assert.ok(/color family: blue/i.test(extractDesignDna('Tema rengi: #2C57A8 | Yaklaşık bölüm sayısı: 5')),
+  `FAIL STY3: #2C57A8 → blue family`)
+assert.ok(/rhythm:/i.test(styDna), `FAIL STY3: must carry a layout rhythm — got: ${styDna}`)
+// CRITICAL anti-clone: the DNA must NOT echo the reference's verbatim brand/copy/URL.
+assert.ok(!/example\.com/i.test(styDna), `FAIL STY3: DNA must NOT leak the reference URL — got: ${styDna}`)
+assert.ok(!/Lux Otel Bodrum/i.test(styDna), `FAIL STY3: DNA must NOT leak the reference's verbatim title — got: ${styDna}`)
+assert.ok(!/Anasayfa|Odalar|İletişim/i.test(styDna), `FAIL STY3: DNA must NOT copy the reference's nav labels — got: ${styDna}`)
+// Empty / junk → empty DNA (callers skip it).
+assert.strictEqual(extractDesignDna(''), '', `FAIL STY3: empty summary → empty DNA`)
+assert.strictEqual(extractDesignDna(null), '', `FAIL STY3: null summary → empty DNA`)
+
+// STY4 — summariseDesignDna de-dupes across multiple refs; empties drop out.
+const styMany = summariseDesignDna([styRefSummary, styRefSummary, ''])
+assert.ok(styMany && styMany.indexOf('·') === -1, `FAIL STY4: identical refs must de-dup to ONE DNA line — got: ${styMany}`)
+
+console.log('style-profile OK')
+
 console.log('context OK')
 
 // ---------------------------------------------------------------------------
@@ -2439,6 +2509,39 @@ const bpUser = buildBlueprintUserMessage(
 assert.ok(/Available components/.test(bpUser), `FAIL BP5: user message must list available components`)
 assert.ok(listComponentKeys().every((k) => bpUser.includes(k)), `FAIL BP5: user message must include every registry key in the available list`)
 
+// BP6 (#builder-6) — the create-modal STYLE choice ACTIVELY shapes the blueprint:
+//   (a) the rich styleDirective + preferredHero reach the blueprint PROMPT, and
+//   (b) the deterministic fallback HOME hero is BIASED to the preferred hero when it
+//       is present in the home pool (luxury → hero.luxury in the 'otel' home pool).
+const bpUserStyled = buildBlueprintUserMessage(
+  {
+    brandName: 'Deniz Otel', locale: 'tr', style: 'luxury',
+    styleDirective: styleProfileFor('luxury').directive,
+    preferredHero: styleProfileFor('luxury').preferredHero, // 'hero.luxury'
+    instruction: '', untrustedBlocks: [],
+  },
+  getIndustryTemplate('otel'),
+  bpDs,
+  listComponentKeys(),
+)
+assert.ok(/HONOR THIS/.test(bpUserStyled), `FAIL BP6a: the rich style directive must reach the blueprint prompt`)
+assert.ok(/LUXURY/.test(bpUserStyled), `FAIL BP6a: the luxury directive content must reach the blueprint prompt`)
+assert.ok(/Preferred hero[^]*hero\.luxury/.test(bpUserStyled), `FAIL BP6a: the preferred hero must reach the blueprint prompt`)
+
+// (b) Deterministic fallback: HOME hero honours the preferred hero (in-pool) ...
+const fbLux = buildFallbackBlueprint(bpDs, getIndustryTemplate('otel'), COMPONENTS, 'tr', 'site-lux', { preferredHero: 'hero.luxury' })
+const fbLuxHome = fbLux.pages.find((p) => p.pageRole === 'home')
+assert.ok(fbLuxHome && fbLuxHome.blocks.some((b) => b.componentKey === 'hero.luxury'),
+  `FAIL BP6b: luxury siteStyle must bias the fallback HOME hero to hero.luxury`)
+// ... and the SAME flows through validateBlueprint's home scaffold when AI omits a hero.
+const fbCorp = buildFallbackBlueprint(bpDs, getIndustryTemplate('kurumsal'), COMPONENTS, 'tr', 'site-corp', { preferredHero: 'hero.corporate' })
+const fbCorpHome = fbCorp.pages.find((p) => p.pageRole === 'home')
+assert.ok(fbCorpHome && fbCorpHome.blocks.some((b) => b.componentKey === 'hero.corporate'),
+  `FAIL BP6b: corporate siteStyle must bias the fallback HOME hero to hero.corporate`)
+// A preferred hero NOT in the pool must NOT break determinism (falls back to seeded pick).
+const fbMiss = buildFallbackBlueprint(bpDs, getIndustryTemplate('feribot-bilet'), COMPONENTS, 'tr', 'site-miss', { preferredHero: 'hero.luxury' })
+assert.ok(isUsableBlueprint(fbMiss, COMPONENTS), `FAIL BP6b: an out-of-pool preferred hero must still yield a usable blueprint`)
+
 console.log('blueprint OK')
 
 // ---------------------------------------------------------------------------
@@ -2571,6 +2674,20 @@ assert.strictEqual(inferIndustryTemplateKey({ category: 'Cafe & Restaurant' }), 
 assert.strictEqual(inferIndustryTemplateKey({ instruction: 'emlak ve gayrimenkul danışmanlığı' }), 'gayrimenkul', `FAIL LG1: emlak must infer 'gayrimenkul'`)
 assert.strictEqual(inferIndustryTemplateKey({ category: 'tamamen alakasız xyzzy' }), DEFAULT_TEMPLATE_KEY, `FAIL LG1: no match must fall back to the default template`)
 assert.ok(getIndustryTemplate(inferIndustryTemplateKey({ category: 'foo' })), `FAIL LG1: the inferred default must be a REAL template key`)
+// LG1b (#builder-6) — the create-modal does NOT send `category` (it is null); the
+// INSTRUCTION (the modal's description field) + siteType are the live signals that
+// must drive template selection. Prove the wizard's real shape works.
+assert.strictEqual(
+  inferIndustryTemplateKey({ category: null, siteType: 'multipage', instruction: 'Bodrum’da bir feribot bilet sitesi' }),
+  'feribot-bilet', `FAIL LG1b: instruction-only (category null) must still infer 'feribot-bilet'`)
+assert.strictEqual(
+  inferIndustryTemplateKey({ category: null, siteType: 'multipage', instruction: 'butik otel ve konaklama' }),
+  'otel', `FAIL LG1b: instruction 'otel' must infer 'otel' with a null category`)
+// siteType 'landing' biases toward the conversion-first landing template when nothing
+// more specific matches (an empty instruction + landing → 'hizmet-landing').
+assert.strictEqual(
+  inferIndustryTemplateKey({ category: null, siteType: 'landing', instruction: '' }),
+  'hizmet-landing', `FAIL LG1b: a landing siteType (no sector signal) must bias to 'hizmet-landing'`)
 
 // LG2 — seed derivation: deterministic, sites differ, regen varies.
 const seedSiteA = deriveSiteSeed('site-AAA', 0)

@@ -376,7 +376,7 @@ async function generateLibrarySite(
     console.warn(
       `[generateHtmlSite] library gate fail (slug="${first.failedSlug}"): ${first.reason} — self-repair via fallback blueprint`,
     )
-    const fallback = buildFallbackBlueprint(ds, templateKey, ctx.locale, seed)
+    const fallback = buildFallbackBlueprint(ds, templateKey, ctx.locale, seed, ctx.preferredHero)
     const repaired = await renderAndGateBlueprint(ctx, ds, website, fallback, seed, resolveImg, siteSeo)
     if (repaired.ok === false) {
       console.warn(

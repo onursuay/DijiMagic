@@ -42,6 +42,9 @@ import { wrapUntrusted } from './untrusted.mjs'
 // eslint-disable-next-line @typescript-eslint/ban-ts-comment
 // @ts-ignore — .mjs imported from TS; Next.js bundler resolves it fine at runtime
 import { resolveSourceUsage, buildReferenceDirective } from './sourcePriority.mjs'
+// eslint-disable-next-line @typescript-eslint/ban-ts-comment
+// @ts-ignore — .mjs imported from TS; Next.js bundler resolves it fine at runtime
+import { styleProfileFor, summariseDesignDna } from './styleProfile.mjs'
 
 type SourceUsage = {
   useReference: boolean
@@ -58,6 +61,9 @@ const coreBuildReferenceDirective = buildReferenceDirective as (
   hasReferenceContent: boolean,
   locale?: string,
 ) => string
+type StyleProfile = { id: string; directive: string; preferredHero: string; fontMood: string }
+const coreStyleProfileFor = styleProfileFor as (style: string | null | undefined) => StyleProfile
+const coreSummariseDesignDna = summariseDesignDna as (summaries: string[]) => string
 
 const clean = (s: string | null | undefined): string =>
   typeof s === 'string' ? s.trim() : ''
@@ -252,6 +258,22 @@ export async function buildCodegenContext(
         untrustedBlocks.push(wrapUntrusted(`reference_url_${idx + 1}`, summary))
       }
     })
+
+    // #builder-6 / §5.4 — ABSTRACT design DNA: distil the scraped reference summaries
+    // into a derived inspiration line (dominant color family / layout rhythm / sector
+    // signal) — NOT the reference's verbatim copy, images, or markup. Quarantined as
+    // its own <untrusted_source> block (data, never instructions) so it feeds the
+    // designSystem + blueprint MOOD without enabling a clone. Anti-clone safeguard:
+    // the inspiration is an abstraction, so even this channel carries no copyable text.
+    const designDna = coreSummariseDesignDna(refSummaries)
+    if (designDna) {
+      untrustedBlocks.push(
+        wrapUntrusted(
+          'reference_design_dna',
+          `ABSTRACT design inspiration derived from the reference (mood only — NOT a template to copy): ${designDna}`,
+        ),
+      )
+    }
   }
 
   // ── Trusted reference-priority directive ────────────────────────────────
@@ -264,6 +286,25 @@ export async function buildCodegenContext(
     website.defaultLocale,
   )
 
+  // #builder-6 — TARZ (siteStyle) → zengin tasarım yönergesi + tercih edilen hero.
+  // theme.style sihirbazda seçilen tarz id'sidir ('modern' | 'luxury' | …). Ham id
+  // geriye dönük uyum için `style`'da kalır; zengin yönerge designSystem + blueprint
+  // prompt'larını gerçekten yönlendirir, preferredHero blueprint hero seçimini biaslar.
+  const styleProfile = coreStyleProfileFor(theme.style ?? null)
+
+  // #builder-6 — YAZI AİLESİ (fontPairing) → çözülmüş heading/body/href. Sihirbaz
+  // seçilen çifti theme.fontHeading/fontBody/fontHref olarak yazar; bunları
+  // designSystem'e "bu aileyi onurlandır" sinyali olarak veririz. fontHref geçerli bir
+  // Google Fonts css2 URL'i değilse (eski kayıt) DEFAULT çiftine düşürürüz (yüklenebilirlik).
+  const themeHeading = clean(theme.fontHeading)
+  const themeBody = clean(theme.fontBody)
+  const themeHref = clean(theme.fontHref)
+  const fontHrefLoadable = /^https:\/\/fonts\.googleapis\.com\//.test(themeHref) ? themeHref : null
+  const fontPairing =
+    themeHeading && themeBody
+      ? { heading: themeHeading, body: themeBody, href: fontHrefLoadable }
+      : undefined
+
   return {
     brandName,
     locale: website.defaultLocale,
@@ -275,5 +316,9 @@ export async function buildCodegenContext(
     instruction,
     untrustedBlocks,
     referenceDirective: referenceDirective || undefined,
+    // #builder-6 — create-modal alanlarını AKTİF üretim sinyallerine bağla.
+    styleDirective: styleProfile.directive || undefined,
+    preferredHero: styleProfile.preferredHero || undefined,
+    fontPairing,
   }
 }
