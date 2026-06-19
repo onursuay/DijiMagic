@@ -354,9 +354,8 @@ export default function BuilderWorkspace({ websiteId }: { websiteId: string }) {
         setEditBusy(null); setBusy(null)
       }
     },
-    // activeSlugSafe/previewLocale render başında türetilir; closure'dan okunur.
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-    [busy, editBusy, websiteId, selection, selectedLabel, pushChat, settleChat, fetchVersions, tChat, tCat],
+    // Sayfa/dil değişince callback yeniden kurulur → chat her zaman GÜNCEL sayfa+locale'i hedefler.
+    [busy, editBusy, websiteId, selection, selectedLabel, activeSlugSafe, previewLocale, pushChat, settleChat, fetchVersions, tChat, tCat],
   )
 
   // "Baştan üret" (reject) — seçimden bağımsız tüm sayfayı yeniden üretir (/generate revisionMode 'reject').
@@ -389,8 +388,8 @@ export default function BuilderWorkspace({ websiteId }: { websiteId: string }) {
         setBusy(null)
       }
     },
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-    [busy, editBusy, websiteId, pushChat, settleChat, fetchVersions, tChat],
+    // Sayfa/dil değişince callback yeniden kurulur → chat her zaman GÜNCEL sayfa+locale'i hedefler.
+    [busy, editBusy, websiteId, activeSlugSafe, previewLocale, pushChat, settleChat, fetchVersions, tChat],
   )
 
   const approve = async () => {
