@@ -321,6 +321,83 @@ const g5 = gateSiteHtml('<main><script>alert(1)</script><h1>Safe</h1></main>')
 assert.ok(g5.ok === true, `FAIL G5: expected ok:true after sanitize strips script — got: ${JSON.stringify(g5)}`)
 assert.ok(!g5.ok || !g5.html.includes('<script'), `FAIL G5: script survived gate — got: ${g5.ok ? g5.html : ''}`)
 
+// ---------------------------------------------------------------------------
+// GATE QUALITY-INVARIANTS (Plan Bölüm 14 backstops — #builder-4). Each new
+// invariant fails ONLY on a CLEAR violation and NEVER on a valid (SABİT-style)
+// page. The CRITICAL anti-false-positive proof — a full library-composed page
+// passing the gate — is asserted in the `library` section (LIB-GATEINV, where the
+// real registry render is available); here we cover the structural positives +
+// the three negatives with their specific reasons + the current-year positives.
+// currentYear is computed at gate time (new Date().getFullYear()), so these tests
+// age with the calendar — no hardcoded year.
+// ---------------------------------------------------------------------------
+const GI_CY = new Date().getFullYear()
+
+// A SABİT-shaped valid page (opaque header + paired mobile menu + current-year
+// footer copyright). Must PASS — no false-positive on any of the 3 invariants.
+const giValidPage =
+  '<header class="bg-[var(--surface)] sticky top-0">' +
+  '<nav class="flex-nowrap"><a href="#top">Acme</a>' +
+  '<button data-yoai-nav-toggle="mobilenav" aria-controls="mobilenav" aria-expanded="false">Menü</button></nav>' +
+  '<nav id="mobilenav" data-yoai-mobile-nav data-yoai-mobile-anim="left" class="bg-[var(--surface)]"><a href="#a">A</a></nav>' +
+  '</header>' +
+  '<main><h1>Hoş geldiniz</h1><p>İçerik 2010 yılında kuruldu.</p></main>' +
+  `<footer class="bg-[var(--surface)]"><p>&copy; ${GI_CY} Acme</p></footer>`
+const giValid = gateSiteHtml(giValidPage)
+assert.ok(giValid.ok === true, `FAIL GI0: SABİT-shaped valid page must PASS the gate (no false-positive) — got: ${JSON.stringify(giValid)}`)
+
+// GI1 — mobile_menu_broken: a hamburger toggle with NO matching panel id → fail.
+const gi1 = gateSiteHtml(
+  '<header class="bg-[var(--surface)]"><nav><button data-yoai-nav-toggle="x">Menü</button></nav></header>' +
+  '<main><h1>H</h1></main><footer>f</footer>',
+)
+assert.ok(gi1.ok === false && gi1.reason === 'mobile_menu_broken', `FAIL GI1: toggle without a matching #x panel must fail mobile_menu_broken — got: ${JSON.stringify(gi1)}`)
+
+// GI1b — mobile_menu_broken: toggle → an EMPTY data-yoai-mobile-nav panel → fail.
+const gi1b = gateSiteHtml(
+  '<header class="bg-[var(--surface)]"><button data-yoai-nav-toggle="x">Menü</button>' +
+  '<nav id="x" data-yoai-mobile-nav></nav></header><main><h1>H</h1></main><footer>f</footer>',
+)
+assert.ok(gi1b.ok === false && gi1b.reason === 'mobile_menu_broken', `FAIL GI1b: toggle → empty mobile panel must fail mobile_menu_broken — got: ${JSON.stringify(gi1b)}`)
+
+// GI1c — CONSERVATIVE positives: a page with NO mobile nav at all PASSES, and a
+// toggle pointing at a NON-mobile-nav element (runtime legacy fallback) PASSES.
+const gi1c1 = gateSiteHtml('<header class="bg-[var(--surface)]"><nav><a href="#a">A</a></nav></header><main><h1>H</h1></main><footer>f</footer>')
+assert.ok(gi1c1.ok === true, `FAIL GI1c: a page with NO mobile nav must NOT require one — got: ${JSON.stringify(gi1c1)}`)
+const gi1c2 = gateSiteHtml('<header class="bg-[var(--surface)]"><button data-yoai-nav-toggle="x">M</button><div id="x"><a href="#a">A</a></div></header><main><h1>H</h1></main><footer>f</footer>')
+assert.ok(gi1c2.ok === true, `FAIL GI1c: legacy (non-mobile-nav) toggle target must NOT trip mobile_menu_broken — got: ${JSON.stringify(gi1c2)}`)
+
+// GI2 — stale_footer_year: a footer copyright with a year < currentYear → fail.
+const gi2 = gateSiteHtml('<header class="bg-[var(--surface)]"></header><main><h1>H</h1></main><footer>© 2023 Acme</footer>')
+assert.ok(gi2.ok === false && gi2.reason === 'stale_footer_year', `FAIL GI2: footer © 2023 (stale) must fail stale_footer_year — got: ${JSON.stringify(gi2)}`)
+const gi2b = gateSiteHtml(`<header class="bg-[var(--surface)]"></header><main><h1>H</h1></main><footer>&copy; ${GI_CY - 1} Acme</footer>`)
+assert.ok(gi2b.ok === false && gi2b.reason === 'stale_footer_year', `FAIL GI2b: footer &copy; ${GI_CY - 1} (last year) must fail stale_footer_year — got: ${JSON.stringify(gi2b)}`)
+
+// GI2c — CONSERVATIVE positives: © currentYear PASSES; a range "© 2024-<cy>"
+// PASSES (ends in the current year); an old year in BODY content (NOT the footer
+// copyright) PASSES (we never scan body content for years).
+const gi2c1 = gateSiteHtml(`<header class="bg-[var(--surface)]"></header><main><h1>H</h1></main><footer>© ${GI_CY} Acme</footer>`)
+assert.ok(gi2c1.ok === true, `FAIL GI2c: footer © ${GI_CY} (current year) must PASS — got: ${JSON.stringify(gi2c1)}`)
+const gi2c2 = gateSiteHtml(`<header class="bg-[var(--surface)]"></header><main><h1>H</h1></main><footer>© 2024-${GI_CY} Acme</footer>`)
+assert.ok(gi2c2.ok === true, `FAIL GI2c: footer © 2024-${GI_CY} (range ending in current year) must PASS — got: ${JSON.stringify(gi2c2)}`)
+const gi2c3 = gateSiteHtml(`<header class="bg-[var(--surface)]"></header><main><h1>H</h1><p>Kuruluş: 2009.</p></main><footer>© ${GI_CY} Acme</footer>`)
+assert.ok(gi2c3.ok === true, `FAIL GI2c: an old year in BODY content (not footer copyright) must NOT trip stale_footer_year — got: ${JSON.stringify(gi2c3)}`)
+
+// GI3 — transparent_header: a navbar root explicitly bg-transparent → fail.
+const gi3 = gateSiteHtml('<header class="bg-transparent sticky"><nav><a href="#a">A</a></nav></header><main><h1>H</h1></main><footer>f</footer>')
+assert.ok(gi3.ok === false && gi3.reason === 'transparent_header', `FAIL GI3: bg-transparent navbar root must fail transparent_header — got: ${JSON.stringify(gi3)}`)
+const gi3b = gateSiteHtml('<header class="bg-[var(--surface)]/0"><nav><a href="#a">A</a></nav></header><main><h1>H</h1></main><footer>f</footer>')
+assert.ok(gi3b.ok === false && gi3b.reason === 'transparent_header', `FAIL GI3b: a fully-transparent (/0) navbar fill must fail transparent_header — got: ${JSON.stringify(gi3b)}`)
+
+// GI3c — CONSERVATIVE positives: an opaque header PASSES; a header with NO bg
+// class at all PASSES (absence is NOT a violation); a translucent /90 PASSES.
+const gi3c1 = gateSiteHtml('<header class="bg-[var(--surface)] sticky"><nav><a href="#a">A</a></nav></header><main><h1>H</h1></main><footer>f</footer>')
+assert.ok(gi3c1.ok === true, `FAIL GI3c: an opaque navbar root must PASS — got: ${JSON.stringify(gi3c1)}`)
+const gi3c2 = gateSiteHtml('<header class="sticky top-0 z-50"><nav><a href="#a">A</a></nav></header><main><h1>H</h1></main><footer>f</footer>')
+assert.ok(gi3c2.ok === true, `FAIL GI3c: a navbar root with NO bg class must NOT be flagged transparent (absence ≠ violation) — got: ${JSON.stringify(gi3c2)}`)
+const gi3c3 = gateSiteHtml('<header class="bg-[var(--surface)]/90 sticky"><nav><a href="#a">A</a></nav></header><main><h1>H</h1></main><footer>f</footer>')
+assert.ok(gi3c3.ok === true, `FAIL GI3c: a translucent (/90, not /0) navbar fill must PASS — got: ${JSON.stringify(gi3c3)}`)
+
 console.log('gate OK')
 
 // ---------------------------------------------------------------------------
@@ -2012,6 +2089,43 @@ assert.ok(pageGate.ok === true, `FAIL LIB9: composed mini-page must pass the gat
 const $mini = load(pageGate.html)
 assert.strictEqual($mini('h1').length, 1, `FAIL LIB9: composed page must have exactly ONE <h1> (hero) — got ${$mini('h1').length}`)
 assert.ok($mini('header').length >= 1 && $mini('footer').length >= 1 && $mini('main').length >= 1, `FAIL LIB9: composed page missing landmarks`)
+
+// LIB-GATEINV (#builder-4 — CRITICAL anti-false-positive) — the SABİT navbar +
+// footer that builder-1/2 produce MUST satisfy all three new QUALITY INVARIANTS
+// of gateSiteHtml by CONSTRUCTION. A full library-composed page must therefore
+// pass the gate cleanly (already asserted above via pageGate.ok), and must NOT be
+// rejected for any of the three quality reasons. We re-run the gate over BOTH the
+// minimal composed page AND a maximal one (navbar + every hero/content variant +
+// footer) and assert NONE returns mobile_menu_broken / stale_footer_year /
+// transparent_header — proving the invariants never false-positive on real output.
+const QUALITY_REASONS = ['mobile_menu_broken', 'stale_footer_year', 'transparent_header']
+for (const navKey of ['navbar.standard', 'navbar.centered-logo', 'navbar.left-logo-right-cta']) {
+  const nv = renderComponent(navKey, SAMPLE_CONTENT[navKey], libDs, { id: 'b1', mobileMenuAnim: 'left' })
+  // The SABİT navbar pairs the hamburger toggle with a populated, OPAQUE mobile
+  // panel whose id matches → mobile menu intact + header never transparent.
+  const navOnlyGate = gateSiteHtml(nv + '<main><h1>x</h1></main>' + footHtml)
+  assert.ok(navOnlyGate.ok === true, `FAIL LIB-GATEINV: SABİT ${navKey} + footer must PASS the gate — got: ${JSON.stringify(navOnlyGate)}`)
+  assert.ok(!(navOnlyGate.ok === false && QUALITY_REASONS.includes(navOnlyGate.reason)), `FAIL LIB-GATEINV: SABİT ${navKey} must not trip a quality invariant — got: ${JSON.stringify(navOnlyGate)}`)
+}
+// Maximal page: navbar + ALL heroes (one h1 → use just one) is impossible (single
+// h1 rule), so use navbar + hero + EVERY content section + contact + footer.
+const maxBody =
+  navHtml +
+  '<main>' +
+  heroHtml +
+  servicesHtml +
+  renderComponent('testimonials.cards', SAMPLE_CONTENT['testimonials.cards'], libDs, { id: 'b5' }) +
+  renderComponent('gallery.grid', SAMPLE_CONTENT['gallery.grid'], libDs, { id: 'b6' }) +
+  renderComponent('pricing-table.tiers', SAMPLE_CONTENT['pricing-table.tiers'], libDs, { id: 'b7' }) +
+  renderComponent('faq.accordion', SAMPLE_CONTENT['faq.accordion'], libDs, { id: 'b10' }) +
+  ctaHtml +
+  cfHtml +
+  '</main>' +
+  footHtml
+const maxGate = gateSiteHtml(maxBody)
+assert.ok(maxGate.ok === true, `FAIL LIB-GATEINV: a maximal library-composed page must PASS the gate (no quality false-positive) — got: ${JSON.stringify(maxGate)}`)
+// The footer copyright is the CURRENT year (server-injected) → never stale.
+assert.ok(footHtml.includes(String(new Date().getFullYear())), `FAIL LIB-GATEINV: SABİT footer must carry the current year so stale_footer_year never fires`)
 
 // LIB10 — split-image hero is an alternative single-<h1> hero AND emits a well-formed
 // {{IMG: placeholder that resolveImagePlaceholders can later swap (no invented URL).
