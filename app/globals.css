@@ -728,3 +728,12 @@ table tbody tr {
   .wsy-revising,
   .wsy-revising-glow { animation: none !important; }
 }
+
+/* #builder-8a — "Yönet" sağ-drawer'ı içeri kayma. */
+@keyframes wsy-drawer-in {
+  from { transform: translateX(24px); opacity: 0; }
+  to   { transform: translateX(0);    opacity: 1; }
+}
+@media (prefers-reduced-motion: reduce) {
+  .animate-\[wsy-drawer-in_\.25s_ease\] { animation: none !important; }
+}

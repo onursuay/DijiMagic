@@ -5995,7 +5995,36 @@
       "siteCounter": "{current} / {total}",
       "cardPreviewTitle": "{label} home page preview",
       "cardPreviewLoading": "Loading preview…",
-      "cardOpenAria": "Open and edit {label}"
+      "cardOpenAria": "Open and edit {label}",
+      "builder": {
+        "undo": "Undo",
+        "redo": "Redo",
+        "refresh": "Refresh",
+        "fullscreen": "Fullscreen",
+        "exitFullscreen": "Exit fullscreen",
+        "preview": "Preview",
+        "live": "Live",
+        "manage": "Manage",
+        "publish": "Publish",
+        "pagePath": "Page path",
+        "pagesTitle": "Pages",
+        "pagesHint": "Pick the page you want to edit.",
+        "aiPanelTitle": "AI Assistant",
+        "aiPanelHint": "Edit the site with natural commands. This panel is coming soon.",
+        "aiPanelSoon": "Coming soon",
+        "inspectorTitle": "Inspector",
+        "inspectorHint": "Edit the selected section's properties here. Coming soon.",
+        "inspectorSoon": "Coming soon",
+        "manageTitle": "Site Settings",
+        "manageHint": "Domain, design and version history will be managed from this panel soon.",
+        "openManage": "Open settings",
+        "canvasLoading": "Loading canvas…",
+        "deviceLabel": "Device view",
+        "undoTooltip": "Undo (coming soon)",
+        "redoTooltip": "Redo (coming soon)",
+        "reviseTitle": "Revise",
+        "designSettings": "Design & Settings"
+      }
     }
   },
   "sidebar": {

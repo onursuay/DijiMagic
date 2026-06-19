@@ -5995,7 +5995,36 @@
       "siteCounter": "{current} / {total}",
       "cardPreviewTitle": "{label} ana sayfa önizlemesi",
       "cardPreviewLoading": "Önizleme yükleniyor…",
-      "cardOpenAria": "{label} sitesini aç ve düzenle"
+      "cardOpenAria": "{label} sitesini aç ve düzenle",
+      "builder": {
+        "undo": "Geri Al",
+        "redo": "İleri Al",
+        "refresh": "Yenile",
+        "fullscreen": "Tam ekran",
+        "exitFullscreen": "Tam ekrandan çık",
+        "preview": "Önizleme",
+        "live": "Canlı",
+        "manage": "Yönet",
+        "publish": "Yayınla",
+        "pagePath": "Sayfa yolu",
+        "pagesTitle": "Sayfalar",
+        "pagesHint": "Düzenlemek istediğiniz sayfayı seçin.",
+        "aiPanelTitle": "AI Asistan",
+        "aiPanelHint": "Doğal komutla siteyi düzenleyin. Bu panel yakında etkin olacak.",
+        "aiPanelSoon": "Yakında",
+        "inspectorTitle": "Müfettiş",
+        "inspectorHint": "Seçili bölümün özelliklerini buradan düzenleyeceksiniz. Yakında etkin olacak.",
+        "inspectorSoon": "Yakında",
+        "manageTitle": "Site Ayarları",
+        "manageHint": "Alan adı, tasarım ve sürüm geçmişi yakında bu panelden yönetilecek.",
+        "openManage": "Ayarları aç",
+        "canvasLoading": "Tuval yükleniyor…",
+        "deviceLabel": "Cihaz görünümü",
+        "undoTooltip": "Geri Al (yakında)",
+        "redoTooltip": "İleri Al (yakında)",
+        "reviseTitle": "Revize",
+        "designSettings": "Tasarım ve Ayarlar"
+      }
     }
   },
   "sidebar": {
