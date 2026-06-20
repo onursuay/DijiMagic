@@ -330,6 +330,48 @@ function parseUserListCustomer(resourceName: string): string | null {
   return m ? m[1] : null
 }
 
+/**
+ * Observation (Gözlem) vs Targeting (Hedefleme) for the AUDIENCE dimension.
+ *
+ * Google Ads kontrol noktası: campaign/ad_group.targeting_setting.target_restrictions
+ *   TargetRestriction { targetingDimension: 'AUDIENCE', bidOnly: <bool> }
+ *     bidOnly = true  → OBSERVATION: kitle teslimatı KISITLAMAZ, yalnızca teklif (raporlama) sinyali.
+ *     bidOnly = false → TARGETING:   teslimat seçilen kitlelere KISITLANIR (para riski kontrolü).
+ *
+ * Bu ayar kriterin üzerinde DEĞİL, kampanya/ad-grubu entity'sinde yaşar; bu yüzden
+ * audience criteria mutate'inden ayrı, ikinci bir update operasyonu olarak yazılır.
+ * create-campaign.ts'deki desenle bire bir aynı: yalnız AUDIENCE dimension'ı yazılır
+ * (Google API targeting_setting'i komple alır, diğer dimension'ların varsayılanı korunur).
+ *
+ * `entity`: 'campaigns' | 'adGroups' — mutate endpoint seçimi.
+ */
+async function setAudienceTargetRestriction(
+  ctx: Ctx,
+  entity: 'campaigns' | 'adGroups',
+  resourceName: string,
+  bidOnly: boolean,
+): Promise<void> {
+  const res = await fetch(`${GOOGLE_ADS_BASE}/customers/${ctx.customerId}/${entity}:mutate`, {
+    method: 'POST',
+    headers: buildGoogleAdsHeaders(ctx),
+    body: JSON.stringify({
+      operations: [{
+        update: {
+          resourceName,
+          targetingSetting: {
+            targetRestrictions: [{ targetingDimension: 'AUDIENCE', bidOnly }],
+          },
+        },
+        updateMask: 'targeting_setting.target_restrictions',
+      }],
+    }),
+  })
+  if (!res.ok) {
+    const e = await res.json()
+    throw new Error(e?.error?.message ?? `setAudienceTargetRestriction (${entity}) failed`)
+  }
+}
+
 export async function addCampaignAudienceCriteria(
   ctx: Ctx,
   campaignResourceName: string,
@@ -358,6 +400,11 @@ export async function addCampaignAudienceCriteria(
     body: JSON.stringify({ operations }),
   })
   if (!res.ok) { const e = await res.json(); throw new Error(e?.error?.message ?? 'addCampaignAudienceCriteria failed') }
+
+  // Observation vs Targeting — kitle teslimatını KISITLA/KISITLAMA kararını entity'ye yaz.
+  // bidOnly=false (Targeting) seçilmezse Google teslimatı sessizce daraltmaz/genişletmez varsayımına
+  // güvenilmez → kullanıcının seçimi her zaman açıkça uygulanır (para riski H10 düzeltmesi).
+  await setAudienceTargetRestriction(ctx, 'campaigns', campaignResourceName, bidOnly)
 }
 
 export async function addAdGroupAudienceCriteria(
@@ -388,6 +435,10 @@ export async function addAdGroupAudienceCriteria(
     body: JSON.stringify({ operations }),
   })
   if (!res.ok) { const e = await res.json(); throw new Error(e?.error?.message ?? 'addAdGroupAudienceCriteria failed') }
+
+  // Observation vs Targeting — kitle teslimatını KISITLA/KISITLAMA kararını ad-grubuna yaz.
+  // bidOnly=true → OBSERVATION (yalnız teklif), false → TARGETING (teslimatı seçilen kitlelere daralt).
+  await setAudienceTargetRestriction(ctx, 'adGroups', adGroupResourceName, bidOnly)
 }
 
 export async function removeCampaignAudienceCriteria(ctx: Ctx, resourceNames: string[]): Promise<void> {
