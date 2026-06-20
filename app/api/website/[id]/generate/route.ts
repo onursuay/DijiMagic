@@ -9,7 +9,6 @@ import { summarizeSiteForRevision } from '@/lib/website/revisionContext'
 import { getProfileByUserId, getIntelligenceByUserId } from '@/lib/yoai/businessProfileStore'
 import { generateHtmlSite } from '@/lib/website/codegen/generateHtmlSite'
 import { applyBlockPatch } from '@/lib/website/codegen/applyBlockPatch'
-import { logGenerationBreakdown, logGenerationRefund } from '@/lib/website/creditEvents'
 import type { Website, WebsitePageInput, WebsiteSnapshot, ThemeTokens } from '@/lib/website/types'
 
 export const dynamic = 'force-dynamic'
@@ -131,25 +130,11 @@ export async function POST(req: NextRequest, { params }: { params: { id: string 
       },
       pages,
     }
-    const versionId = await createVersion(site.id, snapshot, isRevision ? 'revision' : 'initial', cost)
-
-    // TELEMETRY (fail-soft): break the SINGLE charged `access.spent` down by phase
-    // for the CreditUsageTimeline UI. Owner / 0-cost → 0-delta phase events. This
-    // does NOT spend credits — the atomic ledger (chargeFeature) is the only debit.
-    await logGenerationBreakdown({
-      websiteId: site.id,
-      userId: user.id,
-      versionId,
-      chargedTotal: access.spent,
-      pageCount: pages.filter((p) => p.locale === site.defaultLocale).length || 1,
-      localeCount: locales.length || 1,
-      hasImages: true,
-    })
+    await createVersion(site.id, snapshot, isRevision ? 'revision' : 'initial', cost)
 
     return NextResponse.json({ ok: true, pages, creditCharged: access.spent })
   } catch (e) {
     await access.refund()
-    await logGenerationRefund({ websiteId: site.id, userId: user.id, refundedTotal: access.spent })
     const message = e instanceof Error ? e.message : 'Üretilemedi'
     console.error('[website:generate]', message)
     return NextResponse.json({ ok: false, error: message }, { status: 500 })
@@ -221,18 +206,7 @@ async function generateWithCodegenV2({
       if (patch.ok === true) {
         const persisted = await persistBlockPatch(user.id, site, patch.page, access.spent)
         if (persisted) {
-          // TELEMETRY (fail-soft): a surgical block-patch revision is a single render
-          // phase. access.spent (often 0 within the free-revision window) → 0-delta.
-          await logGenerationBreakdown({
-            websiteId: site.id,
-            userId: user.id,
-            versionId: persisted.versionId,
-            chargedTotal: access.spent,
-            pageCount: 1,
-            localeCount: 1,
-            hasImages: false,
-          })
-          return NextResponse.json({ ok: true, pages: persisted.pages, creditCharged: access.spent })
+          return NextResponse.json({ ok: true, pages: persisted, creditCharged: access.spent })
         }
         // persist edilemedi → tam-üretim fallback'e düş (kredi zaten düşüldü; iade etme).
       } else {
@@ -253,7 +227,6 @@ async function generateWithCodegenV2({
   } catch (e) {
     // generateHtmlSite soft-fail sözleşmelidir; yine de beklenmedik throw olursa krediyi iade et.
     await access.refund()
-    await logGenerationRefund({ websiteId: site.id, userId: user.id, refundedTotal: access.spent })
     const message = e instanceof Error ? e.message : 'Üretilemedi'
     console.error('[website:generate:v2]', message)
     return NextResponse.json({ ok: false, error: message }, { status: 500 })
@@ -262,9 +235,6 @@ async function generateWithCodegenV2({
   // Gate başarısız (self-repair sonrası bile) → iade + 422. Canlıya bozuk site çıkmaz.
   if (result.ok === false) {
     await access.refund()
-    // TELEMETRY (fail-soft): mirror the refund as a 'refunded' event so the timeline
-    // reflects the reversed charge. The real refund is access.refund() (atomic ledger).
-    await logGenerationRefund({ websiteId: site.id, userId: user.id, refundedTotal: access.spent })
     console.warn('[website:generate:v2] gate fail:', result.reason)
     return NextResponse.json(
       { ok: false, error: 'Site oluşturulamadı, lütfen tekrar deneyin.' },
@@ -297,26 +267,12 @@ async function generateWithCodegenV2({
       },
       pages, // html + format taşır (rowToPage map eder) → rollback bozulmadan geri yükler
     }
-    const versionId = await createVersion(site.id, snapshot, isRevision ? 'revision' : 'initial', access.spent)
-
-    // TELEMETRY (fail-soft): faz-bazlı kırılım. result.pages default-locale sayfaları
-    // + extra-locale çevirileri taşır → render = default-locale sayfa sayısı, translate
-    // = ek dil sayısı. access.spent tek gerçek charge; kırılım buna eşittir (çift düşüm yok).
-    await logGenerationBreakdown({
-      websiteId: site.id,
-      userId: user.id,
-      versionId,
-      chargedTotal: access.spent,
-      pageCount: result.pages.filter((p) => p.locale === site.defaultLocale).length || 1,
-      localeCount: (site.locales?.length || 1),
-      hasImages: true,
-    })
+    await createVersion(site.id, snapshot, isRevision ? 'revision' : 'initial', access.spent)
 
     return NextResponse.json({ ok: true, pages, creditCharged: access.spent })
   } catch (e) {
     // Persist aşamasında hata → krediyi iade et (üretildi ama yazılamadı; çift ücret olmasın).
     await access.refund()
-    await logGenerationRefund({ websiteId: site.id, userId: user.id, refundedTotal: access.spent })
     const message = e instanceof Error ? e.message : 'Üretilemedi'
     console.error('[website:generate:v2]', message)
     return NextResponse.json({ ok: false, error: message }, { status: 500 })
@@ -337,7 +293,7 @@ async function persistBlockPatch(
   site: Website,
   patchedPage: WebsitePageInput,
   creditCharged: number,
-): Promise<{ pages: Awaited<ReturnType<typeof replacePages>>; versionId: string } | null> {
+): Promise<Awaited<ReturnType<typeof replacePages>> | null> {
   try {
     const current = await getPages(userId, site.id)
     if (current.length === 0) return null
@@ -370,8 +326,8 @@ async function persistBlockPatch(
       },
       pages,
     }
-    const versionId = await createVersion(site.id, snapshot, 'revision', creditCharged)
-    return { pages, versionId }
+    await createVersion(site.id, snapshot, 'revision', creditCharged)
+    return pages
   } catch (e) {
     console.error('[website:generate:v2] block-patch persist failed:', e instanceof Error ? e.message : e)
     return null

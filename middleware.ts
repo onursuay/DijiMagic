@@ -104,39 +104,6 @@ export async function middleware(request: NextRequest) {
     }
   }
 
-  // 0.5. #builder-7 — MARKALI yeni-sekme TASLAK önizleme host yönlendirmesi. DEFAULT-OFF flag:
-  // WEBSITE_PREVIEW_DOMAIN!=='1' iken bu blok HİÇ çalışmaz → davranış bugünküyle BİREBİR aynı
-  // (dev'de wildcard subdomain çözülmediğinden dev zaten owner-gated path'i kullanır). Açıkken
-  // yalnız `<token>.<PREVIEW_ROOT_DOMAIN>` host'u (ör. <token>.preview.firma.com) token-gated
-  // önizleme route'una rewrite edilir. Dashboard host'u / .vercel.app / localhost ASLA önizleme
-  // sayılmaz (custom-domain deseninin AYNISI). Token = kapı → tahmin-edilemez.
-  if (process.env.WEBSITE_PREVIEW_DOMAIN === '1') {
-    const root = (process.env.PREVIEW_ROOT_DOMAIN || '').trim().toLowerCase()
-    const host = (request.headers.get('host') || '').split(':')[0].toLowerCase()
-    if (
-      root &&
-      host &&
-      host !== APP_HOST &&
-      !host.endsWith('.vercel.app') &&
-      host !== 'localhost' &&
-      host !== '127.0.0.1' &&
-      host !== root &&
-      host.endsWith('.' + root)
-    ) {
-      // En soldaki etiket = token (örn. <token>.preview.firma.com → 'token' bölümü).
-      const token = host.slice(0, host.length - root.length - 1)
-      // Token tek etiket + url-güvenli olmalı (alt-alt-domain veya boş etiket reddedilir).
-      if (token && /^[a-z0-9]+$/.test(token)) {
-        const url = request.nextUrl.clone()
-        const rewrittenPathname = `/site-preview/${token}${pathname === '/' ? '' : pathname}`
-        url.pathname = rewrittenPathname
-        const reqHeaders = new Headers(request.headers)
-        reqHeaders.set('x-pathname', rewrittenPathname)
-        return NextResponse.rewrite(url, { request: { headers: reqHeaders } })
-      }
-    }
-  }
-
   // 1. Handle /en prefix: rewrite to TR filesystem route + set locale
   if (pathname === '/en' || pathname.startsWith('/en/')) {
     const rest = pathname.slice(3) || '/' // strip '/en'

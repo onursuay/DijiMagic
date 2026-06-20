@@ -44,28 +44,6 @@ export interface CodegenContext {
    * içeriği gerçekten yönlendirir. 'manual'/auto modlarında boş/tanımsız (davranış değişmez).
    */
   referenceDirective?: string
-  /**
-   * #builder-6 — create-modal'daki TARZ seçiminin (siteStyle) zengin tasarım
-   * yönergesi. designSystem prompt'una (palet sıcaklığı / gölge derinliği / hareket
-   * enerjisi / radius hissi) ve blueprint user-message'ına basılır → seçilen tarz
-   * üretilen TOKEN'ları gerçekten şekillendirir (yalnız saklanmaz). styleProfile.mjs
-   * tarafından türetilir; ham `style` id'si geriye dönük uyum için ayrıca `style`'da kalır.
-   */
-  styleDirective?: string
-  /**
-   * #builder-6 — tarza göre TERCİH EDİLEN hero componentKey (luxury → 'hero.luxury',
-   * corporate → 'hero.corporate', …). Blueprint deterministik fallback'inde hero
-   * seçimini yönlendirir ve AI prompt'una "bu hero'yu tercih et" olarak verilir.
-   * Geçerli bir registry hero anahtarı veya '' (yapısal yönlendirme yok).
-   */
-  preferredHero?: string
-  /**
-   * #builder-6 — create-modal'daki YAZI AİLESİ seçiminin (fontPairing) çözülmüş
-   * heading/body/href değerleri. designSystem'e "bu aileyi onurlandır" olarak verilir
-   * → keyfi font seçimi yerine kullanıcının seçtiği (Google-Fonts-yüklenebilir) çift
-   * kullanılır. Yoksa undefined (designSystem kendi seçer — eski davranış).
-   */
-  fontPairing?: { heading: string; body: string; href: string | null }
 }
 
 /**
@@ -117,78 +95,4 @@ export interface DesignSystem {
     /** Animation durations in ms [micro, standard, emphasis] */
     durations: number[]
   }
-}
-
-// ---------------------------------------------------------------------------
-// Stage 1.5 — SITE BLUEPRINT (Bölüm 4.7 / 5.1 of the master plan).
-//
-// The blueprint is the single decree of generation: it extends the multipage
-// page plan (multipagePlan.ts) with PER-PAGE BLOCK assignments — each block is a
-// named library component (componentKey ∈ the real registry) + a preset + a
-// layout archetype + the editable content. The composition engine
-// (compositionEngine.mjs) and renderer consume this; htmlGenerate / the
-// deterministic fallback render each block from it.
-//
-// Anti-clone (Bölüm 5): two sites of the SAME industry differ because the
-// composition engine picks a DIFFERENT subset/order of components+presets from
-// the industry template's pool (seed-driven). The blueprint is the data those
-// rules operate on.
-// ---------------------------------------------------------------------------
-
-/**
- * One renderable block on a page. The atom the composition engine orders and the
- * renderer (free-form Opus OR the deterministic fallback) materialises.
- */
-export interface BlueprintBlock {
-  /** Stable per-page id → data-yoai-id (e.g. 'b1'). Sequential within a page. */
-  id: string
-  /** Library registry key → data-yoai-block (e.g. 'hero.split-image'). MUST exist in COMPONENTS. */
-  componentKey: string
-  /**
-   * Named composition variation of the component (e.g. 'split-image', 'tiers').
-   * Defaults to the componentKey's suffix when the generator omits it; purely a
-   * label that travels with the block (the renderer keys off componentKey).
-   */
-  presetKey: string
-  /**
-   * Layout archetype carried for the anti-generic post-checks (e.g.
-   * 'asymmetric-split', 'full-bleed', 'card-grid', 'centered-stack', 'band').
-   * The composition engine forbids two CONSECUTIVE blocks sharing an archetype.
-   */
-  archetype: string
-  /**
-   * The block's editable content — shaped to the component's contentFields.
-   * Images stay as {{IMG:query}} placeholders (the model never invents URLs).
-   */
-  content: Record<string, unknown>
-}
-
-/**
- * A single page of the blueprint — mirrors a PlannedPage (multipagePlan) plus
- * the ordered block list that fills it.
- */
-export interface BlueprintPage {
-  /** BCP47-ish locale this page is authored in (the site default locale). */
-  locale: string
-  /** url-safe slug (home === 'home'); unique within the site. */
-  slug: string
-  /** Coerced PageRole (home | about | services | products | contact | …). */
-  pageRole: string
-  /** 0-based order in the sitemap (home === 0). */
-  orderIndex: number
-  /** The ordered blocks that compose this page (navbar … content … footer). */
-  blocks: BlueprintBlock[]
-}
-
-/**
- * THE SITE BLUEPRINT — the enriched output of blueprintGenerator (replaces the
- * bare multipagePlan output downstream). One per generation.
- */
-export interface SiteBlueprint {
-  /** Chosen industry template key (industryTemplates.mjs) or null (free / unmatched). */
-  industryTemplateKey: string | null
-  /** Stage-1 DesignSystem (palette/font/spacing/motion) — half of the anti-clone signature. */
-  designSystem: DesignSystem
-  /** The site's pages, home first, each with its block list. */
-  pages: BlueprintPage[]
 }

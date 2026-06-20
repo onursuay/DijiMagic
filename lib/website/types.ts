@@ -32,25 +32,10 @@ export interface ThemeTokens {
   dataSourcePriority?: 'reference' | 'manual' | null
   /** Faz 3: siteye bağlı kullanıcı domaini (ör. firma.com). theme jsonb'sinde tutulur. */
   customDomain?: string | null
-  /**
-   * #builder-7: markalı yeni-sekme TASLAK önizleme için tahmini-zor token (rastgele, kısa).
-   * `<token>.preview.<root>` host'unu siteye eşler (token = kapı → erişim sahip oturumu GEREKTİRMEZ
-   * ama tahmin edilemez). İlk istekte üretilir (migration yok); theme jsonb'sinde tutulur.
-   */
-  previewToken?: string | null
   /** Wizard'da girilen ilk marka açıklaması/tarif (ilk AI üretim talimatı). theme jsonb'sinde tutulur. */
   initialInstructions?: string | null
   /** Faz B: site tarzı (modern|corporate|playful|luxury|minimal|vibrant). theme jsonb'sinde tutulur. */
   style?: string | null
-  /**
-   * Codegen v2 üretim MODU (#builder-5a):
-   *   'library'  → VARSAYILAN — blueprint + composition + bileşen kütüphanesi yolu
-   *                (Opus blueprint üretir, kütüphaneden bileşen seçilir, deterministik
-   *                render edilir, gate'ten geçer; fallback blueprint garantili gate-geçer).
-   *   'freeform' → eski serbest-HTML motoru (custom/Pro) — byte-byte korunur.
-   *   null/undefined → 'library' (varsayılan). theme jsonb'sinde tutulur — migration gerekmez.
-   */
-  generationMode?: 'library' | 'freeform' | null
   /**
    * Codegen (format='html') siteleri için mobil menü açılış animasyonu (perde yönü):
    * 'left' (soldan), 'right' (sağdan), 'top' (yukarıdan). Üretimde

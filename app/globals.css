@@ -728,35 +728,3 @@ table tbody tr {
   .wsy-revising,
   .wsy-revising-glow { animation: none !important; }
 }
-
-/* #builder-8d — Geçici üretim zaman-çizelgesi overlay'i yumuşak açılış (yalnız transform/opacity). */
-@keyframes wsy-timeline-pop {
-  from { transform: translateY(10px) scale(0.985); opacity: 0; }
-  to   { transform: translateY(0)    scale(1);     opacity: 1; }
-}
-.wsy-timeline-pop { animation: wsy-timeline-pop 0.32s cubic-bezier(0.22, 1, 0.36, 1) both; }
-@media (prefers-reduced-motion: reduce) {
-  .wsy-timeline-pop { animation: none !important; }
-}
-
-/* #builder-8d — Sayfa-sekmeleri şeridi: yatay scroll'da scrollbar gizle (temiz görünüm). */
-.wsy-tabs-scroll { scrollbar-width: none; -ms-overflow-style: none; }
-.wsy-tabs-scroll::-webkit-scrollbar { display: none; }
-
-/* #builder-8a — "Yönet" sağ-drawer'ı içeri kayma. */
-@keyframes wsy-drawer-in {
-  from { transform: translateX(24px); opacity: 0; }
-  to   { transform: translateX(0);    opacity: 1; }
-}
-@media (prefers-reduced-motion: reduce) {
-  .animate-\[wsy-drawer-in_\.25s_ease\] { animation: none !important; }
-}
-
-/* #builder-8c — Yayınla popup'ı yumuşak açılış. */
-@keyframes wsy-pop-in {
-  from { transform: translateY(8px) scale(.98); opacity: 0; }
-  to   { transform: translateY(0)   scale(1);   opacity: 1; }
-}
-@media (prefers-reduced-motion: reduce) {
-  .animate-\[wsy-pop-in_\.2s_ease\] { animation: none !important; }
-}

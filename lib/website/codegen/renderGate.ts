@@ -28,17 +28,12 @@ export type GateResult =
  * Callers (self-repair logic) key on these — do NOT change them.
  */
 export type GateFailReason =
-  | 'parse_error'         // cheerio could not parse the sanitized output
-  | 'no_h1'               // zero <h1> elements
-  | 'multiple_h1'         // more than one <h1>
-  | 'no_landmark'         // no header / nav / main / footer
-  | 'too_large'           // body >= 220 KB
-  | 'forbidden_remnant'   // <script or on<word>= pattern survived sanitize (should never happen)
-  | 'suspicious_form'     // sensitive input / external (form)action / cross-origin form-exfil attempt
-  // QUALITY INVARIANTS (Plan Bölüm 14 backstops — conservative, clear-violation only):
-  | 'mobile_menu_broken'  // a [data-yoai-nav-toggle="X"] hamburger with no/empty matching mobile panel
-  | 'stale_footer_year'   // footer © copyright names a year earlier than the current calendar year
-  | 'transparent_header'  // navbar/header root is explicitly transparent (bg-transparent / bg-…/0)
+  | 'parse_error'        // cheerio could not parse the sanitized output
+  | 'no_h1'             // zero <h1> elements
+  | 'multiple_h1'       // more than one <h1>
+  | 'no_landmark'       // no header / nav / main / footer
+  | 'too_large'         // body >= 220 KB
+  | 'forbidden_remnant' // <script or on<word>= pattern survived sanitize (should never happen)
 
 // ---------------------------------------------------------------------------
 // Public API

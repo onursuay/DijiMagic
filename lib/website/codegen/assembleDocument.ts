@@ -32,13 +32,10 @@ export interface AssembleDocumentArgs {
   /**
    * serve:   <script src="/yoai-site-runtime.js" defer></script>
    *          (CSP script-src 'self' — NO inline scripts)
-   * preview: site runtime JS inlined into <script>...</script>
+   * preview: runtime JS inlined into <script>...</script>
    *          (srcdoc iframe has no same-origin fetch)
-   * builder: site runtime + BUILDER runtime (yoai-builder-runtime.js) both inlined —
-   *          the visual-edit select layer (#builder-8b). BUILDER CANVAS ONLY: the
-   *          public site / `/s/` serve / new-tab preview NEVER use this mode.
    */
-  mode: 'serve' | 'preview' | 'builder'
+  mode: 'serve' | 'preview'
   /**
    * MULTIPAGE: base path used to rewrite shared-nav `data-yoai-href="<slug>"`
    * links into real hrefs. Absent/empty → no rewrite (single-page 'landing').

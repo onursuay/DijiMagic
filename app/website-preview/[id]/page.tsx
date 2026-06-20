@@ -18,7 +18,7 @@ export default async function WebsitePreviewPage({
   searchParams,
 }: {
   params: { id: string }
-  searchParams: { locale?: string; slug?: string; builder?: string }
+  searchParams: { locale?: string; slug?: string }
 }) {
   const user = await getCurrentUser()
   if (!user) notFound()
@@ -28,13 +28,6 @@ export default async function WebsitePreviewPage({
   const pages = await getPages(user.id, params.id)
   const locale = searchParams?.locale && site.locales.includes(searchParams.locale) ? searchParams.locale : site.defaultLocale
   const slug = searchParams?.slug || 'home'
-  // BUILDER canvas (#builder-8b): ?builder=1 → assemble with the visual-edit select
-  // layer (mode='builder' inlines the builder runtime IN ADDITION to the site runtime).
-  // This page is sahip-özel (owner session) so the flag is gated by auth above; the
-  // public `/s/` serve + new-tab preview never hit this route, so the builder runtime
-  // stays builder-only. The inner iframe is STILL sandboxed `allow-scripts` (no
-  // same-origin) — selection happens purely via postMessage.
-  const builderMode = searchParams?.builder === '1'
   const localePages = pages.filter((p) => p.locale === locale)
   const page =
     localePages.find((p) => p.slug === slug) ??
@@ -58,9 +51,7 @@ export default async function WebsitePreviewPage({
       seo: page.seo ?? {},
       lang: locale || site.defaultLocale,
       fontHref: site.theme?.fontHref ?? null,
-      // BUILDER canvas → 'builder' (site runtime + visual-edit select layer inlined);
-      // plain owner preview → 'preview' (site runtime only). NEVER 'serve' here.
-      mode: builderMode ? 'builder' : 'preview',
+      mode: 'preview',
       // MULTIPAGE nav (preview): rewrite data-yoai-href="<slug>" →
       // /website-preview/<id>?slug=<slug>&locale=<locale>. The iframe page reads
       // ?slug and re-renders, so multipage nav works WITHIN the preview without

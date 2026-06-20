@@ -70,57 +70,6 @@ export async function findWebsiteByCustomDomain(
   return { websiteId: row.id, userId: row.user_id }
 }
 
-/**
- * #builder-7: markalı yeni-sekme önizleme — token'a göre site + TASLAK sayfalarını döner
- * (TÜM kullanıcılar arası; token tahmin-edilemez olduğundan kapı görevini görür → sahip
- * oturumu GEREKTİRMEZ). Yalnız `theme->>previewToken` eşleşen tek satır; yoksa null.
- * Yayınlanmamış TASLAK sayfalar dahil döner (önizleme taslağı gösterir, /s/ yayını değil).
- */
-export async function findWebsiteByPreviewToken(
-  token: string,
-): Promise<PublishedSite | null> {
-  if (!token || token.length < 16) return null
-  const db = requireClient()
-  const { data: siteRow, error } = await db
-    .from('websites')
-    .select('*')
-    .eq('theme->>previewToken', token)
-    .limit(1)
-    .maybeSingle()
-  if (error) throw error
-  if (!siteRow) return null
-  const website = rowToWebsite(siteRow as WebsiteRow)
-  const { data: pageRows, error: pErr } = await db
-    .from('website_pages')
-    .select('*')
-    .eq('website_id', website.id)
-    .order('order_index', { ascending: true })
-  if (pErr) throw pErr
-  return { website, pages: (pageRows as WebsitePageRow[]).map(rowToPage) }
-}
-
-/**
- * #builder-7: sitenin markalı önizleme token'ını döndürür; yoksa tahmin-edilemez yeni bir
- * token üretip theme'e yazar (migration yok). 160-bit rastgele (32 hex char) → tahmin-zor.
- * Yalnız sahibin kaydında çalışır (getWebsite ile doğrulanır).
- */
-export async function ensurePreviewToken(userId: string, id: string): Promise<string | null> {
-  const site = await getWebsite(userId, id)
-  if (!site) return null
-  const existing = site.theme?.previewToken
-  if (existing && existing.length >= 16) return existing
-  const token = randomPreviewToken()
-  await updateWebsite(userId, id, { theme: { ...site.theme, previewToken: token } })
-  return token
-}
-
-/** 160-bit rastgele token (32 hex), URL/subdomain-güvenli. */
-function randomPreviewToken(): string {
-  const bytes = new Uint8Array(20)
-  globalThis.crypto.getRandomValues(bytes)
-  return Array.from(bytes, (b) => b.toString(16).padStart(2, '0')).join('')
-}
-
 /** Yeni taslak site oluşturur (status='draft'). Üretim/kredi bu adımda DEĞİL — Faz 1c. */
 export async function createWebsite(userId: string, input: WebsiteDraftInput): Promise<Website> {
   const db = requireClient()
