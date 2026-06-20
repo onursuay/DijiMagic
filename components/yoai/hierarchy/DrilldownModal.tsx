@@ -2,9 +2,11 @@
 
 /* Kampanya kartında "Ad Set'leri Gör" → bu POPUP açılır (Faz 3 UI).
    Hiyerarşi net görünür: Kampanya (+ tür) → Reklam Seti → Reklam.
-   Modal içinde ad set → reklam drill-down + geri. */
+   FIXED VIEWPORT MODAL — React Portal ile document.body'ye render edilir; sayfa
+   akışından/scroll alanından bağımsız her zaman ekranın TAM ORTASINDA açılır. */
 
 import { useEffect, useRef, useState } from 'react'
+import { createPortal } from 'react-dom'
 import { useTranslations, useLocale } from 'next-intl'
 import { X, ChevronLeft, ChevronRight, Megaphone, Layers } from 'lucide-react'
 import AdsetCard from './AdsetCard'
@@ -26,27 +28,49 @@ export default function DrilldownModal({ campaign, busyId, onDecide, onEditAd, o
   const tc = useTranslations('common')
   const locale = useLocale() as 'tr' | 'en'
   const [adsetId, setAdsetId] = useState<string | null>(null)
+  const [mounted, setMounted] = useState(false)
   const bodyRef = useRef<HTMLDivElement>(null)
   const adset = adsetId ? campaign.adsets.find((a) => a.id === adsetId) : undefined
 
-  // Açılışta gövde her zaman tepeden başlasın → ilk reklam seti (ve Onayla/Reddet) hemen görünür.
+  // Portal yalnız client'ta (document.body) render edilir.
+  useEffect(() => { setMounted(true) }, [])
+
+  // Açılışta gövde tepeden başlasın → ilk reklam seti (ve Onayla/Reddet) hemen görünür.
+  useEffect(() => { if (bodyRef.current) bodyRef.current.scrollTop = 0 }, [adsetId])
+
+  // ESC ile kapat.
   useEffect(() => {
-    if (bodyRef.current) bodyRef.current.scrollTop = 0
+    const onKey = (e: KeyboardEvent) => { if (e.key === 'Escape') onClose() }
+    window.addEventListener('keydown', onKey)
+    return () => window.removeEventListener('keydown', onKey)
+  }, [onClose])
+
+  // Modal açıkken body scroll kilitli; kapanınca eski haline döner.
+  useEffect(() => {
+    const prev = document.body.style.overflow
+    document.body.style.overflow = 'hidden'
+    return () => { document.body.style.overflow = prev }
   }, [])
+
   const payload = (campaign.improvement_payload ?? {}) as { current_objective_label?: string | null }
   const curType = payload.current_objective_label || translateEnum(campaign.current_objective, locale, campaign.source_platform)
 
-  return (
+  if (!mounted) return null
+
+  return createPortal(
     <div
-      className="fixed inset-0 z-[60] flex items-start justify-center p-3 sm:p-8 overflow-y-auto bg-black/60 backdrop-blur-sm"
+      className="fixed inset-0 z-[9999] flex items-center justify-center p-4 bg-black/70 backdrop-blur-sm"
       onClick={onClose}
+      role="dialog"
+      aria-modal="true"
     >
       <div
-        className="relative w-full max-w-5xl my-2 max-h-[92vh] flex flex-col rounded-2xl bg-[#0b1120] border border-[#23314d] shadow-2xl"
+        className="relative flex flex-col rounded-2xl bg-[#0b1120] border border-[#23314d] shadow-2xl"
+        style={{ width: 'min(92vw, 900px)', maxHeight: '85vh' }}
         onClick={(e) => e.stopPropagation()}
       >
         {/* Header — hiyerarşi yolu (kompakt, sabit) */}
-        <div className="shrink-0 sticky top-0 z-10 flex items-center justify-between gap-3 px-5 py-2.5 border-b border-[#23314d] rounded-t-2xl bg-[#0b1120]">
+        <div className="shrink-0 flex items-center justify-between gap-3 px-5 py-2.5 border-b border-[#23314d] rounded-t-2xl bg-[#0b1120]">
           <div className="min-w-0">
             <div className="flex items-center gap-1.5 text-[12px] text-slate-400 flex-wrap">
               <Megaphone className="w-3.5 h-3.5 text-emerald-400" />
@@ -128,6 +152,7 @@ export default function DrilldownModal({ campaign, busyId, onDecide, onEditAd, o
           )}
         </div>
       </div>
-    </div>
+    </div>,
+    document.body,
   )
 }

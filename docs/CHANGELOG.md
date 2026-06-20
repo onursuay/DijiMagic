@@ -2,6 +2,13 @@
 
 ---
 
+## 2026-06-20 — Hero: cursor-following glow TRAIL (tam-alan aurora kaldırıldı) + YoAlgoritma adset modalı Portal ile tam-ortalı
+- **Sorun (1):** Önceki aurora tüm hero'yu boyuyordu (background paneli/kutu gibi). Sahibi yalnız imlecin ARKASINDA renkli blur'lu glow IZI istedi; hero tasarımı birebir kalmalı, çerçeve/kutu/tam-boyama OLMAMALI.
+- **Sorun (2):** Adset modalı sayfa akışında (bazen üstte/altta) açılıyordu — scroll konumuna göre kullanıcının karşısına gelmiyordu.
+- **Çözüm (1):** Tam-alan aurora katmanları kaldırıldı; orijinal hafif statik parıltı geri geldi (hero birebir aynı). Yeni `HeroGlowTrail` (canvas overlay) — `pointermove`'u rAF ile işleyip imlecin geçtiği noktalarda küçük, blur'lu (CSS `filter:blur(16px)` + additive radial), renk-dönüşümlü (cyan/blue/purple/green/pink) glow noktaları üretir; ~0.8s'de opacity ile fade-out, mouse durunca iz kaybolur. `pointer-events:none` + `z-0`, içerik `z-10` üstte; çerçeve/kutu/tam-boyama YOK; mouse yoksa (mobil/reduced-motion) hiçbir şey boyanmaz. Playwright: hareket→renkli iz; durunca→temiz (fade) doğrulandı.
+- **Çözüm (2):** `DrilldownModal` artık `react-dom createPortal` ile `document.body`'ye render edilir (scroll alanı/ancestor containing-block etkisi ortadan kalkar). `fixed inset-0 z-[9999] flex items-center justify-center` + `bg-black/70 backdrop-blur-sm`; kutu `width:min(92vw,900px)` `max-h:85vh` flex-col (sabit header + tek scroll gövdesi). Kapatma: X + overlay tıklaması + ESC; açılınca body scroll kilitli, kapanınca eski hâline döner. `scrollIntoView` KULLANILMADI.
+- **Dosyalar:** `components/landing/HeroGlowTrail.tsx` (yeni), `components/landing/HeroAuroraBackground.tsx` (silindi), `app/page.tsx`, `components/yoai/hierarchy/DrilldownModal.tsx`
+
 ## 2026-06-20 — Anasayfa: cursor-following blurred radial aurora gradient (detaylı spec ile yeniden)
 - **Sorun:** Sahibi aurora efektini detaylı teknik spec ile geri istedi: mouse-takipli, çok-renkli (MAVİ/YEŞİL/MOR) radial-gradient lekeleri; `--mouse-x`/`--mouse-y` CSS değişkenleri; blur+opacity+smooth; pointer-events-none; içerik z-index üstte; rAF; mobilde statik.
 - **Çözüm:** `HeroAuroraBackground` client component — `pointermove`'u rAF + lerp ile `--mouse-x`/`--mouse-y`'ye yazar (her event'te reflow yok). 3 cursor-takipli katman `radial-gradient(circle … at var(--mouse-x) var(--mouse-y))` (mavi #3b82f6 / emerald / mor #a855f7) + 3 blur'lu (`filter:blur(80px)`) süzülen ortam katmanı = mobil/statik aurora tabanı. `pointer-events:none` + `aria-hidden`; container `absolute inset-0 z-0`, içerik `relative z-10` üstte; hero `overflow-hidden`. `prefers-reduced-motion`/mobil → statik. Playwright ile iki mouse konumunda renk-takibi + başlık gradyanı doğrulandı.
