@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server'
 import * as cheerio from 'cheerio'
 import { chargeFeature } from '@/lib/billing/featureGuard'
+import { assertSafeUrl } from '@/lib/seo/assertSafeUrl'
 
 interface Check {
   id: string
@@ -830,6 +831,14 @@ export async function POST(request: NextRequest) {
     const url = normalizeUrl(rawUrl)
     try { new URL(url) } catch {
       return NextResponse.json({ error: 'Geçersiz URL formatı.' }, { status: 400 })
+    }
+
+    // SSRF koruması: özel ağ / loopback / link-local / bulut metadata IP'lerine
+    // (169.254.169.254, localhost, 10.x, 192.168.x …) istek atılmasını engelle.
+    try {
+      await assertSafeUrl(url)
+    } catch {
+      return NextResponse.json({ error: 'Bu adres güvenlik nedeniyle taranamaz.' }, { status: 400 })
     }
 
     const startTime = Date.now()

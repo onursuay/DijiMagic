@@ -2,6 +2,11 @@
 
 ---
 
+## 2026-06-20 — FAZ 0: SEO auth/SSRF + Meta webhook imza doğrulaması (denetim 3/n)
+- **Sorun:** (H4) `/api/seo/ai-visibility` auth + billing guard'sızdı → giriş yapmamış herkes ücretli Tavily/Perplexity kotasını sınırsız tüketebiliyordu. (H5) `/api/seo/analyze` kullanıcı URL'ini SSRF kontrolü olmadan fetch ediyordu (169.254.169.254 metadata, localhost, iç ağ erişimi mümkün). (H2) `/api/meta/webhook` gelen leadgen POST'unu X-Hub-Signature-256 imzası olmadan işliyordu → sahte lead enjeksiyonu + meşru kullanıcının page token tüketimi.
+- **Çözüm:** (H4) `chargeFeature({ featureKey: 'seo', requireSubscription: true })` handler başına eklendi. (H5) `assertSafeUrl` ile özel-ağ/loopback/metadata IP'leri ilk fetch öncesi reddediliyor (redirect-hop sertleştirmesi FAZ 1'e bırakıldı). (H2) `META_APP_SECRET` ile HMAC-SHA256 imza doğrulaması (`timingSafeEqual`); doğrulanmayan istek işlenmiyor.
+- **Dosyalar:** `app/api/seo/ai-visibility/route.ts`, `app/api/seo/analyze/route.ts`, `app/api/meta/webhook/route.ts`
+
 ## 2026-06-20 — FAZ 0: Strateji IDOR + kredi düzeltmeleri (denetim 2/n)
 - **Sorun:** (H6 IDOR) Strateji per-instance route'ları sahipliği yalnız `ad_account_id` ile doğruluyordu → aynı Meta reklam hesabına erişen ikinci kullanıcı (ajans/çoklu yönetici) başkasının stratejisini okuyabilir/düzenleyebilir/silebilirdi. (H7) Plan limiti İÇİNDEKİ ücretsiz stratejide de kredi düşülüyordu (UI "limit içinde ücretsiz, aşımda kredi" diyor). (H8) Kredi düşülüp INSERT başarısız olursa iade edilmiyordu; başlık doğrulaması da kredi düşümünden SONRAydı.
 - **Çözüm:** (H6) 9 per-instance route'un tüm sahiplik/mutasyon sorgularına `.eq('user_id', ctx.userId)` eklendi (`ad_account_id` korundu — defense-in-depth). (H7) Kredi yalnız aylık limit AŞIMINDA düşülüyor; limit içi ve sınırsız plan ücretsiz. (H8) Başlık doğrulaması kredi düşümünden öne alındı; aşım kredisi düşülüp INSERT başarısızsa `refund_credits` ile iade ediliyor.
