@@ -2,6 +2,11 @@
 
 ---
 
+## 2026-06-20 — Hero glow trail: Grower (withgrower) renk paletine geçildi
+- **Sorun:** Sahibi izin "Grower gibi" renklerde olmasını istedi. withgrower.com gerçek tarayıcıda incelendi: marka yeşili `#3ded9a` + mor (`purple-500`) + lacivert; beyaz zeminde blur'lu (`blur(64px)`, ~%20) bloblar + animasyonlu başlık (cursor-takip değil; renk hareketi animasyonlardan).
+- **Çözüm:** `HeroGlowTrail` renk paleti Grower'a çevrildi (yeşil `#3ded9a` / mor `#a855f7` / mavi `#3b82f6`); glow yarıçapı büyütüldü (110-200px) + opacity hafif artırıldı → koyu zeminde mouse gezdikçe Grower hissinde yumuşak yeşil/mor/mavi iz. Cursor-takip + fade-out + `pointer-events:none` + mobil-statik korundu. Playwright ile doğrulandı.
+- **Dosyalar:** `components/landing/HeroGlowTrail.tsx`
+
 ## 2026-06-20 — Hero: cursor-following glow TRAIL (tam-alan aurora kaldırıldı) + YoAlgoritma adset modalı Portal ile tam-ortalı
 - **Sorun (1):** Önceki aurora tüm hero'yu boyuyordu (background paneli/kutu gibi). Sahibi yalnız imlecin ARKASINDA renkli blur'lu glow IZI istedi; hero tasarımı birebir kalmalı, çerçeve/kutu/tam-boyama OLMAMALI.
 - **Sorun (2):** Adset modalı sayfa akışında (bazen üstte/altta) açılıyordu — scroll konumuna göre kullanıcının karşısına gelmiyordu.

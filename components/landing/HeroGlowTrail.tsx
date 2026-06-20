@@ -15,12 +15,11 @@ import { useEffect, useRef } from 'react'
  * - requestAnimationFrame ile çizim; nokta sayısı sınırlı; CSS `blur()` ile sis hissi.
  * - `prefers-reduced-motion` / mobil (mouse yok): efekt çalışmaz (statik kalır).
  */
+// Grower (withgrower.com) paleti: marka yeşili #3ded9a + mor + mavi
 const COLORS = [
-  '34,211,238',  // cyan
-  '59,130,246',  // blue
-  '168,85,247',  // purple
-  '16,185,129',  // green
-  '236,72,153',  // pink
+  '61,237,154',  // grower yeşili #3ded9a
+  '168,85,247',  // mor (purple-500)
+  '59,130,246',  // mavi
 ]
 
 export default function HeroGlowTrail() {
@@ -71,7 +70,7 @@ export default function HeroGlowTrail() {
           y: lastY + (dy * i) / n,
           life: 1,
           color: COLORS[ci % COLORS.length],
-          r: 80 + Math.random() * 70,
+          r: 110 + Math.random() * 90,
         })
         ci++
       }
@@ -86,7 +85,7 @@ export default function HeroGlowTrail() {
         const p = pts[i]
         p.life -= 0.02 // ~0.8s'de fade-out
         if (p.life <= 0) { pts.splice(i, 1); continue }
-        const a = p.life * 0.45
+        const a = p.life * 0.5
         const g = ctx.createRadialGradient(p.x, p.y, 0, p.x, p.y, p.r)
         g.addColorStop(0, `rgba(${p.color},${a})`)
         g.addColorStop(1, `rgba(${p.color},0)`)
