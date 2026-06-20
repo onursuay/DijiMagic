@@ -62,6 +62,29 @@ export type ApplyBlockPatchResult =
   | { ok: false; reason: string }
 
 /**
+ * TARGETED (manual click-select) patch — the user already picked the EXACT block
+ * in the preview, so we SKIP the Sonnet planner and apply ONE deterministic op to
+ * that one block id, reusing the same regenerate → merge → re-gate engine.
+ *
+ *   - 'edit'       → regenerate the block from literal new text (instruction = the text)
+ *   - 'ai_rewrite' → regenerate the block from a natural-language instruction
+ *   - 'delete'     → byte-range splice the block out (no model call)
+ *
+ * Same security as applyBlockPatch: targetId must be a real block id of the target
+ * page; the merged body is re-sanitized + re-gated (gate fail → ok:false, NOT
+ * persisted); the structural invariant guards against silent data-loss. Never
+ * throws. lib/meta/* and lib/google/* untouched.
+ */
+export interface ApplyTargetedBlockPatchInput {
+  targetSlug: string
+  targetLocale: string
+  targetId: string
+  op: 'edit' | 'ai_rewrite' | 'delete'
+  /** 'edit'/'ai_rewrite': the new text / instruction. 'delete': ignored. */
+  instruction: string
+}
+
+/**
  * Apply a targeted block-patch to ONE page of the site.
  *
  * @param userId   owner of the site (context scoping + page ownership)
@@ -115,6 +138,111 @@ export async function applyBlockPatch(
     console.warn('[applyBlockPatch] soft-fail:', e instanceof Error ? e.message : e)
     return { ok: false, reason: 'patch_failed' }
   }
+}
+
+/**
+ * Apply a TARGETED manual patch (click-select) to ONE block of ONE page. The
+ * planner is bypassed (the user selected the exact block); we build the single op
+ * for `targetId` directly and run it through the SAME regenerate/merge/gate engine.
+ *
+ * @returns { ok:true, page } on a gated success; { ok:false, reason } otherwise.
+ *          NEVER throws (every failure path returns ok:false).
+ */
+export async function applyTargetedBlockPatch(
+  userId: string,
+  website: Website,
+  input: ApplyTargetedBlockPatchInput,
+): Promise<ApplyBlockPatchResult> {
+  const op = input.op
+  const targetId = (input.targetId || '').trim()
+  const instruction = (input.instruction || '').trim()
+  if (op !== 'delete' && !instruction) return { ok: false, reason: 'no_instruction' }
+  if (!/^b\d+$/.test(targetId)) return { ok: false, reason: 'bad_target' }
+
+  try {
+    // 1. Load the target page (slug + locale). Must be an html-format page.
+    const pages = await getPages(userId, website.id)
+    const target = pickTargetPage(pages, input.targetSlug, input.targetLocale)
+    if (!target) return { ok: false, reason: 'page_not_found' }
+    const sourceBody = typeof target.html === 'string' ? target.html : ''
+    if (target.format !== 'html' || !sourceBody) return { ok: false, reason: 'not_html_page' }
+
+    // 2. Byte-exact top-level blocks; the selected id MUST be a real block.
+    const blocks = coreExtractBlocks(sourceBody)
+    if (blocks.length === 0) return { ok: false, reason: 'no_blocks' }
+    const cur = blocks.find((b) => b.id === targetId)
+    if (!cur) return { ok: false, reason: 'target_not_found' }
+
+    // 3. DELETE — no model call; splice the block out, then re-gate.
+    if (op === 'delete') {
+      // Guard: refuse to delete the LAST remaining block (would gut the page).
+      if (blocks.length <= 1) return { ok: false, reason: 'cannot_delete_last' }
+      const ops: PatchOp[] = [{ op: 'delete', targetId }]
+      const merged = coreMergeBlocks(sourceBody, blocks, ops, {})
+      if (!merged) return { ok: false, reason: 'empty_merge' }
+      const inv = assertStructuralInvariants(sourceBody, merged, blocks, ops)
+      if (!inv.ok) return { ok: false, reason: inv.reason }
+      const gate = gateSiteHtml(merged)
+      if (gate.ok === false) return { ok: false, reason: gate.reason }
+      return finalize(target, gate.html)
+    }
+
+    // 4. EDIT / AI_REWRITE — regenerate just this block, then merge + re-gate.
+    //    'edit' carries the literal new text; 'ai_rewrite' a free-form instruction.
+    //    Both flow through the SAME block prompt (regenerateBlock 'edit' kind),
+    //    keeping the var/data-yoai-* contract + image resolution identical.
+    const blockInstruction =
+      op === 'edit'
+        ? `Bu bölümün ana metnini aşağıdaki yeni metinle güncelle; düzen, sınıflar ve görseller korunur. Yeni metin: ${instruction}`
+        : instruction
+
+    const ctx = await buildCodegenContext(userId, website, {
+      instructions: blockInstruction,
+      revisionMode: 'edit',
+    })
+    const ds = await generateDesignSystem(ctx)
+
+    const ops: PatchOp[] = [{ op: 'edit', targetId }]
+
+    // ONE self-repair: a transient bad block can be fixed by a second pass.
+    const first = await regenMergeGate(ctx, ds, sourceBody, blocks, cur, ops, blockInstruction)
+    if (first.ok) return finalize(target, first.html)
+    const second = await regenMergeGate(ctx, ds, sourceBody, blocks, cur, ops, blockInstruction)
+    if (second.ok) return finalize(target, second.html)
+    return { ok: false, reason: second.reason || first.reason || 'gate_failed' }
+  } catch (e) {
+    console.warn('[applyTargetedBlockPatch] soft-fail:', e instanceof Error ? e.message : e)
+    return { ok: false, reason: 'patch_failed' }
+  }
+}
+
+/**
+ * Regenerate the single selected block, splice it onto the ORIGINAL body, run the
+ * structural invariant + publish gate. Untouched blocks stay BYTE-IDENTICAL.
+ */
+async function regenMergeGate(
+  ctx: CodegenContext,
+  ds: DesignSystem,
+  sourceBody: string,
+  blocks: Block[],
+  cur: Block,
+  ops: PatchOp[],
+  instruction: string,
+): Promise<{ ok: true; html: string } | { ok: false; reason: string }> {
+  let newHtml: string
+  try {
+    newHtml = await regenerateBlock(ctx, ds, 'edit', cur, instruction)
+  } catch (e) {
+    console.warn('[applyTargetedBlockPatch] block regen failed:', e instanceof Error ? e.message : e)
+    return { ok: false, reason: 'block_regen_failed' }
+  }
+  const merged = coreMergeBlocks(sourceBody, blocks, ops, { [cur.id]: newHtml })
+  if (!merged) return { ok: false, reason: 'empty_merge' }
+  const inv = assertStructuralInvariants(sourceBody, merged, blocks, ops)
+  if (!inv.ok) return { ok: false, reason: inv.reason }
+  const gate = gateSiteHtml(merged)
+  if (gate.ok === false) return { ok: false, reason: gate.reason }
+  return { ok: true, html: gate.html }
 }
 
 // ---------------------------------------------------------------------------

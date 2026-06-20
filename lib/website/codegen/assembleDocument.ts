@@ -61,6 +61,13 @@ export interface AssembleDocumentArgs {
    * OPTIMISTIC success (reveal, no real send). Server-controlled string; escaped.
    */
   formActionBase?: string
+  /**
+   * EDIT OVERLAY: when true (PREVIEW mode ONLY), inline the click-select overlay
+   * (public/yoai-select.js) so the owner önizleme "Düzenle" toggle can select a
+   * block via postMessage. NEVER injected in serve mode or when false/absent —
+   * the published /s/ output and the normal preview stay byte-clean of it.
+   */
+  editMode?: boolean
 }
 
 /**

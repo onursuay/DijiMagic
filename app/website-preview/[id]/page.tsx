@@ -18,7 +18,7 @@ export default async function WebsitePreviewPage({
   searchParams,
 }: {
   params: { id: string }
-  searchParams: { locale?: string; slug?: string }
+  searchParams: { locale?: string; slug?: string; edit?: string }
 }) {
   const user = await getCurrentUser()
   if (!user) notFound()
@@ -28,6 +28,9 @@ export default async function WebsitePreviewPage({
   const pages = await getPages(user.id, params.id)
   const locale = searchParams?.locale && site.locales.includes(searchParams.locale) ? searchParams.locale : site.defaultLocale
   const slug = searchParams?.slug || 'home'
+  // EDIT OVERLAY: ?edit=1 (owner önizleme "Düzenle" toggle) inlines the tiny
+  // click-select overlay into the PREVIEW doc only. Absent → normal preview, no overlay.
+  const editMode = searchParams?.edit === '1'
   const localePages = pages.filter((p) => p.locale === locale)
   const page =
     localePages.find((p) => p.slug === slug) ??
@@ -52,6 +55,9 @@ export default async function WebsitePreviewPage({
       lang: locale || site.defaultLocale,
       fontHref: site.theme?.fontHref ?? null,
       mode: 'preview',
+      // EDIT OVERLAY: inline the click-select script ONLY when ?edit=1 (owner edit
+      // toggle). Normal preview (editMode false) stays byte-clean of the overlay.
+      editMode,
       // MULTIPAGE nav (preview): rewrite data-yoai-href="<slug>" →
       // /website-preview/<id>?slug=<slug>&locale=<locale>. The iframe page reads
       // ?slug and re-renders, so multipage nav works WITHIN the preview without
@@ -72,12 +78,28 @@ export default async function WebsitePreviewPage({
       ),
     })
     return (
-      <iframe
-        srcDoc={doc}
-        sandbox="allow-scripts allow-forms"
-        className="w-full h-screen border-0"
-        title={page.seo?.title || site.label}
-      />
+      <>
+        <iframe
+          srcDoc={doc}
+          sandbox="allow-scripts allow-forms"
+          className="w-full h-screen border-0"
+          title={page.seo?.title || site.label}
+        />
+        {/* EDIT RELAY (?edit=1 only): the select overlay lives in the INNER sandboxed
+            srcDoc iframe; it posts {type:'yoai:select'} to ITS parent — this
+            middle (same-origin, owner-only) page. We forward ONLY validated
+            yoai:select messages up to the onizleme page, which validates
+            e.source === this iframe's contentWindow. No other message is relayed.
+            Absent when not in edit mode → normal preview is untouched. */}
+        {editMode && (
+          <script
+            dangerouslySetInnerHTML={{
+              __html:
+                "(function(){try{window.addEventListener('message',function(e){var d=e.data;if(!d||typeof d!=='object'||d.type!=='yoai:select')return;if(typeof d.blockId!=='string'||!/^b\\d+$/.test(d.blockId))return;if(window.parent&&window.parent!==window){window.parent.postMessage({type:'yoai:select',blockId:d.blockId,role:typeof d.role==='string'?d.role:'',text:typeof d.text==='string'?d.text:'',rect:d.rect&&typeof d.rect==='object'?d.rect:null},'*');}});}catch(err){}})();",
+            }}
+          />
+        )}
+      </>
     )
   }
 

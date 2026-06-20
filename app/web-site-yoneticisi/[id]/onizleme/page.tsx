@@ -4,7 +4,7 @@ import { useState, useEffect, useCallback, useRef } from 'react'
 import { useParams, useRouter } from 'next/navigation'
 import Link from 'next/link'
 import { useTranslations, useLocale } from 'next-intl'
-import { ArrowLeft, Check, X, Pencil, Monitor, Tablet, Smartphone, ExternalLink, Sparkles, Send, ThumbsDown } from 'lucide-react'
+import { ArrowLeft, Check, X, Pencil, Monitor, Tablet, Smartphone, ExternalLink, Sparkles, Send, ThumbsDown, MousePointerClick, Type, Wand2, Trash2 } from 'lucide-react'
 import Topbar from '@/components/Topbar'
 import { ToastContainer, type Toast } from '@/components/Toast'
 import AccessRequiredModal from '@/components/billing/AccessRequiredModal'
@@ -12,6 +12,15 @@ import DictateButton from '@/components/website/DictateButton'
 import type { Website, WebsitePage } from '@/lib/website/types'
 
 type Device = 'desktop' | 'tablet' | 'mobile'
+/** Click-select payload posted by the in-iframe overlay (public/yoai-select.js). */
+type Selection = {
+  blockId: string
+  role: string
+  text: string
+  rect: { top: number; left: number; width: number; height: number; bottom: number; right: number }
+}
+/** Which inline action the edit panel is showing (null = just the action list). */
+type EditAction = 'text' | 'ai' | 'delete' | null
 const DESIGN_W: Record<Device, number> = { desktop: 1280, tablet: 834, mobile: 390 }
 // Daha uzun tasarım yüksekliği → "tam ekran" hissi (önizleme görünür alanın çoğunu doldurur).
 const DESIGN_H = 960
@@ -44,7 +53,14 @@ export default function WebsiteReviewPage() {
   const [showCredit, setShowCredit] = useState(false)
   const [toasts, setToasts] = useState<Toast[]>([])
   const frameWrapRef = useRef<HTMLDivElement>(null)
+  const iframeRef = useRef<HTMLIFrameElement>(null)
   const [wrapW, setWrapW] = useState(0)
+  // ── Manuel tıkla-seç düzenleme (hafif overlay) ──
+  const [editMode, setEditMode] = useState(false)
+  const [selection, setSelection] = useState<Selection | null>(null)
+  const [editAction, setEditAction] = useState<EditAction>(null)
+  const [editText, setEditText] = useState('')
+  const [patchBusy, setPatchBusy] = useState(false)
 
   const addToast = useCallback((message: string, type: Toast['type']) => {
     setToasts((prev) => [...prev, { id: crypto.randomUUID(), message, type }])
@@ -72,6 +88,37 @@ export default function WebsiteReviewPage() {
     return () => ro.disconnect()
   }, [pages.length, device])
 
+  // ── Edit overlay: listen for 'yoai:select' from the sandboxed preview iframe.
+  // SECURITY: only accept a message whose source is OUR iframe's contentWindow and
+  // whose payload has the exact expected shape. The iframe stays sandboxed (no
+  // allow-same-origin); selection is postMessage-only. Listener active in edit mode.
+  useEffect(() => {
+    if (!editMode) return
+    const onMessage = (e: MessageEvent) => {
+      const frame = iframeRef.current
+      if (!frame || e.source !== frame.contentWindow) return
+      const d = e.data
+      if (!d || typeof d !== 'object' || d.type !== 'yoai:select') return
+      if (typeof d.blockId !== 'string' || !/^b\d+$/.test(d.blockId)) return
+      const rect = d.rect && typeof d.rect === 'object' ? d.rect : { top: 0, left: 0, width: 0, height: 0, bottom: 0, right: 0 }
+      setSelection({
+        blockId: d.blockId,
+        role: typeof d.role === 'string' ? d.role : '',
+        text: typeof d.text === 'string' ? d.text : '',
+        rect,
+      })
+      setEditAction(null)
+      setEditText(typeof d.text === 'string' ? d.text : '')
+    }
+    window.addEventListener('message', onMessage)
+    return () => window.removeEventListener('message', onMessage)
+  }, [editMode])
+
+  // Leaving edit mode clears any open selection/panel.
+  useEffect(() => {
+    if (!editMode) { setSelection(null); setEditAction(null); setEditText('') }
+  }, [editMode])
+
   const localePages = pages.filter((p) => p.locale === previewLocale)
   const visiblePages = localePages.length ? localePages : pages
   const activePage = visiblePages.find((p) => p.slug === activeSlug) ?? visiblePages[0] ?? null
@@ -81,6 +128,13 @@ export default function WebsiteReviewPage() {
   const designW = DESIGN_W[device]
   const scale = wrapW > 0 ? Math.min(1, (wrapW - (device === 'mobile' ? 0 : 32)) / designW) : 1
   const pageLabel = (p: WebsitePage) => (PAGE_LABELS[previewLocale] ?? PAGE_LABELS.en)[p.pageRole] ?? p.slug
+  // Sade-TR/EN bölüm etiketi (ham 'hero'/'cta' enum'u UI'da ASLA gösterilmez → i18n'den çevir).
+  // Bilinen rol kümesi sabit; bilinmeyen/boş rol → genel "Bölüm" etiketi (ham değer basılmaz).
+  const KNOWN_ROLES = new Set(['hero', 'services', 'features', 'stats', 'proof', 'cta', 'contact', 'footer', 'header'])
+  const roleLabel = (role: string) => {
+    const key = (role || '').trim()
+    return KNOWN_ROLES.has(key) ? t(`blockRole.${key}`) : t('blockRole.section')
+  }
 
   const revise = async (mode: 'reject' | 'edit') => {
     const text = feedback.trim()
@@ -122,6 +176,40 @@ export default function WebsiteReviewPage() {
       setPanel(mode)
       addToast(t('buildError'), 'error')
     } finally { setBusy(null) }
+  }
+
+  // Manuel tıkla-seç düzenleme → /patch (blok-patch motoru, tekil ücret, re-gate).
+  const applyPatch = async (op: 'edit' | 'ai_rewrite' | 'delete', value: string) => {
+    if (!selection || patchBusy) return
+    setPatchBusy(true)
+    try {
+      const res = await fetch(`/api/website/${id}/patch`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          op,
+          targetId: selection.blockId,
+          targetSlug: activeSlugSafe,
+          targetLocale: previewLocale,
+          ...(op === 'edit' ? { content: value } : {}),
+          ...(op === 'ai_rewrite' ? { instruction: value } : {}),
+        }),
+      })
+      if (res.status === 402) { setShowCredit(true); return }
+      const json = await res.json().catch(() => null)
+      if (json?.ok) {
+        if (Array.isArray(json.pages)) setPages(json.pages)
+        setSelection(null)
+        setEditAction(null)
+        setEditText('')
+        setReloadKey((k) => k + 1)
+        addToast(t('revisionDone'), 'success')
+      } else {
+        addToast(json?.error || t('buildError'), 'error')
+      }
+    } catch {
+      addToast(t('buildError'), 'error')
+    } finally { setPatchBusy(false) }
   }
 
   const approve = async () => {
@@ -181,7 +269,20 @@ export default function WebsiteReviewPage() {
                 ))}
               </div>
             )}
-            <div className="ml-auto inline-flex items-center rounded-lg border border-gray-200 p-0.5 bg-white">
+            <button
+              onClick={() => setEditMode((v) => !v)}
+              disabled={working || !site}
+              aria-pressed={editMode}
+              className={`ml-auto inline-flex items-center gap-2 rounded-lg px-3.5 py-2 text-sm font-medium transition-all active:scale-[0.97] disabled:opacity-50 ${
+                editMode
+                  ? 'bg-primary text-white shadow-sm'
+                  : 'border border-primary/30 bg-primary/5 text-primary hover:bg-primary/10'
+              }`}
+            >
+              {editMode ? <Check className="w-4 h-4" /> : <MousePointerClick className="w-4 h-4" />}
+              {editMode ? t('editModeOn') : t('editModeToggle')}
+            </button>
+            <div className="inline-flex items-center rounded-lg border border-gray-200 p-0.5 bg-white">
               {deviceBtn('desktop', Monitor)}
               {deviceBtn('tablet', Tablet)}
               {deviceBtn('mobile', Smartphone)}
@@ -210,8 +311,12 @@ export default function WebsiteReviewPage() {
                 </div>
               )}
               <iframe
-                key={`${previewLocale}-${activeSlugSafe}-${reloadKey}`}
-                src={`/website-preview/${id}?locale=${previewLocale}&slug=${activeSlugSafe}`}
+                ref={iframeRef}
+                key={`${previewLocale}-${activeSlugSafe}-${reloadKey}-${editMode ? 'e' : 'n'}`}
+                // editMode → ?edit=1 inlines the click-select overlay (preview only).
+                // sandbox stays allow-scripts allow-forms (NO allow-same-origin).
+                src={`/website-preview/${id}?locale=${previewLocale}&slug=${activeSlugSafe}${editMode ? '&edit=1' : ''}`}
+                sandbox="allow-scripts allow-forms"
                 title={t('preview')}
                 className="border-0 bg-white shrink-0"
                 style={{
@@ -223,8 +328,88 @@ export default function WebsiteReviewPage() {
                   borderRadius: device !== 'desktop' ? 18 : 0,
                 }}
               />
+              {editMode && !selection && !working && (
+                <div className="pointer-events-none absolute inset-x-0 top-0 z-10 flex justify-center p-3">
+                  <span className="inline-flex items-center gap-2 rounded-full bg-primary/90 px-3.5 py-1.5 text-xs font-medium text-white shadow-sm">
+                    <MousePointerClick className="w-3.5 h-3.5" /> {t('editModeHint')}
+                  </span>
+                </div>
+              )}
             </div>
           </div>
+
+          {/* Manuel düzenleme paneli — seçili bloğun kompakt aksiyon kartı */}
+          {editMode && selection && (
+            <div className="rounded-xl border border-primary/20 bg-white p-4 shadow-sm animate-card-enter">
+              <div className="flex items-center justify-between gap-3">
+                <div className="flex items-center gap-2.5 min-w-0">
+                  <span className="inline-flex h-9 w-9 shrink-0 items-center justify-center rounded-lg bg-primary/10 text-primary">
+                    <Pencil className="w-4 h-4" />
+                  </span>
+                  <div className="min-w-0">
+                    <h3 className="text-base font-semibold text-gray-900 truncate">{t('selectedBlock', { role: roleLabel(selection.role) })}</h3>
+                    {selection.text && <p className="text-sm text-gray-500 truncate">{selection.text}</p>}
+                  </div>
+                </div>
+                <button onClick={() => { setSelection(null); setEditAction(null) }} disabled={patchBusy} className="text-gray-400 hover:text-gray-600 transition-colors disabled:opacity-40" aria-label={t('cancel')}>
+                  <X className="w-5 h-5" />
+                </button>
+              </div>
+
+              {editAction === null && (
+                <div className="mt-4 flex flex-wrap gap-2.5">
+                  <button onClick={() => { setEditAction('text'); setEditText(selection.text) }} disabled={patchBusy} className="inline-flex items-center gap-2 rounded-lg border border-gray-200 px-4 py-2.5 text-sm font-medium text-gray-700 hover:bg-gray-50/60 transition-colors disabled:opacity-50">
+                    <Type className="w-4 h-4" /> {t('editTextAction')}
+                  </button>
+                  <button onClick={() => { setEditAction('ai'); setEditText('') }} disabled={patchBusy} className="inline-flex items-center gap-2 rounded-lg border border-primary/30 bg-primary/5 px-4 py-2.5 text-sm font-medium text-primary hover:bg-primary/10 transition-colors disabled:opacity-50">
+                    <Wand2 className="w-4 h-4" /> {t('aiRewriteAction')}
+                  </button>
+                  <button onClick={() => setEditAction('delete')} disabled={patchBusy} className="inline-flex items-center gap-2 rounded-lg border border-red-200 bg-red-50 px-4 py-2.5 text-sm font-medium text-red-700 hover:bg-red-100 transition-colors disabled:opacity-50">
+                    <Trash2 className="w-4 h-4" /> {t('deleteBlockAction')}
+                  </button>
+                </div>
+              )}
+
+              {(editAction === 'text' || editAction === 'ai') && (
+                <div className="mt-4">
+                  <textarea
+                    value={editText}
+                    onChange={(e) => setEditText(e.target.value)}
+                    rows={editAction === 'text' ? 4 : 3}
+                    autoFocus
+                    placeholder={editAction === 'text' ? t('editTextPlaceholder') : t('aiRewritePlaceholder')}
+                    className="w-full rounded-xl border border-gray-200 p-3 text-sm leading-relaxed focus:outline-none focus:border-primary focus:ring-2 focus:ring-primary/20 transition-all resize-none"
+                  />
+                  <div className="mt-3 flex items-center justify-end gap-2.5">
+                    <button onClick={() => setEditAction(null)} disabled={patchBusy} className="rounded-lg px-4 py-2.5 text-sm font-medium text-gray-600 hover:bg-gray-100 transition-colors disabled:opacity-50">
+                      {t('cancel')}
+                    </button>
+                    <button
+                      onClick={() => applyPatch(editAction === 'text' ? 'edit' : 'ai_rewrite', editText.trim())}
+                      disabled={patchBusy || !editText.trim()}
+                      className="inline-flex items-center gap-2 rounded-lg bg-primary px-5 py-2.5 text-sm font-semibold text-white active:scale-[0.97] transition-all disabled:opacity-50"
+                    >
+                      <Send className="w-4 h-4" /> {patchBusy ? t('revising') : t('applyEdit')}
+                    </button>
+                  </div>
+                </div>
+              )}
+
+              {editAction === 'delete' && (
+                <div className="mt-4 rounded-xl border border-red-200 bg-red-50 p-3.5">
+                  <p className="text-sm text-red-700">{t('deleteBlockConfirm')}</p>
+                  <div className="mt-3 flex items-center justify-end gap-2.5">
+                    <button onClick={() => setEditAction(null)} disabled={patchBusy} className="rounded-lg px-4 py-2.5 text-sm font-medium text-gray-600 hover:bg-gray-100 transition-colors disabled:opacity-50">
+                      {t('cancel')}
+                    </button>
+                    <button onClick={() => applyPatch('delete', '')} disabled={patchBusy} className="inline-flex items-center gap-2 rounded-lg bg-red-600 px-5 py-2.5 text-sm font-semibold text-white active:scale-[0.97] transition-all disabled:opacity-50">
+                      <Trash2 className="w-4 h-4" /> {patchBusy ? t('revising') : t('deleteBlockAction')}
+                    </button>
+                  </div>
+                </div>
+              )}
+            </div>
+          )}
 
           {/* Aksiyon barı: Onayla / Reddet / Düzenle */}
           {!site ? (

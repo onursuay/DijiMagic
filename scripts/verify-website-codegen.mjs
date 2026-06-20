@@ -264,6 +264,37 @@ assert.ok(previewDoc.includes('yoai-site-runtime v1'), `FAIL A2: preview mode mu
 assert.ok(!previewDoc.includes('<script src="/yoai-site-runtime.js"'), `FAIL A2: preview mode must not use external runtime script src`)
 assert.ok(previewDoc.includes('fonts.googleapis.com'), `FAIL A2: fontHref not included in preview mode`)
 
+// A2b — EDIT OVERLAY (click-select) injection is EDIT-MODE-ONLY:
+//   - preview + editMode:true  → inlined (marker 'yoai-select v1' present)
+//   - preview + editMode:false → ABSENT (normal preview stays byte-clean)
+//   - preview (no editMode arg) → ABSENT (default off)
+//   - serve  + editMode:true   → ABSENT (published /s/ NEVER gets the overlay)
+const editDoc = await assembleDocument({
+  bodyHtml: sampleBody, designVars: sampleDesignVars, seo: { title: 'Edit' }, lang: 'tr', fontHref: null,
+  mode: 'preview', editMode: true,
+})
+assert.ok(editDoc.includes('yoai-select v1'), `FAIL A2b: preview + editMode:true MUST inline the click-select overlay (marker 'yoai-select v1')`)
+assert.ok(editDoc.includes('yoai-site-runtime v1'), `FAIL A2b: edit-mode preview must STILL include the normal runtime`)
+
+const editOffDoc = await assembleDocument({
+  bodyHtml: sampleBody, designVars: sampleDesignVars, seo: { title: 'NoEdit' }, lang: 'tr', fontHref: null,
+  mode: 'preview', editMode: false,
+})
+assert.ok(!editOffDoc.includes('yoai-select v1'), `FAIL A2b: preview + editMode:false MUST NOT inline the overlay`)
+
+// default (no editMode arg) → off (this is the existing previewDoc above)
+assert.ok(!previewDoc.includes('yoai-select v1'), `FAIL A2b: normal preview (no editMode) MUST NOT inline the overlay`)
+
+const editServeDoc = await assembleDocument({
+  bodyHtml: sampleBody, designVars: sampleDesignVars, seo: { title: 'Serve' }, lang: 'tr', fontHref: null,
+  mode: 'serve', editMode: true,
+})
+assert.ok(!editServeDoc.includes('yoai-select v1'), `FAIL A2b: serve mode MUST NEVER inline the overlay even with editMode:true (published site is clean)`)
+// serve mode is also clean of the normal inline runtime (external script only)
+assert.ok(!serveDoc.includes('yoai-select v1'), `FAIL A2b: serve mode must be clean of the overlay`)
+
+console.log('edit-overlay OK')
+
 // A3 — HTML escaping: AI-generated title with HTML/attr special chars
 const xssTitle = '<b>Acme & "Co"</b>'
 const escapedDoc = await assembleDocument({
