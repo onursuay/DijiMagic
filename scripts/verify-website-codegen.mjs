@@ -503,7 +503,7 @@ console.log('context OK')
 
 // Load the pure validator (single source of truth — also used by designSystem.ts)
 const designSystemValidatePath = path.join(__dirname, '../lib/website/codegen/designSystemValidate.mjs')
-const { validateDesignSystem, SAFE_DEFAULT_DESIGN_SYSTEM } = await import(designSystemValidatePath)
+const { validateDesignSystem, SAFE_DEFAULT_DESIGN_SYSTEM, ensureNeutralSurface, colorToHsl } = await import(designSystemValidatePath)
 
 // D1 — Malicious DesignSystem: accent with CSS injection, spacingScale with } injection
 const malicious = {
@@ -614,6 +614,59 @@ const withAmber = {
 const d4 = validateDesignSystem(withAmber)
 assert.strictEqual(d4.palette.accent, '#d97706', `FAIL D4: amber accent was rejected — got: ${d4.palette.accent}`)
 assert.strictEqual(d4.palette.accentSoft, '#fef3c7', `FAIL D4: amber accentSoft was rejected — got: ${d4.palette.accentSoft}`)
+// D4 cream surface (#fffbeb) is a LEGITIMATE near-white neutral — the guard must NOT touch it.
+assert.strictEqual(d4.palette.surface, '#fffbeb', `FAIL D4: legit cream surface was wrongly coerced — got: ${d4.palette.surface}`)
+
+// ---------------------------------------------------------------------------
+// D5 — NEUTRAL-SURFACE GUARD (60-30-10 defense-in-depth). The brand color must
+// be an ACCENT, never the page background. If the model emits a brand-tinted
+// surface (e.g. navy page for a navy brand), validateDesignSystem coerces it
+// back to a neutral so the generated site never floods the page with the hue.
+// This must work for ANY brand color (hue-agnostic) and must NOT touch real
+// neutrals (white / near-white / cream / deep-neutral darks).
+// ---------------------------------------------------------------------------
+
+// D5a — navy brand with a NAVY surface (the exact reported bug) → surface forced neutral.
+const navyFlood = {
+  palette: { ink: '#e8eef6', accent: '#1e3a5f', accentSoft: '#dbe7f5', surface: '#1e3a5f', onAccent: '#ffffff', muted: '#9fb3c8', border: '#2b4a6b' },
+  fonts: { headingHref: null, heading: '"Space Grotesk", sans-serif', body: 'Inter, sans-serif' },
+  spacingScale: ['1rem'], radiusScale: ['0.5rem'], shadowRecipes: ['0 1px 3px rgba(0,0,0,0.1)'],
+  gradientRecipes: ['linear-gradient(135deg,#1e3a5f 0%,#0a1929 100%)'], motion: { easing: 'ease', durations: [150, 250, 400] },
+}
+const d5a = validateDesignSystem(navyFlood)
+assert.ok(
+  d5a.palette.surface === '#ffffff' || d5a.palette.surface === '#0c0f14',
+  `FAIL D5a: navy surface must be coerced to a NEUTRAL — got: ${d5a.palette.surface}`,
+)
+assert.notStrictEqual(d5a.palette.surface, '#1e3a5f', `FAIL D5a: brand-tinted surface survived — page would flood navy`)
+// the accent (brand color) is preserved — only surface is neutralized
+assert.strictEqual(d5a.palette.accent, '#1e3a5f', `FAIL D5a: accent (brand color) must be preserved — got: ${d5a.palette.accent}`)
+
+// D5b — works for a DIFFERENT brand color (crimson) → still coerced (hue-agnostic).
+const crimsonFlood = validateDesignSystem({
+  palette: { ink: '#fff', accent: '#b91c1c', accentSoft: '#fde2e2', surface: '#7f1d1d', onAccent: '#fff', muted: '#d4a', border: '#922' },
+  fonts: { headingHref: null, heading: '"Fraunces", serif', body: 'Inter, sans-serif' },
+  spacingScale: ['1rem'], radiusScale: ['0.5rem'], shadowRecipes: ['0 1px 3px rgba(0,0,0,0.1)'],
+  gradientRecipes: ['linear-gradient(135deg,#b91c1c 0%,#7f1d1d 100%)'], motion: { easing: 'ease', durations: [150, 250, 400] },
+})
+assert.ok(
+  crimsonFlood.palette.surface === '#ffffff' || crimsonFlood.palette.surface === '#0c0f14',
+  `FAIL D5b: crimson-tinted surface must be coerced to NEUTRAL (any brand color) — got: ${crimsonFlood.palette.surface}`,
+)
+
+// D5c — LEGITIMATE neutrals pass UNCHANGED (no false positives across themes).
+for (const s of ['#ffffff', '#f7f8fa', '#fffbeb', '#0b0e12', '#0c0f14', '#11151b']) {
+  const got = ensureNeutralSurface(s, '#1e3a5f')
+  assert.strictEqual(got, s, `FAIL D5c: legit neutral surface ${s} was wrongly coerced — got: ${got}`)
+}
+
+// D5d — colorToHsl basic correctness (hex / rgb / hsl parse to comparable HSL).
+const hslW = colorToHsl('#ffffff')
+assert.ok(hslW && hslW.s === 0 && hslW.l === 1, `FAIL D5d: #ffffff must parse to s:0 l:1 — got: ${JSON.stringify(hslW)}`)
+assert.ok(colorToHsl('rgb(255,255,255)')?.l === 1, `FAIL D5d: rgb() white must parse to l:1`)
+const hslNavy = colorToHsl('#1e3a5f')
+assert.ok(hslNavy && hslNavy.s > 0.3, `FAIL D5d: navy must read as saturated (s>0.3) — got: ${JSON.stringify(hslNavy)}`)
+assert.strictEqual(colorToHsl('transparent'), null, `FAIL D5d: named color must fail-open (null) — got: ${JSON.stringify(colorToHsl('transparent'))}`)
 
 console.log('designsystem OK')
 
@@ -628,6 +681,7 @@ const {
   toDesignVars,
   resolveImagePlaceholders,
   buildHtmlSystemPrompt,
+  buildBlockSystemPrompt,
   buildHtmlUserMessage,
   buildRepairUserMessage,
   repairInstructionFor,
@@ -664,6 +718,26 @@ assert.ok(/FORBIDDEN/i.test(sys), `FAIL H2: prompt missing color-freedom/forbidd
 assert.ok(sys.includes('{{IMG:'), `FAIL H2: prompt missing {{IMG:}} image-placeholder directive`)
 assert.ok(sys.includes('data-yoai-reveal'), `FAIL H2: prompt missing data-yoai-reveal motion hook`)
 assert.ok(sys.includes('data-yoai-block'), `FAIL H2: prompt missing data-yoai-block section hook`)
+
+// H2-COLOR — 60-30-10 ACCENT DISCIPLINE (the brand-color-flood fix). The COLOR
+// ethos must teach neutral backgrounds + accent restraint, and must NOT contain
+// the old flooding directives ("DOMINATE" / "color flows through the page").
+assert.ok(/60-30-10/.test(sys), `FAIL H2-COLOR: prompt missing the 60-30-10 accent discipline`)
+assert.ok(!/--accent DOMINATE/i.test(sys), `FAIL H2-COLOR: prompt still tells --accent to DOMINATE (flooding directive)`)
+assert.ok(!/color flows through the page/i.test(sys), `FAIL H2-COLOR: prompt still says color should "flow through the page" (flooding)`)
+// must explicitly forbid accent/accent-soft as a full background
+assert.ok(/Do NOT use bg-\[var\(--accent\)\]/i.test(sys), `FAIL H2-COLOR: prompt must forbid bg-[var(--accent)] as a full-section/page background`)
+assert.ok(/NEUTRAL/.test(sys), `FAIL H2-COLOR: prompt must call the surface/background NEUTRAL`)
+// modern gradient over-application is constrained to ONE band
+const sysModernColor = buildHtmlSystemPrompt({ style: 'modern' })
+assert.ok(/ONE band only/i.test(sysModernColor) || /at most ONE band/i.test(sysModernColor), `FAIL H2-COLOR: modern gradient directive must be limited to ONE band`)
+
+// H2-BLOCK — the block-level contract MIRRORS the accent discipline so chat-edited /
+// inserted blocks don't re-flood the brand color.
+const blockSys = buildBlockSystemPrompt()
+assert.ok(/60-30-10/.test(blockSys), `FAIL H2-BLOCK: block contract missing the 60-30-10 accent discipline mirror`)
+assert.ok(/Do NOT use bg-\[var\(--accent\)\]/i.test(blockSys), `FAIL H2-BLOCK: block contract must forbid bg-[var(--accent)] as the block background`)
+assert.ok(/NEUTRAL/.test(blockSys), `FAIL H2-BLOCK: block contract must keep the block background NEUTRAL`)
 
 // H2b — mobile-menu animation choice threads through buildHtmlSystemPrompt(ctx):
 // no arg / invalid → 'left' (backward-compat); each valid choice is emitted verbatim.

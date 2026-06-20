@@ -51,7 +51,14 @@ const MODEL = process.env.ANTHROPIC_MODEL_WEBSITE_INITIAL ?? 'claude-opus-4-8'
 const SYSTEM = `You are a world-class web design system architect. Your sole task is to produce a precise, numeric design system JSON for a marketing website. You must output ONLY a single valid JSON object — no markdown fences, no explanation, no comments, no trailing text.
 
 Design philosophy (decide like a senior brand designer — avoid generic AI-template aesthetics):
-- Anti-generic: choose a palette that is DISTINCTIVE and brand-appropriate. Avoid default blue/indigo. Pick ONE signature brand color and commit to it — a dominant accent with sharp, derived accents, not a timid evenly-grey set. Derive the full palette (ink, accentSoft, surface, onAccent, muted, border) from it with proper contrast.
+- Anti-generic: choose ONE distinctive, brand-appropriate signature color. Avoid default blue/indigo. This signature color is the page's ACCENT — it is NOT the background. Pick it boldly, then deploy it with restraint.
+- 60-30-10 ACCENT DISCIPLINE (CRITICAL — this is what makes the result look professional, not "painted one color"): roughly ~60% NEUTRAL surface (page + section backgrounds), ~30% secondary neutrals (cards, borders, muted text), and only ~10% brand accent. The brand hue must NEVER become the page background or any full-section background — it is reserved for small high-emphasis moments. A page flooded with the brand color reads as broken, amateur, and off-brand.
+- ROLE SEPARATION (each palette token has ONE job — do NOT derive the background from the brand hue):
+  · surface = NEUTRAL page/card background. Light themes: white → very-light gray (#ffffff–#f7f8fa). Dark themes: near-black → deep neutral (#0b0e12–#11151b). NEVER a saturated tint of the brand hue.
+  · ink = near-black (light theme) / near-white (dark theme) NEUTRAL text — not brand-tinted.
+  · accent = the brand signature color, used ONLY for CTAs / links / highlights / icons / key numbers / thin rules (≈10% of the page).
+  · accentSoft = a VERY light, low-saturation brand tint for SMALL badges/chips/icon backings ONLY — never a full-section background.
+  · onAccent / muted / border = derive for proper contrast against surface + accent.
 - Layered depth: shadows must be multi-layer with low-opacity, color-tinted offsets (subtle → medium → elevated). No flat shadow-md equivalents.
 - TYPOGRAPHY (distinctive pairing — the highest-leverage choice): pair a CHARACTERFUL display heading font with a clean, refined sans body font, and match the pairing to the brand's mood (e.g. editorial serif "Fraunces"/"Playfair Display"/"DM Serif Display" or a confident geometric/grotesk display "Clash Display"/"Space Grotesk"/"Sora" for heading; "Inter"/"Manrope"/"Sora"/"Plus Jakarta Sans"/"Work Sans"/"Outfit" for body). AVOID generic defaults as the DISPLAY/heading choice (no Inter, Roboto, Arial, Open Sans, Lato, or system-ui as the heading face — those are body/neutral only). Never use the same family for heading and body. Large headings imply tight tracking; body implies relaxed line-height (the HTML layer applies these).
 - FONT LOADABILITY (hard requirement): every font family you name MUST be a real Google Fonts family, and headingHref MUST be a single valid "https://fonts.googleapis.com/css2?family=...&family=...&display=swap" URL that loads BOTH the heading AND the body families (with their needed weights/italics). The font-family strings must exactly match the Google Fonts family names you requested in that URL — if a family is not in the headingHref it will not load on the page. Use only families that actually exist on Google Fonts.
@@ -100,10 +107,10 @@ function buildUserMessage(ctx: CodegenContext): string {
 Return ONLY this JSON object (no fences, no explanation):
 {
   "palette": {
-    "ink": "<primary text color>",
-    "accent": "<brand accent — full color freedom, pick something distinctive>",
-    "accentSoft": "<tinted soft accent for backgrounds/badges>",
-    "surface": "<page/card background>",
+    "ink": "<NEUTRAL primary text color — near-black on light themes, near-white on dark; NOT a tint of the accent>",
+    "accent": "<brand signature color — full color freedom, pick something distinctive; used ONLY for CTAs/links/highlights/icons (~10% of the page), NEVER as a page or section background>",
+    "accentSoft": "<very light, low-saturation accent tint for SMALL badges/chips/icon backings only — NOT a section background>",
+    "surface": "<NEUTRAL page background — white/near-white (light) or near-black/deep-neutral (dark); NOT a tint of the accent>",
     "onAccent": "<text color on accent backgrounds>",
     "muted": "<secondary/muted text color>",
     "border": "<default border color>"
