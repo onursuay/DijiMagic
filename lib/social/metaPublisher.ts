@@ -5,6 +5,8 @@
  * okur → cron worker'da çalışmaz. Bu modül AYNI Graph API akışını DB'deki
  * (user_id → access_token) bağlantıdan okuyarak uygular. Mevcut route'lara
  * dokunulmaz (Meta publish koruması); bu paralel bir kopyadır.
+ *
+ * Tekil ve carousel (çoklu medya, yalnız feed) yayını destekler.
  */
 import 'server-only'
 import { getMetaConnection } from '@/lib/metaConnectionStore'
@@ -16,9 +18,7 @@ import type { SocialFormat, SocialMediaType, SocialPlatform } from './types'
 
 /**
  * SSRF koruması (derinlemesine savunma): yayınlanacak medya URL'i yalnız kendi
- * Supabase Storage host'umuzdan ve https olabilir. Bu hem sunucunun fetch ettiği
- * (FB Reels) hem Meta'ya image_url/video_url olarak gönderilen URL'i kapsar; keyfi
- * bir URL DB'ye sızsa bile internal/loopback/3rd-party hedefe istek gitmez.
+ * Supabase Storage host'umuzdan ve https olabilir.
  */
 let allowedMediaHost = ''
 try { allowedMediaHost = new URL(resolveSupabaseUrl() || '').host } catch { /* env yok */ }
@@ -32,13 +32,17 @@ function isAllowedMediaUrl(url: string): boolean {
   }
 }
 
+export interface PublishMediaItem {
+  url: string
+  type: SocialMediaType
+}
+
 export interface PublishTargetArgs {
   platform: SocialPlatform
   pageId: string
   igUserId?: string | null
   format: SocialFormat
-  mediaUrl: string
-  mediaType: SocialMediaType
+  media: PublishMediaItem[]
   caption?: string | null
 }
 
@@ -55,21 +59,27 @@ function fail(error: string): PublishResult {
   return { ok: false, error }
 }
 
-/** user_id → geçerli Meta user access token (DB'den, decrypt edilmiş). */
+const sleep = (ms: number) => new Promise((r) => setTimeout(r, ms))
+
 async function resolveUserToken(userId: string): Promise<string | null> {
   const conn = await getMetaConnection(userId)
   return conn?.accessToken ?? null
 }
 
 export async function publishToTarget(userId: string, args: PublishTargetArgs): Promise<PublishResult> {
-  const { platform, pageId, igUserId, format, mediaUrl, mediaType, caption } = args
+  const { platform, pageId, igUserId, format, caption } = args
 
-  // Format ↔ medya doğrulaması
-  if (format === 'reels' && mediaType === 'image') return fail('Reels yalnızca video destekler')
+  // Carousel yalnız feed'de; diğer biçimler tek medya kullanır.
+  const media = format === 'feed' ? args.media : args.media.slice(0, 1)
+  if (media.length === 0) return fail('Medya bulunamadı')
+
+  const primary = media[0]
+  if (format === 'reels' && primary.type === 'image') return fail('Reels yalnızca video destekler')
   if (platform === 'facebook' && format === 'story') return fail('Facebook Hikaye desteklenmiyor')
   if (platform === 'instagram' && !igUserId) return fail('Instagram hesabı çözümlenemedi')
-  // SSRF koruması: medya yalnız kendi Storage host'umuzdan olabilir.
-  if (!isAllowedMediaUrl(mediaUrl)) return fail('Geçersiz medya kaynağı')
+  for (const m of media) {
+    if (!isAllowedMediaUrl(m.url)) return fail('Geçersiz medya kaynağı')
+  }
 
   const userToken = await resolveUserToken(userId)
   if (!userToken) return fail('Meta bağlantısı bulunamadı veya süresi dolmuş')
@@ -83,50 +93,89 @@ export async function publishToTarget(userId: string, args: PublishTargetArgs): 
   }
 
   if (platform === 'instagram') {
-    return publishInstagram(pageToken, igUserId!, format, mediaUrl, mediaType, caption)
+    return publishInstagram(pageToken, igUserId!, format, media, caption)
   }
-  return publishFacebook(pageToken, pageId, format, mediaUrl, mediaType, caption)
+  return publishFacebook(pageToken, pageId, format, media, caption)
 }
 
 /* --------------------------- Instagram --------------------------- */
+
+/** Container hazır olana dek bekler (özellikle video). */
+async function pollContainer(client: MetaGraphClient, containerId: string, type: SocialMediaType): Promise<PublishResult> {
+  const delay = type === 'image' ? 2000 : POLL_INTERVAL_MS
+  for (let i = 0; i < MAX_POLLS; i++) {
+    await sleep(delay)
+    const statusResult = await client.get(`/${containerId}`, { fields: 'status_code' })
+    if (statusResult.ok) {
+      const statusCode = statusResult.data?.status_code
+      if (statusCode === 'FINISHED') return { ok: true }
+      if (statusCode === 'ERROR') return fail('Instagram medya işleme hatası')
+    }
+    if (i === MAX_POLLS - 1) return fail('Instagram medya işleme zaman aşımı')
+  }
+  return { ok: true }
+}
 
 async function publishInstagram(
   pageToken: string,
   igUserId: string,
   format: SocialFormat,
-  mediaUrl: string,
-  mediaType: SocialMediaType,
+  media: PublishMediaItem[],
   caption?: string | null,
 ): Promise<PublishResult> {
   const client = new MetaGraphClient({ accessToken: pageToken, timeout: 30000 })
 
-  // Step 1: container
+  // ── Carousel (feed, çoklu medya) ──
+  if (format === 'feed' && media.length > 1) {
+    const childIds: string[] = []
+    for (const m of media) {
+      const params = new URLSearchParams()
+      if (m.type === 'image') {
+        params.append('image_url', m.url)
+      } else {
+        params.append('video_url', m.url)
+        params.append('media_type', 'VIDEO') // carousel video öğesi için zorunlu (Graph v24)
+      }
+      params.append('is_carousel_item', 'true')
+      const r = await client.postForm(`/${igUserId}/media`, params)
+      if (!r.ok || !r.data?.id) return fail(r.error?.message || 'Instagram carousel öğesi oluşturulamadı')
+      const ready = await pollContainer(client, r.data.id, m.type)
+      if (!ready.ok) return ready
+      childIds.push(r.data.id)
+    }
+    const carouselParams = new URLSearchParams()
+    carouselParams.append('media_type', 'CAROUSEL')
+    carouselParams.append('children', childIds.join(','))
+    if (caption) carouselParams.append('caption', caption)
+    const cr = await client.postForm(`/${igUserId}/media`, carouselParams)
+    if (!cr.ok || !cr.data?.id) return fail(cr.error?.message || 'Instagram carousel oluşturulamadı')
+    const ready = await pollContainer(client, cr.data.id, 'image')
+    if (!ready.ok) return ready
+    const publishParams = new URLSearchParams()
+    publishParams.append('creation_id', cr.data.id)
+    const pub = await client.postForm(`/${igUserId}/media_publish`, publishParams)
+    if (!pub.ok) return fail(pub.error?.message || 'Instagram yayınlama başarısız')
+    return { ok: true, publishedId: pub.data?.id }
+  }
+
+  // ── Tekil (feed/reels/story) ──
+  const m = media[0]
   const containerParams = new URLSearchParams()
   if (caption && format !== 'story') containerParams.append('caption', caption)
-  if (mediaType === 'image') containerParams.append('image_url', mediaUrl)
-  else containerParams.append('video_url', mediaUrl)
+  if (m.type === 'image') containerParams.append('image_url', m.url)
+  else containerParams.append('video_url', m.url)
   if (format === 'reels') containerParams.append('media_type', 'REELS')
   else if (format === 'story') containerParams.append('media_type', 'STORIES')
+  else if (m.type === 'video') containerParams.append('media_type', 'VIDEO') // feed video için zorunlu (Graph v24)
 
   const containerResult = await client.postForm(`/${igUserId}/media`, containerParams)
   if (!containerResult.ok) return fail(containerResult.error?.message || 'Instagram medya container hatası')
   const containerId = containerResult.data?.id
   if (!containerId) return fail('Instagram container ID alınamadı')
 
-  // Step 2: poll
-  const pollDelay = mediaType === 'image' && format === 'feed' ? 2000 : POLL_INTERVAL_MS
-  for (let i = 0; i < MAX_POLLS; i++) {
-    await new Promise((r) => setTimeout(r, pollDelay))
-    const statusResult = await client.get(`/${containerId}`, { fields: 'status_code' })
-    if (statusResult.ok) {
-      const statusCode = statusResult.data?.status_code
-      if (statusCode === 'FINISHED') break
-      if (statusCode === 'ERROR') return fail('Instagram medya işleme hatası')
-    }
-    if (i === MAX_POLLS - 1) return fail('Instagram medya işleme zaman aşımı')
-  }
+  const ready = await pollContainer(client, containerId, format === 'feed' ? m.type : 'video')
+  if (!ready.ok) return ready
 
-  // Step 3: publish
   const publishParams = new URLSearchParams()
   publishParams.append('creation_id', containerId)
   const publishResult = await client.postForm(`/${igUserId}/media_publish`, publishParams)
@@ -140,27 +189,47 @@ async function publishFacebook(
   pageToken: string,
   pageId: string,
   format: SocialFormat,
-  mediaUrl: string,
-  mediaType: SocialMediaType,
+  media: PublishMediaItem[],
   caption?: string | null,
 ): Promise<PublishResult> {
   const client = new MetaGraphClient({ accessToken: pageToken, timeout: 60000 })
 
   if (format === 'reels') {
-    return publishFacebookReels(client, pageId, pageToken, mediaUrl, caption)
+    return publishFacebookReels(client, pageId, pageToken, media[0].url, caption)
   }
 
-  // Feed
-  if (mediaType === 'image') {
+  // ── Çoklu görsel (feed) → tek gönderide birden çok foto ──
+  const allImages = media.every((m) => m.type === 'image')
+  if (media.length > 1 && allImages) {
+    const fbids: string[] = []
+    for (const m of media) {
+      const params = new URLSearchParams()
+      params.append('url', m.url)
+      params.append('published', 'false')
+      const r = await client.postForm(`/${pageId}/photos`, params)
+      if (!r.ok || !r.data?.id) return fail(r.error?.message || 'Facebook fotoğrafı yüklenemedi')
+      fbids.push(r.data.id)
+    }
+    const feedParams = new URLSearchParams()
+    if (caption) feedParams.append('message', caption)
+    fbids.forEach((id, i) => feedParams.append(`attached_media[${i}]`, JSON.stringify({ media_fbid: id })))
+    const fr = await client.postForm(`/${pageId}/feed`, feedParams)
+    if (!fr.ok) return fail(fr.error?.message || 'Facebook gönderisi oluşturulamadı')
+    return { ok: true, publishedId: fr.data?.id }
+  }
+
+  // ── Tekil görsel/video (feed) ──
+  const m = media[0]
+  if (m.type === 'image') {
     const params = new URLSearchParams()
-    params.append('url', mediaUrl)
+    params.append('url', m.url)
     if (caption) params.append('message', caption)
     const result = await client.postForm(`/${pageId}/photos`, params)
     if (!result.ok) return fail(result.error?.message || 'Görsel yayınlanamadı')
     return { ok: true, publishedId: result.data?.id || result.data?.post_id }
   }
   const params = new URLSearchParams()
-  params.append('file_url', mediaUrl)
+  params.append('file_url', m.url)
   if (caption) params.append('description', caption)
   const result = await client.postForm(`/${pageId}/videos`, params)
   if (!result.ok) return fail(result.error?.message || 'Video yayınlanamadı')

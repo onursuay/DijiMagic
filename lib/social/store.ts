@@ -18,6 +18,8 @@ import type {
 } from './types'
 
 const MAX_ATTEMPTS = 3
+// 'publishing'de bu süreden uzun takılı kalan post stranded sayılır ve yeniden claim edilir.
+const STALE_PUBLISHING_MS = 10 * 60_000
 
 function db() {
   if (!supabase) throw new Error('supabase_unavailable')
@@ -126,13 +128,26 @@ export async function getPost(userId: string, id: string): Promise<SocialPostWit
   return withRel ?? null
 }
 
+/** projectId verilmişse sahipliği doğrular; sahibi değilse null döner (cross-user dangling referans engeli). */
+async function resolveOwnedProjectId(userId: string, projectId: string | null | undefined): Promise<string | null> {
+  if (!projectId) return null
+  const { data } = await db()
+    .from('social_projects')
+    .select('id')
+    .eq('id', projectId)
+    .eq('user_id', userId)
+    .maybeSingle()
+  return data ? projectId : null
+}
+
 export async function createPost(userId: string, input: CreatePostInput): Promise<SocialPostWithRelations | null> {
   const client = db()
+  const projectId = await resolveOwnedProjectId(userId, input.projectId)
   const { data: post, error } = await client
     .from('social_scheduled_posts')
     .insert({
       user_id: userId,
-      project_id: input.projectId ?? null,
+      project_id: projectId,
       format: input.format,
       caption: input.caption ?? null,
       scheduled_at: input.scheduledAt,
@@ -178,7 +193,7 @@ export async function createPost(userId: string, input: CreatePostInput): Promis
 
 export async function updatePost(userId: string, id: string, patch: UpdatePostInput): Promise<boolean> {
   const fields: Record<string, unknown> = { updated_at: new Date().toISOString() }
-  if (patch.projectId !== undefined) fields.project_id = patch.projectId
+  if (patch.projectId !== undefined) fields.project_id = await resolveOwnedProjectId(userId, patch.projectId)
   if (patch.caption !== undefined) fields.caption = patch.caption
   if (patch.scheduledAt !== undefined) fields.scheduled_at = patch.scheduledAt
   if (patch.status !== undefined) fields.status = patch.status
@@ -235,7 +250,9 @@ export async function retryPost(userId: string, id: string): Promise<boolean> {
 export async function claimDuePosts(limit = 25): Promise<SocialPostWithRelations[]> {
   const client = db()
   const nowIso = new Date().toISOString()
-  const { data: due, error } = await client
+  const staleIso = new Date(Date.now() - STALE_PUBLISHING_MS).toISOString()
+
+  const { data: dueScheduled, error } = await client
     .from('social_scheduled_posts')
     .select('id')
     .eq('status', 'scheduled')
@@ -245,13 +262,36 @@ export async function claimDuePosts(limit = 25): Promise<SocialPostWithRelations
     .limit(limit)
   if (error) { console.error('[social.store] claimDuePosts select', error.message); return [] }
 
+  // Süreç ölümü/zaman aşımı nedeniyle 'publishing'de takılı kalmış postları kurtar.
+  const { data: dueStale } = await client
+    .from('social_scheduled_posts')
+    .select('id')
+    .eq('status', 'publishing')
+    .lt('updated_at', staleIso)
+    .order('updated_at', { ascending: true })
+    .limit(limit)
+
   const claimed: SocialScheduledPost[] = []
-  for (const row of (due ?? []) as { id: string }[]) {
+
+  for (const row of (dueScheduled ?? []) as { id: string }[]) {
     const { data: upd } = await client
       .from('social_scheduled_posts')
       .update({ status: 'publishing', updated_at: new Date().toISOString() })
       .eq('id', row.id)
       .eq('status', 'scheduled')
+      .select('*')
+    if (upd && upd.length > 0) claimed.push(upd[0] as SocialScheduledPost)
+  }
+  // Stale yeniden-claim: `updated_at < staleIso` koşulu yarış halinde atomikliği sağlar
+  // (ilk claim updated_at'ı şimdiye çeker → ikinci claim 0 satır döner). Yayınlanmış
+  // hedefler worker'da target_status='published' ile atlandığı için duplicate olmaz.
+  for (const row of (dueStale ?? []) as { id: string }[]) {
+    const { data: upd } = await client
+      .from('social_scheduled_posts')
+      .update({ status: 'publishing', updated_at: new Date().toISOString() })
+      .eq('id', row.id)
+      .eq('status', 'publishing')
+      .lt('updated_at', staleIso)
       .select('*')
     if (upd && upd.length > 0) claimed.push(upd[0] as SocialScheduledPost)
   }
@@ -287,19 +327,22 @@ export async function markPostPublished(postId: string): Promise<void> {
 
 /**
  * Post yayını başarısız: attempts++. Limit aşılmadıysa retry için 'scheduled'a geri
- * döndürür ve next_retry_at ayarlar; aşıldıysa 'failed' olarak kalıcı işaretler.
+ * döndürür. Aşıldıysa: en az bir hedef yayınlanmışsa 'partial' (kısmen yayınlandı),
+ * hiç yayınlanmamışsa 'failed' olarak kalıcı işaretler.
  */
-export async function markPostFailed(post: SocialScheduledPost, error: string): Promise<void> {
+export async function markPostFailed(post: SocialScheduledPost, error: string, hasPublishedTarget = false): Promise<void> {
   const attempts = (post.attempts ?? 0) + 1
   const canRetry = attempts < MAX_ATTEMPTS
   const backoffMin = Math.pow(2, attempts) * 5 // 10, 20, 40 dk
+  const finalStatus = canRetry ? 'scheduled' : hasPublishedTarget ? 'partial' : 'failed'
   await db()
     .from('social_scheduled_posts')
     .update({
-      status: canRetry ? 'scheduled' : 'failed',
+      status: finalStatus,
       attempts,
       last_error: error.slice(0, 500),
       next_retry_at: canRetry ? new Date(Date.now() + backoffMin * 60_000).toISOString() : null,
+      published_at: finalStatus === 'partial' ? new Date().toISOString() : null,
       updated_at: new Date().toISOString(),
     })
     .eq('id', post.id)

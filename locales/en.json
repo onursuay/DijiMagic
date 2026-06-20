@@ -306,7 +306,7 @@
   },
   "dashboard": {
     "sosyalmedya": {
-      "title": "Social Media Management",
+      "title": "Social Media",
       "pageDescription": "Plan your content, set a date; the system publishes automatically to Instagram and Facebook when the time comes.",
       "newPost": "Schedule Content",
       "loading": "Loading…",
@@ -336,6 +336,7 @@
         "scheduled": "Scheduled",
         "publishing": "Publishing",
         "published": "Published",
+        "partial": "Partially published",
         "failed": "Failed",
         "cancelled": "Cancelled"
       },
@@ -344,16 +345,28 @@
         "editTitle": "Edit Content",
         "source": "Content source",
         "sourceUpload": "Upload file",
+        "sourceAi": "Generate with AI",
+        "sourceLibrary": "Library",
+        "libraryEmpty": "Your design library is empty",
+        "aiKindImage": "Image",
+        "aiKindVideo": "Video",
+        "aiPromptPlaceholder": "Describe what to create… (e.g. a modern poster for a summer sale)",
+        "generate": "Generate",
+        "generating": "Generating…",
+        "generateCost": "{count} credits",
         "sourceDesign": "From Design",
         "designComingSoon": "Coming soon",
         "uploadHint": "Drag an image or video, or choose one",
         "uploadButton": "Choose file",
         "uploading": "Uploading…",
         "removeMedia": "Remove",
+        "carouselHint": "{count} items shared as a carousel",
         "format": "Format",
         "targets": "Target accounts",
         "targetsHint": "Select one or more accounts",
-        "noTargets": "No connected accounts found",
+        "noTargets": "No publishable Facebook Page or Instagram account found",
+        "notConnected": "Your Meta account is not connected. Connect your Instagram/Facebook account first to publish.",
+        "goToIntegration": "Go to Integrations",
         "connectMeta": "Connect your Meta account",
         "caption": "Caption",
         "captionPlaceholder": "Write a caption…",
@@ -374,6 +387,18 @@
         "cancelConfirm": "Do you want to cancel this scheduled content?",
         "publishedAt": "Published at {time}"
       },
+      "analytics": {
+        "title": "Performance",
+        "published": "Published",
+        "likes": "Likes",
+        "comments": "Comments",
+        "engagement": "Engagement",
+        "bestHour": "Best time",
+        "bestHourValue": "{hour}:00",
+        "notEnoughData": "Not enough data",
+        "suggestedTime": "Suggested time: {hour}:00",
+        "useSuggested": "Apply"
+      },
       "toasts": {
         "loadError": "Could not load content",
         "created": "Content scheduled",
@@ -381,7 +406,8 @@
         "updated": "Content updated",
         "cancelled": "Content cancelled",
         "retried": "Rescheduled",
-        "uploadError": "Could not upload file"
+        "uploadError": "Could not upload file",
+        "generateError": "Could not generate content"
       }
     },
     "homepage": {
@@ -6041,7 +6067,7 @@
     "yoai": "YoAlgorithm",
     "hedefKitle": "Target Audience",
     "tasarim": "Design",
-    "sosyalmedya": "Social Media Management",
+    "sosyalmedya": "Social Media",
     "raporlar": "Reports",
     "katalog": "Catalog",
     "seo": "SEO Plus",

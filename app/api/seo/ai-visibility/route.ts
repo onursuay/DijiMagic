@@ -1,4 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server'
+import { chargeFeature } from '@/lib/billing/featureGuard'
 
 function extractDomain(raw: string): string {
   try {
@@ -78,6 +79,11 @@ async function checkViaPerplexity(apiKey: string, domain: string, locale: string
 
 export async function POST(req: NextRequest) {
   try {
+    // SEO modülü abonelik gerektirir — ücretli Tavily/Perplexity kotasını
+    // giriş yapmamış / aboneliği olmayan kullanıcıya kapat.
+    const access = await chargeFeature({ featureKey: 'seo', requireSubscription: true })
+    if (!access.ok) return NextResponse.json(access.body, { status: access.status })
+
     const { url, locale = 'tr' } = await req.json()
     if (!url) return NextResponse.json({ error: 'URL required' }, { status: 400 })
 

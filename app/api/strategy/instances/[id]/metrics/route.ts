@@ -27,6 +27,7 @@ export async function POST(_request: Request, { params }: { params: Promise<{ id
     .select('status')
     .eq('id', id)
     .eq('ad_account_id', ctx.accountId)
+    .eq('user_id', ctx.userId)
     .single()
 
   if (!instance) {

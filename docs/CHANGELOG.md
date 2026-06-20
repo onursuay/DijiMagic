@@ -174,6 +174,55 @@
 - **Sorun:** Yayınlanan müşteri siteleri (`/s/<subdomain>`) root `app/layout.tsx` üzerinden render oluyor; dashboard provider'ları (NextIntlClientProvider, SubscriptionProvider, CreditProvider, RouteTracker, CookieConsent, AnalyticsScripts) bu sitelere gereksiz yere uygulanıyordu.
 - **Çözüm:** `middleware.ts`'e additive `x-pathname` request header eklendi (3 exit point). `app/layout.tsx`'e path-conditional dal eklendi: `/s/` ile başlayan path'lerde minimal tree (sıfır provider), diğerlerinde tam provider zinciri değişmeden. `app/(sites)/` route group oluşturuldu, sayfa dosyaları git mv ile taşındı.
 - **Dosyalar:** `app/layout.tsx`, `middleware.ts`, `app/(sites)/layout.tsx` (yeni), `app/(sites)/s/[subdomain]/page.tsx` (taşındı), `app/(sites)/s/[subdomain]/[slug]/page.tsx` (taşındı)
+## 2026-06-20 — FAZ 0: SEO auth/SSRF + Meta webhook imza doğrulaması (denetim 3/n)
+- **Sorun:** (H4) `/api/seo/ai-visibility` auth + billing guard'sızdı → giriş yapmamış herkes ücretli Tavily/Perplexity kotasını sınırsız tüketebiliyordu. (H5) `/api/seo/analyze` kullanıcı URL'ini SSRF kontrolü olmadan fetch ediyordu (169.254.169.254 metadata, localhost, iç ağ erişimi mümkün). (H2) `/api/meta/webhook` gelen leadgen POST'unu X-Hub-Signature-256 imzası olmadan işliyordu → sahte lead enjeksiyonu + meşru kullanıcının page token tüketimi.
+- **Çözüm:** (H4) `chargeFeature({ featureKey: 'seo', requireSubscription: true })` handler başına eklendi. (H5) `assertSafeUrl` ile özel-ağ/loopback/metadata IP'leri ilk fetch öncesi reddediliyor (redirect-hop sertleştirmesi FAZ 1'e bırakıldı). (H2) `META_APP_SECRET` ile HMAC-SHA256 imza doğrulaması (`timingSafeEqual`); doğrulanmayan istek işlenmiyor.
+- **Dosyalar:** `app/api/seo/ai-visibility/route.ts`, `app/api/seo/analyze/route.ts`, `app/api/meta/webhook/route.ts`
+
+## 2026-06-20 — FAZ 0: Strateji IDOR + kredi düzeltmeleri (denetim 2/n)
+- **Sorun:** (H6 IDOR) Strateji per-instance route'ları sahipliği yalnız `ad_account_id` ile doğruluyordu → aynı Meta reklam hesabına erişen ikinci kullanıcı (ajans/çoklu yönetici) başkasının stratejisini okuyabilir/düzenleyebilir/silebilirdi. (H7) Plan limiti İÇİNDEKİ ücretsiz stratejide de kredi düşülüyordu (UI "limit içinde ücretsiz, aşımda kredi" diyor). (H8) Kredi düşülüp INSERT başarısız olursa iade edilmiyordu; başlık doğrulaması da kredi düşümünden SONRAydı.
+- **Çözüm:** (H6) 9 per-instance route'un tüm sahiplik/mutasyon sorgularına `.eq('user_id', ctx.userId)` eklendi (`ad_account_id` korundu — defense-in-depth). (H7) Kredi yalnız aylık limit AŞIMINDA düşülüyor; limit içi ve sınırsız plan ücretsiz. (H8) Başlık doğrulaması kredi düşümünden öne alındı; aşım kredisi düşülüp INSERT başarısızsa `refund_credits` ile iade ediliyor.
+- **Dosyalar:** `app/api/strategy/instances/route.ts` + `app/api/strategy/instances/[id]/{route,metrics,tasks,retry,generate-plan,approve,expert-plan,analyze,inputs}/route.ts`
+
+## 2026-06-20 — FAZ 0 güvenlik/para sertleştirmesi: iyzico sandbox + Meta token sızıntısı + SSRF route (denetim 1/n)
+- **Sorun:** Açılış öncesi çok-ajanlı denetim kritik bulgular tespit etti: (1) iyzico prod'da `IYZICO_BASE_URL` set edilmezse sessizce sandbox'a düşüyordu → gerçek para tahsil edilmez; (2) `/api/meta/capabilities` her Facebook sayfasının Page Access Token'ını istemciye sızdırıyordu (httpOnly bypass); (3) `/api/seo/wordpress/publish` auth'suz, keyfi URL'e kimlikli Basic-Auth isteği atan açık-proxy/SSRF orphan route'uydu.
+- **Çözüm:** (1) Canlı deployment'ta (`VERCEL_ENV=production`) `IYZICO_BASE_URL` zorunlu + sandbox URL reddediliyor (fail-closed). (2) `/me/accounts` artık `access_token` istemiyor + defense-in-depth strip; token yanıta/cache'e konmuyor. (3) Orphan SSRF route tamamen kaldırıldı (güncel akış `/api/seo/publish`).
+- **Dosyalar:** `lib/billing/iyzico.ts`, `app/api/meta/capabilities/route.ts`, `app/api/seo/wordpress/publish/route.ts` (silindi)
+
+## 2026-06-20 — Sosyal Medya başlığı tek tipleştirildi: "Sosyal Medya"
+- **Sorun:** Sosyal Medya modülünün başlığı "Sosyal Medya Yönetimi" görünüyordu; owner sadece "Sosyal Medya" istemişti ama başlık üç ayrı yerde "Yönetimi" ekiyle tanımlıydı (nav doğruydu, bu yüzden tutarsızdı).
+- **Çözüm:** `dashboard.sosyalmedya.title` (TR "Sosyal Medya", EN "Social Media") ve `featureAccessMap` `social_media_management.label` ("Sosyal Medya") düzeltildi. Topbar başlığı, nav etiketi ve abonelik modalı artık tek tip.
+- **Dosyalar:** `locales/tr.json`, `locales/en.json`, `lib/billing/featureAccessMap.ts`
+
+## 2026-06-17 — Google Ads: Reklam grupları ve reklamlar sekmesinde boş tablo düzeltmesi
+- **Sorun:** Google Ads'te "Reklam Grupları" ve "Reklamlar" sekmeleri boş görünüyordu (kalıcı skeleton + KPI'lar 0). Aktif kampanyada veri olmasına rağmen satır gelmiyordu. Path-routing (`feat(routing): Google Ads sekme path URL'leri`) ile sekme durumu artık URL'den türetiliyor; doğrudan `/google-ads/reklam-gruplari` veya `/reklamlar` URL'sine girilince sekme efekti yalnız o sekmenin verisini çekiyor, kampanyaları hiç çekmiyordu. `adGroupsToShow`/`adsToShow` ise satırları `enabledCampaignIds` (kampanya verisinden türetilir) ile filtrelediğinden, kampanyalar boş olunca tüm aktif satırlar eleniyordu.
+- **Çözüm:** Sekme-değişim efekti ve `onAccountSelected` artık ad-grupları/reklamlar sekmesinde de kampanyaları (yüklü değilse) arka planda çekiyor — `enabledCampaignIds` ve KPI kartları doluyor. Görünür tablo background refresh'ten etkilenmiyor (skeleton yalnız kampanyalar sekmesinde gösterilir).
+- **Dosyalar:** `app/dashboard/reklam/google/GooglePage.tsx`
+
+## 2026-06-17 — Sosyal Medya: denetim sonrası sertleştirme (8 bulgu)
+- **Sorun:** Çok-ajanlı adversarial denetim 8 doğrulanmış kusur buldu.
+- **Çözüm:**
+  - **(HIGH) Reaper:** `publishing`'de takılı kalan (süreç ölümü/zaman aşımı) postlar `claimDuePosts`'ta zaman-aşımlı (10dk) atomik yeniden-claim ile kurtarılıyor; worker'da per-post try/catch ile bir postun throw'u diğerlerini stranded bırakmıyor.
+  - **(MED) Carousel/feed video:** IG carousel video child + tekil feed video container'ına `media_type=VIDEO` eklendi (Graph v24 zorunlu).
+  - **(MED) Kısmi yayın:** Bazı hedef yayınlanıp bazısı kalıcı başarısız olunca post `failed` yerine yeni `partial` durumu alıyor (migration + badge + i18n).
+  - **(MED) Büyük yükleme:** Vercel ~4.5MB Route Handler gövde limitini bypass eden imzalı doğrudan-Storage yükleme (`/api/social/media/sign-upload`); video yükleme artık çalışır (≤200MB).
+  - **(MED) Edit modu:** Hedef seçim UI'ı edit'te gizlendi (API targets güncellemiyordu — sessiz veri kaybı); canSubmit edit'te medya/hedef/çakışmadan muaf.
+  - **(LOW) projectId IDOR:** createPost/updatePost'ta proje sahipliği doğrulanıyor (cross-user dangling referans engeli).
+  - **(LOW) Import türü:** Kütüphane import'unda medya türü content-type → URL uzantısı → client tipi sırasıyla belirleniyor (video→jpg riski giderildi).
+  - **Doğrulama:** build temiz, tsc 0, i18n parite tam; migration canlıya uygulandı.
+- **Dosyalar:** lib/social/{store,runScheduledPosts,metaPublisher,types}.ts, app/api/social/media/{sign-upload,import}/route.ts, components/social/{PostComposerModal,PostStatusBadge}.tsx, supabase/migrations/20260617120000_social_posts_partial_status.sql, locales/tr.json, locales/en.json
+
+## 2026-06-17 — Sosyal Medya: AI üretim, hesap seçimi, carousel, analitik, kütüphane
+- **İstek:** İlk sürümün üzerine 3 acil düzeltme + ek geliştirmeler.
+- **Çözüm:**
+  - **AI ile üret (composer):** Tasarım motoru (fal.ai görsel/video) composer'a bağlandı; üretilen içerik `social-media` bucket'a kopyalanıp doğrudan planlanabiliyor. Hibrit erişim (abonelik + `design_generation` kredi), hata→kredi iadesi. ([/api/social/media/generate], [lib/social/aiMedia.ts])
+  - **Hesap seçimi düzeltmesi:** `/api/social/targets` token'ı cookie+DB ikisinden çözüyor; bağlı değilse composer "Entegrasyon'a git" yönlendirmesi gösteriyor (sessiz boş yerine).
+  - **Carousel (çoklu medya):** IG carousel + FB multi-photo yayını; composer'da feed'de çoklu yükleme/üretim/kütüphane + medya ızgarası (maks. 10). Worker ve API doğrulaması güncellendi.
+  - **Analitik + optimal saat:** Yayınlanan içeriklerin beğeni/yorum metrikleri ay özeti; ≥3 yayında en iyi yayın saati önerisi (composer'da tek tıkla uygula). ([/api/social/analytics], [lib/social/insights.ts])
+  - **Tasarım kütüphanesinden seçme:** Composer'da 3. kaynak; Tasarım modülü çıktıları içe aktarılıp planlanabiliyor (SSRF: fal host whitelist). ([/api/social/media/import])
+  - **Sidebar:** etiket "Sosyal Medya" olarak kısaltıldı.
+  - **Doğrulama:** `npm run build` temiz; tsc 0 hata; i18n parite tam.
+- **Dosyalar:** lib/social/{aiMedia,insights,metaPublisher,runScheduledPosts}.ts, app/api/social/{media/generate,media/import,analytics,targets,posts}/**, components/social/{PostComposerModal,SocialMediaPage,AnalyticsBar,PostCard}.tsx, lib/nav.ts, locales/tr.json, locales/en.json
 
 ## 2026-06-17 — Yeni modül: Sosyal Medya Yönetimi (içerik takvimi + otomatik yayın)
 - **İstek:** Kullanıcıların görsel/video içeriklerini proje (kampanya) bazında planlayıp ileri bir tarih-saate zamanlayabildiği; zamanı gelince sistemin otomatik Instagram/Facebook'a (Akış/Reels/Hikaye) paylaştığı, Meta Business Suite "Planner" benzeri bir modül. Çoklu hedef (cross-post), başarısızlıkta yeniden deneme.

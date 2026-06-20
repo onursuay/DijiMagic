@@ -23,6 +23,7 @@ export async function PATCH(request: Request, { params }: { params: Promise<{ id
     .select('id')
     .eq('id', id)
     .eq('ad_account_id', ctx.accountId)
+    .eq('user_id', ctx.userId)
     .single()
 
   if (!instance) {

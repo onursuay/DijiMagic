@@ -11,6 +11,7 @@ export type SocialPostStatus =
   | 'publishing'
   | 'published'
   | 'failed'
+  | 'partial'
   | 'cancelled'
 
 export type SocialProjectStatus = 'active' | 'archived'

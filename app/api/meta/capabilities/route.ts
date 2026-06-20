@@ -127,10 +127,13 @@ export async function GET() {
   // Pages
   const userPagesRes = await client.get<{ data?: { id: string; name: string; access_token?: string; picture?: { data?: { url?: string } }; instagram_business_account?: { id: string; username: string; profile_picture_url?: string } }[] }>(
     '/me/accounts',
-    { fields: 'id,name,access_token,picture{url},instagram_business_account{id,username,profile_picture_url}', limit: '100' }
+    { fields: 'id,name,picture{url},instagram_business_account{id,username,profile_picture_url}', limit: '100' }
   )
   if (userPagesRes.ok && userPagesRes.data?.data?.length) {
-    assets.pages = userPagesRes.data.data
+    // GÜVENLİK: Page Access Token'ı ASLA istemciye sızdırma. /me/accounts
+    // access_token alanını artık istemiyoruz; defense-in-depth için yine de
+    // strip ediyoruz (sayfa token'ı yalnız sunucuda kullanılır, yanıta/cache'e konmaz).
+    assets.pages = userPagesRes.data.data.map(({ access_token, ...rest }) => rest)
     const igSet = new Map<string, { id: string; username: string; profile_picture_url?: string }>()
     for (const p of assets.pages) {
       if (p.instagram_business_account) {

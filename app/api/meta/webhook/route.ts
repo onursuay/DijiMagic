@@ -1,8 +1,23 @@
 import { NextResponse } from 'next/server'
+import crypto from 'crypto'
 import { ingestLeadgen } from '@/lib/crm/metaLeadIngest'
 
 const VERIFY_TOKEN = process.env.META_WEBHOOK_VERIFY_TOKEN
 const DEBUG = process.env.NODE_ENV !== 'production'
+
+/**
+ * Meta webhook imza doğrulaması — X-Hub-Signature-256 (HMAC-SHA256, app secret).
+ * Header formatı: "sha256=<hexdigest>"; imza HAM gövde üzerinden hesaplanır.
+ * Sabit-zaman karşılaştırma ile (timingSafeEqual) sahte leadgen enjeksiyonu engellenir.
+ */
+function verifyWebhookSignature(rawBody: string, signatureHeader: string | null, appSecret: string): boolean {
+  if (!signatureHeader) return false
+  const expected = 'sha256=' + crypto.createHmac('sha256', appSecret).update(rawBody, 'utf8').digest('hex')
+  const a = Buffer.from(signatureHeader)
+  const b = Buffer.from(expected)
+  if (a.length !== b.length) return false
+  return crypto.timingSafeEqual(a, b)
+}
 
 /**
  * GET — Meta Webhook Verification (hub.challenge handshake)
@@ -34,7 +49,22 @@ export async function GET(request: Request) {
  */
 export async function POST(request: Request) {
   try {
-    const body = await request.json()
+    const rawBody = await request.text()
+
+    // GÜVENLİK: İmzasız/sahte leadgen enjeksiyonunu engelle. Meta her POST'u
+    // app secret ile imzalar (X-Hub-Signature-256). Doğrulanmayan istek İŞLENMEZ
+    // (Meta retry'ı tetiklememek için 200 döner ama hiçbir şey yapılmaz).
+    const appSecret = process.env.META_APP_SECRET
+    if (!appSecret) {
+      console.error('[Webhook] META_APP_SECRET tanımlı değil — imzasız webhook reddedildi')
+      return NextResponse.json({ received: true })
+    }
+    if (!verifyWebhookSignature(rawBody, request.headers.get('x-hub-signature-256'), appSecret)) {
+      console.warn('[Webhook] Geçersiz X-Hub-Signature-256 — istek reddedildi')
+      return NextResponse.json({ received: true })
+    }
+
+    const body = JSON.parse(rawBody)
 
     if (DEBUG) {
       console.log('[Webhook] Incoming event:', JSON.stringify(body, null, 2))

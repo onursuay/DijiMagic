@@ -306,7 +306,7 @@
   },
   "dashboard": {
     "sosyalmedya": {
-      "title": "Sosyal Medya Yönetimi",
+      "title": "Sosyal Medya",
       "pageDescription": "İçeriklerinizi planlayın, tarih verin; sistem zamanı gelince Instagram ve Facebook'ta otomatik paylaşsın.",
       "newPost": "Yeni İçerik Planla",
       "loading": "Yükleniyor…",
@@ -336,6 +336,7 @@
         "scheduled": "Planlandı",
         "publishing": "Yayınlanıyor",
         "published": "Yayında",
+        "partial": "Kısmen yayında",
         "failed": "Başarısız",
         "cancelled": "İptal edildi"
       },
@@ -344,16 +345,28 @@
         "editTitle": "İçeriği Düzenle",
         "source": "İçerik kaynağı",
         "sourceUpload": "Dosya yükle",
+        "sourceAi": "AI ile üret",
+        "sourceLibrary": "Kütüphane",
+        "libraryEmpty": "Tasarım kütüphaneniz boş",
+        "aiKindImage": "Görsel",
+        "aiKindVideo": "Video",
+        "aiPromptPlaceholder": "Ne üretmek istediğini yaz… (örn. yaz indirimi için modern bir afiş)",
+        "generate": "Üret",
+        "generating": "Üretiliyor…",
+        "generateCost": "{count} kredi",
         "sourceDesign": "Tasarım'dan getir",
         "designComingSoon": "Yakında",
         "uploadHint": "Görsel veya video sürükleyin ya da seçin",
         "uploadButton": "Dosya seç",
         "uploading": "Yükleniyor…",
         "removeMedia": "Kaldır",
+        "carouselHint": "{count} öğe carousel olarak paylaşılır",
         "format": "Biçim",
         "targets": "Hedef hesaplar",
         "targetsHint": "Bir veya birden fazla hesap seçin",
-        "noTargets": "Bağlı hesap bulunamadı",
+        "noTargets": "Yayınlanabilir Facebook sayfası veya Instagram hesabı bulunamadı",
+        "notConnected": "Meta hesabınız bağlı değil. Yayın yapabilmek için önce Instagram/Facebook hesabınızı bağlayın.",
+        "goToIntegration": "Entegrasyon'a git",
         "connectMeta": "Meta hesabınızı bağlayın",
         "caption": "Açıklama",
         "captionPlaceholder": "Gönderi açıklaması yazın…",
@@ -374,6 +387,18 @@
         "cancelConfirm": "Bu planlanmış içeriği iptal etmek istiyor musunuz?",
         "publishedAt": "{time} yayınlandı"
       },
+      "analytics": {
+        "title": "Performans",
+        "published": "Yayınlanan",
+        "likes": "Beğeni",
+        "comments": "Yorum",
+        "engagement": "Etkileşim",
+        "bestHour": "En iyi saat",
+        "bestHourValue": "{hour}:00",
+        "notEnoughData": "Yeterli veri yok",
+        "suggestedTime": "Önerilen saat: {hour}:00",
+        "useSuggested": "Uygula"
+      },
       "toasts": {
         "loadError": "İçerikler yüklenemedi",
         "created": "İçerik planlandı",
@@ -381,7 +406,8 @@
         "updated": "İçerik güncellendi",
         "cancelled": "İçerik iptal edildi",
         "retried": "Yeniden zamanlandı",
-        "uploadError": "Dosya yüklenemedi"
+        "uploadError": "Dosya yüklenemedi",
+        "generateError": "İçerik üretilemedi"
       }
     },
     "homepage": {
@@ -6041,7 +6067,7 @@
     "yoai": "YoAlgoritma",
     "hedefKitle": "Hedef Kitle",
     "tasarim": "Tasarım",
-    "sosyalmedya": "Sosyal Medya Yönetimi",
+    "sosyalmedya": "Sosyal Medya",
     "raporlar": "Raporlar",
     "katalog": "Katalog",
     "seo": "SEO Plus",

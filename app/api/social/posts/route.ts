@@ -85,6 +85,13 @@ export async function POST(req: NextRequest) {
   if (!media) {
     return NextResponse.json({ ok: false, error: 'invalid_request', message: 'Geçersiz medya' }, { status: 400 })
   }
+  // Carousel yalnız feed'de; en fazla 10 medya.
+  if (media.length > 10) {
+    return NextResponse.json({ ok: false, error: 'invalid_request', message: 'En fazla 10 medya ekleyebilirsiniz' }, { status: 400 })
+  }
+  if (format !== 'feed' && media.length > 1) {
+    return NextResponse.json({ ok: false, error: 'invalid_request', message: 'Reels ve Hikaye yalnız tek medya destekler' }, { status: 400 })
+  }
   // Format ↔ medya / platform tutarlılığı
   const primaryMedia = media[0]
   if (format === 'reels' && primaryMedia.mediaType !== 'video') {

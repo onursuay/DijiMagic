@@ -16,6 +16,7 @@ export default function PostStatusBadge({ status }: { status: SocialPostStatus }
     scheduled: { cls: 'bg-gray-100 text-gray-700', Icon: Clock },
     publishing: { cls: 'bg-primary/10 text-primary', Icon: Loader2, spin: true },
     published: { cls: 'bg-emerald-50 text-emerald-700', Icon: CheckCircle2 },
+    partial: { cls: 'bg-primary/10 text-primary', Icon: AlertCircle },
     failed: { cls: 'bg-red-50 text-red-700', Icon: AlertCircle },
     cancelled: { cls: 'bg-gray-100 text-gray-500', Icon: AlertCircle },
   }

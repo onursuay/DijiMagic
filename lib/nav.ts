@@ -74,7 +74,7 @@ export const navItems: NavItem[] = [
   },
   {
     id: 'yoai',
-    label: 'YoAi',
+    label: 'YoAlgoritma',
     href: '/yoalgoritma',
     icon: Sparkles,
   },
@@ -92,7 +92,7 @@ export const navItems: NavItem[] = [
   },
   {
     id: 'sosyal-medya',
-    label: 'Sosyal Medya Yönetimi',
+    label: 'Sosyal Medya',
     href: ROUTES.SOCIAL_MEDIA,
     icon: CalendarClock,
   },
@@ -116,7 +116,7 @@ export const navItems: NavItem[] = [
   },
   {
     id: 'crm',
-    label: 'CRM',
+    label: 'CRM Sistemi',
     href: ROUTES.CRM,
     icon: Contact,
   },
