@@ -470,7 +470,7 @@ export default function TabDetails({
         />
         {pagesError && <p className="mt-1 text-sm text-red-600">{pagesError}</p>}
         {showEmptyPages && (
-          <p className="mt-1 text-sm text-amber-600">{t.noPageHint}</p>
+          <p className="mt-1 text-sm text-primary">{t.noPageHint}</p>
         )}
       </div>
 
@@ -504,7 +504,7 @@ export default function TabDetails({
           options={conversionLocationOptions.map((loc) => ({ value: loc.value, label: loc.label, disabled: loc.locked }))}
         />
         {conversionLocationOptions.some((o) => o.value === state.conversionLocation && o.locked) && (
-          <p className="mt-1 text-sm text-amber-600">
+          <p className="mt-1 text-sm text-primary">
             {t[mapReasonToKey(conversionLocationOptions.find((o) => o.value === state.conversionLocation)?.reason)]}
           </p>
         )}
@@ -721,7 +721,7 @@ export default function TabDetails({
 
       {/* Leads + ON_AD ve lead_terms_accepted === false uyarısı */}
       {leadTermsNotAccepted && (
-        <div className="p-3 rounded-lg bg-amber-50 border border-amber-200 text-amber-800 text-sm">
+        <div className="p-3 rounded-lg bg-primary/5 border border-primary/20 text-primary text-sm">
           {t.leadTermsWarning}{' '}
           <a href="https://www.facebook.com/ads/leadgen/tos" target="_blank" rel="noopener noreferrer" className="underline font-medium">{t.leadTermsAcceptLink}</a>
         </div>
@@ -741,7 +741,7 @@ export default function TabDetails({
               error={!!errors.pixel_id}
               options={[{ value: '', label: pixels.length === 0 ? t.pixelNone : t.selectOption }, ...pixels.map((p) => ({ value: p.pixel_id, label: p.name || p.pixel_id }))]}
             />
-            {pixels.length === 0 && <p className="mt-1 text-sm text-amber-600">{t.pixelRequiredSales}</p>}
+            {pixels.length === 0 && <p className="mt-1 text-sm text-primary">{t.pixelRequiredSales}</p>}
             {errors.pixel_id && <p className="mt-1 text-sm text-red-600">{errors.pixel_id}</p>}
           </div>
           <div>
@@ -822,7 +822,7 @@ export default function TabDetails({
               error={!!errors.pixel_id}
               options={[{ value: '', label: pixels.length === 0 ? t.pixelNone : t.selectOption }, ...pixels.map((p) => ({ value: p.pixel_id, label: p.name || p.pixel_id }))]}
             />
-            {pixels.length === 0 && <p className="mt-1 text-sm text-amber-600">{t.pixelRequiredLeads}</p>}
+            {pixels.length === 0 && <p className="mt-1 text-sm text-primary">{t.pixelRequiredLeads}</p>}
             {errors.pixel_id && <p className="mt-1 text-sm text-red-600">{errors.pixel_id}</p>}
           </div>
           <div>
@@ -855,7 +855,7 @@ export default function TabDetails({
               error={!!errors.pixel_id}
               options={[{ value: '', label: pixels.length === 0 ? t.pixelNone : t.selectOption }, ...pixels.map((p) => ({ value: p.pixel_id, label: p.name || p.pixel_id }))]}
             />
-            {pixels.length === 0 && <p className="mt-1 text-sm text-amber-600">{t.pixelRequiredEngagement}</p>}
+            {pixels.length === 0 && <p className="mt-1 text-sm text-primary">{t.pixelRequiredEngagement}</p>}
             {errors.pixel_id && <p className="mt-1 text-sm text-red-600">{errors.pixel_id}</p>}
           </div>
           <div>

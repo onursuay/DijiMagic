@@ -47,7 +47,10 @@ export default function GoogleEditOverlay({
       {/* Header */}
       <div className="h-14 flex items-center justify-between px-5 border-b border-gray-200 flex-shrink-0">
         <div className="flex items-center gap-3">
-          <div className="w-7 h-7 rounded-full bg-gradient-to-br from-blue-500 via-red-500 to-yellow-500 flex items-center justify-center shrink-0">
+          <div
+            className="w-7 h-7 rounded-full flex items-center justify-center shrink-0"
+            style={{ backgroundImage: 'linear-gradient(to bottom right, #4285F4, #EA4335, #FBBC05)' }}
+          >
             <span className="text-white text-xs font-bold">G</span>
           </div>
           <div>

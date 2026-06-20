@@ -203,7 +203,7 @@ export default function AdEditDrawer({ adId, adName, relatedCampaignId, open, on
             {/* ═══════ LEFT COLUMN ═══════ */}
             <div className="col-span-2 space-y-6">
               {!editCapabilities.canEditCreative && (
-                <div className="px-3 py-2 bg-amber-50 border border-amber-200 rounded-lg text-sm text-amber-800">
+                <div className="px-3 py-2 bg-primary/5 border border-primary/20 rounded-lg text-sm text-primary">
                   {editCapabilities.reason === 'Lead Gen form'
                     ? t('ad.leadGenNotEditable')
                     : t('ad.postPromotedNotEditable')}

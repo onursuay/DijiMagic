@@ -9,7 +9,7 @@ export default function ConfidenceGauge({ confidence, size = 44 }: ConfidenceGau
   const radius = (size - 6) / 2
   const circumference = 2 * Math.PI * radius
   const progress = confidence * circumference
-  const color = confidence >= 0.8 ? '#10B981' : confidence >= 0.6 ? '#F59E0B' : '#EF4444'
+  const color = confidence >= 0.8 ? '#10B981' : confidence >= 0.6 ? '#059669' : '#EF4444'
 
   return (
     <div className="relative flex items-center justify-center shrink-0" style={{ width: size, height: size }}>

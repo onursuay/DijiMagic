@@ -156,7 +156,7 @@ export default function AdTextFields({ state, campaignObjective = 'OUTCOME_TRAFF
               ]}
             />
           ) : (
-            <p className="text-sm text-amber-600">
+            <p className="text-sm text-primary">
               {t.leadFormNotFound}
             </p>
           )}
@@ -195,7 +195,7 @@ export default function AdTextFields({ state, campaignObjective = 'OUTCOME_TRAFF
               options={ctaOptions}
             />
             {ctaAutoUpdated && (
-              <p className="mt-1 text-caption text-amber-600">{t.ctaAutoUpdated}</p>
+              <p className="mt-1 text-caption text-primary">{t.ctaAutoUpdated}</p>
             )}
           </>
         )}

@@ -51,6 +51,15 @@ export interface InitCheckoutInput {
   itemName: string
   itemCategory: 'subscription' | 'credit_pack'
   buyer: BuyerInfo
+  /** Opsiyonel gerçek fatura bilgisi (H9) — yoksa placeholder fallback kullanılır. */
+  billing?: {
+    identityNumber?: string
+    gsmNumber?: string
+    city?: string
+    country?: string
+    address?: string
+    zipCode?: string
+  }
 }
 
 export interface InitCheckoutResult {
@@ -61,6 +70,11 @@ export interface InitCheckoutResult {
 
 export async function initCheckoutForm(input: InitCheckoutInput): Promise<InitCheckoutResult> {
   const client = getClient()
+
+  // H9: Gerçek fatura bilgisi varsa kullan; yoksa eski placeholder'a düş (fallback —
+  // ödeme akışı bozulmaz, yalnız fatura doğruluğu profil dolu olunca iyileşir).
+  const b = input.billing ?? {}
+  const contactName = [input.buyer.name, input.buyer.surname].filter(Boolean).join(' ').trim() || 'Musteri'
 
   const request = {
     locale: 'tr',
@@ -77,24 +91,27 @@ export async function initCheckoutForm(input: InitCheckoutInput): Promise<InitCh
       name: input.buyer.name || 'Musteri',
       surname: input.buyer.surname || '-',
       email: input.buyer.email,
-      identityNumber: '11111111111',
-      registrationAddress: '-',
-      city: 'Istanbul',
-      country: 'Turkey',
+      identityNumber: b.identityNumber || '11111111111',
+      registrationAddress: b.address || '-',
+      city: b.city || 'Istanbul',
+      country: b.country || 'Turkey',
       ip: input.buyer.ip,
-      gsmNumber: '+905000000000',
+      gsmNumber: b.gsmNumber || '+905000000000',
+      ...(b.zipCode ? { zipCode: b.zipCode } : {}),
     },
     shippingAddress: {
-      contactName: input.buyer.name || 'Musteri',
-      city: 'Istanbul',
-      country: 'Turkey',
-      address: '-',
+      contactName,
+      city: b.city || 'Istanbul',
+      country: b.country || 'Turkey',
+      address: b.address || '-',
+      ...(b.zipCode ? { zipCode: b.zipCode } : {}),
     },
     billingAddress: {
-      contactName: input.buyer.name || 'Musteri',
-      city: 'Istanbul',
-      country: 'Turkey',
-      address: '-',
+      contactName,
+      city: b.city || 'Istanbul',
+      country: b.country || 'Turkey',
+      address: b.address || '-',
+      ...(b.zipCode ? { zipCode: b.zipCode } : {}),
     },
     basketItems: [{
       id: input.basketId,

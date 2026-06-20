@@ -2,6 +2,11 @@
 
 ---
 
+## 2026-06-20 — FAZ 1: H9 sunucu-taraflı fatura profili + amber/sarı renk temizliği
+- **Sorun:** (H9) Fatura/vergi bilgisi yalnız tarayıcı localStorage'ındaydı; iyzico checkout'una placeholder buyer/billingAddress (TC '11111111111', adres '-', Istanbul) gidiyordu → kurumsal müşteriye doğru fatura kesilemiyordu. (Renk) Meta/Google reklam UI'ında proje kırmızı-çizgisi amber/sarı renkler vardı.
+- **Çözüm:** (H9) `user_billing_profile` tablosu + `getBillingProfile`/`saveBillingProfile` store + `/api/billing/profile` route; faturalarim sunucuya kaydeder; `iyzico/start` profili yükleyip gerçek buyer/billingAddress (ad, telefon, adres, şehir, kurumsal vergi no) geçirir. **ADDITIVE:** profil yoksa/migration uygulanmadıysa eski placeholder fallback korunur (ödeme akışı bozulmaz). Migration: `npm run db:migrate:billing-profile`. (Not: bireysel TC kimlik form alanı + e-fatura entegrasyonu ayrı adım.) (Renk) 28 dosyada amber/sarı → semantiğe uygun primary/gray/red/emerald.
+- **Dosyalar:** `supabase/migrations/20260620000000_user_billing_profile.sql`, `lib/billing/billingProfile.ts`, `app/api/billing/profile/route.ts`, `scripts/apply-billing-profile-migration.mjs`, `lib/billing/iyzico.ts`, `app/api/billing/iyzico/start/route.ts`, `app/faturalarim/page.tsx`, `package.json` + 28 Meta/Google/raporlar/optimizasyon UI dosyası (amber temizliği)
+
 ## 2026-06-20 — FAZ 0: Meta + Google reklam sertleştirme (denetim 4/n — yan-dal faz0/meta-roas merge)
 - **Sorun:** Çok-ajanlı derin denetim, gelir-kritik Meta/Google akışlarında doğrulanmış kusurlar buldu: Meta ROAS tablolarda hep boş; Google PMax TARGET_ROAS birim hatası (%45.000 hedef riski); Google kitle editörü dokunulmamış segmentleri siliyordu (veri kaybı); Meta cross-account IDOR (yazma: status/adset-budget + okuma: campaigns/adsets/recommendations/perf-rec); Google kitle OBSERVATION/TARGETING modu uygulanmıyordu (bütçe geniş kitleye kaçar); PMax görsel yükleme tamamen kırık (`blob:` URL); Meta video upload ham token sızdırıyordu.
 - **Çözüm:**

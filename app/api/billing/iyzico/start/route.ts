@@ -4,6 +4,7 @@ import { getCurrentUser } from '@/lib/billing/user'
 import { priceSubscription, priceCreditPack } from '@/lib/billing/catalog'
 import { createPendingTransaction, attachIyzicoToken } from '@/lib/billing/db'
 import { initCheckoutForm } from '@/lib/billing/iyzico'
+import { getBillingProfile } from '@/lib/billing/billingProfile'
 
 export const runtime = 'nodejs'
 export const dynamic = 'force-dynamic'
@@ -90,7 +91,27 @@ export async function POST(request: Request) {
       || request.headers.get('x-real-ip')
       || '127.0.0.1'
 
-    const { name, surname } = splitName(user.name)
+    // H9: Sunucudaki gerçek fatura profilini yükle; varsa buyer/billingAddress
+    // ondan doldurulur, yoksa eski placeholder fallback'i devreye girer.
+    const profile = await getBillingProfile(user.id)
+    let name: string, surname: string
+    if (profile?.fullName) {
+      name = profile.fullName
+      surname = profile.lastName || '-'
+    } else {
+      ;({ name, surname } = splitName(user.name))
+    }
+    const phoneDigits = (profile?.phone || '').replace(/\D/g, '')
+    const billing = profile
+      ? {
+          identityNumber: profile.type === 'corporate' ? profile.taxNumber : profile.identityNumber,
+          gsmNumber: phoneDigits ? (phoneDigits.startsWith('90') ? `+${phoneDigits}` : `+90${phoneDigits}`) : undefined,
+          city: profile.city || undefined,
+          country: profile.country || undefined,
+          address: profile.address || undefined,
+          zipCode: profile.postalCode || undefined,
+        }
+      : undefined
     const base = getBaseUrl(request)
 
     const result = await initCheckoutForm({
@@ -103,6 +124,7 @@ export async function POST(request: Request) {
       itemName,
       itemCategory: itemType,
       buyer: { id: user.id, name, surname, email: user.email, ip },
+      billing,
     })
 
     await attachIyzicoToken(tx.id, result.token, result.raw)

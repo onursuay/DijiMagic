@@ -469,7 +469,7 @@ export default function CampaignAssetsTab({
                     <td className="px-3 py-2.5 whitespace-nowrap">
                       <span className={`text-xs font-medium ${
                         asset.status === 'ENABLED' ? 'text-green-700' :
-                        asset.status === 'PAUSED' ? 'text-yellow-600' : 'text-gray-500'
+                        asset.status === 'PAUSED' ? 'text-gray-600' : 'text-gray-500'
                       }`}>
                         {statusLabel(asset.status)}
                       </span>
@@ -541,7 +541,7 @@ function FilterChip({ label, active, onClick }: { label: string; active: boolean
 
 function StatusDot({ status }: { status: string }) {
   let color = 'bg-green-500'
-  if (status === 'PAUSED') color = 'bg-yellow-500'
+  if (status === 'PAUSED') color = 'bg-gray-400'
   else if (status === 'REMOVED') color = 'bg-gray-400'
   return <span className={`inline-block w-2.5 h-2.5 rounded-full ${color}`} />
 }

@@ -293,7 +293,7 @@ export default function GoogleTableReal({
                                 : '—'}
                             </span>
                             {campaign.isSharedBudget && (
-                              <span className="text-[10px] px-1.5 py-0.5 bg-amber-50 text-amber-600 border border-amber-200 rounded-full whitespace-nowrap" title="Paylaşılan bütçe">
+                              <span className="text-[10px] px-1.5 py-0.5 bg-gray-100 text-gray-700 border border-gray-200 rounded-full whitespace-nowrap" title="Paylaşılan bütçe">
                                 Paylaşılan
                               </span>
                             )}

@@ -161,9 +161,9 @@ export default function TWStepCreative({ state, onChange }: TWStepCreativeProps)
               <span className="text-xs text-gray-500">{t.identityPageLoading}</span>
             </div>
           ) : pages.length === 0 ? (
-            <div className="flex items-center gap-2 p-3 bg-amber-50 border border-amber-100 rounded-lg">
-              <AlertCircle className="w-4 h-4 text-amber-500 shrink-0" />
-              <span className="text-xs text-amber-700">{t.identityPageNone}</span>
+            <div className="flex items-center gap-2 p-3 bg-primary/5 border border-primary/20 rounded-lg">
+              <AlertCircle className="w-4 h-4 text-gray-500 shrink-0" />
+              <span className="text-xs text-primary">{t.identityPageNone}</span>
             </div>
           ) : (
             <div className="space-y-2">
@@ -390,7 +390,7 @@ export default function TWStepCreative({ state, onChange }: TWStepCreativeProps)
             />
             <div className="flex justify-between mt-1">
               <p className="text-[11px] text-gray-400">{t.adTextPrimaryHint}</p>
-              <p className={`text-[11px] ${ad.primaryText.length > 2500 ? 'text-amber-500' : 'text-gray-400'}`}>
+              <p className={`text-[11px] ${ad.primaryText.length > 2500 ? 'text-primary' : 'text-gray-400'}`}>
                 {ad.primaryText.length}/3000
               </p>
             </div>
@@ -410,7 +410,7 @@ export default function TWStepCreative({ state, onChange }: TWStepCreativeProps)
             />
             <div className="flex justify-between mt-1">
               <p className="text-[11px] text-gray-400">{t.adTextHeadlineHint}</p>
-              <p className={`text-[11px] ${ad.headline.length > 40 ? 'text-amber-500' : 'text-gray-400'}`}>
+              <p className={`text-[11px] ${ad.headline.length > 40 ? 'text-primary' : 'text-gray-400'}`}>
                 {ad.headline.length}/40
               </p>
             </div>
@@ -430,7 +430,7 @@ export default function TWStepCreative({ state, onChange }: TWStepCreativeProps)
             />
             <div className="flex justify-between mt-1">
               <p className="text-[11px] text-gray-400">{t.adTextDescriptionHint}</p>
-              <p className={`text-[11px] ${ad.description.length > 30 ? 'text-amber-500' : 'text-gray-400'}`}>
+              <p className={`text-[11px] ${ad.description.length > 30 ? 'text-primary' : 'text-gray-400'}`}>
                 {ad.description.length}/30
               </p>
             </div>

@@ -62,7 +62,7 @@ export default function CampaignOverviewTab({ detail }: Props) {
                   key={d.code}
                   className={`flex items-start gap-2 text-sm rounded-lg px-3 py-2 ${
                     d.type === 'error' ? 'bg-red-50 text-red-700' :
-                    d.type === 'warning' ? 'bg-yellow-50 text-yellow-700' :
+                    d.type === 'warning' ? 'bg-primary/5 text-primary' :
                     'bg-blue-50 text-blue-700'
                   }`}
                 >

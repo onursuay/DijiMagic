@@ -186,7 +186,7 @@ export default function TWStepAdSet({ state, onChange }: TWStepAdSetProps) {
   const typeBadgeColor = (type: 'interest' | 'behavior' | 'demographic') => {
     if (type === 'interest') return 'bg-blue-50 text-blue-600'
     if (type === 'behavior') return 'bg-purple-50 text-purple-600'
-    return 'bg-amber-50 text-amber-600'
+    return 'bg-gray-100 text-gray-700'
   }
 
   // ── Transform API results for AudienceSearchInput ──

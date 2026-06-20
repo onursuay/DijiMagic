@@ -326,7 +326,7 @@ function RaporlarContent() {
     return keys.slice(0, 4) // max 4 lines
   }, [currentReport])
 
-  const CHART_COLORS = ['#2BB673', '#3B82F6', '#F59E0B', '#EF4444']
+  const CHART_COLORS = ['#2BB673', '#3B82F6', '#8B5CF6', '#EF4444']
 
   const handleRefresh = () => {
     if (!activeProvider) return

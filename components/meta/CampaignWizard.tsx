@@ -2230,9 +2230,9 @@ const messagingOk = true
             {/* Left: step content */}
             <div className="col-span-2">
               {discoveryPatch?.invalidCombination && (
-                <div className="mb-4 p-3 rounded-lg bg-amber-50 border border-amber-200 text-amber-800 text-sm">
+                <div className="mb-4 p-3 rounded-lg bg-primary/5 border border-primary/20 text-primary text-sm">
                   {t.invalidCombination}
-                  {discoveryPatch.notes && <span className="block mt-1 text-amber-700">{discoveryPatch.notes}</span>}
+                  {discoveryPatch.notes && <span className="block mt-1 text-primary">{discoveryPatch.notes}</span>}
                 </div>
               )}
 
@@ -2279,9 +2279,9 @@ const messagingOk = true
                     </p>
                   )}
                   {state.adset.conversionLocation === 'INSTAGRAM_DIRECT' && igVerifyStatus === 'blocked_rate_limit' && (
-                    <div className="mt-2 rounded-md border border-amber-200 bg-amber-50 p-3 text-caption text-amber-700">
+                    <div className="mt-2 rounded-md border border-primary/20 bg-primary/5 p-3 text-caption text-primary">
                       <div className="flex items-start gap-2">
-                        <svg className="mt-0.5 h-3.5 w-3.5 shrink-0 text-amber-500" fill="currentColor" viewBox="0 0 20 20">
+                        <svg className="mt-0.5 h-3.5 w-3.5 shrink-0 text-gray-500" fill="currentColor" viewBox="0 0 20 20">
                           <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm1-12a1 1 0 10-2 0v4a1 1 0 102 0V6zm-1 8a1 1 0 100-2 1 1 0 000 2z" clipRule="evenodd" />
                         </svg>
                         <span>
@@ -2301,9 +2301,9 @@ const messagingOk = true
                         <span>{igVerifyMsg}</span>
                       </div>
                       {igVerifyErrorKind === 'ig_not_linked_to_page' && (
-                        <p className="mt-2 text-caption text-amber-700">
+                        <p className="mt-2 text-caption text-red-700">
                           Bu sayfaya Instagram bağlı değil.{' '}
-                          <a href="https://business.facebook.com/settings/instagram-accounts" target="_blank" rel="noopener noreferrer" className="underline font-medium hover:text-amber-900">
+                          <a href="https://business.facebook.com/settings/instagram-accounts" target="_blank" rel="noopener noreferrer" className="underline font-medium hover:text-red-900">
                             Meta Business Manager'dan bağlayın →
                           </a>
                         </p>

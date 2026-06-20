@@ -553,7 +553,7 @@ export default function AudienceSegmentEditor({
                   )}
 
                   {browseData?.state === 'data_not_ready' && (
-                    <div className="p-4 rounded-lg bg-amber-50 border border-amber-200 text-amber-800 text-sm">
+                    <div className="p-4 rounded-lg bg-primary/5 border border-primary/20 text-primary text-sm">
                       {t('dataNotReady')}
                     </div>
                   )}

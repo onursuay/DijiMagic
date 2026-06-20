@@ -27,7 +27,7 @@ export default function EvidenceChart({ evidence, currency = 'TRY' }: EvidenceCh
       {evidence.map((e, i) => {
         const maxVal = e.benchmark ? Math.max(e.value, e.benchmark) * 1.2 : e.value * 1.2
         const barPercent = maxVal > 0 ? Math.min((e.value / maxVal) * 100, 100) : 0
-        const barColor = e.direction === 'above' ? 'bg-red-400' : e.direction === 'below' ? 'bg-amber-400' : 'bg-green-400'
+        const barColor = e.direction === 'above' ? 'bg-red-400' : e.direction === 'below' ? 'bg-primary' : 'bg-green-400'
 
         // Translate metric name — fallback to raw key if no translation
         const metricLabel = t.has(`metricLabels.${e.metric}`) ? t(`metricLabels.${e.metric}`) : e.metric

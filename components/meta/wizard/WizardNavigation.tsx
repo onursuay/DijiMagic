@@ -46,7 +46,7 @@ export default function WizardNavigation({
       </button>
       <div className="flex flex-col items-end gap-1">
         {!canGoNext && blockedReason && (
-          <p className="text-caption text-amber-600">{blockedReason}</p>
+          <p className="text-caption text-primary">{blockedReason}</p>
         )}
         <button
           type="button"

@@ -10,7 +10,7 @@ interface AlertListProps {
 
 const SEVERITY_CONFIG = {
   critical: { icon: AlertTriangle, bg: 'bg-red-50', border: 'border-red-200', text: 'text-red-700', iconColor: 'text-red-500' },
-  warning: { icon: AlertCircle, bg: 'bg-amber-50', border: 'border-amber-200', text: 'text-amber-700', iconColor: 'text-amber-500' },
+  warning: { icon: AlertCircle, bg: 'bg-primary/5', border: 'border-primary/20', text: 'text-primary', iconColor: 'text-gray-500' },
   info: { icon: Info, bg: 'bg-blue-50', border: 'border-blue-200', text: 'text-blue-700', iconColor: 'text-blue-500' },
 }
 

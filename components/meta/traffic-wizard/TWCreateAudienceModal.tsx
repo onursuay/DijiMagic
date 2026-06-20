@@ -341,12 +341,12 @@ function CapabilityGate({ t, items, loading, children }: {
   }
   if (items.length === 0) {
     return (
-      <div className="p-4 bg-yellow-50 border border-yellow-100 rounded-lg space-y-2">
+      <div className="p-4 bg-primary/5 border border-primary/20 rounded-lg space-y-2">
         <div className="flex items-center gap-2">
-          <AlertCircle className="w-5 h-5 text-yellow-600 shrink-0" />
-          <span className="text-sm font-medium text-yellow-700">{t.capabilityMissing}</span>
+          <AlertCircle className="w-5 h-5 text-gray-500 shrink-0" />
+          <span className="text-sm font-medium text-primary">{t.capabilityMissing}</span>
         </div>
-        <p className="text-xs text-yellow-600">{t.capabilitySetupHint}</p>
+        <p className="text-xs text-primary">{t.capabilitySetupHint}</p>
       </div>
     )
   }
@@ -372,9 +372,9 @@ function SelectField({ value, onChange, label, placeholder, items, loading, empt
     return (
       <div>
         <FieldLabel>{label}</FieldLabel>
-        <div className="flex items-center gap-2 p-3 bg-yellow-50 border border-yellow-100 rounded-lg">
-          <AlertCircle className="w-4 h-4 text-yellow-600 shrink-0" />
-          <span className="text-xs text-yellow-700">{emptyText}</span>
+        <div className="flex items-center gap-2 p-3 bg-primary/5 border border-primary/20 rounded-lg">
+          <AlertCircle className="w-4 h-4 text-gray-500 shrink-0" />
+          <span className="text-xs text-primary">{emptyText}</span>
         </div>
       </div>
     )
@@ -1794,7 +1794,7 @@ function LookalikeAudienceView({ t, audiences, onCreated, onClose }: {
     : type === 'pixel' ? t.lookalikeTypePixel
     : t.lookalikeTypePage
 
-  const SEGMENT_COLORS = ['#2BB673', '#3B82F6', '#8B5CF6', '#F59E0B', '#EF4444', '#06B6D4']
+  const SEGMENT_COLORS = ['#2BB673', '#3B82F6', '#8B5CF6', '#14B8A6', '#EF4444', '#06B6D4']
 
   return (
     <div className="space-y-6">

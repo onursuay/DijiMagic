@@ -184,7 +184,7 @@ export default function GoogleCampaignEditOverlay({
               <div className="border border-gray-200 rounded-lg p-4 space-y-3">
                 <h3 className="text-sm font-semibold text-gray-900">Butce</h3>
                 {budgetShared && (
-                  <div className="px-3 py-2 bg-amber-50 border border-amber-200 rounded-lg text-xs text-amber-700">
+                  <div className="px-3 py-2 bg-primary/5 border border-primary/20 rounded-lg text-xs text-primary">
                     Bu kampanya paylasilan butce kullaniyor. Degisiklik ayni butceyi paylasan diger kampanyalari da etkiler.
                   </div>
                 )}

@@ -45,8 +45,14 @@ export default function FaturalarimPage() {
   const [saved, setSaved] = useState(false)
 
   useEffect(() => {
-    const stored = getStoredInvoiceInfo()
-    if (stored) setInfo(stored)
+    // H9: Önce sunucudaki fatura profilini dene; yoksa localStorage cache'e düş.
+    fetch('/api/billing/profile', { cache: 'no-store' })
+      .then((r) => (r.ok ? r.json() : null))
+      .then((data) => {
+        if (data?.profile) setInfo(data.profile as InvoiceInfo)
+        else { const stored = getStoredInvoiceInfo(); if (stored) setInfo(stored) }
+      })
+      .catch(() => { const stored = getStoredInvoiceInfo(); if (stored) setInfo(stored) })
     // Fatura geçmişi gerçek payment_transactions'tan (sunucu) gelir
     fetch('/api/billing/invoices', { cache: 'no-store' })
       .then((r) => (r.ok ? r.json() : null))
@@ -58,8 +64,16 @@ export default function FaturalarimPage() {
     setInfo(prev => ({ ...prev, type }))
   }
 
-  const handleSave = () => {
-    setStoredInvoiceInfo(info)
+  const handleSave = async () => {
+    setStoredInvoiceInfo(info) // localStorage cache (anlık UI)
+    // H9: sunucuya da kaydet — checkout'ta iyzico'ya gerçek fatura bilgisi gider.
+    try {
+      await fetch('/api/billing/profile', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(info),
+      })
+    } catch { /* sunucu kaydı başarısızsa localStorage cache yine de var */ }
     setSaved(true)
     setTimeout(() => setSaved(false), 2000)
   }

@@ -166,7 +166,7 @@ export default function GoogleAdEditOverlay({
         </div>
       ) : !isRsa ? (
         <div className="p-8 max-w-2xl">
-          <div className="px-4 py-3 bg-amber-50 border border-amber-200 rounded-lg text-sm text-amber-700">
+          <div className="px-4 py-3 bg-primary/5 border border-primary/20 rounded-lg text-sm text-primary">
             {t('unsupportedType', { type: adType })}
           </div>
         </div>

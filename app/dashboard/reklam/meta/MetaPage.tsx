@@ -2665,15 +2665,15 @@ export default function MetaPage() {
 
           {/* Rate Limit Error Banner */}
           {rateLimitError && (
-            <div className="bg-yellow-50 border border-yellow-200 rounded-lg p-4 flex items-center justify-between">
+            <div className="bg-primary/5 border border-primary/20 rounded-lg p-4 flex items-center justify-between">
               <div className="flex-1">
-                <p className="text-sm font-medium text-yellow-800 mb-1">
+                <p className="text-sm font-medium text-primary mb-1">
                   {rateLimitError.retryAfterMs
                     ? t('fetchErrors.rateLimitRetry', { seconds: Math.ceil(rateLimitError.retryAfterMs / 1000) })
                     : rateLimitError.message}
                 </p>
                 {rateLimitError.fbtrace_id && (
-                  <p className="text-caption text-yellow-600">Trace ID: {rateLimitError.fbtrace_id}</p>
+                  <p className="text-caption text-primary">Trace ID: {rateLimitError.fbtrace_id}</p>
                 )}
               </div>
               <div className="flex items-center gap-2">
@@ -2683,7 +2683,7 @@ export default function MetaPage() {
                     setRateLimitError(null)
                     loadTabData(activeTab, true)
                   }}
-                  className="px-4 py-2 bg-yellow-600 text-white text-sm font-medium rounded-lg hover:bg-yellow-700 transition-colors"
+                  className="px-4 py-2 bg-primary text-white text-sm font-medium rounded-lg hover:bg-primary/90 transition-colors"
                 >
                   {t('fetchErrors.retryNow')}
                 </button>
@@ -2692,7 +2692,7 @@ export default function MetaPage() {
                     setRateLimitedUntil(0)
                     setRateLimitError(null)
                   }}
-                  className="text-yellow-600 hover:text-yellow-800"
+                  className="text-gray-500 hover:text-gray-700"
                 >
                   <X className="w-4 h-4" />
                 </button>

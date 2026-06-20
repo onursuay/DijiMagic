@@ -662,15 +662,15 @@ export default function TWStepSummary({
         )}
 
         {warnings.length > 0 && (
-          <div className="mt-3 pt-3 border-t border-amber-200/50">
-            <p className="text-xs text-amber-600 mb-2">
+          <div className="mt-3 pt-3 border-t border-primary/20">
+            <p className="text-xs text-primary mb-2">
               {t.summaryValidationWarnings}
             </p>
             <div className="space-y-1.5">
               {warnings.map((w, i) => (
                 <div key={i} className="flex items-center gap-2">
-                  <AlertTriangle className="w-3.5 h-3.5 text-amber-500 shrink-0" />
-                  <span className="text-xs text-amber-700">{w.message}</span>
+                  <AlertTriangle className="w-3.5 h-3.5 text-gray-500 shrink-0" />
+                  <span className="text-xs text-primary">{w.message}</span>
                 </div>
               ))}
             </div>

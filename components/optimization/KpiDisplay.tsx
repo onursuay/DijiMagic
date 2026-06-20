@@ -66,7 +66,7 @@ export default function KpiDisplay({ title, metrics, insights, currency = 'TRY' 
           if (isRanking) {
             const raw = (insights as any)[metric.key] as string
             if (raw?.includes('ABOVE_AVERAGE')) valueColor = 'text-green-600'
-            else if (raw === 'AVERAGE') valueColor = 'text-yellow-600'
+            else if (raw === 'AVERAGE') valueColor = 'text-primary'
             else if (raw?.includes('BELOW_AVERAGE')) valueColor = 'text-red-600'
             else valueColor = 'text-gray-400'
           }

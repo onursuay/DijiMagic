@@ -96,7 +96,7 @@ export default function QuickActions({
             disabled={loading !== null}
             className={`flex items-center gap-1.5 px-3 py-1.5 text-ui font-medium rounded-lg transition ${
               isActive
-                ? 'text-amber-700 bg-amber-50 hover:bg-amber-100 border border-amber-200'
+                ? 'text-primary bg-primary/5 hover:bg-primary/10 border border-primary/20'
                 : 'text-green-700 bg-green-50 hover:bg-green-100 border border-green-200'
             } disabled:opacity-50`}
           >

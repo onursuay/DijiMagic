@@ -20,7 +20,7 @@ interface DetailPanelProps {
 
 const GLOW_COLOR = {
   low: '#10B981',
-  medium: '#F59E0B',
+  medium: '#059669',
   high: '#EF4444',
 }
 

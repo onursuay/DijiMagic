@@ -12,7 +12,7 @@ interface CategoryFilterPillsProps {
 const PILLS = [
   { key: null, icon: LayoutGrid, labelKey: 'all' as const, activeBg: 'bg-gray-900', activeText: 'text-white', inactiveBg: 'bg-gray-100', inactiveText: 'text-gray-600' },
   { key: 'AUTO_APPLY_SAFE', icon: Zap, labelKey: 'categories.autoApply' as const, activeBg: 'bg-green-600', activeText: 'text-white', inactiveBg: 'bg-green-50', inactiveText: 'text-green-700' },
-  { key: 'REVIEW_REQUIRED', icon: Eye, labelKey: 'categories.review' as const, activeBg: 'bg-amber-500', activeText: 'text-white', inactiveBg: 'bg-amber-50', inactiveText: 'text-amber-700' },
+  { key: 'REVIEW_REQUIRED', icon: Eye, labelKey: 'categories.review' as const, activeBg: 'bg-primary', activeText: 'text-white', inactiveBg: 'bg-primary/5', inactiveText: 'text-primary' },
   { key: 'TASK', icon: ClipboardList, labelKey: 'categories.task' as const, activeBg: 'bg-blue-500', activeText: 'text-white', inactiveBg: 'bg-blue-50', inactiveText: 'text-blue-700' },
 ] as const
 

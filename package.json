@@ -20,6 +20,7 @@
     "db:migrate:site-briefs": "node scripts/apply-site-content-briefs-migration.mjs",
     "db:migrate:website": "node scripts/apply-website-tables-migration.mjs",
     "db:migrate:website-html": "node scripts/apply-website-html-format-migration.mjs",
+    "db:migrate:billing-profile": "node scripts/apply-billing-profile-migration.mjs",
     "verify:website-credits": "node scripts/verify-website-credits.mjs",
     "verify:freepik": "node scripts/verify-freepik-stock.mjs",
     "verify:stock": "node scripts/verify-stock.mjs",

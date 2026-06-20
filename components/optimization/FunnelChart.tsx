@@ -16,7 +16,7 @@ interface FunnelStage {
 const STAGES: FunnelStage[] = [
   { key: 'viewContent', actionType: 'offsite_conversion.fb_pixel_view_content', color: '#3B82F6' },
   { key: 'addToCart', actionType: 'offsite_conversion.fb_pixel_add_to_cart', color: '#8B5CF6' },
-  { key: 'initiateCheckout', actionType: 'offsite_conversion.fb_pixel_initiate_checkout', color: '#F59E0B' },
+  { key: 'initiateCheckout', actionType: 'offsite_conversion.fb_pixel_initiate_checkout', color: '#06B6D4' },
   { key: 'purchase', actionType: 'offsite_conversion.fb_pixel_purchase', color: '#10B981' },
 ]
 
