@@ -2,6 +2,11 @@
 
 ---
 
+## 2026-06-20 — Sosyal Medya başlığı tek tipleştirildi: "Sosyal Medya"
+- **Sorun:** Sosyal Medya modülünün başlığı "Sosyal Medya Yönetimi" görünüyordu; owner sadece "Sosyal Medya" istemişti ama başlık üç ayrı yerde "Yönetimi" ekiyle tanımlıydı (nav doğruydu, bu yüzden tutarsızdı).
+- **Çözüm:** `dashboard.sosyalmedya.title` (TR "Sosyal Medya", EN "Social Media") ve `featureAccessMap` `social_media_management.label` ("Sosyal Medya") düzeltildi. Topbar başlığı, nav etiketi ve abonelik modalı artık tek tip.
+- **Dosyalar:** `locales/tr.json`, `locales/en.json`, `lib/billing/featureAccessMap.ts`
+
 ## 2026-06-17 — Google Ads: Reklam grupları ve reklamlar sekmesinde boş tablo düzeltmesi
 - **Sorun:** Google Ads'te "Reklam Grupları" ve "Reklamlar" sekmeleri boş görünüyordu (kalıcı skeleton + KPI'lar 0). Aktif kampanyada veri olmasına rağmen satır gelmiyordu. Path-routing (`feat(routing): Google Ads sekme path URL'leri`) ile sekme durumu artık URL'den türetiliyor; doğrudan `/google-ads/reklam-gruplari` veya `/reklamlar` URL'sine girilince sekme efekti yalnız o sekmenin verisini çekiyor, kampanyaları hiç çekmiyordu. `adGroupsToShow`/`adsToShow` ise satırları `enabledCampaignIds` (kampanya verisinden türetilir) ile filtrelediğinden, kampanyalar boş olunca tüm aktif satırlar eleniyordu.
 - **Çözüm:** Sekme-değişim efekti ve `onAccountSelected` artık ad-grupları/reklamlar sekmesinde de kampanyaları (yüklü değilse) arka planda çekiyor — `enabledCampaignIds` ve KPI kartları doluyor. Görünür tablo background refresh'ten etkilenmiyor (skeleton yalnız kampanyalar sekmesinde gösterilir).

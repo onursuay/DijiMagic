@@ -306,7 +306,7 @@
   },
   "dashboard": {
     "sosyalmedya": {
-      "title": "Social Media Management",
+      "title": "Social Media",
       "pageDescription": "Plan your content, set a date; the system publishes automatically to Instagram and Facebook when the time comes.",
       "newPost": "Schedule Content",
       "loading": "Loading…",

@@ -103,7 +103,7 @@ export const FEATURE_ACCESS: Record<string, FeatureAccessRule> = {
   },
   social_media_management: {
     key: 'social_media_management',
-    label: 'Sosyal Medya Yönetimi',
+    label: 'Sosyal Medya',
     tier: 'subscription_required',
     description:
       'İçerik takvimi ve otomatik sosyal medya paylaşımı için aktif bir abonelik planına sahip olmanız gerekir.',
