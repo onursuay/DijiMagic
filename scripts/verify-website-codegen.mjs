@@ -1174,6 +1174,8 @@ const {
   summarizeBlocks,
   mergeBlocks,
   nextBlockId,
+  replaceBlockImageSrc,
+  isSafeReplaceImageUrl,
   ALLOWED_OPS,
   MAX_OPS,
 } = await import(blockMapPath)
@@ -1399,6 +1401,82 @@ const plSys = buildPlannerSystemPrompt()
 assert.ok(typeof plSys === 'string' && /JSON/i.test(plSys) && /\bedit\b/.test(plSys) && /\binsert\b/.test(plSys), `FAIL BPV8: planner system prompt must describe the JSON op shape`)
 const plUser = buildPlannerUserMessage(bpSum, 'hero bölümünü koyulaştır')
 assert.ok(plUser.includes('b1') && plUser.includes('hero bölümünü koyulaştır'), `FAIL BPV8: planner user message must carry the block list + the command`)
+
+// ---------------------------------------------------------------------------
+// REPLACE-IMAGE section — deterministic <img> src swap (manual "Görseli değiştir").
+// Locate the <img> at imageIndex inside ONE block, swap its src for an https URL,
+// preserve alt + all other markup; reject unsafe urls; result re-gates clean.
+// ---------------------------------------------------------------------------
+
+// A block carrying TWO images (so the index matters) + an alt we must preserve.
+const riBlock =
+  '<section data-yoai-block="services" data-yoai-id="b2" class="grid">' +
+  '<img src="https://cdn.example.com/old-0.jpg" alt="Birinci görsel" width="800" height="600" loading="lazy">' +
+  '<h2>Hizmetler</h2>' +
+  "<img src='https://cdn.example.com/old-1.jpg' alt=\"İkinci görsel\">" +
+  '</section>'
+
+// RI1 — swap image index 0: only old-0 changes; alt + index-1 image + heading intact.
+const ri1 = replaceBlockImageSrc(riBlock, 0, 'https://cdn.example.com/new-0.png')
+assert.ok(ri1 && ri1.includes('https://cdn.example.com/new-0.png'), `FAIL RI1: new src missing — got: ${ri1}`)
+assert.ok(!ri1.includes('old-0.jpg'), `FAIL RI1: old src[0] must be gone — got: ${ri1}`)
+assert.ok(ri1.includes('alt="Birinci görsel"'), `FAIL RI1: alt[0] must be preserved — got: ${ri1}`)
+assert.ok(ri1.includes('width="800"') && ri1.includes('height="600"') && ri1.includes('loading="lazy"'), `FAIL RI1: other img attrs must survive — got: ${ri1}`)
+assert.ok(ri1.includes('old-1.jpg'), `FAIL RI1: the OTHER image (index 1) must be untouched — got: ${ri1}`)
+assert.ok(ri1.includes('<h2>Hizmetler</h2>'), `FAIL RI1: non-image markup must survive — got: ${ri1}`)
+
+// RI2 — swap image index 1 (single-quoted src): only old-1 changes; index-0 intact.
+const ri2 = replaceBlockImageSrc(riBlock, 1, 'https://cdn.example.com/new-1.webp')
+assert.ok(ri2 && ri2.includes('https://cdn.example.com/new-1.webp'), `FAIL RI2: new src[1] missing — got: ${ri2}`)
+assert.ok(!ri2.includes('old-1.jpg'), `FAIL RI2: old src[1] must be gone — got: ${ri2}`)
+assert.ok(ri2.includes('alt="İkinci görsel"'), `FAIL RI2: alt[1] must be preserved — got: ${ri2}`)
+assert.ok(ri2.includes('old-0.jpg'), `FAIL RI2: index-0 image must be untouched — got: ${ri2}`)
+
+// RI3 — BAD urls are REJECTED (null) — javascript:/data:/relative/http (not https)/blank.
+for (const bad of [
+  'javascript:alert(1)',
+  'JavaScript:alert(1)',
+  'data:image/png;base64,abc',
+  'data:text/html,<script>x</script>',
+  '/relative/path.jpg',
+  'http://cdn.example.com/x.jpg',
+  'https://evil.com/x.jpg" onerror="alert(1)',
+  '   ',
+  '',
+]) {
+  assert.strictEqual(isSafeReplaceImageUrl(bad), false, `FAIL RI3: unsafe url must be rejected by validator — ${bad}`)
+  assert.strictEqual(replaceBlockImageSrc(riBlock, 0, bad), null, `FAIL RI3: replaceBlockImageSrc must refuse unsafe url — ${bad}`)
+}
+// the canonical javascript: payload from the brief must be rejected
+assert.strictEqual(replaceBlockImageSrc(riBlock, 0, 'javascript:alert(document.cookie)'), null, `FAIL RI3: javascript: payload must be rejected`)
+assert.ok(isSafeReplaceImageUrl('https://cdn.example.com/ok.jpg'), `FAIL RI3: a plain https url must be accepted`)
+
+// RI4 — out-of-range index / no-image block / bad index → null (no mutation).
+assert.strictEqual(replaceBlockImageSrc(riBlock, 5, 'https://cdn.example.com/x.jpg'), null, `FAIL RI4: out-of-range index → null`)
+assert.strictEqual(replaceBlockImageSrc('<section data-yoai-id="b2"><p>no image</p></section>', 0, 'https://cdn.example.com/x.jpg'), null, `FAIL RI4: image-less block → null`)
+assert.strictEqual(replaceBlockImageSrc(riBlock, -1, 'https://cdn.example.com/x.jpg'), null, `FAIL RI4: negative index → null`)
+assert.strictEqual(replaceBlockImageSrc(riBlock, 0.5, 'https://cdn.example.com/x.jpg'), null, `FAIL RI4: non-integer index → null`)
+
+// RI5 — END-TO-END: swap an image inside the full body, byte-splice the block back,
+// untouched blocks byte-identical, AND the merged body PASSES the publish gate with
+// the NEW https src surviving the sanitizer (an unsafe src would have been stripped).
+const riFullBlocks = extractBlocks(bpBody)
+const riHero = riFullBlocks.find((b) => b.id === 'b1') // hero carries an <img> in bpBody
+assert.ok(riHero, `FAIL RI5: hero block (b1) with an image must exist in the fixture`)
+const riNewHeroHtml = replaceBlockImageSrc(riHero.html, 0, 'https://cdn.example.com/hero-new.jpg')
+assert.ok(riNewHeroHtml && riNewHeroHtml.includes('https://cdn.example.com/hero-new.jpg'), `FAIL RI5: hero img not swapped — got: ${riNewHeroHtml}`)
+assert.ok(riNewHeroHtml.includes('alt="x"'), `FAIL RI5: hero img alt must be preserved`)
+const riMerged = mergeBlocks(bpBody, riFullBlocks, [{ op: 'edit', targetId: 'b1' }], { b1: riNewHeroHtml })
+assert.ok(riMerged.includes('https://cdn.example.com/hero-new.jpg'), `FAIL RI5: merged body must carry the new src`)
+assert.ok(!riMerged.includes('https://cdn.example.com/a.jpg'), `FAIL RI5: old hero src must be gone from the merged body`)
+assert.ok(riMerged.includes(riFullBlocks[1].html) && riMerged.includes(riFullBlocks[2].html) && riMerged.includes(riFullBlocks[3].html), `FAIL RI5: untouched blocks must be byte-identical after an image swap`)
+assert.ok(riMerged.includes('<main>') && riMerged.includes('</main>'), `FAIL RI5: <main> wrapper must survive an image swap`)
+const riGate = gateSiteHtml(riMerged)
+assert.ok(riGate.ok === true, `FAIL RI5: image-swapped body must re-gate clean — got: ${JSON.stringify(riGate)}`)
+assert.ok(riGate.html.includes('https://cdn.example.com/hero-new.jpg'), `FAIL RI5: the new https src MUST survive the sanitizer (allowlisted)`)
+assert.ok(!riGate.html.includes('<script'), `FAIL RI5: gated body must be sanitized`)
+
+console.log('replace-image OK')
 
 console.log('block-patch OK')
 

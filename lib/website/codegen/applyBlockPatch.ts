@@ -38,6 +38,8 @@ import {
   extractBlocks as _extractBlocks,
   summarizeBlocks as _summarizeBlocks,
   mergeBlocks as _mergeBlocks,
+  replaceBlockImageSrc as _replaceBlockImageSrc,
+  isSafeReplaceImageUrl as _isSafeReplaceImageUrl,
 } from './blockMap.mjs'
 
 const coreExtractBlocks = _extractBlocks as (bodyHtml: string) => Block[]
@@ -50,6 +52,12 @@ const coreMergeBlocks = _mergeBlocks as (
   ops: PatchOp[],
   newHtmlById: Record<string, string>,
 ) => string
+const coreReplaceBlockImageSrc = _replaceBlockImageSrc as (
+  blockHtml: string,
+  imageIndex: number,
+  newUrl: string,
+) => string | null
+const coreIsSafeReplaceImageUrl = _isSafeReplaceImageUrl as (url: string) => boolean
 
 export interface ApplyBlockPatchInput {
   targetSlug: string
@@ -243,6 +251,87 @@ async function regenMergeGate(
   const gate = gateSiteHtml(merged)
   if (gate.ok === false) return { ok: false, reason: gate.reason }
   return { ok: true, html: gate.html }
+}
+
+/**
+ * Replace ONE image's src inside ONE block (manual "Görseli değiştir"). FULLY
+ * DETERMINISTIC — no model call, no network: we locate the block, swap the <img> at
+ * `imageIndex` for `newUrl` (https-only; the original alt + every other attribute is
+ * preserved), then merge + re-sanitize + re-gate the whole body. Untouched blocks
+ * stay BYTE-IDENTICAL.
+ *
+ * Security:
+ *   - targetId must be a real block id (^b\d+$, present on the page).
+ *   - newUrl MUST be an absolute https URL (isSafeReplaceImageUrl) — javascript:,
+ *     data:, vbscript:, relative, quote/space-bearing values are REJECTED here. Our
+ *     own stored uploads are https Supabase URLs, so they pass.
+ *   - The merged body is re-sanitized + re-gated; the sanitizer's img allowlist keeps
+ *     https srcs (SAFE_IMG_SRC_RE) and would strip anything unsafe that slipped in.
+ *     Gate fail → ok:false, NOT persisted.
+ *   - imageIndex is clamped to a valid range (out of range → ok:false).
+ * Never throws. lib/meta/* and lib/google/* untouched.
+ */
+export interface ApplyImageReplaceInput {
+  targetSlug: string
+  targetLocale: string
+  targetId: string
+  imageIndex: number
+  newUrl: string
+}
+
+export async function applyImageReplacePatch(
+  userId: string,
+  website: Website,
+  input: ApplyImageReplaceInput,
+): Promise<ApplyBlockPatchResult> {
+  const targetId = (input.targetId || '').trim()
+  const newUrl = (input.newUrl || '').trim()
+  const imageIndex = Number.isInteger(input.imageIndex) ? input.imageIndex : -1
+
+  if (!/^b\d+$/.test(targetId)) return { ok: false, reason: 'bad_target' }
+  if (imageIndex < 0) return { ok: false, reason: 'bad_image_index' }
+  if (!coreIsSafeReplaceImageUrl(newUrl)) return { ok: false, reason: 'bad_url' }
+
+  try {
+    // 1. Load the target page (slug + locale). Must be an html-format page.
+    const pages = await getPages(userId, website.id)
+    const target = pickTargetPage(pages, input.targetSlug, input.targetLocale)
+    if (!target) return { ok: false, reason: 'page_not_found' }
+    const sourceBody = typeof target.html === 'string' ? target.html : ''
+    if (target.format !== 'html' || !sourceBody) return { ok: false, reason: 'not_html_page' }
+
+    // 2. Byte-exact top-level blocks; the selected id MUST be a real block with images.
+    const blocks = coreExtractBlocks(sourceBody)
+    if (blocks.length === 0) return { ok: false, reason: 'no_blocks' }
+    const cur = blocks.find((b) => b.id === targetId)
+    if (!cur) return { ok: false, reason: 'target_not_found' }
+
+    // 3. Deterministic image-src swap inside the block (alt + all else preserved).
+    const newBlockHtml = coreReplaceBlockImageSrc(cur.html, imageIndex, newUrl)
+    if (newBlockHtml === null) return { ok: false, reason: 'image_not_found' }
+    if (newBlockHtml === cur.html) return { ok: false, reason: 'image_unchanged' }
+
+    // 4. Byte-splice the rewritten block onto the original body (others byte-identical).
+    const ops: PatchOp[] = [{ op: 'edit', targetId }]
+    const merged = coreMergeBlocks(sourceBody, blocks, ops, { [targetId]: newBlockHtml })
+    if (!merged) return { ok: false, reason: 'empty_merge' }
+
+    // 5. Structural invariant + the SAME publish gate (sanitize → structure → size).
+    //    The sanitizer re-checks every img src; an unsafe src can never persist.
+    const inv = assertStructuralInvariants(sourceBody, merged, blocks, ops)
+    if (!inv.ok) return { ok: false, reason: inv.reason }
+    const gate = gateSiteHtml(merged)
+    if (gate.ok === false) return { ok: false, reason: gate.reason }
+
+    // 6. Defense-in-depth: the new https url MUST survive the gate (i.e. the sanitizer
+    //    kept it). If it was stripped, refuse to persist a broken/blank image.
+    if (!gate.html.includes(newUrl)) return { ok: false, reason: 'src_stripped' }
+
+    return finalize(target, gate.html)
+  } catch (e) {
+    console.warn('[applyImageReplacePatch] soft-fail:', e instanceof Error ? e.message : e)
+    return { ok: false, reason: 'patch_failed' }
+  }
 }
 
 // ---------------------------------------------------------------------------

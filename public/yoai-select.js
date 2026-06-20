@@ -12,10 +12,16 @@
  *   - HOVER over a TOP-LEVEL block [data-yoai-block][data-yoai-id] → a subtle
  *     outline (inline style, highest specificity, removed on leave).
  *   - CLICK a block → postMessage to the parent window:
- *       { type:'yoai:select', blockId, role, rect, text }
+ *       { type:'yoai:select', blockId, role, rect, text, hasImage?, image? }
  *     where blockId = dataset.yoaiId, role = dataset.yoaiBlock, rect = the block's
  *     bounding box (for the parent panel placement), text = a short trimmed
  *     innerText snippet (for the "Metni düzenle" textarea prefill).
+ *     IMAGE REPLACE (additive): when the block contains <img> elements we also send
+ *       hasImage:true. If the actual clicked element is (or is inside) an <img>, we
+ *       additionally send image:{ index, src } — index = that <img>'s position among
+ *       the block's images, so the patch can target the EXACT image deterministically.
+ *       (Non-image click in an image-bearing block → only hasImage:true, so the panel
+ *       can still offer "replace image", defaulting to the first image.)
  *
  * ISOLATION
  *   - The iframe stays sandbox="allow-scripts allow-forms" (NO allow-same-origin).
@@ -101,6 +107,41 @@
     }
   }
 
+  /**
+   * Image metadata for the "Görseli değiştir" action.
+   * Returns { hasImage, image? } where:
+   *   - hasImage = the block contains at least one <img>
+   *   - image    = { index, src } of the CLICKED image (only when the click target
+   *                 is or is inside an <img> that belongs to this block). index is
+   *                 the position of that <img> among block.querySelectorAll('img').
+   * Non-sensitive: src is a URL already visible in the rendered page. Fail-open.
+   */
+  function imageInfo(block, target) {
+    var info = { hasImage: false };
+    try {
+      var imgs = block.querySelectorAll ? block.querySelectorAll('img') : [];
+      if (!imgs || !imgs.length) return info;
+      info.hasImage = true;
+      // The clicked <img> (the target itself, or the nearest <img> ancestor).
+      var clicked = null;
+      if (target) {
+        if (target.tagName && target.tagName.toLowerCase() === 'img') clicked = target;
+        else if (target.closest) {
+          try { clicked = target.closest('img'); } catch (e) { clicked = null; }
+        }
+      }
+      if (clicked) {
+        for (var i = 0; i < imgs.length; i++) {
+          if (imgs[i] === clicked) {
+            info.image = { index: i, src: String(clicked.getAttribute('src') || clicked.src || '') };
+            break;
+          }
+        }
+      }
+    } catch (e) { /* ignore — fail-open */ }
+    return info;
+  }
+
   function onOver(e) {
     var block = blockFrom(e.target);
     if (block) setOutline(block); else clearOutline();
@@ -123,21 +164,23 @@
     var blockId = (block.getAttribute('data-yoai-id') || '').trim();
     if (!blockId) return;
     var role = (block.getAttribute('data-yoai-block') || '').trim();
+    var imgInfo = imageInfo(block, e.target);
 
     try {
       // Target origin '*' is acceptable here: the payload is non-sensitive UI
-      // metadata (a block id + a visible-text snippet the user already sees), and
-      // the PARENT validates e.source === iframe.contentWindow before trusting it.
-      parentWin.postMessage(
-        {
-          type: 'yoai:select',
-          blockId: blockId,
-          role: role,
-          rect: rectOf(block),
-          text: shortText(block),
-        },
-        '*'
-      );
+      // metadata (a block id + a visible-text snippet the user already sees + the
+      // visible image URL/index), and the PARENT validates
+      // e.source === iframe.contentWindow + the field shapes before trusting it.
+      var msg = {
+        type: 'yoai:select',
+        blockId: blockId,
+        role: role,
+        rect: rectOf(block),
+        text: shortText(block),
+        hasImage: imgInfo.hasImage === true,
+      };
+      if (imgInfo.image) msg.image = imgInfo.image;
+      parentWin.postMessage(msg, '*');
     } catch (er) { /* ignore — fail-open */ }
   }
 

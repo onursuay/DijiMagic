@@ -4,7 +4,7 @@ import { useState, useEffect, useCallback, useRef } from 'react'
 import { useParams, useRouter } from 'next/navigation'
 import Link from 'next/link'
 import { useTranslations, useLocale } from 'next-intl'
-import { ArrowLeft, Check, X, Pencil, Monitor, Tablet, Smartphone, ExternalLink, Sparkles, Send, ThumbsDown, MousePointerClick, Type, Wand2, Trash2 } from 'lucide-react'
+import { ArrowLeft, Check, X, Pencil, Monitor, Tablet, Smartphone, ExternalLink, Sparkles, Send, ThumbsDown, MousePointerClick, Type, Wand2, Trash2, ImagePlus, Upload, Search } from 'lucide-react'
 import Topbar from '@/components/Topbar'
 import { ToastContainer, type Toast } from '@/components/Toast'
 import AccessRequiredModal from '@/components/billing/AccessRequiredModal'
@@ -18,9 +18,15 @@ type Selection = {
   role: string
   text: string
   rect: { top: number; left: number; width: number; height: number; bottom: number; right: number }
+  /** The block contains at least one <img> (offer "Görseli değiştir"). */
+  hasImage: boolean
+  /** The clicked image (index among the block's images + its current src), if any. */
+  image: { index: number; src: string } | null
 }
 /** Which inline action the edit panel is showing (null = just the action list). */
-type EditAction = 'text' | 'ai' | 'delete' | null
+type EditAction = 'text' | 'ai' | 'delete' | 'image' | null
+/** Which image-source picker is open inside the 'image' action ('upload' | 'stock'). */
+type ImageMode = 'upload' | 'stock' | null
 const DESIGN_W: Record<Device, number> = { desktop: 1280, tablet: 834, mobile: 390 }
 // Daha uzun tasarım yüksekliği → "tam ekran" hissi (önizleme görünür alanın çoğunu doldurur).
 const DESIGN_H = 960
@@ -61,6 +67,11 @@ export default function WebsiteReviewPage() {
   const [editAction, setEditAction] = useState<EditAction>(null)
   const [editText, setEditText] = useState('')
   const [patchBusy, setPatchBusy] = useState(false)
+  // ── "Görseli değiştir" alt-paneli ──
+  const [imageMode, setImageMode] = useState<ImageMode>(null)
+  const [stockQuery, setStockQuery] = useState('')
+  const [imageBusy, setImageBusy] = useState(false)
+  const fileInputRef = useRef<HTMLInputElement>(null)
 
   const addToast = useCallback((message: string, type: Toast['type']) => {
     setToasts((prev) => [...prev, { id: crypto.randomUUID(), message, type }])
@@ -101,14 +112,29 @@ export default function WebsiteReviewPage() {
       if (!d || typeof d !== 'object' || d.type !== 'yoai:select') return
       if (typeof d.blockId !== 'string' || !/^b\d+$/.test(d.blockId)) return
       const rect = d.rect && typeof d.rect === 'object' ? d.rect : { top: 0, left: 0, width: 0, height: 0, bottom: 0, right: 0 }
+      // Validate the optional image fields' SHAPE (same rigor as blockId): index a
+      // small non-negative int, src a string. Anything malformed → no image.
+      const hasImage = d.hasImage === true
+      let image: { index: number; src: string } | null = null
+      if (
+        d.image && typeof d.image === 'object' &&
+        Number.isInteger(d.image.index) && d.image.index >= 0 && d.image.index < 1000 &&
+        typeof d.image.src === 'string'
+      ) {
+        image = { index: d.image.index, src: d.image.src }
+      }
       setSelection({
         blockId: d.blockId,
         role: typeof d.role === 'string' ? d.role : '',
         text: typeof d.text === 'string' ? d.text : '',
         rect,
+        hasImage,
+        image,
       })
       setEditAction(null)
       setEditText(typeof d.text === 'string' ? d.text : '')
+      setImageMode(null)
+      setStockQuery('')
     }
     window.addEventListener('message', onMessage)
     return () => window.removeEventListener('message', onMessage)
@@ -116,7 +142,7 @@ export default function WebsiteReviewPage() {
 
   // Leaving edit mode clears any open selection/panel.
   useEffect(() => {
-    if (!editMode) { setSelection(null); setEditAction(null); setEditText('') }
+    if (!editMode) { setSelection(null); setEditAction(null); setEditText(''); setImageMode(null); setStockQuery('') }
   }, [editMode])
 
   const localePages = pages.filter((p) => p.locale === previewLocale)
@@ -210,6 +236,81 @@ export default function WebsiteReviewPage() {
     } catch {
       addToast(t('buildError'), 'error')
     } finally { setPatchBusy(false) }
+  }
+
+  // Send the deterministic replace_image patch (newUrl = stored upload or stock URL).
+  const sendReplaceImage = async (newUrl: string) => {
+    if (!selection) return
+    // The clicked image's index, or 0 when the block has images but a non-image was
+    // clicked (default to the first image).
+    const imageIndex = selection.image ? selection.image.index : 0
+    const res = await fetch(`/api/website/${id}/patch`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        op: 'replace_image',
+        targetId: selection.blockId,
+        imageIndex,
+        newUrl,
+        targetSlug: activeSlugSafe,
+        targetLocale: previewLocale,
+      }),
+    })
+    if (res.status === 402) { setShowCredit(true); return }
+    const json = await res.json().catch(() => null)
+    if (json?.ok) {
+      if (Array.isArray(json.pages)) setPages(json.pages)
+      setSelection(null)
+      setEditAction(null)
+      setImageMode(null)
+      setStockQuery('')
+      setReloadKey((k) => k + 1)
+      addToast(t('revisionDone'), 'success')
+    } else {
+      addToast(json?.error || t('buildError'), 'error')
+    }
+  }
+
+  // "Yükle" → upload an image file → stored https URL → replace_image patch.
+  const onUploadFile = async (file: File | null) => {
+    if (!file || !selection || imageBusy) return
+    setImageBusy(true)
+    try {
+      const fd = new FormData()
+      fd.append('file', file)
+      const up = await fetch(`/api/website/${id}/assets`, { method: 'POST', body: fd })
+      const upJson = await up.json().catch(() => null)
+      if (!upJson?.ok || typeof upJson.url !== 'string') {
+        addToast(upJson?.error || t('imageUploadError'), 'error')
+        return
+      }
+      await sendReplaceImage(upJson.url)
+    } catch {
+      addToast(t('imageUploadError'), 'error')
+    } finally {
+      setImageBusy(false)
+      if (fileInputRef.current) fileInputRef.current.value = ''
+    }
+  }
+
+  // "Açıklama ile bul" → fetch ONE stock image for the query → replace_image patch.
+  const onStockSearch = async () => {
+    const q = stockQuery.trim()
+    if (!q || !selection || imageBusy) return
+    setImageBusy(true)
+    try {
+      const sr = await fetch(`/api/website/${id}/stock-image?q=${encodeURIComponent(q)}`)
+      const srJson = await sr.json().catch(() => null)
+      if (!srJson?.ok || typeof srJson.url !== 'string') {
+        addToast(srJson?.error || t('imageStockError'), 'error')
+        return
+      }
+      await sendReplaceImage(srJson.url)
+    } catch {
+      addToast(t('imageStockError'), 'error')
+    } finally {
+      setImageBusy(false)
+    }
   }
 
   const approve = async () => {
@@ -351,7 +452,7 @@ export default function WebsiteReviewPage() {
                     {selection.text && <p className="text-sm text-gray-500 truncate">{selection.text}</p>}
                   </div>
                 </div>
-                <button onClick={() => { setSelection(null); setEditAction(null) }} disabled={patchBusy} className="text-gray-400 hover:text-gray-600 transition-colors disabled:opacity-40" aria-label={t('cancel')}>
+                <button onClick={() => { setSelection(null); setEditAction(null); setImageMode(null); setStockQuery('') }} disabled={patchBusy || imageBusy} className="text-gray-400 hover:text-gray-600 transition-colors disabled:opacity-40" aria-label={t('cancel')}>
                   <X className="w-5 h-5" />
                 </button>
               </div>
@@ -364,6 +465,11 @@ export default function WebsiteReviewPage() {
                   <button onClick={() => { setEditAction('ai'); setEditText('') }} disabled={patchBusy} className="inline-flex items-center gap-2 rounded-lg border border-primary/30 bg-primary/5 px-4 py-2.5 text-sm font-medium text-primary hover:bg-primary/10 transition-colors disabled:opacity-50">
                     <Wand2 className="w-4 h-4" /> {t('aiRewriteAction')}
                   </button>
+                  {selection.hasImage && (
+                    <button onClick={() => { setEditAction('image'); setImageMode(null); setStockQuery('') }} disabled={patchBusy} className="inline-flex items-center gap-2 rounded-lg border border-gray-200 px-4 py-2.5 text-sm font-medium text-gray-700 hover:bg-gray-50/60 transition-colors disabled:opacity-50">
+                      <ImagePlus className="w-4 h-4" /> {t('replaceImageAction')}
+                    </button>
+                  )}
                   <button onClick={() => setEditAction('delete')} disabled={patchBusy} className="inline-flex items-center gap-2 rounded-lg border border-red-200 bg-red-50 px-4 py-2.5 text-sm font-medium text-red-700 hover:bg-red-100 transition-colors disabled:opacity-50">
                     <Trash2 className="w-4 h-4" /> {t('deleteBlockAction')}
                   </button>
@@ -404,6 +510,56 @@ export default function WebsiteReviewPage() {
                     </button>
                     <button onClick={() => applyPatch('delete', '')} disabled={patchBusy} className="inline-flex items-center gap-2 rounded-lg bg-red-600 px-5 py-2.5 text-sm font-semibold text-white active:scale-[0.97] transition-all disabled:opacity-50">
                       <Trash2 className="w-4 h-4" /> {patchBusy ? t('revising') : t('deleteBlockAction')}
+                    </button>
+                  </div>
+                </div>
+              )}
+
+              {/* "Görseli değiştir" — kompakt alt-panel: Yükle veya Açıklama ile bul */}
+              {editAction === 'image' && (
+                <div className="mt-4">
+                  {imageMode === null && (
+                    <div className="flex flex-wrap gap-2.5">
+                      <button onClick={() => fileInputRef.current?.click()} disabled={imageBusy} className="inline-flex items-center gap-2 rounded-lg border border-gray-200 px-4 py-2.5 text-sm font-medium text-gray-700 hover:bg-gray-50/60 transition-colors disabled:opacity-50">
+                        <Upload className="w-4 h-4" /> {imageBusy ? t('imageWorking') : t('imageUploadOption')}
+                      </button>
+                      <button onClick={() => setImageMode('stock')} disabled={imageBusy} className="inline-flex items-center gap-2 rounded-lg border border-primary/30 bg-primary/5 px-4 py-2.5 text-sm font-medium text-primary hover:bg-primary/10 transition-colors disabled:opacity-50">
+                        <Search className="w-4 h-4" /> {t('imageStockOption')}
+                      </button>
+                      <input
+                        ref={fileInputRef}
+                        type="file"
+                        accept="image/png,image/jpeg,image/webp,image/gif"
+                        className="hidden"
+                        onChange={(e) => onUploadFile(e.target.files?.[0] ?? null)}
+                      />
+                    </div>
+                  )}
+
+                  {imageMode === 'stock' && (
+                    <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-2.5">
+                      <input
+                        type="text"
+                        value={stockQuery}
+                        onChange={(e) => setStockQuery(e.target.value)}
+                        onKeyDown={(e) => { if (e.key === 'Enter' && stockQuery.trim() && !imageBusy) onStockSearch() }}
+                        autoFocus
+                        placeholder={t('imageStockPlaceholder')}
+                        className="flex-1 rounded-xl border border-gray-200 p-3 text-sm focus:outline-none focus:border-primary focus:ring-2 focus:ring-primary/20 transition-all"
+                      />
+                      <button onClick={onStockSearch} disabled={imageBusy || !stockQuery.trim()} className="inline-flex items-center justify-center gap-2 rounded-lg bg-primary px-5 py-2.5 text-sm font-semibold text-white active:scale-[0.97] transition-all disabled:opacity-50">
+                        <Search className="w-4 h-4" /> {imageBusy ? t('imageWorking') : t('imageStockSearch')}
+                      </button>
+                    </div>
+                  )}
+
+                  <div className="mt-3 flex items-center justify-end">
+                    <button
+                      onClick={() => { if (imageMode) setImageMode(null); else setEditAction(null) }}
+                      disabled={imageBusy}
+                      className="rounded-lg px-4 py-2.5 text-sm font-medium text-gray-600 hover:bg-gray-100 transition-colors disabled:opacity-50"
+                    >
+                      {imageMode ? t('back') : t('cancel')}
                     </button>
                   </div>
                 </div>

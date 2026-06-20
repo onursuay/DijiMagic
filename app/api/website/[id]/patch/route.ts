@@ -4,7 +4,7 @@ import { chargeFeature } from '@/lib/billing/featureGuard'
 import { getWebsite, replacePages, createVersion, getPages, listVersions } from '@/lib/website/store'
 import { isWebsiteAiReady } from '@/lib/website/ai/generate'
 import { WEBSITE_REVISION_COST, WEBSITE_FREE_REVISIONS } from '@/lib/website/credits'
-import { applyTargetedBlockPatch } from '@/lib/website/codegen/applyBlockPatch'
+import { applyTargetedBlockPatch, applyImageReplacePatch } from '@/lib/website/codegen/applyBlockPatch'
 import type { Website, WebsitePageInput, WebsiteSnapshot } from '@/lib/website/types'
 
 export const dynamic = 'force-dynamic'
@@ -28,11 +28,18 @@ export const maxDuration = 60
  *     free, then WEBSITE_REVISION_COST; owner bypass via chargeFeature). NO double-
  *     charge: one chargeFeature per request, refunded on any failure.
  *
- * Body: { op:'edit'|'ai_rewrite'|'delete', targetId, content?, instruction?,
- *         targetSlug, targetLocale }
- *   - 'edit'       → `content` is the literal new text for the block.
- *   - 'ai_rewrite' → `instruction` is a natural-language change request.
- *   - 'delete'     → remove the block (no model call).
+ * Body: { op:'edit'|'ai_rewrite'|'delete'|'replace_image', targetId, content?,
+ *         instruction?, imageIndex?, newUrl?, targetSlug, targetLocale }
+ *   - 'edit'          → `content` is the literal new text for the block.
+ *   - 'ai_rewrite'    → `instruction` is a natural-language change request.
+ *   - 'delete'        → remove the block (no model call).
+ *   - 'replace_image' → swap the <img> at `imageIndex` for `newUrl` (DETERMINISTIC,
+ *                       no model call). `newUrl` MUST be an absolute https URL — our
+ *                       own stored uploads + stock-provider URLs are https; anything
+ *                       else (javascript:/data:/relative) is REJECTED. The merged body
+ *                       is re-sanitized + re-gated so an unsafe src can never persist.
+ *                       Same revision charge policy (first-3-free) — a cheap op, NOT
+ *                       double-charged.
  */
 export async function POST(req: NextRequest, { params }: { params: { id: string } }) {
   if (!isWebsiteAiReady()) {
@@ -47,11 +54,16 @@ export async function POST(req: NextRequest, { params }: { params: { id: string 
     targetId?: string
     content?: string
     instruction?: string
+    imageIndex?: number
+    newUrl?: string
     targetSlug?: string
     targetLocale?: string
   }
 
-  const op = body.op === 'edit' || body.op === 'ai_rewrite' || body.op === 'delete' ? body.op : undefined
+  const op =
+    body.op === 'edit' || body.op === 'ai_rewrite' || body.op === 'delete' || body.op === 'replace_image'
+      ? body.op
+      : undefined
   if (!op) return NextResponse.json({ ok: false, error: 'Geçersiz işlem' }, { status: 400 })
 
   const targetId = typeof body.targetId === 'string' ? body.targetId.trim() : ''
@@ -62,15 +74,27 @@ export async function POST(req: NextRequest, { params }: { params: { id: string 
   const targetSlug = (typeof body.targetSlug === 'string' ? body.targetSlug.trim() : '') || 'home'
   const targetLocale = typeof body.targetLocale === 'string' ? body.targetLocale.trim() : ''
 
+  // 'replace_image' carries imageIndex + newUrl (https-only, validated in the engine).
+  const imageIndex = Number.isInteger(body.imageIndex) ? (body.imageIndex as number) : -1
+  const newUrl = typeof body.newUrl === 'string' ? body.newUrl.trim() : ''
+  if (op === 'replace_image') {
+    if (imageIndex < 0) return NextResponse.json({ ok: false, error: 'Geçersiz görsel' }, { status: 400 })
+    // Absolute https only — a hard wall against javascript:/data:/relative at the edge
+    // (the engine + sanitizer re-check; this is the first of three gates).
+    if (!/^https:\/\/[^\s"'<>]+$/i.test(newUrl)) {
+      return NextResponse.json({ ok: false, error: 'Geçersiz görsel adresi' }, { status: 400 })
+    }
+  }
+
   // 'edit' uses the literal new text (content); 'ai_rewrite' a free instruction.
-  // 'delete' needs neither.
+  // 'delete'/'replace_image' need neither.
   const instruction =
     op === 'edit'
       ? (typeof body.content === 'string' ? body.content.trim() : '')
       : op === 'ai_rewrite'
         ? (typeof body.instruction === 'string' ? body.instruction.trim() : '')
         : ''
-  if (op !== 'delete' && !instruction) {
+  if (op !== 'delete' && op !== 'replace_image' && !instruction) {
     return NextResponse.json({ ok: false, error: 'İçerik gerekli' }, { status: 400 })
   }
 
@@ -87,13 +111,25 @@ export async function POST(req: NextRequest, { params }: { params: { id: string 
   if (!access.ok) return NextResponse.json(access.body, { status: access.status })
 
   try {
-    const patch = await applyTargetedBlockPatch(user.id, site, {
-      targetSlug,
-      targetLocale,
-      targetId,
-      op,
-      instruction,
-    })
+    // 'replace_image' is a DETERMINISTIC image-src swap (no model call); every other
+    // op goes through the targeted block-patch engine (model rewrite / splice).
+    const patch =
+      op === 'replace_image'
+        ? await applyImageReplacePatch(user.id, site, {
+            targetSlug,
+            targetLocale,
+            targetId,
+            imageIndex,
+            newUrl,
+          })
+        : await applyTargetedBlockPatch(user.id, site, {
+            targetSlug,
+            targetLocale,
+            targetId,
+            // Narrowed by the ternary guard (op !== 'replace_image' here).
+            op: op as 'edit' | 'ai_rewrite' | 'delete',
+            instruction,
+          })
 
     if (patch.ok !== true) {
       // Engine soft-failed (gate fail / regen fail / target missing) → refund + 422.
