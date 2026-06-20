@@ -3,98 +3,56 @@
 import { useEffect, useRef } from 'react'
 
 /**
- * Cursor-following colorful blurred glow trail effect.
+ * Grower (withgrower.com) tarzı yumuşak renkli hero ışığı.
  *
- * Mouse hero üzerinde gezdikçe, imlecin ARKASINDA renkli (cyan/blue/purple/green/pink),
- * blur verilmiş, yumuşak ışık/sis izleri (glow noktaları) üretilir; noktalar kısa sürede
- * opacity ile fade-out olur. Mouse durunca izler yavaşça kaybolur.
+ * Grower'ın GERÇEK yapısı: statik, blur'lu yeşil (#3ded9a) + mor bloblar + animasyonlu
+ * başlık. Biz buna ek olarak imleci NAZİKÇE takip eden yumuşak yeşil/mor glow ekliyoruz
+ * (kullanıcı "mouse gezdikçe renk" istedi). ÖNEMLİ: additive blending YOK → beyaza
+ * patlamaz; normal blend + düşük opacity + ağır blur → yumuşak RENKLİ his.
  *
- * - Ayrı bir OVERLAY canvas katmanı (hero background DEĞİL; border/çerçeve/kutu YOK).
- * - Mouse olmadan HİÇBİR şey boyanmaz (yalnız imlecin geçtiği noktalar).
- * - `pointer-events:none` + `aria-hidden` → içerik/buton/navbar etkilenmez; `z-0`, içerik `z-10` üstte.
- * - requestAnimationFrame ile çizim; nokta sayısı sınırlı; CSS `blur()` ile sis hissi.
- * - `prefers-reduced-motion` / mobil (mouse yok): efekt çalışmaz (statik kalır).
+ * - Statik ambient bloblar her zaman görünür (mobil/mouse yok → Grower tabanı).
+ * - İmleci takip eden 2 glow (yeşil önde, mor hafif geride) lerp ile yumuşak izler;
+ *   mouse durunca ~0.7s'de fade-out. `pointer-events:none` + `z-0`, içerik `z-10` üstte.
+ * - `prefers-reduced-motion` / mobil: yalnız statik ambient (takip kapalı).
  */
-// Grower (withgrower.com) paleti: marka yeşili #3ded9a + mor + mavi
-const COLORS = [
-  '61,237,154',  // grower yeşili #3ded9a
-  '168,85,247',  // mor (purple-500)
-  '59,130,246',  // mavi
-]
-
 export default function HeroGlowTrail() {
-  const canvasRef = useRef<HTMLCanvasElement>(null)
+  const wrap = useRef<HTMLDivElement>(null)
+  const a = useRef<HTMLDivElement>(null)
+  const b = useRef<HTMLDivElement>(null)
 
   useEffect(() => {
-    const canvas = canvasRef.current
-    const parent = canvas?.parentElement
-    if (!canvas || !parent || typeof window === 'undefined') return
+    const w = wrap.current, e1 = a.current, e2 = b.current
+    if (!w || !e1 || !e2 || typeof window === 'undefined') return
     if (window.matchMedia('(prefers-reduced-motion: reduce)').matches) return
-    const ctx = canvas.getContext('2d')
-    if (!ctx) return
 
-    const dpr = Math.min(window.devicePixelRatio || 1, 2)
-    let w = 0, h = 0
-    const resize = () => {
-      const r = parent.getBoundingClientRect()
-      w = r.width; h = r.height
-      canvas.width = Math.max(1, Math.round(w * dpr))
-      canvas.height = Math.max(1, Math.round(h * dpr))
-      canvas.style.width = w + 'px'
-      canvas.style.height = h + 'px'
-      ctx.setTransform(dpr, 0, 0, dpr, 0, 0)
+    let cw = 0, ch = 0, left = 0, top = 0
+    const measure = () => { const r = w.getBoundingClientRect(); cw = r.width; ch = r.height; left = r.left; top = r.top }
+    measure()
+    const ro = typeof ResizeObserver !== 'undefined' ? new ResizeObserver(measure) : null
+    ro?.observe(w)
+    window.addEventListener('scroll', measure, { passive: true })
+    window.addEventListener('resize', measure)
+
+    let tx = 0, ty = 0
+    let ax = 0, ay = 0, bx = 0, by = 0, init = false
+    let active = false, lastMove = 0, raf = 0
+
+    const onMove = (ev: PointerEvent) => {
+      const x = ev.clientX - left, y = ev.clientY - top
+      if (x < -60 || y < -60 || x > cw + 60 || y > ch + 60) { active = false; return } // yalnız hero çevresi
+      tx = x; ty = y
+      if (!init) { ax = bx = x; ay = by = y; init = true }
+      active = true
+      lastMove = performance.now()
     }
-    resize()
-    const ro = typeof ResizeObserver !== 'undefined' ? new ResizeObserver(resize) : null
-    ro?.observe(parent)
-
-    type Pt = { x: number; y: number; life: number; color: string; r: number }
-    const pts: Pt[] = []
-    let ci = 0
-    let lastX = 0, lastY = 0, hasLast = false
-    let raf = 0
-
-    const onMove = (e: PointerEvent) => {
-      const r = parent.getBoundingClientRect()
-      const x = e.clientX - r.left
-      const y = e.clientY - r.top
-      if (x < 0 || y < 0 || x > w || y > h) { hasLast = false; return } // yalnız hero içinde
-      if (!hasLast) { lastX = x; lastY = y; hasLast = true; return }
-      const dx = x - lastX, dy = y - lastY
-      const dist = Math.hypot(dx, dy)
-      const step = 16
-      const n = Math.max(1, Math.min(5, Math.floor(dist / step)))
-      for (let i = 1; i <= n; i++) {
-        pts.push({
-          x: lastX + (dx * i) / n,
-          y: lastY + (dy * i) / n,
-          life: 1,
-          color: COLORS[ci % COLORS.length],
-          r: 110 + Math.random() * 90,
-        })
-        ci++
-      }
-      lastX = x; lastY = y
-      if (pts.length > 90) pts.splice(0, pts.length - 90)
-    }
-
     const tick = () => {
-      ctx.clearRect(0, 0, w, h)
-      ctx.globalCompositeOperation = 'lighter' // additive → renkler birbirine karışır
-      for (let i = pts.length - 1; i >= 0; i--) {
-        const p = pts[i]
-        p.life -= 0.02 // ~0.8s'de fade-out
-        if (p.life <= 0) { pts.splice(i, 1); continue }
-        const a = p.life * 0.5
-        const g = ctx.createRadialGradient(p.x, p.y, 0, p.x, p.y, p.r)
-        g.addColorStop(0, `rgba(${p.color},${a})`)
-        g.addColorStop(1, `rgba(${p.color},0)`)
-        ctx.fillStyle = g
-        ctx.beginPath()
-        ctx.arc(p.x, p.y, p.r, 0, Math.PI * 2)
-        ctx.fill()
-      }
-      ctx.globalCompositeOperation = 'source-over'
+      ax += (tx - ax) * 0.14; ay += (ty - ay) * 0.14 // yeşil — daha hızlı takip
+      bx += (tx - bx) * 0.07; by += (ty - by) * 0.07 // mor — hafif geride (iz hissi)
+      e1.style.transform = `translate(${ax.toFixed(1)}px, ${ay.toFixed(1)}px) translate(-50%, -50%)`
+      e2.style.transform = `translate(${bx.toFixed(1)}px, ${by.toFixed(1)}px) translate(-50%, -50%)`
+      if (active && performance.now() - lastMove > 600) active = false // mouse durdu → fade
+      const o = active ? '1' : '0'
+      if (e1.style.opacity !== o) { e1.style.opacity = o; e2.style.opacity = o }
       raf = requestAnimationFrame(tick)
     }
 
@@ -102,17 +60,21 @@ export default function HeroGlowTrail() {
     raf = requestAnimationFrame(tick)
     return () => {
       window.removeEventListener('pointermove', onMove)
+      window.removeEventListener('scroll', measure)
+      window.removeEventListener('resize', measure)
       cancelAnimationFrame(raf)
       ro?.disconnect()
     }
   }, [])
 
   return (
-    <canvas
-      ref={canvasRef}
-      aria-hidden="true"
-      className="pointer-events-none absolute inset-0 z-0"
-      style={{ filter: 'blur(16px)' }}
-    />
+    <div ref={wrap} aria-hidden="true" className="pointer-events-none absolute inset-0 z-0 overflow-hidden">
+      {/* Grower statik ambient — yumuşak yeşil/mor bloblar (mouse yokken/mobilde de görünür) */}
+      <div className="absolute -top-20 right-[5%] w-[36vw] max-w-[480px] aspect-square rounded-full blur-[100px]" style={{ background: 'radial-gradient(circle, rgba(61,237,154,0.14), transparent 70%)' }} />
+      <div className="absolute -bottom-28 left-[3%] w-[32vw] max-w-[430px] aspect-square rounded-full blur-[100px]" style={{ background: 'radial-gradient(circle, rgba(168,85,247,0.13), transparent 70%)' }} />
+      {/* İmleci takip eden yumuşak renkli glow — yeşil + mor (beyaz DEĞİL; normal blend, ağır blur) */}
+      <div ref={a} className="absolute top-0 left-0 w-[26vw] max-w-[360px] aspect-square rounded-full blur-[80px] opacity-0 transition-opacity duration-700 ease-out" style={{ background: 'radial-gradient(circle, rgba(61,237,154,0.22), transparent 68%)', willChange: 'transform, opacity' }} />
+      <div ref={b} className="absolute top-0 left-0 w-[24vw] max-w-[320px] aspect-square rounded-full blur-[80px] opacity-0 transition-opacity duration-700 ease-out" style={{ background: 'radial-gradient(circle, rgba(168,85,247,0.20), transparent 68%)', willChange: 'transform, opacity' }} />
+    </div>
   )
 }
