@@ -42,9 +42,25 @@ async function fetchAndValidateImage(
   url: string,
   role: 'marketing' | 'logo'
 ): Promise<{ base64: string; width: number; height: number }> {
-  const res = await fetch(url, { next: { revalidate: 0 } })
-  if (!res.ok) throw new Error(`Image fetch failed: ${res.status} ${url}`)
-  const buf = Buffer.from(await res.arrayBuffer())
+  // Görsel kaynağını byte'a çöz. UI yüklenen dosyaları artık base64 `data:` URL
+  // olarak gönderir — sunucu `blob:` URL'i fetch EDEMEZ (eski bug: her PMax create
+  // patlıyordu). `data:` doğrudan decode edilir; `https` fetch edilir; erişilemez
+  // şema (blob:/file:) net hatayla reddedilir.
+  let buf: Buffer
+  if (url.startsWith('data:')) {
+    const comma = url.indexOf(',')
+    const header = comma >= 0 ? url.slice(0, comma) : ''
+    if (comma < 0 || !/;base64/i.test(header)) {
+      throw new Error('PMax_UNSUPPORTED_IMAGE_ENCODING')
+    }
+    buf = Buffer.from(url.slice(comma + 1), 'base64')
+  } else if (url.startsWith('http://') || url.startsWith('https://')) {
+    const res = await fetch(url, { next: { revalidate: 0 } })
+    if (!res.ok) throw new Error(`Image fetch failed: ${res.status} ${url}`)
+    buf = Buffer.from(await res.arrayBuffer())
+  } else {
+    throw new Error('PMax_UNREACHABLE_IMAGE_URL')
+  }
   const metadata = await sharp(buf).metadata()
   const w = metadata.width ?? 0
   const h = metadata.height ?? 0
