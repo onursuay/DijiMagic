@@ -2,6 +2,11 @@
 
 ---
 
+## 2026-06-20 — Anasayfa: imleci-takip mouse aurora KALDIRILDI (revize öncesi haline döndürüldü)
+- **Sorun:** Sahibi anasayfadaki imleci-takip eden aurora mouse efektini istemedi; revize öncesi orijinal haline dönülmesini istedi.
+- **Çözüm:** `HeroAuroraBackground` component'i silindi; `app/page.tsx`'ten import + mount + `aurora-drift` keyframe/sınıfları kaldırıldı → hero yalnız orijinal statik parıltıya (radial-gradient ellipse) döndü. Başlık akan-gradyan animasyonu (voice_agent tekniği) KORUNDU (ayrı bir talepti — istenirse o da geri alınır). Playwright ile mouse hareketinde renk-takibi olmadığı doğrulandı.
+- **Dosyalar:** `app/page.tsx`, `components/landing/HeroAuroraBackground.tsx` (silindi)
+
 ## 2026-06-20 — Web Site Yöneticisi: manuel tıkla-seç düzenleme dev'de açıldı (Next dev-overlay false-positive bastırma)
 - **Sorun:** "Düzenleme açık" gösteriliyor ama bölüme tıklama çalışmıyordu; ekranda "SecurityError: Blocked a frame with origin null from accessing a cross-origin frame" (Next dev overlay, detectFocus/executeTests). Kök neden: Next.js dev hata-overlay'inin odak yardımcısı (ally.js) sayfadaki KASITLI sandboxed (origin "null") önizleme iframe'inin document'ını okumaya çalışıp SecurityError fırlatıyor → overlay önizlemenin ÜSTÜNE açılıp tıklamayı engelliyordu. Kodumuz cross-origin frame'i HİÇ okumaz (seçim yalnız postMessage); bu Next dev-tool'unun bilinçli sandbox'ımıza dair yanlış-pozitifi (production'da overlay yok → orada zaten çalışıyor). postMessage zinciri (inner yoai-select → orta relay → üst handler, `e.source===frame.contentWindow`) standalone Playwright repro ile doğrulandı (PASS).
 - **Çözüm:** Root layout (dashboard dalı) `<body>` başına parse-time inline `<script>` — Next overlay handler'ından ÖNCE kaydolup yalnız "Blocked a frame … cross-origin" SecurityError'ını capture-fazında `stopImmediatePropagation`+`preventDefault` ile yutar (mine-first → hem addEventListener hem window.onerror bastırılır; Playwright `addEvt=blocked onerror=blocked` PASS). Başka hata etkilenmez; sandbox/güvenlik DEĞİŞMEZ (allow-same-origin verilmedi); prod'da no-op. Geç-kayıtlı (Next'ten sonra çalışan, işe yaramaz) useEffect denemesi kaldırıldı; suppressor'ın dashboard HTML'ine basıldığı curl ile teyit edildi.

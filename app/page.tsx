@@ -5,7 +5,6 @@ import ScheduleModal from '@/components/landing/ScheduleModal'
 import DemoModal from '@/components/landing/DemoModal'
 import LandingHeader from '@/components/landing/LandingHeader'
 import FooterLangSwitcher from '@/components/landing/FooterLangSwitcher'
-import HeroAuroraBackground from '@/components/landing/HeroAuroraBackground'
 
 export default async function RootPage() {
   const cookieStore = await cookies()
@@ -167,13 +166,6 @@ export default async function RootPage() {
           30% { opacity: 0; }
           100% { opacity: 0; left: 100%; }
         }
-        /* Hero aurora — ortam ışıklarının hafif süzülmesi */
-        @keyframes aurora-drift-a { 0%,100% { transform: translate3d(0,0,0) scale(1); } 50% { transform: translate3d(7%, 5%, 0) scale(1.1); } }
-        @keyframes aurora-drift-b { 0%,100% { transform: translate3d(0,0,0) scale(1.06); } 50% { transform: translate3d(-6%, 7%, 0) scale(1); } }
-        @keyframes aurora-drift-c { 0%,100% { transform: translate3d(0,0,0) scale(1); } 50% { transform: translate3d(5%, -6%, 0) scale(1.08); } }
-        .aurora-drift-a { animation: aurora-drift-a 19s ease-in-out infinite; will-change: transform; }
-        .aurora-drift-b { animation: aurora-drift-b 24s ease-in-out infinite; will-change: transform; }
-        .aurora-drift-c { animation: aurora-drift-c 21s ease-in-out infinite; will-change: transform; }
         /* Başlık akan gradyan — voiceagent.yodijital.com tagline animasyonu ile aynı teknik (gradient-shift 3s) */
         @keyframes gradient-shift {
           0% { background-position: 0% center; }
@@ -182,7 +174,7 @@ export default async function RootPage() {
         }
         .hero-tagline-flow { background-size: 200% auto; animation: gradient-shift 3s ease infinite; }
         @media (prefers-reduced-motion: reduce) {
-          .aurora-drift-a, .aurora-drift-b, .aurora-drift-c, .hero-tagline-flow { animation: none !important; }
+          .hero-tagline-flow { animation: none !important; }
         }
       ` }} />
 
@@ -191,12 +183,9 @@ export default async function RootPage() {
 
       {/* ═══════════ HERO — Centered layout ═══════════ */}
       <section className="relative w-full px-6 pt-10 pb-8 md:pt-16 md:pb-10 overflow-hidden">
-        {/* Statik temel parıltı (reduced-motion / JS yok fallback) */}
         <div className="absolute inset-0 pointer-events-none" aria-hidden="true">
           <div className="absolute top-[15%] left-1/2 -translate-x-1/2 w-[1000px] h-[700px] rounded-full blur-[160px]" style={{ background: 'radial-gradient(ellipse, rgba(16,185,129,0.07) 0%, rgba(20,184,166,0.03) 50%, transparent 80%)' }} />
         </div>
-        {/* İmleci takip eden çok-renkli aurora — mouse ile renkler hareket eder */}
-        <HeroAuroraBackground />
 
         <div className="relative max-w-7xl mx-auto text-center">
           {/* Badge */}
