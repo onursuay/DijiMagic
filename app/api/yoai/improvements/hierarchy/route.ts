@@ -1,11 +1,85 @@
 import { NextResponse } from 'next/server'
 import { readUserId } from '@/lib/auth/userCookie'
 import { cookies } from 'next/headers'
-import { getImprovementHierarchy, type HierStatus, type ImprovementHierarchy } from '@/lib/yoai/ai/hierarchicalStore'
+import { getImprovementHierarchy, type AccountAlertRow, type HierStatus, type ImprovementHierarchy } from '@/lib/yoai/ai/hierarchicalStore'
 import { isPerAccountScopeEnabled } from '@/lib/yoai/featureFlag'
 import { resolveYoaiScope } from '@/lib/yoai/businessScope'
 import { buildAccountScope, getBestAvailableRun } from '@/lib/yoai/dailyRunStore'
 import { normalizeMetaAccountId, normalizeGoogleCustomerId } from '@/lib/yoai/businessKey'
+import { listRegisteredAccounts } from '@/lib/account/registeredAccounts'
+import { getMetaConnection } from '@/lib/metaConnectionStore'
+import { getConnection as getGoogleConnection } from '@/lib/googleAdsConnectionStore'
+
+/**
+ * Kullanıcının O AN kayıtlı/aktif reklam hesaplarını çözer (KOŞULSUZ filtre için).
+ * Kaynak: user_registered_ad_accounts (çoklu hesap kümesi) + canlı aktif bağlantı
+ * (henüz backfill olmamış tek-hesap kullanıcıları). Dönen küme normalize'tir.
+ */
+async function resolveActiveAdAccounts(userId: string): Promise<{
+  metaIds: Set<string>
+  googleIds: Set<string>
+  hasMeta: boolean
+  hasGoogle: boolean
+}> {
+  const metaIds = new Set<string>()
+  const googleIds = new Set<string>()
+
+  const registered = await listRegisteredAccounts(userId).catch(() => [])
+  for (const a of registered) {
+    if (a.platform === 'meta') {
+      const n = normalizeMetaAccountId(a.account_id)
+      if (n) metaIds.add(n)
+    } else if (a.platform === 'google') {
+      const n = normalizeGoogleCustomerId(a.account_id)
+      if (n) googleIds.add(n)
+    }
+  }
+
+  // Canlı seçili bağlantı (kayıtlı küme boşsa/backfill olmadıysa gerçeği yansıt).
+  try {
+    const meta = await getMetaConnection(userId)
+    const n = normalizeMetaAccountId(meta?.selectedAdAccountId)
+    if (n) metaIds.add(n)
+  } catch { /* meta bağlantısı yok/expired — geç */ }
+  try {
+    const g = await getGoogleConnection(userId)
+    const n = normalizeGoogleCustomerId(g?.customerId)
+    if (n) googleIds.add(n)
+  } catch { /* google bağlantısı yok — geç */ }
+
+  return { metaIds, googleIds, hasMeta: metaIds.size > 0, hasGoogle: googleIds.size > 0 }
+}
+
+/**
+ * KOŞULSUZ hesap-uyarısı filtresi (flag'e bağlı DEĞİL): yalnız kullanıcının O AN
+ * kayıtlı/aktif hesaplarına ait uyarıları tut → pasif/silinmiş hesapların
+ * "Hesap Sağlık Durumu" uyarıları asla görünmez.
+ *   • account_id dolu → o platformun aktif hesap kümesinde olmalı.
+ *   • account_id NULL (legacy) → yalnız o platformun AKTİF hesabı/seçimi varsa tut.
+ */
+function filterAlertsToActiveAccounts(
+  alerts: AccountAlertRow[],
+  active: { metaIds: Set<string>; googleIds: Set<string>; hasMeta: boolean; hasGoogle: boolean },
+): AccountAlertRow[] {
+  return alerts.filter((a) => {
+    if (a.account_id != null) {
+      if (a.source_platform === 'meta') {
+        const n = normalizeMetaAccountId(a.account_id)
+        return n != null && active.metaIds.has(n)
+      }
+      if (a.source_platform === 'google') {
+        const n = normalizeGoogleCustomerId(a.account_id)
+        return n != null && active.googleIds.has(n)
+      }
+      return false
+    }
+    // Legacy (account_id NULL): platform aktifse tut; platformsuz uyarı (her ikisi
+    // de yoksa) yalnız hiç aktif hesap kalmamışsa elenir.
+    if (a.source_platform === 'meta') return active.hasMeta
+    if (a.source_platform === 'google') return active.hasGoogle
+    return active.hasMeta || active.hasGoogle
+  })
+}
 
 export const dynamic = 'force-dynamic'
 export const maxDuration = 15
@@ -34,6 +108,14 @@ export async function GET(request: Request) {
       : undefined
 
     const data = await getImprovementHierarchy(userId, statuses)
+
+    // ── KOŞULSUZ hesap-uyarısı filtresi (flag'den BAĞIMSIZ) ──
+    // "Hesap Sağlık Durumu" yalnız kullanıcının O AN kayıtlı/aktif hesaplarını
+    // göstermeli. getImprovementHierarchy hesap filtresi UYGULAMAZ (yalnız status) →
+    // pasif/silinmiş hesapların uyarıları sızardı. Burada her zaman süzülür; scope ON
+    // dalı bunu ayrıca seçili işletmeye daraltır (çift filtre = doğru sonuç).
+    const activeAccounts = await resolveActiveAdAccounts(userId)
+    data.accountAlerts = filterAlertsToActiveAccounts(data.accountAlerts, activeAccounts)
 
     // ── Outcome rozetleri: applied/öneri sonucunu kartlara iliştir (öğrenen beyin ölçümü) ──
     // yoai_recommendation_results.proposal_id === ad_improvement.id eşleşmesiyle.

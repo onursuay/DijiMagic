@@ -254,6 +254,15 @@ export async function removeRegisteredAccount(
     .eq('platform', platform)
     .eq('account_id', accountId)
   if (error) return { ok: false, wasActiveInDb: false, next: null, disconnected: false }
+  // Çıkarılan hesabın açık (pending) "Hesap Sağlık Durumu" uyarılarını superseded yap
+  // (best-effort). Görünüm filtresi zaten pasif/silinmiş hesabı eler; bu ek temizlik
+  // sayaçların da şişmemesini sağlar. Hatası silme sonucunu etkilemez.
+  try {
+    const { supersedePendingAccountAlerts } = await import('@/lib/yoai/ai/hierarchicalStore')
+    await supersedePendingAccountAlerts(userId, accountId)
+  } catch (e) {
+    console.warn('[registeredAccounts] supersede account_alerts after removal skipped:', e instanceof Error ? e.message : e)
+  }
   try {
     const r = await reconcileActiveConnectionAfterRemoval(userId, platform, accountId)
     return { ok: true, ...r }

@@ -4,7 +4,7 @@
    Hiyerarşi net görünür: Kampanya (+ tür) → Reklam Seti → Reklam.
    Modal içinde ad set → reklam drill-down + geri. */
 
-import { useState } from 'react'
+import { useEffect, useState } from 'react'
 import { useTranslations, useLocale } from 'next-intl'
 import { X, ChevronLeft, ChevronRight, Megaphone, Layers } from 'lucide-react'
 import AdsetCard from './AdsetCard'
@@ -30,13 +30,22 @@ export default function DrilldownModal({ campaign, busyId, onDecide, onEditAd, o
   const payload = (campaign.improvement_payload ?? {}) as { current_objective_label?: string | null }
   const curType = payload.current_objective_label || translateEnum(campaign.current_objective, locale, campaign.source_platform)
 
+  // Body scroll lock — modal açıkken arka plan kaydırılmaz (proje modal standardı).
+  useEffect(() => {
+    const prev = document.body.style.overflow
+    document.body.style.overflow = 'hidden'
+    return () => {
+      document.body.style.overflow = prev
+    }
+  }, [])
+
   return (
     <div
-      className="fixed inset-0 z-[60] flex items-start justify-center p-3 sm:p-8 overflow-y-auto bg-black/60 backdrop-blur-sm"
+      className="fixed inset-0 z-[60] flex items-center justify-center p-3 sm:p-8 overflow-y-auto bg-black/60 backdrop-blur-sm"
       onClick={onClose}
     >
       <div
-        className="relative w-full max-w-5xl my-2 rounded-2xl bg-[#0b1120] border border-[#23314d] shadow-2xl"
+        className="relative w-full max-w-5xl my-2 max-h-[92vh] overflow-y-auto rounded-2xl bg-[#0b1120] border border-[#23314d] shadow-2xl"
         onClick={(e) => e.stopPropagation()}
       >
         {/* Header — hiyerarşi yolu */}
