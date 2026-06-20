@@ -2,6 +2,11 @@
 
 ---
 
+## 2026-06-20 — FAZ 0: Strateji IDOR + kredi düzeltmeleri (denetim 2/n)
+- **Sorun:** (H6 IDOR) Strateji per-instance route'ları sahipliği yalnız `ad_account_id` ile doğruluyordu → aynı Meta reklam hesabına erişen ikinci kullanıcı (ajans/çoklu yönetici) başkasının stratejisini okuyabilir/düzenleyebilir/silebilirdi. (H7) Plan limiti İÇİNDEKİ ücretsiz stratejide de kredi düşülüyordu (UI "limit içinde ücretsiz, aşımda kredi" diyor). (H8) Kredi düşülüp INSERT başarısız olursa iade edilmiyordu; başlık doğrulaması da kredi düşümünden SONRAydı.
+- **Çözüm:** (H6) 9 per-instance route'un tüm sahiplik/mutasyon sorgularına `.eq('user_id', ctx.userId)` eklendi (`ad_account_id` korundu — defense-in-depth). (H7) Kredi yalnız aylık limit AŞIMINDA düşülüyor; limit içi ve sınırsız plan ücretsiz. (H8) Başlık doğrulaması kredi düşümünden öne alındı; aşım kredisi düşülüp INSERT başarısızsa `refund_credits` ile iade ediliyor.
+- **Dosyalar:** `app/api/strategy/instances/route.ts` + `app/api/strategy/instances/[id]/{route,metrics,tasks,retry,generate-plan,approve,expert-plan,analyze,inputs}/route.ts`
+
 ## 2026-06-20 — FAZ 0 güvenlik/para sertleştirmesi: iyzico sandbox + Meta token sızıntısı + SSRF route (denetim 1/n)
 - **Sorun:** Açılış öncesi çok-ajanlı denetim kritik bulgular tespit etti: (1) iyzico prod'da `IYZICO_BASE_URL` set edilmezse sessizce sandbox'a düşüyordu → gerçek para tahsil edilmez; (2) `/api/meta/capabilities` her Facebook sayfasının Page Access Token'ını istemciye sızdırıyordu (httpOnly bypass); (3) `/api/seo/wordpress/publish` auth'suz, keyfi URL'e kimlikli Basic-Auth isteği atan açık-proxy/SSRF orphan route'uydu.
 - **Çözüm:** (1) Canlı deployment'ta (`VERCEL_ENV=production`) `IYZICO_BASE_URL` zorunlu + sandbox URL reddediliyor (fail-closed). (2) `/me/accounts` artık `access_token` istemiyor + defense-in-depth strip; token yanıta/cache'e konmuyor. (3) Orphan SSRF route tamamen kaldırıldı (güncel akış `/api/seo/publish`).

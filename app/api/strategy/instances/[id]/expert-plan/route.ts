@@ -54,6 +54,7 @@ export async function POST(_request: Request, { params }: { params: Promise<{ id
     .select('id')
     .eq('id', id)
     .eq('ad_account_id', ctx.accountId)
+    .eq('user_id', ctx.userId)
     .single()
   if (!instance) {
     return NextResponse.json({ ok: false, error: 'not_found' }, { status: 404 })

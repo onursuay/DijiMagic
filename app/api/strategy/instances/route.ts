@@ -90,84 +90,9 @@ export async function POST(request: Request) {
 
   const userId = ctx.userId
 
-  // ── Owner bypass: plan / kredi / limit kontrolü atlanır ──
-  const ownerMode = await isOwner(userId)
-
-  if (!ownerMode) {
-    // ── Plan limiti kontrolü ────────────────────────────────
-    const monthlyLimit = await resolveMonthlyStrategyLimit(userId)
-
-    if (monthlyLimit === 0) {
-      return NextResponse.json(
-        { ok: false, error: 'plan_limit', message: 'Abonelik planınız strateji oluşturmaya izin vermiyor.' },
-        { status: 403 }
-      )
-    }
-
-    if (monthlyLimit > 0) {
-      const currentMonthStart = new Date()
-      currentMonthStart.setDate(1)
-      currentMonthStart.setHours(0, 0, 0, 0)
-
-      const { count } = await supabase
-        .from('strategy_instances')
-        .select('id', { count: 'exact', head: true })
-        .eq('user_id', userId)
-        .gte('created_at', currentMonthStart.toISOString())
-
-      if ((count ?? 0) >= monthlyLimit) {
-        return NextResponse.json(
-          {
-            ok: false,
-            error: 'monthly_limit_reached',
-            message: `Bu ay için strateji limitine ulaştınız (${monthlyLimit}/${monthlyLimit}).`,
-          },
-          { status: 429 }
-        )
-      }
-    }
-
-    // ── Kredi kontrolü ve atomik düşme ──────────────────────
-    // credit_balances satırı yoksa varsayılan 100 krediyle oluştur (trial kullanıcısı).
-    const { data: creditRow } = await supabase
-      .from('credit_balances')
-      .select('balance')
-      .eq('user_id', userId)
-      .single()
-
-    if (!creditRow) {
-      await supabase
-        .from('credit_balances')
-        .upsert({ user_id: userId, balance: 100, total_earned: 100, total_spent: 0 }, { onConflict: 'user_id' })
-    } else if (creditRow.balance < COST_PER_STRATEGY) {
-      return NextResponse.json(
-        {
-          ok: false,
-          error: 'insufficient_credits',
-          message: `Yetersiz kredi. Strateji oluşturmak için ${COST_PER_STRATEGY} kredi gerekli, mevcut: ${creditRow.balance}.`,
-        },
-        { status: 402 }
-      )
-    }
-
-    // Atomik düşme: balance >= cost ise günceller, yoksa -1 döner.
-    const { data: deductResult, error: deductError } = await supabase
-      .rpc('deduct_strategy_credit', { p_user_id: userId, p_cost: COST_PER_STRATEGY })
-
-    if (deductError) {
-      console.error('[strategy/instances/POST] credit deduct rpc error:', deductError)
-      return NextResponse.json({ ok: false, error: 'credit_deduct_failed', message: 'Kredi işlemi başarısız.' }, { status: 500 })
-    }
-
-    if (deductResult === -1) {
-      return NextResponse.json(
-        { ok: false, error: 'insufficient_credits', message: `Yetersiz kredi. Strateji oluşturmak için ${COST_PER_STRATEGY} kredi gerekli.` },
-        { status: 402 }
-      )
-    }
-  }
-
-  // ── Instance oluştur ──────────────────────────────────────
+  // ── Body parse + başlık doğrulaması (kredi düşmeden ÖNCE) ──
+  // H8: geçersiz/eksik istekte boşuna kredi düşülmesin diye doğrulama,
+  // herhangi bir kredi işleminden önce yapılır.
   let body: Record<string, unknown>
   try {
     body = await request.json()
@@ -180,6 +105,87 @@ export async function POST(request: Request) {
     return NextResponse.json({ ok: false, error: 'missing_title', message: 'Başlık gerekli' }, { status: 400 })
   }
 
+  // ── Owner bypass: plan / kredi / limit kontrolü atlanır ──
+  const ownerMode = await isOwner(userId)
+
+  // Yalnız limit AŞIMINDA (overage) kredi düşülür; düşüldüyse ve INSERT
+  // başarısız olursa iade edilir (H8: kredi kaybı olmasın).
+  let overageCharged = false
+
+  if (!ownerMode) {
+    // ── Plan limiti kontrolü ────────────────────────────────
+    const monthlyLimit = await resolveMonthlyStrategyLimit(userId)
+
+    if (monthlyLimit === 0) {
+      return NextResponse.json(
+        { ok: false, error: 'plan_limit', message: 'Abonelik planınız strateji oluşturmaya izin vermiyor.' },
+        { status: 403 }
+      )
+    }
+
+    // H7: Aylık plan limiti İÇİNDEKİ stratejiler ÜCRETSİZ; yalnız limit
+    // AŞIMINDA kredi düşülür (UI sözleşmesi: limit içinde ücretsiz, aşımda kredi).
+    // monthlyLimit === -1 → sınırsız plan → her zaman ücretsiz (isOverage false).
+    let isOverage = false
+    if (monthlyLimit > 0) {
+      const currentMonthStart = new Date()
+      currentMonthStart.setDate(1)
+      currentMonthStart.setHours(0, 0, 0, 0)
+
+      const { count } = await supabase
+        .from('strategy_instances')
+        .select('id', { count: 'exact', head: true })
+        .eq('user_id', userId)
+        .gte('created_at', currentMonthStart.toISOString())
+
+      isOverage = (count ?? 0) >= monthlyLimit
+    }
+
+    if (isOverage) {
+      // ── Kredi kontrolü ve atomik düşme (YALNIZ aşımda) ──────
+      // credit_balances satırı yoksa varsayılan 100 krediyle oluştur (trial kullanıcısı).
+      const { data: creditRow } = await supabase
+        .from('credit_balances')
+        .select('balance')
+        .eq('user_id', userId)
+        .single()
+
+      if (!creditRow) {
+        await supabase
+          .from('credit_balances')
+          .upsert({ user_id: userId, balance: 100, total_earned: 100, total_spent: 0 }, { onConflict: 'user_id' })
+      } else if (creditRow.balance < COST_PER_STRATEGY) {
+        return NextResponse.json(
+          {
+            ok: false,
+            error: 'insufficient_credits',
+            message: `Aylık strateji limitinizi aştınız. Ek strateji için ${COST_PER_STRATEGY} kredi gerekli, mevcut: ${creditRow.balance}.`,
+          },
+          { status: 402 }
+        )
+      }
+
+      // Atomik düşme: balance >= cost ise günceller, yoksa -1 döner.
+      const { data: deductResult, error: deductError } = await supabase
+        .rpc('deduct_strategy_credit', { p_user_id: userId, p_cost: COST_PER_STRATEGY })
+
+      if (deductError) {
+        console.error('[strategy/instances/POST] credit deduct rpc error:', deductError)
+        return NextResponse.json({ ok: false, error: 'credit_deduct_failed', message: 'Kredi işlemi başarısız.' }, { status: 500 })
+      }
+
+      if (deductResult === -1) {
+        return NextResponse.json(
+          { ok: false, error: 'insufficient_credits', message: `Aylık strateji limitinizi aştınız. Ek strateji için ${COST_PER_STRATEGY} kredi gerekli.` },
+          { status: 402 }
+        )
+      }
+
+      overageCharged = true
+    }
+  }
+
+  // ── Instance oluştur ──────────────────────────────────────
   const row = {
     ad_account_id: ctx.accountId,
     user_id: userId,
@@ -202,8 +208,14 @@ export async function POST(request: Request) {
 
   if (error) {
     console.error('[strategy/instances/POST]', error)
+    // H8: Aşım kredisi düşülmüş ve oluşturma başarısızsa iade et (kredi kaybı olmasın).
+    if (overageCharged) {
+      const { error: refundError } = await supabase
+        .rpc('refund_credits', { p_user_id: userId, p_amount: COST_PER_STRATEGY, p_reason: 'strategy_create_failed' })
+      if (refundError) console.error('[strategy/instances/POST] insert sonrası iade başarısız:', refundError)
+    }
     return NextResponse.json({ ok: false, error: 'db_error', message: error.message }, { status: 500 })
   }
 
-  return NextResponse.json({ ok: true, instance: data, ownerBypass: ownerMode || undefined }, { status: 201 })
+  return NextResponse.json({ ok: true, instance: data, ownerBypass: ownerMode || undefined, overageCharged: overageCharged || undefined }, { status: 201 })
 }

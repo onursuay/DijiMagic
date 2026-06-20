@@ -33,6 +33,7 @@ export async function GET(_request: Request, { params }: { params: Promise<{ id:
       .select('*')
       .eq('id', idParam)
       .eq('ad_account_id', ctx.accountId)
+      .eq('user_id', ctx.userId)
       .single()
     instance = r.data ?? null
   } else {
@@ -41,6 +42,7 @@ export async function GET(_request: Request, { params }: { params: Promise<{ id:
       .from('strategy_instances')
       .select('*')
       .eq('ad_account_id', ctx.accountId)
+      .eq('user_id', ctx.userId)
     const matches = (r.data ?? []).filter((row: { id: string }) => row.id.toLowerCase().startsWith(prefix))
     instance = matches.length === 1 ? matches[0] : null
   }
@@ -136,6 +138,7 @@ export async function PATCH(request: Request, { params }: { params: Promise<{ id
     .update(updates)
     .eq('id', id)
     .eq('ad_account_id', ctx.accountId)
+    .eq('user_id', ctx.userId)
     .select()
     .single()
 
@@ -166,6 +169,7 @@ export async function DELETE(_request: Request, { params }: { params: Promise<{ 
     .select('id')
     .eq('id', id)
     .eq('ad_account_id', ctx.accountId)
+    .eq('user_id', ctx.userId)
     .single()
 
   if (!instance) {
@@ -186,6 +190,7 @@ export async function DELETE(_request: Request, { params }: { params: Promise<{ 
     .delete()
     .eq('id', id)
     .eq('ad_account_id', ctx.accountId)
+    .eq('user_id', ctx.userId)
 
   if (error) {
     console.error('[strategy/instances/DELETE]', error)
