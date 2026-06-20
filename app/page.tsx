@@ -174,8 +174,15 @@ export default async function RootPage() {
         .aurora-drift-a { animation: aurora-drift-a 19s ease-in-out infinite; will-change: transform; }
         .aurora-drift-b { animation: aurora-drift-b 24s ease-in-out infinite; will-change: transform; }
         .aurora-drift-c { animation: aurora-drift-c 21s ease-in-out infinite; will-change: transform; }
+        /* Başlık akan gradyan — voiceagent.yodijital.com tagline animasyonu ile aynı teknik (gradient-shift 3s) */
+        @keyframes gradient-shift {
+          0% { background-position: 0% center; }
+          50% { background-position: 100% center; }
+          100% { background-position: 0% center; }
+        }
+        .hero-tagline-flow { background-size: 200% auto; animation: gradient-shift 3s ease infinite; }
         @media (prefers-reduced-motion: reduce) {
-          .aurora-drift-a, .aurora-drift-b, .aurora-drift-c { animation: none !important; }
+          .aurora-drift-a, .aurora-drift-b, .aurora-drift-c, .hero-tagline-flow { animation: none !important; }
         }
       ` }} />
 
@@ -201,7 +208,12 @@ export default async function RootPage() {
           {/* Title — single large centered heading */}
           <h1 className="text-4xl sm:text-5xl md:text-6xl lg:text-[4.5rem] font-black leading-[1.1] tracking-tight text-white mb-5">
             {c.heroLine1}{' '}
-            <span className="bg-gradient-to-r from-emerald-400 via-teal-300 to-cyan-400 bg-clip-text text-transparent">{c.heroLine2}</span>
+            <span
+              className="hero-tagline-flow bg-clip-text text-transparent"
+              style={{ backgroundImage: 'linear-gradient(90deg, #34d399, #22d3ee, #38bdf8, #22d3ee, #34d399)' }}
+            >
+              {c.heroLine2}
+            </span>
           </h1>
 
           {/* Subtitle */}

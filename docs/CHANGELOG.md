@@ -2,6 +2,11 @@
 
 ---
 
+## 2026-06-20 — Anasayfa: başlık akan gradyan animasyonu (voice_agent tagline tekniği)
+- **Sorun:** Hero başlığındaki ("Hepsi Bir Arada Pazarlama Yönetimi") renkler sabit duruyordu; sahibi voiceagent.yodijital.com'daki "Satış ekibinizin yapay zeka gücü." tagline'ının akan-renk animasyonunu istedi (local kaynak: `voice_agent/src/components/layout/topbar.tsx` + `globals.css`).
+- **Çözüm:** Aynı teknik birebir alındı — `@keyframes gradient-shift` (background-position 0%↔100% center) + `bg-[length:200%_auto]` + `animation: gradient-shift 3s ease infinite` + `bg-clip-text text-transparent`. Renkler bizim cool marka ailesinde (emerald #34d399 → cyan #22d3ee → sky #38bdf8 → cyan → emerald, döngüsel). 3s'de renkler harflerin içinde akar; reduced-motion'da durur. Playwright ile 1.5s arayla iki frame'de gradyanın kaydığı doğrulandı.
+- **Dosyalar:** `app/page.tsx`
+
 ## 2026-06-20 — Anasayfa: imleci takip eden çok-renkli aurora (withgrower tarzı)
 - **Sorun:** İlk aurora denemesi (dd63880) yeterince belirgin değildi; sahibi withgrower.com/tr'deki "mouse hareketleriyle renkler hareket eder" efektini net istedi. İlk sürüm revert edildi (89dd58a), referans video (eder.mp4) incelendi.
 - **Çözüm:** `HeroAuroraBackground` yeniden yazıldı — koordinatlar hero'ya GÖRELİ (`getBoundingClientRect`), ışık tam imlecin altında belirir; üç imleci-takip eden ışık (emerald 0.30 / cyan 0.20 aynalı / sky 0.13) + üç süzülen ortam ışığı = belirgin, çok-renkli, withgrower benzeri hareket. Lerp 0.09 yumuşak takip; `prefers-reduced-motion`'da durur; `pointer-events-none` + `aria-hidden`. Playwright ile iki mouse konumunda doğrulandı. NOT: başlık harf-renk animasyonu ayrı referans ("Voice agent" sitesi) beklediğinden bu commit'te statik bırakıldı.
