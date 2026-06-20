@@ -2,6 +2,11 @@
 
 ---
 
+## 2026-06-20 — Anasayfa: cursor-following blurred radial aurora gradient (detaylı spec ile yeniden)
+- **Sorun:** Sahibi aurora efektini detaylı teknik spec ile geri istedi: mouse-takipli, çok-renkli (MAVİ/YEŞİL/MOR) radial-gradient lekeleri; `--mouse-x`/`--mouse-y` CSS değişkenleri; blur+opacity+smooth; pointer-events-none; içerik z-index üstte; rAF; mobilde statik.
+- **Çözüm:** `HeroAuroraBackground` client component — `pointermove`'u rAF + lerp ile `--mouse-x`/`--mouse-y`'ye yazar (her event'te reflow yok). 3 cursor-takipli katman `radial-gradient(circle … at var(--mouse-x) var(--mouse-y))` (mavi #3b82f6 / emerald / mor #a855f7) + 3 blur'lu (`filter:blur(80px)`) süzülen ortam katmanı = mobil/statik aurora tabanı. `pointer-events:none` + `aria-hidden`; container `absolute inset-0 z-0`, içerik `relative z-10` üstte; hero `overflow-hidden`. `prefers-reduced-motion`/mobil → statik. Playwright ile iki mouse konumunda renk-takibi + başlık gradyanı doğrulandı.
+- **Dosyalar:** `components/landing/HeroAuroraBackground.tsx`, `app/page.tsx`
+
 ## 2026-06-20 — Anasayfa: imleci-takip mouse aurora KALDIRILDI (revize öncesi haline döndürüldü)
 - **Sorun:** Sahibi anasayfadaki imleci-takip eden aurora mouse efektini istemedi; revize öncesi orijinal haline dönülmesini istedi.
 - **Çözüm:** `HeroAuroraBackground` component'i silindi; `app/page.tsx`'ten import + mount + `aurora-drift` keyframe/sınıfları kaldırıldı → hero yalnız orijinal statik parıltıya (radial-gradient ellipse) döndü. Başlık akan-gradyan animasyonu (voice_agent tekniği) KORUNDU (ayrı bir talepti — istenirse o da geri alınır). Playwright ile mouse hareketinde renk-takibi olmadığı doğrulandı.

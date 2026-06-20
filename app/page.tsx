@@ -5,6 +5,7 @@ import ScheduleModal from '@/components/landing/ScheduleModal'
 import DemoModal from '@/components/landing/DemoModal'
 import LandingHeader from '@/components/landing/LandingHeader'
 import FooterLangSwitcher from '@/components/landing/FooterLangSwitcher'
+import HeroAuroraBackground from '@/components/landing/HeroAuroraBackground'
 
 export default async function RootPage() {
   const cookieStore = await cookies()
@@ -173,8 +174,20 @@ export default async function RootPage() {
           100% { background-position: 0% center; }
         }
         .hero-tagline-flow { background-size: 200% auto; animation: gradient-shift 3s ease infinite; }
+        /* Cursor-following blurred radial aurora gradient background (hero) */
+        .hero-aurora-cur { position: absolute; inset: 0; }
+        .hero-aurora-cur-blue  { background: radial-gradient(circle 620px at var(--mouse-x) var(--mouse-y), rgba(56,130,246,0.30), transparent 60%); }
+        .hero-aurora-cur-green { background: radial-gradient(circle 520px at calc(100% - var(--mouse-x)) calc(100% - var(--mouse-y)), rgba(16,185,129,0.24), transparent 60%); }
+        .hero-aurora-cur-pink  { background: radial-gradient(circle 480px at var(--mouse-x) calc(100% - var(--mouse-y)), rgba(168,85,247,0.24), transparent 60%); }
+        .hero-aurora-amb { position: absolute; border-radius: 9999px; filter: blur(80px); will-change: transform; }
+        .hero-aurora-amb-1 { width: 46vw; max-width: 640px; height: 46vw; max-height: 640px; top: -14%; left: -2%; background: radial-gradient(circle, rgba(56,130,246,0.32), transparent 66%); animation: hero-aurora-drift-1 22s ease-in-out infinite; }
+        .hero-aurora-amb-2 { width: 42vw; max-width: 580px; height: 42vw; max-height: 580px; top: -8%; right: 0%; background: radial-gradient(circle, rgba(16,185,129,0.28), transparent 66%); animation: hero-aurora-drift-2 26s ease-in-out infinite; }
+        .hero-aurora-amb-3 { width: 40vw; max-width: 540px; height: 40vw; max-height: 540px; bottom: -28%; left: 34%; background: radial-gradient(circle, rgba(168,85,247,0.26), transparent 66%); animation: hero-aurora-drift-3 24s ease-in-out infinite; }
+        @keyframes hero-aurora-drift-1 { 0%,100% { transform: translate3d(0,0,0) scale(1); } 50% { transform: translate3d(8%,6%,0) scale(1.1); } }
+        @keyframes hero-aurora-drift-2 { 0%,100% { transform: translate3d(0,0,0) scale(1.06); } 50% { transform: translate3d(-7%,8%,0) scale(1); } }
+        @keyframes hero-aurora-drift-3 { 0%,100% { transform: translate3d(0,0,0) scale(1); } 50% { transform: translate3d(6%,-7%,0) scale(1.08); } }
         @media (prefers-reduced-motion: reduce) {
-          .hero-tagline-flow { animation: none !important; }
+          .hero-tagline-flow, .hero-aurora-amb-1, .hero-aurora-amb-2, .hero-aurora-amb-3 { animation: none !important; }
         }
       ` }} />
 
@@ -183,11 +196,10 @@ export default async function RootPage() {
 
       {/* ═══════════ HERO — Centered layout ═══════════ */}
       <section className="relative w-full px-6 pt-10 pb-8 md:pt-16 md:pb-10 overflow-hidden">
-        <div className="absolute inset-0 pointer-events-none" aria-hidden="true">
-          <div className="absolute top-[15%] left-1/2 -translate-x-1/2 w-[1000px] h-[700px] rounded-full blur-[160px]" style={{ background: 'radial-gradient(ellipse, rgba(16,185,129,0.07) 0%, rgba(20,184,166,0.03) 50%, transparent 80%)' }} />
-        </div>
+        {/* Cursor-following blurred radial aurora gradient background effect */}
+        <HeroAuroraBackground />
 
-        <div className="relative max-w-7xl mx-auto text-center">
+        <div className="relative z-10 max-w-7xl mx-auto text-center">
           {/* Badge */}
           <div className="btn-shimmer inline-flex items-center gap-2.5 text-[14px] font-medium text-emerald-400/90 border border-emerald-400/20 bg-emerald-400/[0.06] px-5 py-2.5 rounded-full mb-6">
             <Image src="/icons/ai-brain.png" alt="" width={18} height={18} style={{ filter: 'brightness(0) saturate(100%) invert(73%) sepia(52%) saturate(456%) hue-rotate(108deg) brightness(95%) contrast(91%)' }} />
