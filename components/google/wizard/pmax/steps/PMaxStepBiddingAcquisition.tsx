@@ -119,13 +119,16 @@ export default function PMaxStepBiddingAcquisition({ state, update, t }: PMaxSte
               {state.biddingStrategy === 'TARGET_ROAS' && (
                 <div className="mt-3 ml-6">
                   <label className="block text-[13px] font-medium text-gray-700 mb-1">{t('bidding.targetRoasLabel')}</label>
-                  <div className="relative max-w-[200px]">
-                    <span className="absolute left-3 top-1/2 -translate-y-1/2 text-sm text-gray-400">%</span>
+                  <div className="max-w-[200px]">
+                    {/* KESİR birimi (Search wizard'ı ile aynı): 4.5 = %450. Yanıltıcı
+                        % sembolü kaldırıldı — kullanıcı "450" girip %45.000 hedef
+                        göndermesin. min/max/step kesir aralığını (0.01–100) zorlar. */}
                     <input
-                      className={`${inputCls} pl-7`}
+                      className={inputCls}
                       type="number"
-                      min="0"
-                      step="0.1"
+                      min="0.01"
+                      max="100"
+                      step="0.01"
                       value={state.targetRoas}
                       onChange={e => update({ targetRoas: e.target.value })}
                       placeholder={t('bidding.targetRoasPlaceholder')}

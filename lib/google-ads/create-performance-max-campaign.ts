@@ -84,11 +84,19 @@ interface PreFetchedImages {
 
 /** Build bidding config for PMax. */
 function buildBiddingField(params: CreatePerformanceMaxPayload): Record<string, unknown> {
+  // GÜVENLİK/PARA: Google'da target_roas KESİR'dir (4.5 = %450). UI'da yüzde sanılıp
+  // "450" girilirse %45.000 hedef → canlı kampanya hiç teslim etmez. Makul [0.01, 100]
+  // aralığına kıs (sunucu sınır kontrolü, defense-in-depth). Geçersiz → tROAS gönderme.
+  const safeTargetRoas =
+    typeof params.targetRoas === 'number' && isFinite(params.targetRoas) && params.targetRoas > 0
+      ? Math.min(100, Math.max(0.01, params.targetRoas))
+      : undefined
+
   if (params.biddingStrategy === 'MAXIMIZE_CONVERSIONS') {
     if (params.biddingFocus === 'CONVERSION_VALUE') {
       return {
-        maximizeConversionValue: params.targetRoas
-          ? { targetRoas: params.targetRoas }
+        maximizeConversionValue: safeTargetRoas
+          ? { targetRoas: safeTargetRoas }
           : {},
       }
     }
@@ -103,7 +111,7 @@ function buildBiddingField(params: CreatePerformanceMaxPayload): Record<string, 
     return { maximizeConversions: params.targetCpaMicros ? { targetCpaMicros: String(params.targetCpaMicros) } : {} }
   }
   if (params.biddingStrategy === 'TARGET_ROAS') {
-    return { maximizeConversionValue: params.targetRoas ? { targetRoas: params.targetRoas } : {} }
+    return { maximizeConversionValue: safeTargetRoas ? { targetRoas: safeTargetRoas } : {} }
   }
   return { maximizeConversions: {} }
 }
