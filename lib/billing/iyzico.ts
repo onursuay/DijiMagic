@@ -12,9 +12,23 @@ const Iyzipay = require('iyzipay')
 function getClient() {
   const apiKey = process.env.IYZICO_API_KEY
   const secretKey = process.env.IYZICO_SECRET_KEY
-  const uri = process.env.IYZICO_BASE_URL || 'https://sandbox-api.iyzipay.com'
   if (!apiKey || !secretKey) {
     throw new Error('IYZICO_NOT_CONFIGURED')
+  }
+  // Üretimde sessizce sandbox'a düşmeyi engelle (fail-closed). Gerçek prod
+  // deployment'ta (Vercel production) IYZICO_BASE_URL açıkça CANLI API'ye set
+  // EDİLMELİ; aksi halde kullanıcı "ödedim" görür, abonelik/kredi aktifleşir
+  // ama gerçek para tahsil edilmez (gelir kaybı + yanlış aktivasyon).
+  const isLiveDeployment =
+    process.env.VERCEL_ENV === 'production' ||
+    (!process.env.VERCEL_ENV && process.env.NODE_ENV === 'production')
+  const uri =
+    process.env.IYZICO_BASE_URL || (isLiveDeployment ? '' : 'https://sandbox-api.iyzipay.com')
+  if (!uri) {
+    throw new Error('IYZICO_BASE_URL_REQUIRED_IN_PRODUCTION')
+  }
+  if (isLiveDeployment && uri.includes('sandbox')) {
+    throw new Error('IYZICO_SANDBOX_URL_IN_PRODUCTION')
   }
   return new Iyzipay({ apiKey, secretKey, uri })
 }

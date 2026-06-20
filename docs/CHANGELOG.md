@@ -2,6 +2,11 @@
 
 ---
 
+## 2026-06-20 — FAZ 0 güvenlik/para sertleştirmesi: iyzico sandbox + Meta token sızıntısı + SSRF route (denetim 1/n)
+- **Sorun:** Açılış öncesi çok-ajanlı denetim kritik bulgular tespit etti: (1) iyzico prod'da `IYZICO_BASE_URL` set edilmezse sessizce sandbox'a düşüyordu → gerçek para tahsil edilmez; (2) `/api/meta/capabilities` her Facebook sayfasının Page Access Token'ını istemciye sızdırıyordu (httpOnly bypass); (3) `/api/seo/wordpress/publish` auth'suz, keyfi URL'e kimlikli Basic-Auth isteği atan açık-proxy/SSRF orphan route'uydu.
+- **Çözüm:** (1) Canlı deployment'ta (`VERCEL_ENV=production`) `IYZICO_BASE_URL` zorunlu + sandbox URL reddediliyor (fail-closed). (2) `/me/accounts` artık `access_token` istemiyor + defense-in-depth strip; token yanıta/cache'e konmuyor. (3) Orphan SSRF route tamamen kaldırıldı (güncel akış `/api/seo/publish`).
+- **Dosyalar:** `lib/billing/iyzico.ts`, `app/api/meta/capabilities/route.ts`, `app/api/seo/wordpress/publish/route.ts` (silindi)
+
 ## 2026-06-20 — Sosyal Medya başlığı tek tipleştirildi: "Sosyal Medya"
 - **Sorun:** Sosyal Medya modülünün başlığı "Sosyal Medya Yönetimi" görünüyordu; owner sadece "Sosyal Medya" istemişti ama başlık üç ayrı yerde "Yönetimi" ekiyle tanımlıydı (nav doğruydu, bu yüzden tutarsızdı).
 - **Çözüm:** `dashboard.sosyalmedya.title` (TR "Sosyal Medya", EN "Social Media") ve `featureAccessMap` `social_media_management.label` ("Sosyal Medya") düzeltildi. Topbar başlığı, nav etiketi ve abonelik modalı artık tek tip.
