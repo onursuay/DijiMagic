@@ -5,6 +5,7 @@ import ScheduleModal from '@/components/landing/ScheduleModal'
 import DemoModal from '@/components/landing/DemoModal'
 import LandingHeader from '@/components/landing/LandingHeader'
 import FooterLangSwitcher from '@/components/landing/FooterLangSwitcher'
+import HeroAuroraBackground from '@/components/landing/HeroAuroraBackground'
 
 export default async function RootPage() {
   const cookieStore = await cookies()
@@ -166,6 +167,29 @@ export default async function RootPage() {
           30% { opacity: 0; }
           100% { opacity: 0; left: 100%; }
         }
+        /* Başlık gradyanının kendi benzer tonlarında akması (sabit değil) */
+        @keyframes hero-gradient-flow {
+          0%, 100% { background-position: 0% 50%; }
+          50% { background-position: 100% 50%; }
+        }
+        .hero-gradient-text {
+          background-size: 220% auto;
+          animation: hero-gradient-flow 7s ease-in-out infinite;
+        }
+        /* Aurora ortam blobları — hafif süzülme */
+        @keyframes aurora-drift-a {
+          0%, 100% { transform: translate3d(0,0,0) scale(1); }
+          50% { transform: translate3d(6%, 4%, 0) scale(1.08); }
+        }
+        @keyframes aurora-drift-b {
+          0%, 100% { transform: translate3d(0,0,0) scale(1.05); }
+          50% { transform: translate3d(-5%, 6%, 0) scale(1); }
+        }
+        .aurora-drift-a { animation: aurora-drift-a 18s ease-in-out infinite; will-change: transform; }
+        .aurora-drift-b { animation: aurora-drift-b 22s ease-in-out infinite; will-change: transform; }
+        @media (prefers-reduced-motion: reduce) {
+          .hero-gradient-text, .aurora-drift-a, .aurora-drift-b { animation: none !important; }
+        }
       ` }} />
 
       {/* ═══════════ HEADER ═══════════ */}
@@ -173,9 +197,12 @@ export default async function RootPage() {
 
       {/* ═══════════ HERO — Centered layout ═══════════ */}
       <section className="relative w-full px-6 pt-10 pb-8 md:pt-16 md:pb-10 overflow-hidden">
+        {/* Statik temel parıltı (JS yok / reduced-motion için fallback) */}
         <div className="absolute inset-0 pointer-events-none" aria-hidden="true">
           <div className="absolute top-[15%] left-1/2 -translate-x-1/2 w-[1000px] h-[700px] rounded-full blur-[160px]" style={{ background: 'radial-gradient(ellipse, rgba(16,185,129,0.07) 0%, rgba(20,184,166,0.03) 50%, transparent 80%)' }} />
         </div>
+        {/* İmleci takip eden aurora — mouse hareketiyle renkler hareket eder */}
+        <HeroAuroraBackground />
 
         <div className="relative max-w-7xl mx-auto text-center">
           {/* Badge */}
@@ -187,7 +214,12 @@ export default async function RootPage() {
           {/* Title — single large centered heading */}
           <h1 className="text-4xl sm:text-5xl md:text-6xl lg:text-[4.5rem] font-black leading-[1.1] tracking-tight text-white mb-5">
             {c.heroLine1}{' '}
-            <span className="bg-gradient-to-r from-emerald-400 via-teal-300 to-cyan-400 bg-clip-text text-transparent">{c.heroLine2}</span>
+            <span
+              className="hero-gradient-text bg-clip-text text-transparent"
+              style={{ backgroundImage: 'linear-gradient(90deg, #34d399, #2dd4bf, #22d3ee, #2dd4bf, #34d399)' }}
+            >
+              {c.heroLine2}
+            </span>
           </h1>
 
           {/* Subtitle */}
