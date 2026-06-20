@@ -40,6 +40,7 @@ import {
   mergeBlocks as _mergeBlocks,
   replaceBlockImageSrc as _replaceBlockImageSrc,
   isSafeReplaceImageUrl as _isSafeReplaceImageUrl,
+  escapeAttrValue as _escapeAttrValue,
 } from './blockMap.mjs'
 
 const coreExtractBlocks = _extractBlocks as (bodyHtml: string) => Block[]
@@ -58,6 +59,7 @@ const coreReplaceBlockImageSrc = _replaceBlockImageSrc as (
   newUrl: string,
 ) => string | null
 const coreIsSafeReplaceImageUrl = _isSafeReplaceImageUrl as (url: string) => boolean
+const coreEscapeAttrValue = _escapeAttrValue as (s: string) => string
 
 export interface ApplyBlockPatchInput {
   targetSlug: string
@@ -325,7 +327,15 @@ export async function applyImageReplacePatch(
 
     // 6. Defense-in-depth: the new https url MUST survive the gate (i.e. the sanitizer
     //    kept it). If it was stripped, refuse to persist a broken/blank image.
-    if (!gate.html.includes(newUrl)) return { ok: false, reason: 'src_stripped' }
+    //    NOTE: the src is written attribute-escaped (swapImgSrc → escapeAttrValue) and
+    //    sanitize-html entity-encodes `&` → `&amp;`, so a query-string url (Pexels /
+    //    Unsplash: `…?auto=compress&cs=tinysrgb`) lives in gate.html as `&amp;`, NOT
+    //    raw `&`. Match the EXACT newUrl in either form — raw OR its escaped form — so
+    //    the check stays strict (a stripped/altered src still fails) but tolerates the
+    //    encoding. We never widen to a substring/partial match.
+    const survived =
+      gate.html.includes(newUrl) || gate.html.includes(coreEscapeAttrValue(newUrl))
+    if (!survived) return { ok: false, reason: 'src_stripped' }
 
     return finalize(target, gate.html)
   } catch (e) {

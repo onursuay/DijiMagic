@@ -1176,6 +1176,7 @@ const {
   nextBlockId,
   replaceBlockImageSrc,
   isSafeReplaceImageUrl,
+  escapeAttrValue,
   ALLOWED_OPS,
   MAX_OPS,
 } = await import(blockMapPath)
@@ -1475,6 +1476,29 @@ const riGate = gateSiteHtml(riMerged)
 assert.ok(riGate.ok === true, `FAIL RI5: image-swapped body must re-gate clean — got: ${JSON.stringify(riGate)}`)
 assert.ok(riGate.html.includes('https://cdn.example.com/hero-new.jpg'), `FAIL RI5: the new https src MUST survive the sanitizer (allowlisted)`)
 assert.ok(!riGate.html.includes('<script'), `FAIL RI5: gated body must be sanitized`)
+
+// RI6 — QUERY-STRING STOCK URL (Pexels/Unsplash) — the `&` in the query string is
+// entity-encoded to `&amp;` by the sanitizer, so the survival check must compare the
+// new src in EITHER form (raw OR attribute-escaped) — the SAME logic as the
+// applyImageReplacePatch defense-in-depth check. (Regression: raw-only includ() saw
+// `&amp;` in gate.html, missed the raw `&`, and wrongly returned `src_stripped`/422.)
+const riStockUrl = 'https://images.pexels.com/photos/1/x.jpg?auto=compress&cs=tinysrgb&w=1200'
+const riStockHero = replaceBlockImageSrc(riHero.html, 0, riStockUrl)
+assert.ok(riStockHero, `FAIL RI6: query-string stock url must be accepted by the swap`)
+const riStockMerged = mergeBlocks(bpBody, riFullBlocks, [{ op: 'edit', targetId: 'b1' }], { b1: riStockHero })
+const riStockGate = gateSiteHtml(riStockMerged)
+assert.ok(riStockGate.ok === true, `FAIL RI6: query-string stock body must re-gate clean — got: ${JSON.stringify(riStockGate)}`)
+// the `&` survives in gate.html ONLY as the entity `&amp;` — raw includes() would miss it.
+assert.ok(!riStockGate.html.includes(riStockUrl), `FAIL RI6: precondition — the RAW url (with bare &) must NOT be byte-present in gated html (it is entity-encoded)`)
+assert.ok(riStockGate.html.includes(escapeAttrValue(riStockUrl)), `FAIL RI6: the entity-escaped url (&amp;) MUST be present in gated html`)
+// the production survival check (raw OR escaped) → PASSES (no src_stripped/422).
+const riStockSurvived = riStockGate.html.includes(riStockUrl) || riStockGate.html.includes(escapeAttrValue(riStockUrl))
+assert.ok(riStockSurvived, `FAIL RI6: entity-tolerant survival check must PASS for a query-string stock url (no src_stripped)`)
+// security intact — a genuinely blocked url (javascript:) is still rejected upstream,
+// and a stripped/absent src still fails the same survival check.
+assert.strictEqual(replaceBlockImageSrc(riHero.html, 0, 'javascript:alert(document.cookie)'), null, `FAIL RI6: javascript: payload must still be rejected (security unchanged)`)
+const riStrippedSurvived = riStockGate.html.includes('https://images.pexels.com/photos/999/STRIPPED.jpg') || riStockGate.html.includes(escapeAttrValue('https://images.pexels.com/photos/999/STRIPPED.jpg'))
+assert.ok(!riStrippedSurvived, `FAIL RI6: a DIFFERENT/stripped url must still fail the survival check (exact-url intent kept)`)
 
 console.log('replace-image OK')
 
