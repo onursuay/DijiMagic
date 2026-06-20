@@ -54,6 +54,17 @@ export default async function RootLayout({
   return (
     <html lang={locale}>
       <body className={`${inter.variable} ${inter.className} text-body`}>
+        {/* DEV-OVERLAY GÜRÜLTÜ BASTIRMA (parse-time, Next hata-overlay handler'ından ÖNCE
+            kaydolmalı → bu yüzden inline script, useEffect DEĞİL). Next dev overlay'inin
+            odak yardımcısı (ally.js) sayfadaki sandboxed önizleme iframe'inin (origin "null")
+            document'ını okumaya çalışıp "Blocked a frame ... cross-origin" SecurityError'ı
+            fırlatıyor → overlay önizlemenin üstüne açılıp Web Site Yöneticisi tıkla-seç
+            düzenlemeyi engelliyordu. Bu, bizim KASITLI sandbox'ımıza dair yanlış-pozitif
+            (kodumuz cross-origin frame'i hiç okumaz; seçim yalnız postMessage). Yalnız BU
+            spesifik hata yutulur; başka hiçbir hata etkilenmez. Production'da dev overlay
+            yok → no-op. capture + stopImmediatePropagation ile hem addEventListener hem
+            window.onerror overlay'i bastırılır (mine-first olduğu için çalışır). */}
+        <script dangerouslySetInnerHTML={{ __html: `try{window.addEventListener('error',function(e){var m=(e&&e.message)||'';if(/Blocked a frame with origin|cross-origin frame/i.test(m)){e.stopImmediatePropagation();if(e.preventDefault)e.preventDefault();}},true)}catch(_){}` }} />
         <script dangerouslySetInnerHTML={{ __html: `try{var s=localStorage.getItem('sidebar_collapsed');var w=s==='true'?'72px':'260px';document.documentElement.style.setProperty('--sidebar-width',w)}catch(e){}` }} />
         <AnalyticsScripts />
         <NextIntlClientProvider locale={locale} messages={messages}>
