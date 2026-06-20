@@ -1,7 +1,7 @@
 'use client'
 
 import { useState, useEffect, useCallback, useRef } from 'react'
-import { useParams, useRouter } from 'next/navigation'
+import { useParams, useRouter, useSearchParams } from 'next/navigation'
 import Link from 'next/link'
 import { useTranslations, useLocale } from 'next-intl'
 import { ArrowLeft, Check, X, Pencil, Monitor, Tablet, Smartphone, ExternalLink, Sparkles, Send, ThumbsDown, MousePointerClick, Type, Wand2, Trash2, ImagePlus, Upload, Search } from 'lucide-react'
@@ -43,6 +43,7 @@ const PAGE_LABELS: Record<string, Record<string, string>> = {
 export default function WebsiteReviewPage() {
   const params = useParams()
   const router = useRouter()
+  const search = useSearchParams()
   const id = String(params?.id ?? '')
   const t = useTranslations('dashboard.webSiteYoneticisi')
   const uiLocale = useLocale()
@@ -62,7 +63,9 @@ export default function WebsiteReviewPage() {
   const iframeRef = useRef<HTMLIFrameElement>(null)
   const [wrapW, setWrapW] = useState(0)
   // ── Manuel tıkla-seç düzenleme (hafif overlay) ──
-  const [editMode, setEditMode] = useState(false)
+  // Detay sayfasındaki "Bölümleri Düzenle" butonu buraya ?edit=1 ile yönlendirir →
+  // önizleme düzenleme modu AÇIK başlar (kullanıcı düzenleme özelliğini hemen görür).
+  const [editMode, setEditMode] = useState(() => search.get('edit') === '1')
   const [selection, setSelection] = useState<Selection | null>(null)
   const [editAction, setEditAction] = useState<EditAction>(null)
   const [editText, setEditText] = useState('')
@@ -374,15 +377,23 @@ export default function WebsiteReviewPage() {
               onClick={() => setEditMode((v) => !v)}
               disabled={working || !site}
               aria-pressed={editMode}
-              className={`ml-auto inline-flex items-center gap-2 rounded-lg px-3.5 py-2 text-sm font-medium transition-all active:scale-[0.97] disabled:opacity-50 ${
+              className={`ml-auto inline-flex items-center gap-2 rounded-lg px-4 py-2.5 text-sm font-semibold transition-all active:scale-[0.97] disabled:opacity-50 ${
                 editMode
-                  ? 'bg-primary text-white shadow-sm'
-                  : 'border border-primary/30 bg-primary/5 text-primary hover:bg-primary/10'
+                  ? 'bg-primary text-white shadow-sm ring-2 ring-primary/20'
+                  : 'border border-primary/40 bg-primary/10 text-primary shadow-sm hover:bg-primary/15'
               }`}
             >
               {editMode ? <Check className="w-4 h-4" /> : <MousePointerClick className="w-4 h-4" />}
-              {editMode ? t('editModeOn') : t('editModeToggle')}
+              {editMode ? t('editModeOn') : t('editSections')}
             </button>
+            <a
+              href={`/website-preview/${id}?locale=${previewLocale}&slug=${activeSlugSafe}`}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="inline-flex items-center gap-2 rounded-lg border border-gray-200 px-4 py-2.5 text-sm font-medium text-gray-700 hover:bg-gray-50/60 transition-colors"
+            >
+              <ExternalLink className="w-4 h-4" /> {t('openInNewTab')}
+            </a>
             <div className="inline-flex items-center rounded-lg border border-gray-200 p-0.5 bg-white">
               {deviceBtn('desktop', Monitor)}
               {deviceBtn('tablet', Tablet)}

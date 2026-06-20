@@ -872,6 +872,26 @@ assert.ok(p5.some((p) => p.role === 'contact'), `FAIL MP5: null default must inc
 const p5en = validatePagePlan('not-an-object', 'en')
 assert.ok(p5en[0].navLabel === 'Home', `FAIL MP5: en locale home label — got: ${p5en[0].navLabel}`)
 
+// MP5b — ORTHOGRAPHY NORMALIZE: when the AI emits ascii-degraded labels for KNOWN
+// roles ("Hakkimizda"/"Iletisim"), the navLabel/title are REPLACED with the canonical
+// proper-Turkish label; UNKNOWN ('custom') roles keep the AI label verbatim.
+const asciiPlan = {
+  pages: [
+    { slug: 'home', title: 'Anasayfa', navLabel: 'Anasayfa', role: 'home', purpose: 'x' },
+    { slug: 'hakkimizda', title: 'Hakkimizda', navLabel: 'Hakkimizda', role: 'about', purpose: 'x' },
+    { slug: 'iletisim', title: 'Iletisim', navLabel: 'Iletisim', role: 'contact', purpose: 'x' },
+    { slug: 'ozel-konu', title: 'Özel Konu', navLabel: 'Özel Konu', role: 'custom', purpose: 'x' },
+  ],
+}
+const pAscii = validatePagePlan(asciiPlan, 'tr')
+const about = pAscii.find((p) => p.role === 'about')
+const contact = pAscii.find((p) => p.role === 'contact')
+const custom = pAscii.find((p) => p.role === 'custom')
+assert.strictEqual(about.navLabel, 'Hakkımızda', `FAIL MP5b: about navLabel not normalized — got: ${about.navLabel}`)
+assert.strictEqual(about.title, 'Hakkımızda', `FAIL MP5b: about title not normalized — got: ${about.title}`)
+assert.strictEqual(contact.navLabel, 'İletişim', `FAIL MP5b: contact navLabel not normalized — got: ${contact.navLabel}`)
+assert.ok(custom && custom.navLabel === 'Özel Konu', `FAIL MP5b: custom role navLabel must be kept verbatim — got: ${custom && custom.navLabel}`)
+
 // MP6 — planning prompt builders are non-empty and on-topic
 assert.ok(typeof buildPlanSystemPrompt() === 'string' && /JSON/i.test(buildPlanSystemPrompt()), `FAIL MP6: plan system prompt`)
 const planUser = buildPlanUserMessage({ brandName: 'Acme', locale: 'tr', instruction: '', untrustedBlocks: [] })

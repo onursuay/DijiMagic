@@ -4,7 +4,7 @@ import { useState, useEffect, useCallback, useRef } from 'react'
 import { useParams, useRouter, useSearchParams } from 'next/navigation'
 import Link from 'next/link'
 import { useTranslations, useLocale } from 'next-intl'
-import { Sparkles, RefreshCw, Globe, ExternalLink, ArrowLeft, Monitor, Tablet, Smartphone, ImagePlus, History, RotateCcw, ChevronDown, Eye, AlertCircle, Palette } from 'lucide-react'
+import { Sparkles, RefreshCw, Globe, ExternalLink, ArrowLeft, Monitor, Tablet, Smartphone, ImagePlus, History, RotateCcw, ChevronDown, Eye, AlertCircle, Palette, MousePointerClick } from 'lucide-react'
 import Topbar from '@/components/Topbar'
 import { ToastContainer, type Toast } from '@/components/Toast'
 import AccessRequiredModal from '@/components/billing/AccessRequiredModal'
@@ -285,11 +285,25 @@ export default function WebSiteDetailPage() {
                     <Palette className="w-4 h-4" /> {t('designTitle')}
                   </button>
                   <button
-                    onClick={() => router.push(`/web-site-yoneticisi/${id}/onizleme`)}
+                    onClick={() => router.push(`/web-site-yoneticisi/${id}/onizleme?edit=1`)}
                     className="inline-flex items-center gap-2 rounded-lg bg-primary px-5 py-2.5 text-sm font-medium text-white active:scale-[0.97] transition-all"
+                  >
+                    <MousePointerClick className="w-4 h-4" /> {t('editSections')}
+                  </button>
+                  <button
+                    onClick={() => router.push(`/web-site-yoneticisi/${id}/onizleme`)}
+                    className="inline-flex items-center gap-2 rounded-lg border border-gray-200 px-4 py-2.5 text-sm font-medium text-gray-700 hover:bg-gray-50/60 transition-colors"
                   >
                     <Eye className="w-4 h-4" /> {t('detailedPreview')}
                   </button>
+                  <a
+                    href={`/website-preview/${id}?locale=${previewLocale}&slug=${activeSlugSafe}`}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="inline-flex items-center gap-2 rounded-lg border border-gray-200 px-4 py-2.5 text-sm font-medium text-gray-700 hover:bg-gray-50/60 transition-colors"
+                  >
+                    <ExternalLink className="w-4 h-4" /> {t('openInNewTab')}
+                  </a>
                   <button
                     onClick={() => handlePublish(isPublished ? 'unpublish' : 'publish')}
                     disabled={busy !== null}

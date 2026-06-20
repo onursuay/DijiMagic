@@ -5939,6 +5939,8 @@
       "revising": "AI revize ediyor…",
       "revisionDone": "Site güncellendi.",
       "editModeToggle": "Düzenle",
+      "editSections": "Bölümleri Düzenle",
+      "openInNewTab": "Yeni sekmede aç",
       "editModeOn": "Düzenleme açık",
       "editModeHint": "Düzenlemek istediğiniz bölüme tıklayın",
       "selectedBlock": "{role} bölümü",
