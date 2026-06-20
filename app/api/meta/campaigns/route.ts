@@ -1,6 +1,6 @@
 import { NextResponse } from 'next/server'
-import { cookies } from 'next/headers'
 import { metaGraphFetch } from '@/lib/metaGraph'
+import { resolveMetaContext, checkAdAccountMismatch } from '@/lib/meta/context'
 import {
   getListCacheKey,
   getListCached,
@@ -24,40 +24,26 @@ export async function GET(request: Request) {
   const after = searchParams.get('after') || null
   const adAccountIdParam = searchParams.get('adAccountId')
 
-  const cookieStore = await cookies()
-  const accessToken = cookieStore.get('meta_access_token')
-  const selectedAdAccountIdCookie = cookieStore.get('meta_selected_ad_account_id')
-
-  if (!accessToken || !accessToken.value) {
+  // GÜVENLİK (IDOR): cookie token (stale olabilir) + keyfi adAccountId, başka
+  // hesabın kampanya verisinin okunmasına yol açıyordu. DB-izolasyonlu bağlamı
+  // kullan — token ve hesap MEVCUT kullanıcının DB kaydından gelir.
+  const ctx = await resolveMetaContext()
+  if (!ctx) {
     return NextResponse.json({ error: 'missing_token' }, { status: 401 })
   }
 
-  // adAccountId is required: prefer query param, fallback to cookie
-  const selectedAdAccountId = adAccountIdParam || selectedAdAccountIdCookie?.value
-  if (!selectedAdAccountId) {
+  // Query param adAccountId geldiyse bağlamla eşleşmeli (cross-account engellenir)
+  const mm = checkAdAccountMismatch(ctx, adAccountIdParam)
+  if (mm?.mismatch) {
     return NextResponse.json(
-      { 
-        ok: false,
-        error: 'MISSING_AD_ACCOUNT_ID',
-        code: 'MISSING_AD_ACCOUNT_ID',
-        message: 'adAccountId is required in query params or cookies'
-      },
-      { status: 400 }
+      { ok: false, error: 'ad_account_mismatch', resolved: mm.resolved, received: mm.received },
+      { status: 403 }
     )
   }
 
-  const expiresAtCookie = cookieStore.get('meta_access_expires_at')
-  if (expiresAtCookie) {
-    const expiresAt = parseInt(expiresAtCookie.value, 10)
-    if (Date.now() >= expiresAt) {
-      return NextResponse.json({ error: 'token_expired' }, { status: 401 })
-    }
-  }
-
   try {
-    const accountId = selectedAdAccountId.startsWith('act_')
-      ? selectedAdAccountId
-      : `act_${selectedAdAccountId.replace('act_', '')}`
+    // Tek doğruluk kaynağı: bağlamdaki normalize edilmiş hesap (act_XXX)
+    const accountId = ctx.accountId
 
     const cacheParams = { date_preset: datePreset || '', since: since || '', until: until || '', after: after || '' }
     const cacheKey = getListCacheKey('/campaigns', cacheParams, accountId)
@@ -93,7 +79,7 @@ export async function GET(request: Request) {
 
     const fetchResult = await withLock(`act:${accountId}`, async () => {
       const { response, errorData, retryAfterMs } = await fetchWithBackoff(
-        () => metaGraphFetch(`/${accountId}/campaigns`, accessToken.value, { params: campaignParams }),
+        () => metaGraphFetch(`/${accountId}/campaigns`, ctx.userAccessToken, { params: campaignParams }),
         3
       )
       return { response, errorData, retryAfterMs }

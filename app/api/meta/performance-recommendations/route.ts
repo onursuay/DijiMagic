@@ -1,6 +1,6 @@
 import { NextResponse } from 'next/server'
-import { cookies } from 'next/headers'
 import { metaGraphFetch } from '@/lib/metaGraph'
+import { resolveMetaContext, checkAdAccountMismatch } from '@/lib/meta/context'
 import { metaFetchWithRateLimit, isRateLimitError, extractFbTraceId } from '@/lib/meta/rateLimit'
 import { getCacheKey, getCached, setCached } from '@/lib/meta/cache'
 
@@ -22,11 +22,11 @@ type PerfRecItem = {
 
 export async function GET(request: Request) {
   try {
-    const cookieStore = await cookies()
-    const accessToken = cookieStore.get('meta_access_token')
-    const selectedAdAccountId = cookieStore.get('meta_selected_ad_account_id')
-
-    if (!accessToken?.value) {
+    // GÜVENLİK (IDOR): cookie token (stale olabilir) + keyfi adAccountId, başka
+    // hesabın performans önerilerinin okunmasına yol açıyordu. DB-izolasyonlu
+    // bağlamı kullan — token ve hesap MEVCUT kullanıcının DB kaydından gelir.
+    const ctx = await resolveMetaContext()
+    if (!ctx) {
       return NextResponse.json({
         ok: false,
         error: 'missing_token',
@@ -34,42 +34,22 @@ export async function GET(request: Request) {
       }, { status: 200 }) // Return 200 with ok:false instead of 401
     }
 
-    if (!selectedAdAccountId?.value) {
-      return NextResponse.json({
-        ok: false,
-        error: 'no_ad_account_selected',
-        message: 'No ad account selected',
-      }, { status: 200 })
-    }
-
-    // Check token expiration if available
-    const expiresAtCookie = cookieStore.get('meta_access_expires_at')
-    if (expiresAtCookie) {
-      const expiresAt = parseInt(expiresAtCookie.value, 10)
-      if (Date.now() >= expiresAt) {
-        return NextResponse.json({
-          ok: false,
-          error: 'token_expired',
-          message: 'Access token has expired',
-        }, { status: 200 })
-      }
-    }
-
+    // Query param adAccountId geldiyse bağlamla eşleşmeli (cross-account engellenir)
     const { searchParams } = new URL(request.url)
-    const adAccountId = searchParams.get('adAccountId')
-
-    if (!adAccountId) {
+    const adAccountIdParam = searchParams.get('adAccountId')
+    const mm = checkAdAccountMismatch(ctx, adAccountIdParam)
+    if (mm?.mismatch) {
       return NextResponse.json({
         ok: false,
-        error: 'adAccountId_required',
-        message: 'adAccountId is required',
+        error: 'ad_account_mismatch',
+        message: 'Requested adAccountId does not match the authenticated account',
+        resolved: mm.resolved,
+        received: mm.received,
       }, { status: 200 })
     }
 
-    // Ensure ad_account_id starts with 'act_'
-    const accountId = adAccountId.startsWith('act_')
-      ? adAccountId
-      : `act_${adAccountId.replace('act_', '')}`
+    // Tek doğruluk kaynağı: bağlamdaki normalize edilmiş hesap (act_XXX)
+    const accountId = ctx.accountId
 
     // Check cache first
     const cacheKey = getCacheKey('meta', accountId, 'default', 'performance_recommendations')
@@ -86,7 +66,7 @@ export async function GET(request: Request) {
       const result = await metaFetchWithRateLimit(
         () => metaGraphFetch(
           `/${accountId}/performance_recommendations`,
-          accessToken.value,
+          ctx.userAccessToken,
           {
             params: {
               fields: 'id,recommendation_type,recommendation_title,recommendation_message,level,entity_id,entity_type,impact,default_action,created_time,status',
