@@ -1,6 +1,6 @@
 import { NextResponse } from 'next/server'
-import { cookies } from 'next/headers'
 import { metaGraphFetch } from '@/lib/metaGraph'
+import { resolveMetaContext, checkAdAccountMismatch } from '@/lib/meta/context'
 import {
   getListCacheKey,
   getListCached,
@@ -10,7 +10,7 @@ import {
   isRateLimitError,
   extractFbTraceId,
 } from '@/lib/meta/listFetch'
-import { extractObjectiveResults } from '@/lib/meta/resultExtraction'
+import { extractObjectiveResults, extractRoas } from '@/lib/meta/resultExtraction'
 
 const DEBUG = process.env.NODE_ENV !== 'production'
 // No cache - always fresh data
@@ -24,40 +24,26 @@ export async function GET(request: Request) {
   const after = searchParams.get('after') || null
   const adAccountIdParam = searchParams.get('adAccountId')
 
-  const cookieStore = await cookies()
-  const accessToken = cookieStore.get('meta_access_token')
-  const selectedAdAccountIdCookie = cookieStore.get('meta_selected_ad_account_id')
-
-  if (!accessToken || !accessToken.value) {
+  // GÜVENLİK (IDOR): cookie token (stale olabilir) + keyfi adAccountId, başka
+  // hesabın kampanya verisinin okunmasına yol açıyordu. DB-izolasyonlu bağlamı
+  // kullan — token ve hesap MEVCUT kullanıcının DB kaydından gelir.
+  const ctx = await resolveMetaContext()
+  if (!ctx) {
     return NextResponse.json({ error: 'missing_token' }, { status: 401 })
   }
 
-  // adAccountId is required: prefer query param, fallback to cookie
-  const selectedAdAccountId = adAccountIdParam || selectedAdAccountIdCookie?.value
-  if (!selectedAdAccountId) {
+  // Query param adAccountId geldiyse bağlamla eşleşmeli (cross-account engellenir)
+  const mm = checkAdAccountMismatch(ctx, adAccountIdParam)
+  if (mm?.mismatch) {
     return NextResponse.json(
-      { 
-        ok: false,
-        error: 'MISSING_AD_ACCOUNT_ID',
-        code: 'MISSING_AD_ACCOUNT_ID',
-        message: 'adAccountId is required in query params or cookies'
-      },
-      { status: 400 }
+      { ok: false, error: 'ad_account_mismatch', resolved: mm.resolved, received: mm.received },
+      { status: 403 }
     )
   }
 
-  const expiresAtCookie = cookieStore.get('meta_access_expires_at')
-  if (expiresAtCookie) {
-    const expiresAt = parseInt(expiresAtCookie.value, 10)
-    if (Date.now() >= expiresAt) {
-      return NextResponse.json({ error: 'token_expired' }, { status: 401 })
-    }
-  }
-
   try {
-    const accountId = selectedAdAccountId.startsWith('act_')
-      ? selectedAdAccountId
-      : `act_${selectedAdAccountId.replace('act_', '')}`
+    // Tek doğruluk kaynağı: bağlamdaki normalize edilmiş hesap (act_XXX)
+    const accountId = ctx.accountId
 
     const cacheParams = { date_preset: datePreset || '', since: since || '', until: until || '', after: after || '' }
     const cacheKey = getListCacheKey('/campaigns', cacheParams, accountId)
@@ -93,7 +79,7 @@ export async function GET(request: Request) {
 
     const fetchResult = await withLock(`act:${accountId}`, async () => {
       const { response, errorData, retryAfterMs } = await fetchWithBackoff(
-        () => metaGraphFetch(`/${accountId}/campaigns`, accessToken.value, { params: campaignParams }),
+        () => metaGraphFetch(`/${accountId}/campaigns`, ctx.userAccessToken, { params: campaignParams }),
         3
       )
       return { response, errorData, retryAfterMs }
@@ -161,13 +147,7 @@ export async function GET(request: Request) {
         if (engagementAction) engagement = parseInt(engagementAction.value || '0', 10)
       }
 
-      let roas = 0
-      if (insight?.purchase_roas) {
-        roas = parseFloat(insight.purchase_roas)
-      } else if (insight?.action_values && spend > 0) {
-        const purchaseValue = insight.action_values.find((av: any) => av.action_type === 'purchase' || av.action_type === 'omni_purchase')
-        if (purchaseValue) roas = parseFloat(purchaseValue.value || '0') / spend
-      }
+      const roas = extractRoas(insight, spend)
 
       const objective = campaign.objective || ''
       const { resultType, results } = extractObjectiveResults(objective, insight)

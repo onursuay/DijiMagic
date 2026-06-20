@@ -176,3 +176,26 @@ function findActionValue(actions: any[] | undefined, types: string[]): number {
   }
   return 0
 }
+
+/**
+ * ROAS çıkarımı — TEK kaynak. Meta `purchase_roas`'ı [{action_type, value}]
+ * DİZİSİ olarak döndürür (bazı yerlerde sayı/string olabilir). Düz
+ * `parseFloat(dizi)` → NaN → ROAS daima boş görünür (campaigns/ads/adsets
+ * tablolarındaki bug buydu). Bu helper üç biçimi de doğru çözer; `purchase_roas`
+ * yoksa `action_values`/spend ile hesaplar (insights route'uyla aynı mantık).
+ */
+export function extractRoas(insight: any, spend: number): number {
+  const pr = insight?.purchase_roas
+  if (pr != null && pr !== '') {
+    if (Array.isArray(pr)) return parseFloat(pr[0]?.value ?? '0') || 0
+    if (typeof pr === 'number') return pr || 0
+    if (typeof pr === 'string') return parseFloat(pr) || 0
+  }
+  if (Array.isArray(insight?.action_values) && spend > 0) {
+    const purchaseValue = insight.action_values.find(
+      (av: any) => av?.action_type === 'purchase' || av?.action_type === 'omni_purchase'
+    )
+    if (purchaseValue?.value) return (parseFloat(String(purchaseValue.value)) / spend) || 0
+  }
+  return 0
+}

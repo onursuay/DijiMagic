@@ -2,6 +2,18 @@
 
 ---
 
+## 2026-06-20 — FAZ 0: Meta + Google reklam sertleştirme (denetim 4/n — yan-dal faz0/meta-roas merge)
+- **Sorun:** Çok-ajanlı derin denetim, gelir-kritik Meta/Google akışlarında doğrulanmış kusurlar buldu: Meta ROAS tablolarda hep boş; Google PMax TARGET_ROAS birim hatası (%45.000 hedef riski); Google kitle editörü dokunulmamış segmentleri siliyordu (veri kaybı); Meta cross-account IDOR (yazma: status/adset-budget + okuma: campaigns/adsets/recommendations/perf-rec); Google kitle OBSERVATION/TARGETING modu uygulanmıyordu (bütçe geniş kitleye kaçar); PMax görsel yükleme tamamen kırık (`blob:` URL); Meta video upload ham token sızdırıyordu.
+- **Çözüm:**
+  - **Meta ROAS (H3):** `purchase_roas` dizi-parse → tek-kaynak `extractRoas` helper (campaigns/ads/adsets).
+  - **Google TARGET_ROAS (H8):** UI'dan yanıltıcı `%` kaldırıldı (kesir birimi) + backend [0.01, 100] sınır guard'ı.
+  - **Google kitle veri-kaybı (H11):** `toRemove` artık `segId (segmentId ?? criterionId)` ile eşleştirir.
+  - **Meta IDOR:** status + adset-budget (yazma) ve campaigns/adsets/recommendations/performance-recommendations (okuma) `resolveMetaContext` + `checkAdAccountMismatch`'e taşındı (stale cookie token kullanılmaz).
+  - **bidOnly (H10):** audience-criteria entity'ye `targeting_setting.target_restrictions[AUDIENCE].bidOnly` yazar → Hedefleme/Gözlem gerçekten uygulanır.
+  - **PMax görsel (B3):** UI base64 `data:` URL gönderir, backend doğrudan decode eder (`blob:` reddedilir) → PMax create çalışır. *(canlı doğrulama gerekir)*
+  - **Meta video upload (B2):** video da `/api/meta/upload-media` server proxy'sinden geçer; `upload-token` route silindi (ham token istemciye verilmez). *(canlı doğrulama gerekir)*
+- **Dosyalar:** `lib/meta/resultExtraction.ts`, `app/api/meta/{campaigns,ads,adsets,status,adset-budget,recommendations,performance-recommendations}/route.ts`, `app/api/meta/upload-token/route.ts` (silindi), `components/meta/wizard/MediaUploader.tsx`, `components/google/detail/AudienceSegmentEditor.tsx`, `components/google/wizard/pmax/steps/PMaxStepAssetGroup.tsx`, `lib/google-ads/{audience-criteria,create-performance-max-campaign}.ts`
+
 ## 2026-06-20 — Hero renkleri NET görünür yapıldı (statik renkli bloblar + parlak cursor glow)
 - **Sorun:** Önceki sürümde hero'da renk neredeyse görünmüyordu (opacity çok düşük); mouse olmadan tamamen renksiz görünüyordu. Önceki salınım: beyaz-patlama (additive) ↔ aşırı-subtle.
 - **Çözüm:** `HeroGlowTrail` — HER ZAMAN görünür 3 statik renkli blob (yeşil #3ded9a ~0.34 / mor ~0.32 / mavi ~0.30, blur ~100px) → mouse/mobil olmadan da hero renkli. Üstüne imleci takip eden parlak yeşil+mor glow (~0.42/0.38, normal blend → BEYAZ YOK; ağır blur → panel/kutu değil, yumuşak). Playwright: mouse'suz da renk NET, mouse ile glow takip ediyor.

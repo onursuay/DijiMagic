@@ -914,13 +914,25 @@ export default function PMaxStepAssetGroup({ state, update, t }: PMaxStepProps) 
   const addDescription = () => { if (state.descriptions.length < 5) update({ descriptions: [...state.descriptions, ''] }) }
   const removeDescription = (i: number) => { if (state.descriptions.length > 3) update({ descriptions: state.descriptions.filter((_, idx) => idx !== i) }) }
 
+  // Yüklenen dosyayı base64 `data:` URL'e çevir — sunucu `blob:` URL'i fetch
+  // edemez (PMax create her seferinde patlıyordu); `data:` URL'i doğrudan decode eder.
+  const fileToDataUrl = (file: File): Promise<string> =>
+    new Promise((resolve, reject) => {
+      const reader = new FileReader()
+      reader.onload = () => resolve(reader.result as string)
+      reader.onerror = () => reject(reader.error)
+      reader.readAsDataURL(file)
+    })
+
   // Image upload
-  const addImages = (files: File[]) => {
-    const newImages: PMaxAssetImage[] = files.map(f => ({
-      id: `img-${Date.now()}-${Math.random().toString(36).slice(2, 8)}`,
-      name: f.name,
-      url: URL.createObjectURL(f),
-    }))
+  const addImages = async (files: File[]) => {
+    const newImages: PMaxAssetImage[] = await Promise.all(
+      files.map(async f => ({
+        id: `img-${Date.now()}-${Math.random().toString(36).slice(2, 8)}`,
+        name: f.name,
+        url: await fileToDataUrl(f),
+      })),
+    )
     update({ images: [...state.images, ...newImages].slice(0, 20) })
   }
   const removeImage = (id: string) => {
@@ -930,12 +942,14 @@ export default function PMaxStepAssetGroup({ state, update, t }: PMaxStepProps) 
   }
 
   // Logo upload
-  const addLogos = (files: File[]) => {
-    const newLogos: PMaxAssetImage[] = files.map(f => ({
-      id: `logo-${Date.now()}-${Math.random().toString(36).slice(2, 8)}`,
-      name: f.name,
-      url: URL.createObjectURL(f),
-    }))
+  const addLogos = async (files: File[]) => {
+    const newLogos: PMaxAssetImage[] = await Promise.all(
+      files.map(async f => ({
+        id: `logo-${Date.now()}-${Math.random().toString(36).slice(2, 8)}`,
+        name: f.name,
+        url: await fileToDataUrl(f),
+      })),
+    )
     update({ logos: [...state.logos, ...newLogos].slice(0, 5) })
   }
   const removeLogo = (id: string) => {

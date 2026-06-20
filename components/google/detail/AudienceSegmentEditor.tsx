@@ -273,9 +273,14 @@ export default function AudienceSegmentEditor({
         ? `/api/integrations/google-ads/ad-groups/${entityId}/audience-criteria`
         : `/api/integrations/google-ads/campaigns/${campaignId}/audience-criteria`
 
-      // Find removed: in initial but not in current
+      // Find removed: in initial but not in current.
+      // KRİTİK: existingCriteria'yı SEGMENT id'siyle eşleştir (load'daki segId ile
+      // birebir: segmentId ?? criterionId). criterionId kullanmak LIFE_EVENT/
+      // DETAILED_DEMOGRAPHIC segmentlerini (segmentId ≠ criterionId) yanlışlıkla
+      // "kaldırılacak" sayıp dokunulmamış hedeflemeleri siliyordu (veri kaybı).
+      const segId = (c: ExistingCriterion) => c.segmentId ?? c.criterionId
       const currentIds = new Set(selectedSegments.map(s => s.id))
-      const toRemove = existingCriteria.filter(c => !currentIds.has(c.criterionId))
+      const toRemove = existingCriteria.filter(c => !currentIds.has(segId(c)))
 
       // Find added: in current but not in initial
       const toAdd = selectedSegments.filter(s => !initialSegmentIds.has(s.id))

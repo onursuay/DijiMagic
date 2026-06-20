@@ -1,6 +1,6 @@
 import { NextResponse } from 'next/server'
-import { cookies } from 'next/headers'
 import { metaGraphFetchJSON } from '@/lib/metaGraph'
+import { resolveMetaContext } from '@/lib/meta/context'
 
 const DEBUG = process.env.NODE_ENV !== 'production'
 export const dynamic = 'force-dynamic'
@@ -69,21 +69,19 @@ function flattenRecommendations(payload: any): FlatRec[] {
 }
 
 export async function GET(request: Request) {
-  const cookieStore = await cookies()
-  const accessToken = cookieStore.get('meta_access_token')
-  const selectedAdAccountId = cookieStore.get('meta_selected_ad_account_id')
-  if (!accessToken?.value) return NextResponse.json({ error: 'missing_token' }, { status: 401 })
-  if (!selectedAdAccountId?.value) return NextResponse.json({ error: 'no_ad_account_selected' }, { status: 400 })
+  // GÜVENLİK (IDOR): cookie token (stale olabilir) yerine DB-izolasyonlu bağlamı
+  // kullan — token ve hesap MEVCUT kullanıcının DB kaydından gelir.
+  const ctx = await resolveMetaContext()
+  if (!ctx) return NextResponse.json({ error: 'missing_token' }, { status: 401 })
 
   const url = new URL(request.url)
   const locale = normalizeLocale(url.searchParams.get('locale'))
 
-  const accountId = selectedAdAccountId.value.startsWith('act_')
-    ? selectedAdAccountId.value
-    : `act_${selectedAdAccountId.value.replace('act_', '')}`
+  // Tek doğruluk kaynağı: bağlamdaki normalize edilmiş hesap (act_XXX)
+  const accountId = ctx.accountId
 
   try {
-    const recRes = await metaGraphFetchJSON(`/${accountId}/recommendations`, accessToken.value, {
+    const recRes = await metaGraphFetchJSON(`/${accountId}/recommendations`, ctx.userAccessToken, {
       params: { locale },
     })
     if (recRes.error) {
@@ -94,7 +92,7 @@ export async function GET(request: Request) {
     // opportunity score can come from separate endpoint OR sometimes from root
     let opportunityScore: number | null = null
     try {
-      const osRes = await metaGraphFetchJSON(`/${accountId}/opportunity_score`, accessToken.value, { params: { locale } })
+      const osRes = await metaGraphFetchJSON(`/${accountId}/opportunity_score`, ctx.userAccessToken, { params: { locale } })
       if (!osRes.error) {
         const score = osRes.data?.opportunity_score?.score
         opportunityScore = score != null ? Number(score) : null

@@ -73,8 +73,9 @@ export default function MediaUploader({
 
   if (type === 'video') {
     accept = 'video/mp4,video/quicktime'
-    // Vercel 4.5MB body limit - video max 4MB
-    maxSizeMB = 4 * 1024
+    // Sunucu proxy Vercel 4.5MB gövde limitine tabi → doğrudan video yükleme en
+    // fazla 4MB. Daha büyük videolar Medya Kütüphanesi'nden seçilir.
+    maxSizeMB = 4
   }
   const maxBytes = maxSizeMB * 1024 * 1024
 
@@ -88,58 +89,32 @@ export default function MediaUploader({
       const compressedFile = isVideo ? file : await compressImage(file)
 
       try {
-        if (isVideo) {
-          // Video: dogrudan Meta Graph API'ye yukle (Vercel 4.5MB limitini bypass et)
-          const tokenRes = await fetch('/api/meta/upload-token')
-          if (!tokenRes.ok) {
-            setError('Meta bağlantısı kurulamadı')
-            onFileSelect(null, '')
-            return
-          }
-          const { accessToken, accountId } = await tokenRes.json()
+        // GÜVENLİK: Hem görsel hem video SUNUCU PROXY'sinden (/api/meta/upload-media)
+        // geçer — Meta erişim token'ı ASLA istemciye verilmez (eski upload-token
+        // ham-token sızıntısı kapatıldı). Proxy advideos/adimages'a server-side yükler.
+        const formData = new FormData()
+        formData.append('file', compressedFile)
+        formData.append('type', isVideo ? 'video' : 'image')
 
-          const metaFormData = new FormData()
-          metaFormData.append('source', compressedFile, file.name)
-          metaFormData.append('title', file.name)
-          metaFormData.append('access_token', accessToken)
-
-          const metaRes = await fetch(
-            `https://graph.facebook.com/v21.0/${accountId}/advideos`,
-            { method: 'POST', body: metaFormData }
+        const res = await fetch('/api/meta/upload-media', { method: 'POST', body: formData })
+        if (res.status === 413) {
+          setError(
+            isVideo
+              ? "Video çok büyük. Doğrudan yükleme en fazla 4MB; daha büyük videolar için Medya Kütüphanesi'ni kullanın."
+              : 'Görsel çok büyük. Maksimum 30MB olmalıdır.'
           )
-          const metaData = await metaRes.json()
-          setUploadProgress(100)
+          onFileSelect(null, '')
+          return
+        }
+        const data = await res.json()
+        setUploadProgress(100)
 
-          if (metaData.id) {
-            const previewUrl = URL.createObjectURL(file)
-            onFileSelect(file, previewUrl, { videoId: metaData.id })
-          } else {
-            const msg = metaData.error?.error_user_msg || metaData.error?.message || t.uploadFailed
-            setError(msg)
-            onFileSelect(null, '')
-          }
+        if (data.ok) {
+          const previewUrl = URL.createObjectURL(file)
+          onFileSelect(file, previewUrl, isVideo ? { videoId: data.videoId } : { hash: data.hash })
         } else {
-          // Gorsel: mevcut proxy route'u kullan
-          const formData = new FormData()
-          formData.append('file', compressedFile)
-          formData.append('type', 'image')
-
-          const res = await fetch('/api/meta/upload-media', { method: 'POST', body: formData })
-          if (res.status === 413) {
-            setError('Görsel çok büyük. Maksimum 30MB olmalıdır.')
-            onFileSelect(null, '')
-            return
-          }
-          const data = await res.json()
-          setUploadProgress(100)
-
-          if (data.ok) {
-            const previewUrl = URL.createObjectURL(file)
-            onFileSelect(file, previewUrl, { hash: data.hash })
-          } else {
-            setError(data.message || t.uploadFailed)
-            onFileSelect(null, '')
-          }
+          setError(data.message || t.uploadFailed)
+          onFileSelect(null, '')
         }
       } catch {
         setError(t.connectionError)
@@ -159,7 +134,7 @@ export default function MediaUploader({
         return
       }
       if (file.size > maxBytes) {
-        setError(`Maksimum boyut: ${type === 'video' ? '4GB' : `${maxSizeMB}MB`}`)
+        setError(`Maksimum boyut: ${maxSizeMB}MB`)
         return
       }
       uploadMedia(file)

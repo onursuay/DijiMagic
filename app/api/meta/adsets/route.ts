@@ -1,6 +1,6 @@
 import { NextResponse } from 'next/server'
-import { cookies } from 'next/headers'
 import { metaGraphFetch } from '@/lib/metaGraph'
+import { resolveMetaContext, checkAdAccountMismatch } from '@/lib/meta/context'
 import {
   getListCacheKey,
   getListCached,
@@ -10,7 +10,7 @@ import {
   isRateLimitError,
   extractFbTraceId,
 } from '@/lib/meta/listFetch'
-import { extractGoalResults } from '@/lib/meta/resultExtraction'
+import { extractGoalResults, extractRoas } from '@/lib/meta/resultExtraction'
 
 // No cache - always fresh data
 export const dynamic = 'force-dynamic'
@@ -77,66 +77,33 @@ export async function GET(request: Request) {
       )
     }
 
-    // Validate required inputs early
-    let cookieStore
-    try {
-      cookieStore = await cookies()
-    } catch (error) {
-      return NextResponse.json(
-        createErrorResponse(
-          false,
-          'cookie_error',
-          { message: 'Failed to read cookies', error: error instanceof Error ? error.message : 'Unknown' },
-          'validate'
-        ),
-        { status: 500 }
-      )
-    }
-
-    const accessToken = cookieStore.get('meta_access_token')
-    const selectedAdAccountIdCookie = cookieStore.get('meta_selected_ad_account_id')
-
-    if (!accessToken || !accessToken.value) {
+    // GÜVENLİK (IDOR): cookie token (stale olabilir) + keyfi adAccountId, başka
+    // hesabın reklam seti verisinin okunmasına yol açıyordu. DB-izolasyonlu bağlamı
+    // kullan — token ve hesap MEVCUT kullanıcının DB kaydından gelir.
+    const ctx = await resolveMetaContext()
+    if (!ctx) {
       return NextResponse.json(
         createErrorResponse(false, 'missing_token', { message: 'Meta access token not found' }, 'validate'),
         { status: 401 }
       )
     }
 
-    // adAccountId is required: prefer query param, fallback to cookie
-    const selectedAdAccountId = adAccountIdParam || selectedAdAccountIdCookie?.value
-    if (!selectedAdAccountId) {
+    // Query param adAccountId geldiyse bağlamla eşleşmeli (cross-account engellenir)
+    const mm = checkAdAccountMismatch(ctx, adAccountIdParam)
+    if (mm?.mismatch) {
       return NextResponse.json(
         createErrorResponse(
           false,
-          'MISSING_AD_ACCOUNT_ID',
-          { message: 'adAccountId is required in query params or cookies' },
+          'ad_account_mismatch',
+          { message: 'Requested adAccountId does not match the authenticated account', resolved: mm.resolved, received: mm.received },
           'validate'
         ),
-        { status: 400 }
+        { status: 403 }
       )
     }
 
-    // Check token expiration
-    const expiresAtCookie = cookieStore.get('meta_access_expires_at')
-    if (expiresAtCookie) {
-      try {
-        const expiresAt = parseInt(expiresAtCookie.value, 10)
-        if (isNaN(expiresAt) || Date.now() >= expiresAt) {
-          return NextResponse.json(
-            createErrorResponse(false, 'token_expired', { message: 'Access token has expired' }, 'validate'),
-            { status: 401 }
-          )
-        }
-      } catch {
-        // Invalid expiration cookie, continue
-      }
-    }
-
-    // Normalize account ID
-    const accountId = selectedAdAccountId.startsWith('act_')
-      ? selectedAdAccountId
-      : `act_${selectedAdAccountId.replace('act_', '')}`
+    // Tek doğruluk kaynağı: bağlamdaki normalize edilmiş hesap (act_XXX)
+    const accountId = ctx.accountId
 
     const cacheParams = { date_preset: datePreset || '', since: since || '', until: until || '', after: after || '' }
     const cacheKey = getListCacheKey('/adsets', cacheParams, accountId)
@@ -182,7 +149,7 @@ export async function GET(request: Request) {
         const controller = new AbortController()
         const timeoutId = setTimeout(() => controller.abort(), 15000)
         try {
-          const res = await metaGraphFetch(`/${accountId}/adsets`, accessToken.value, {
+          const res = await metaGraphFetch(`/${accountId}/adsets`, ctx.userAccessToken, {
             params: adsetParams,
             signal: controller.signal,
           })
@@ -301,17 +268,7 @@ export async function GET(request: Request) {
           }
         }
 
-        let roas = 0
-        if (insight?.purchase_roas) {
-          roas = parseFloat(String(insight.purchase_roas)) || 0
-        } else if (Array.isArray(insight?.action_values) && spend > 0) {
-          const purchaseValue = insight.action_values.find(
-            (av: any) => av?.action_type === 'purchase' || av?.action_type === 'omni_purchase'
-          )
-          if (purchaseValue?.value) {
-            roas = parseFloat(String(purchaseValue.value)) / spend
-          }
-        }
+        const roas = extractRoas(insight, spend)
 
         const optimizationGoal = adset?.optimization_goal || ''
         const { resultType, results } = extractGoalResults(optimizationGoal, insight)
