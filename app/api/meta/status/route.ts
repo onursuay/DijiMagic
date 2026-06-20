@@ -2,6 +2,7 @@ import { NextResponse } from "next/server";
 import { cookies } from "next/headers";
 import { metaGraphFetch } from "@/lib/metaGraph";
 import { getUserAccessToken } from "@/lib/meta/authHelpers";
+import { resolveMetaContext } from "@/lib/meta/context";
 
 export const dynamic = 'force-dynamic'
 
@@ -67,11 +68,15 @@ export async function POST(request: Request) {
       );
     }
 
-    const accessToken = await getUserAccessToken();
-
-    if (!accessToken) {
+    // GÜVENLİK (IDOR): cookie token'ı (önceki kullanıcıdan kalma/stale olabilir)
+    // yerine DB-izolasyonlu bağlamı kullan. Böylece keyfi objectId yalnız MEVCUT
+    // kullanıcının token'ının eriştiği objelerde geçerli olur (Meta erişimi token'a
+    // göre zorlar) — cross-account PAUSE/ACTIVE toggle engellenir.
+    const ctx = await resolveMetaContext();
+    if (!ctx) {
       return NextResponse.json({ error: "missing_token" }, { status: 401 });
     }
+    const accessToken = ctx.userAccessToken;
 
     // Update status via Meta Graph API
     const formData = new URLSearchParams();

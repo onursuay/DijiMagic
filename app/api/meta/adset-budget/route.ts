@@ -1,33 +1,21 @@
 import { NextResponse } from 'next/server'
-import { cookies } from 'next/headers'
 import { metaGraphFetch, metaGraphFetchJSON } from '@/lib/metaGraph'
 import { toMetaMinorUnits } from '@/lib/meta/currency'
+import { resolveMetaContext } from '@/lib/meta/context'
 
 const DEBUG = process.env.NODE_ENV !== 'production'
 export const dynamic = 'force-dynamic'
 
 export async function POST(request: Request) {
   try {
-    const cookieStore = await cookies()
-    const accessToken = cookieStore.get('meta_access_token')
-    const selectedAdAccountId = cookieStore.get('meta_selected_ad_account_id')
-
-    if (!accessToken?.value) {
+    // GÜVENLİK (IDOR): cookie token (stale olabilir) + keyfi adset_id, başka
+    // kullanıcının reklam setine bütçe yazılmasına yol açıyordu. DB-izolasyonlu
+    // bağlamı kullan — token ve hesap MEVCUT kullanıcının DB kaydından gelir.
+    const ctx = await resolveMetaContext()
+    if (!ctx) {
       return NextResponse.json({ error: 'missing_token' }, { status: 401 })
     }
-
-    if (!selectedAdAccountId?.value) {
-      return NextResponse.json({ error: 'no_ad_account_selected' }, { status: 400 })
-    }
-
-    // Check token expiration
-    const expiresAtCookie = cookieStore.get('meta_access_expires_at')
-    if (expiresAtCookie) {
-      const expiresAt = parseInt(expiresAtCookie.value, 10)
-      if (Date.now() >= expiresAt) {
-        return NextResponse.json({ error: 'token_expired' }, { status: 401 })
-      }
-    }
+    const accessToken = ctx.userAccessToken
 
     const body = await request.json()
     const { account_id, adset_id, adsetId, budgetTL, dailyBudget, budgetType } = body
@@ -59,8 +47,8 @@ export async function POST(request: Request) {
     }
 
     // Fetch account currency for correct minor unit conversion
-    const normalizedAccountId = selectedAdAccountId.value.startsWith('act_') ? selectedAdAccountId.value : `act_${selectedAdAccountId.value}`
-    const { data: acctData } = await metaGraphFetchJSON(`/${normalizedAccountId}`, accessToken.value, { params: { fields: 'currency' } })
+    const normalizedAccountId = ctx.accountId
+    const { data: acctData } = await metaGraphFetchJSON(`/${normalizedAccountId}`, accessToken, { params: { fields: 'currency' } })
     const acctCurrency = typeof acctData?.currency === 'string' ? acctData.currency : 'USD'
     const budgetMinor = toMetaMinorUnits(finalBudgetTL, acctCurrency)
 
@@ -72,7 +60,7 @@ export async function POST(request: Request) {
       formData.append('lifetime_budget', budgetMinor)
     }
 
-    const response = await metaGraphFetch(`/${finalAdsetId}`, accessToken.value, {
+    const response = await metaGraphFetch(`/${finalAdsetId}`, accessToken, {
       method: 'POST',
       body: formData.toString(),
       headers: {
