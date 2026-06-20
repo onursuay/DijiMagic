@@ -2,6 +2,11 @@
 
 ---
 
+## 2026-06-20 — Hero renkleri NET görünür yapıldı (statik renkli bloblar + parlak cursor glow)
+- **Sorun:** Önceki sürümde hero'da renk neredeyse görünmüyordu (opacity çok düşük); mouse olmadan tamamen renksiz görünüyordu. Önceki salınım: beyaz-patlama (additive) ↔ aşırı-subtle.
+- **Çözüm:** `HeroGlowTrail` — HER ZAMAN görünür 3 statik renkli blob (yeşil #3ded9a ~0.34 / mor ~0.32 / mavi ~0.30, blur ~100px) → mouse/mobil olmadan da hero renkli. Üstüne imleci takip eden parlak yeşil+mor glow (~0.42/0.38, normal blend → BEYAZ YOK; ağır blur → panel/kutu değil, yumuşak). Playwright: mouse'suz da renk NET, mouse ile glow takip ediyor.
+- **Dosyalar:** `components/landing/HeroGlowTrail.tsx`
+
 ## 2026-06-20 — Hero glow trail: Grower (withgrower) renk paletine geçildi
 - **Sorun:** Sahibi izin "Grower gibi" renklerde olmasını istedi. withgrower.com gerçek tarayıcıda incelendi: marka yeşili `#3ded9a` + mor (`purple-500`) + lacivert; beyaz zeminde blur'lu (`blur(64px)`, ~%20) bloblar + animasyonlu başlık (cursor-takip değil; renk hareketi animasyonlardan).
 - **Çözüm:** `HeroGlowTrail` renk paleti Grower'a çevrildi (yeşil `#3ded9a` / mor `#a855f7` / mavi `#3b82f6`); glow yarıçapı büyütüldü (110-200px) + opacity hafif artırıldı → koyu zeminde mouse gezdikçe Grower hissinde yumuşak yeşil/mor/mavi iz. Cursor-takip + fade-out + `pointer-events:none` + mobil-statik korundu. Playwright ile doğrulandı.
