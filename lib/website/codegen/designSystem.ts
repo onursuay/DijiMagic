@@ -76,7 +76,16 @@ function buildUserMessage(ctx: CodegenContext): string {
   const lines: string[] = []
   lines.push(`Generate a design system for the following website:`)
   lines.push(`Brand name: ${ctx.brandName}`)
-  if (ctx.style) lines.push(`Style direction: ${ctx.style}`)
+  if (ctx.style) {
+    // Çıplak anahtar kelime ("modern") DEĞİL — tarzın zengin direktifini bas.
+    // styleDirective varsa onu kullan (örn. "modern" = animasyonlu/kinetik/dinamik);
+    // yoksa çıplak style'a düş (geriye dönük uyumlu).
+    lines.push(
+      ctx.styleDirective
+        ? `Style direction (${ctx.style}): ${ctx.styleDirective}`
+        : `Style direction: ${ctx.style}`,
+    )
+  }
   if (ctx.instruction) lines.push(`Designer's instruction: ${ctx.instruction}`)
   if (ctx.locale) lines.push(`Locale/language: ${ctx.locale}`)
 

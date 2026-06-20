@@ -151,6 +151,23 @@ assert.ok(!rI3c.includes('data:text/html'), `FAIL I3c: data:text/html SVG image 
 const rM2 = sanitizeSiteHtml('<div style="@import url(https://evil.com/x.css)">x</div>')
 assert.ok(!rM2.includes('@import'), `FAIL m2: @import in style not stripped — got: ${rM2}`)
 
+// K1 — KINETIC HOOKS survive sanitize (Modern style = animated/dynamic).
+//   · data-yoai-text-rotate (VALUED — passes the data-* glob)
+//   · data-yoai-count-up + data-yoai-count-suffix (VALUED)
+//   · data-yoai-gradient-anim (VALUELESS — needs allowedEmptyAttributes)
+//   · data-yoai-rotate-interval (VALUED) + the inline gradient style on the same el
+const rK1 = sanitizeSiteHtml(
+  '<h1 data-yoai-text-rotate="Hızlı|Güçlü|Akıllı" data-yoai-rotate-interval="2200">Hızlı</h1>' +
+  '<div data-yoai-gradient-anim style="background-image:var(--gradient-brand)">x</div>' +
+  '<span data-yoai-count-up="1240" data-yoai-count-suffix="+">1240+</span>',
+)
+assert.ok(rK1.includes('data-yoai-text-rotate="Hızlı|Güçlü|Akıllı"'), `FAIL K1: data-yoai-text-rotate stripped — got: ${rK1}`)
+assert.ok(rK1.includes('data-yoai-rotate-interval="2200"'), `FAIL K1: data-yoai-rotate-interval stripped — got: ${rK1}`)
+assert.ok(rK1.includes('data-yoai-gradient-anim'), `FAIL K1: data-yoai-gradient-anim (valueless) stripped — got: ${rK1}`)
+assert.ok(rK1.includes('background-image:var(--gradient-brand)'), `FAIL K1: inline gradient style stripped — got: ${rK1}`)
+assert.ok(rK1.includes('data-yoai-count-up="1240"'), `FAIL K1: data-yoai-count-up stripped — got: ${rK1}`)
+assert.ok(rK1.includes('data-yoai-count-suffix="+"'), `FAIL K1: data-yoai-count-suffix stripped — got: ${rK1}`)
+
 console.log('sanitize OK')
 
 // ---------------------------------------------------------------------------
@@ -611,6 +628,7 @@ const {
   toDesignVars,
   resolveImagePlaceholders,
   buildHtmlSystemPrompt,
+  buildHtmlUserMessage,
   buildRepairUserMessage,
   repairInstructionFor,
   DESIGN_VAR_NAMES,
@@ -663,6 +681,41 @@ for (const v of ['left', 'right', 'top']) {
     p.includes(`data-yoai-mobile-anim="${v}"`),
     `FAIL H2b: mobileMenuAnim="${v}" not emitted on the mobile panel`,
   )
+}
+
+// H2c — STYLE-CONDITIONAL MOTION: style='modern' injects the kinetic/animated
+// motion block + advertises the new data-yoai-* hooks; non-modern stays calmer.
+const sysModern = buildHtmlSystemPrompt({ style: 'modern' })
+assert.ok(/ANIMATED|KINETIC|DYNAMIC/i.test(sysModern), `FAIL H2c: modern prompt missing animated/kinetic motion directive`)
+for (const hook of ['data-yoai-text-rotate', 'data-yoai-gradient-anim', 'data-yoai-count-up']) {
+  assert.ok(sysModern.includes(hook), `FAIL H2c: modern prompt missing hook ${hook}`)
+}
+// The allowed-hook list advertises the new hooks for EVERY style (not just modern).
+const sysMinimal = buildHtmlSystemPrompt({ style: 'minimal' })
+for (const hook of ['data-yoai-text-rotate', 'data-yoai-gradient-anim', 'data-yoai-count-up']) {
+  assert.ok(sysMinimal.includes(hook), `FAIL H2c: allowed-hook list missing ${hook} for non-modern`)
+}
+// Non-modern does NOT carry the heavy "ANIMATED / KINETIC / DYNAMIC" header.
+assert.ok(!/MODERN = ANIMATED \/ KINETIC \/ DYNAMIC/i.test(sysMinimal), `FAIL H2c: minimal should not force the modern motion header`)
+
+// H2d — the RICH style directive (styleDirective) reaches the user message
+// (codegen sends the directive, not the bare keyword). buildCodegenContext wires
+// ctx.styleDirective; here we assert the message surfaces it when present.
+const umModern = buildHtmlUserMessage(
+  { brandName: 'X', locale: 'tr', style: 'modern', styleDirective: 'Çağdaş ve YÜKSEK ENERJİLİ; STATİK ve düz DEĞİL', untrustedBlocks: [] },
+  { palette: {}, fonts: {} },
+)
+assert.ok(umModern.includes('Style direction (modern):'), `FAIL H2d: rich directive label missing — got bare style`)
+assert.ok(umModern.includes('YÜKSEK ENERJİLİ'), `FAIL H2d: styleDirective text not injected into user message`)
+// Without a directive it falls back to the bare keyword (backward-compat).
+const umBare = buildHtmlUserMessage({ brandName: 'X', locale: 'tr', style: 'modern', untrustedBlocks: [] }, { palette: {}, fonts: {} })
+assert.ok(umBare.includes('Style direction: modern'), `FAIL H2d: bare-style fallback broken — got: ${umBare}`)
+
+// H2e — branded motion-token vars are emitted (--dur-fast/--dur/--dur-slow) as ms.
+const hvDur = toDesignVars(SAFE_DEFAULT_DESIGN_SYSTEM)
+for (const name of ['--dur-fast', '--dur', '--dur-slow']) {
+  assert.ok(name in hvDur, `FAIL H2e: ${name} missing from toDesignVars output`)
+  assert.ok(/^\d+ms$/.test(hvDur[name]), `FAIL H2e: ${name} not a "<int>ms" token — got: ${hvDur[name]}`)
 }
 
 // H3 — resolveImagePlaceholders: both placeholders replaced, no raw {{IMG remains

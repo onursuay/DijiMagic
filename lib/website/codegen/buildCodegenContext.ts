@@ -29,6 +29,7 @@ import 'server-only'
 
 import { getProfileByUserId, getIntelligenceByUserId } from '@/lib/yoai/businessProfileStore'
 import { scanReferences } from '@/lib/website/referenceScanner'
+import { styleDirective } from '@/lib/website/render/theme'
 import type { Website } from '@/lib/website/types'
 import type { CodegenContext } from './types'
 // Pure ESM helper shared with .mjs verify — import as a module alias
@@ -264,10 +265,17 @@ export async function buildCodegenContext(
     website.defaultLocale,
   )
 
+  // ── Zengin tarz direktifi (theme.ts) ───────────────────────────────────
+  // `style` çıplak anahtar kelimedir ("modern"); styleDirective o tarzın AI'a
+  // verilecek tam ton/hareket yönergesini döndürür. "modern" → animasyonlu/
+  // kinetik/dinamik. Bilinmeyen/boş style → '' (prompt builder çıplak style'a düşer).
+  const richStyleDirective = styleDirective(theme.style)
+
   return {
     brandName,
     locale: website.defaultLocale,
     style: theme.style ?? undefined,
+    styleDirective: richStyleDirective || undefined,
     fontHref: theme.fontHref ?? null,
     logoUrl: theme.logoUrl ?? null,
     // Mobil menü animasyon seçimi (sihirbazda seçilir) — geçersiz/yok → 'left'.

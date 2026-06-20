@@ -25,6 +25,14 @@ export interface CodegenContext {
   brandName: string
   locale: string
   style?: string
+  /**
+   * Seçilen tarzın ZENGİN tasarım direktifi (theme.ts → styleDirective). `style`
+   * yalnız çıplak anahtar kelimedir ("modern"); bu alan o tarzın AI'a verilecek
+   * tam tonu/hareket yönergesini taşır (örn. "modern" = animasyonlu/kinetik/dinamik).
+   * Prompt builder'lar (designSystem + plan + html) çıplak "Style direction" yerine
+   * bunu basar. Tanımsız → çıplak `style` davranışına düşer (geriye dönük uyumlu).
+   */
+  styleDirective?: string
   fontHref?: string | null
   logoUrl?: string | null
   /**

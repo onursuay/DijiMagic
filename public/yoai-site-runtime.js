@@ -54,6 +54,26 @@
  *   Intercepts click and smooth-scrolls to the target element.
  *   Falls back to instant scroll if prefers-reduced-motion.
  *
+ * TEXT ROTATE  [data-yoai-text-rotate="Word1|Word2|Word3"]
+ *   Cycles through the pipe-separated words inside the element with a smooth
+ *   fade/slide (inline opacity + transform), looping forever. The "moving text"
+ *   for kinetic "modern" headlines.
+ *     data-yoai-rotate-interval — ms per word (default 2200, clamped 800..8000)
+ *   prefers-reduced-motion: shows the FIRST word statically, no cycling.
+ *   Capped to a sane number of words; uses setTimeout (cleared on pagehide).
+ *
+ * GRADIENT MOTION  [data-yoai-gradient-anim]  (valueless)
+ *   Slowly animates the element's background-position (and a faint hue drift) via
+ *   rAF so a gradient background gently shifts ("changing colors"). The element
+ *   must already carry a gradient background (e.g. style=background-image:var(...)).
+ *   Runs only while on-screen (IntersectionObserver pauses it offscreen) for perf.
+ *   prefers-reduced-motion: no-op (gradient stays static).
+ *
+ * COUNT UP  [data-yoai-count-up="1240"]  (optional data-yoai-count-suffix="+")
+ *   Animates the number from 0 to the target when the element scrolls into view
+ *   (IntersectionObserver, one-shot), preserving any suffix. rAF, eased.
+ *   prefers-reduced-motion: sets the final value instantly (no tween).
+ *
  * CONTACT FORM  [data-yoai-form]  (declarative — NO AI script, NO native POST)
  *   On submit the runtime preventDefaults and handles it itself:
  *     1. HONEYPOT: reads the hidden input [data-yoai-honeypot] (or [name="company"]).
@@ -370,6 +390,186 @@
     });
   }
 
+  /* ── Text rotate (kinetic headline words) ──────────────────────────────────
+   * [data-yoai-text-rotate="A|B|C"] cycles the words with a fade/slide loop.
+   * Reduced motion → first word, static. Capped + cleanup-safe (timer cleared on
+   * pagehide). The element's own text is replaced by the current word.
+   */
+  var ROTATE_TIMERS = [];
+  function initTextRotate() {
+    var els = document.querySelectorAll('[data-yoai-text-rotate]');
+    if (!els.length) return;
+    // Cap how many rotating elements we drive (perf / abuse guard).
+    var MAX = 12;
+    var count = Math.min(els.length, MAX);
+
+    for (var i = 0; i < count; i++) {
+      (function (el) {
+        var raw = el.getAttribute('data-yoai-text-rotate') || '';
+        var words = raw.split('|').map(function (w) { return w.trim(); })
+          .filter(function (w) { return w.length; });
+        // Cap words per element too.
+        if (words.length > 8) words = words.slice(0, 8);
+        if (!words.length) return;
+
+        // Reduced motion (or single word): just show the first word, no cycling.
+        if (reducedMotion || words.length < 2) {
+          el.textContent = words[0];
+          return;
+        }
+
+        var interval = parseIntAttr(el, 'data-yoai-rotate-interval', 2200);
+        if (interval < 800) interval = 800;
+        if (interval > 8000) interval = 8000;
+
+        // Inline transition for the swap (transform + opacity only).
+        el.style.display = 'inline-block';
+        el.style.transition = 'opacity .35s ease, transform .35s ease';
+        el.style.willChange = 'opacity, transform';
+        el.textContent = words[0];
+
+        var idx = 0;
+        function step() {
+          // Fade/slide out, swap text, fade/slide in.
+          el.style.opacity = '0';
+          el.style.transform = 'translateY(-8px)';
+          var t1 = window.setTimeout(function () {
+            idx = (idx + 1) % words.length;
+            el.textContent = words[idx];
+            el.style.transform = 'translateY(8px)';
+            // force reflow-free next frame for the in-transition
+            requestAnimationFrame(function () {
+              el.style.opacity = '1';
+              el.style.transform = 'translateY(0)';
+            });
+          }, 360);
+          ROTATE_TIMERS.push(t1);
+          var t2 = window.setTimeout(step, interval);
+          ROTATE_TIMERS.push(t2);
+        }
+        var t0 = window.setTimeout(step, interval);
+        ROTATE_TIMERS.push(t0);
+      })(els[i]);
+    }
+  }
+
+  /* ── Gradient motion (slowly shifting gradient bg = "changing colors") ──────
+   * [data-yoai-gradient-anim] (valueless). Drives background-position over time
+   * via rAF; pauses while offscreen. Reduced motion → no-op. The element must
+   * already have a gradient background; we only move it.
+   */
+  function initGradientMotion() {
+    if (reducedMotion) return;
+    var els = document.querySelectorAll('[data-yoai-gradient-anim]');
+    if (!els.length || !window.requestAnimationFrame) return;
+    var MAX = 8;
+    var count = Math.min(els.length, MAX);
+
+    for (var i = 0; i < count; i++) {
+      (function (el) {
+        // Ensure the gradient is larger than the box so panning is visible.
+        el.style.backgroundSize = '200% 200%';
+        var visible = true;
+        var rafId = 0;
+        var start = 0;
+
+        function frame(ts) {
+          if (!start) start = ts;
+          // ~24s full loop; gentle sinusoidal pan on both axes.
+          var t = (ts - start) / 24000;
+          var x = 50 + 50 * Math.sin(t * 2 * Math.PI);
+          var y = 50 + 50 * Math.cos(t * 2 * Math.PI);
+          el.style.backgroundPosition = x.toFixed(2) + '% ' + y.toFixed(2) + '%';
+          if (visible) rafId = requestAnimationFrame(frame);
+        }
+
+        function play() {
+          if (rafId) return;
+          start = 0;
+          rafId = requestAnimationFrame(frame);
+        }
+        function pause() {
+          if (rafId) { cancelAnimationFrame(rafId); rafId = 0; }
+        }
+
+        if (window.IntersectionObserver) {
+          var io = new IntersectionObserver(function (entries) {
+            for (var e = 0; e < entries.length; e++) {
+              visible = entries[e].isIntersecting;
+              if (visible) play(); else pause();
+            }
+          }, { threshold: 0 });
+          io.observe(el);
+        } else {
+          play();
+        }
+      })(els[i]);
+    }
+  }
+
+  /* ── Count up (animate a number 0→target when scrolled into view) ───────────
+   * [data-yoai-count-up="1240"] (+ optional data-yoai-count-suffix="+").
+   * One-shot via IntersectionObserver. Reduced motion / no-IO → final value set
+   * instantly. Eased with rAF.
+   */
+  function initCountUp() {
+    var els = document.querySelectorAll('[data-yoai-count-up]');
+    if (!els.length) return;
+
+    function finalText(el) {
+      var target = parseFloatAttr(el, 'data-yoai-count-up', 0);
+      var suffix = el.getAttribute('data-yoai-count-suffix') || '';
+      return formatNumber(target) + suffix;
+    }
+    function formatNumber(n) {
+      // Integer if the target is whole; else one decimal. Group thousands.
+      var isInt = Math.abs(n - Math.round(n)) < 0.0001;
+      var v = isInt ? Math.round(n) : Math.round(n * 10) / 10;
+      try { return v.toLocaleString(); } catch (e) { return String(v); }
+    }
+
+    if (reducedMotion || !window.requestAnimationFrame) {
+      for (var j = 0; j < els.length; j++) els[j].textContent = finalText(els[j]);
+      return;
+    }
+    if (!window.IntersectionObserver) {
+      for (var k = 0; k < els.length; k++) els[k].textContent = finalText(els[k]);
+      return;
+    }
+
+    var MAX = 24;
+    var observer = new IntersectionObserver(function (entries, obs) {
+      for (var e = 0; e < entries.length; e++) {
+        var entry = entries[e];
+        if (!entry.isIntersecting) continue;
+        animateCount(entry.target);
+        obs.unobserve(entry.target);
+      }
+    }, { threshold: 0.4 });
+
+    function animateCount(el) {
+      var target = parseFloatAttr(el, 'data-yoai-count-up', 0);
+      var suffix = el.getAttribute('data-yoai-count-suffix') || '';
+      var dur = 1400;
+      var t0 = 0;
+      function tick(ts) {
+        if (!t0) t0 = ts;
+        var p = Math.min((ts - t0) / dur, 1);
+        // easeOutCubic
+        var eased = 1 - Math.pow(1 - p, 3);
+        el.textContent = formatNumber(target * eased) + suffix;
+        if (p < 1) requestAnimationFrame(tick);
+        else el.textContent = formatNumber(target) + suffix;
+      }
+      requestAnimationFrame(tick);
+    }
+
+    var cap = Math.min(els.length, MAX);
+    for (var i = 0; i < cap; i++) observer.observe(els[i]);
+    // Any beyond the cap just get their final value immediately.
+    for (var m = cap; m < els.length; m++) els[m].textContent = finalText(els[m]);
+  }
+
   /* ── Contact form (declarative submit → same-origin lead endpoint) ────────
    * No AI script: the runtime owns submit. Honeypot + simple validation guard
    * spam; the real spam/rate defense is server-side. Fail-open: any unexpected
@@ -491,7 +691,20 @@
     initToggle();
     initMobileNav();
     initSmoothScroll();
+    initTextRotate();
+    initGradientMotion();
+    initCountUp();
     initContactForm();
+  }
+
+  // Cleanup: clear rotate timers on pagehide (back/forward cache + nav).
+  if (typeof window !== 'undefined' && window.addEventListener) {
+    window.addEventListener('pagehide', function () {
+      for (var i = 0; i < ROTATE_TIMERS.length; i++) {
+        try { window.clearTimeout(ROTATE_TIMERS[i]); } catch (e) { /* ignore */ }
+      }
+      ROTATE_TIMERS.length = 0;
+    });
   }
 
   if (document.readyState === 'loading') {

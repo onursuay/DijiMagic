@@ -257,12 +257,27 @@ export function onAccentFor(hex: string): string {
 /** Faz B — site tarzı: AI üretim tonu yönergesi + wizard'da önerilen yazı ailesi. */
 export interface SiteStylePreset { id: string; label: string; directive: string; fontHint: string }
 export const SITE_STYLE_PRESETS: SiteStylePreset[] = [
-  { id: 'modern', label: 'Modern', directive: 'Temiz, çağdaş ve ferah; bol beyaz alan, net sans-serif tipografi, sade ve dengeli renk; gereksiz süsten kaçın.', fontHint: 'inter' },
-  { id: 'corporate', label: 'Kurumsal', directive: 'Profesyonel, güven veren ve yapılandırılmış; ciddi ve net dil, nötr/lacivert ton, düzenli hizalama.', fontHint: 'classic' },
-  { id: 'playful', label: 'Keyifli', directive: 'Sıcak, samimi ve enerjik; davetkâr dil, yuvarlak hatlar, canlı ama dengeli renk.', fontHint: 'poppins' },
-  { id: 'luxury', label: 'Lüks', directive: 'Zarif, premium ve sofistike; ölçülü ve şık dil, serif başlık hissi, koyu zemin + metalik/altın aksan vurgusu, geniş nefes alanı.', fontHint: 'elegant' },
-  { id: 'minimal', label: 'Minimal', directive: 'Sade ve tipografi-odaklı; çok boşluk, az renk, kısa ve öz metin; her öğe amaçlı.', fontHint: 'manrope' },
-  { id: 'vibrant', label: 'Canlı', directive: 'Cesur, enerjik ve dikkat çekici; parlak renkler, büyük tipografi, güçlü ve iddialı ifadeler.', fontHint: 'syne' },
+  // ── MODERN = ANIMASYONLU / KİNETİK / DİNAMİK (statik ve düz DEĞİL) ──
+  // Owner kırmızı çizgisi: "Modern" seçimi yaşayan, hareketli, dikkat çekici bir
+  // site üretmeli (wask.co koyu zemin + neon enerji, antso ferry navy + pill +
+  // renkli yumuşak gölge). Bu yüzden direktif HAREKETİ açıkça emreder.
+  {
+    id: 'modern',
+    label: 'Modern',
+    directive:
+      'Çağdaş ve YÜKSEK ENERJİLİ; STATİK ve düz DEĞİL — yaşayan, hareketli, dikkat çekici bir site. ' +
+      'Koyu veya canlı bir zemin üzerinde PARLAYAN bir vurgu rengi (neon/glow aksan) hâkim olsun. ' +
+      'Animasyonlu, yavaşça kayan/değişen gradyan arka planlar kullan; KİNETİK başlıklar (dönüşen/yazılan/hareket eden kelimeler) ile hero’yu canlandır. ' +
+      'Bölümler scroll ile aşağıdan belirsin (staggered/gecikmeli), sayılar/metrikler görünürken 0’dan hedefe saysın. ' +
+      'Her etkileşimli öğede hover mikro-etkileşimi (yükselme/büyüme/parıltı). Derinlik için katmanlı renkli gölge ve cam (backdrop-blur) yüzeyler. ' +
+      'Net sans-serif tipografi ve düzenli boşluk korunur ama enerji ve hareket esastır; kinetik öğeler hareket azaltma (reduced-motion) tercihinde sakince durur.',
+    fontHint: 'space',
+  },
+  { id: 'corporate', label: 'Kurumsal', directive: 'Profesyonel, güven veren ve yapılandırılmış; ciddi ve net dil, nötr/lacivert ton, düzenli ve hizalı grid. Ölçülü hareket: yalnız ince scroll-beliriş ve nazik hover; gösterişli animasyondan kaçın.', fontHint: 'classic' },
+  { id: 'playful', label: 'Keyifli', directive: 'Sıcak, samimi ve enerjik; davetkâr dil, yuvarlak hatlar, canlı ama dengeli renk. Neşeli mikro-hareketler: yumuşak scroll-beliriş, oynak hover, hafif zıplama/parıltı aksanları.', fontHint: 'poppins' },
+  { id: 'luxury', label: 'Lüks', directive: 'Zarif, premium ve sofistike; ölçülü ve şık dil, serif başlık hissi, koyu zemin + metalik/altın aksan vurgusu, geniş nefes alanı. Hareket YAVAŞ ve zarif: uzun yumuşak scroll-beliriş, ince ışıltı; asla aceleci/abartılı değil.', fontHint: 'elegant' },
+  { id: 'minimal', label: 'Minimal', directive: 'Sade ve tipografi-odaklı; çok boşluk, az renk, kısa ve öz metin; her öğe amaçlı. Hareket EN AZ düzeyde: sadece çok ince bir scroll-beliriş; kinetik/gradyan animasyon ve gösteri YOK — sükûnet esastır.', fontHint: 'manrope' },
+  { id: 'vibrant', label: 'Canlı', directive: 'Cesur, enerjik ve dikkat çekici; parlak renkler, büyük tipografi, güçlü ve iddialı ifadeler. Hareket cömert: belirgin scroll-beliriş, animasyonlu gradyan, güçlü hover; enerjiyi öne çıkar ama okunabilirliği koru.', fontHint: 'syne' },
 ]
 export const SITE_STYLE_MAP: Record<string, SiteStylePreset> = Object.fromEntries(SITE_STYLE_PRESETS.map((p) => [p.id, p]))
 
