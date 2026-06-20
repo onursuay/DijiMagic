@@ -822,7 +822,8 @@ function formatComparisonValue(value: number, format: 'currency' | 'number' | 'p
   if (isNaN(value)) return '-'
   switch (format) {
     case 'currency':
-      return `$${value.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`
+      // Ana panel ₺ (tr-TR) kullanır — raporlar da onunla tutarlı (eski $ yanlıştı).
+      return `₺${value.toLocaleString('tr-TR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`
     case 'percent':
       return `${value.toFixed(1)}%`
     case 'decimal':
@@ -842,7 +843,8 @@ function formatKpiValue(value: number | string, format?: string): string {
     case 'percent':
       return `${num.toFixed(1)}%`
     case 'currency':
-      return `$${num.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`
+      // Ana panel ₺ (tr-TR) kullanır — raporlar da onunla tutarlı (eski $ yanlıştı).
+      return `₺${num.toLocaleString('tr-TR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`
     case 'duration': {
       const mins = Math.floor(num / 60)
       const secs = Math.round(num % 60)
