@@ -10,7 +10,7 @@ import {
   isRateLimitError,
   extractFbTraceId,
 } from '@/lib/meta/listFetch'
-import { extractGoalResults } from '@/lib/meta/resultExtraction'
+import { extractGoalResults, extractRoas } from '@/lib/meta/resultExtraction'
 
 // No cache - always fresh data
 export const dynamic = 'force-dynamic'
@@ -301,17 +301,7 @@ export async function GET(request: Request) {
           }
         }
 
-        let roas = 0
-        if (insight?.purchase_roas) {
-          roas = parseFloat(String(insight.purchase_roas)) || 0
-        } else if (Array.isArray(insight?.action_values) && spend > 0) {
-          const purchaseValue = insight.action_values.find(
-            (av: any) => av?.action_type === 'purchase' || av?.action_type === 'omni_purchase'
-          )
-          if (purchaseValue?.value) {
-            roas = parseFloat(String(purchaseValue.value)) / spend
-          }
-        }
+        const roas = extractRoas(insight, spend)
 
         const optimizationGoal = adset?.optimization_goal || ''
         const { resultType, results } = extractGoalResults(optimizationGoal, insight)

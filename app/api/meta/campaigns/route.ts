@@ -10,7 +10,7 @@ import {
   isRateLimitError,
   extractFbTraceId,
 } from '@/lib/meta/listFetch'
-import { extractObjectiveResults } from '@/lib/meta/resultExtraction'
+import { extractObjectiveResults, extractRoas } from '@/lib/meta/resultExtraction'
 
 const DEBUG = process.env.NODE_ENV !== 'production'
 // No cache - always fresh data
@@ -161,13 +161,7 @@ export async function GET(request: Request) {
         if (engagementAction) engagement = parseInt(engagementAction.value || '0', 10)
       }
 
-      let roas = 0
-      if (insight?.purchase_roas) {
-        roas = parseFloat(insight.purchase_roas)
-      } else if (insight?.action_values && spend > 0) {
-        const purchaseValue = insight.action_values.find((av: any) => av.action_type === 'purchase' || av.action_type === 'omni_purchase')
-        if (purchaseValue) roas = parseFloat(purchaseValue.value || '0') / spend
-      }
+      const roas = extractRoas(insight, spend)
 
       const objective = campaign.objective || ''
       const { resultType, results } = extractObjectiveResults(objective, insight)

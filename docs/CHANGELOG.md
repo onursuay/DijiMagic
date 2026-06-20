@@ -2,6 +2,11 @@
 
 ---
 
+## 2026-06-20 — FAZ 0: Meta ROAS dizi-parse düzeltmesi (denetim 4/n)
+- **Sorun:** `campaigns`/`ads`/`adsets` route'ları Meta `purchase_roas` alanını (Graph API'de `[{action_type, value}]` DİZİSİ) düz `parseFloat` ile parse ediyordu → NaN → ana kampanya/ad set/reklam tablolarında ROAS daima boş/null görünüyordu. `insights`/`campaign-comparison` aynı alanı dizi-duyarlı işliyordu (net tutarsızlık; müşteri yanlış performans okur).
+- **Çözüm:** `lib/meta/resultExtraction.ts`'e tek-kaynak `extractRoas(insight, spend)` helper'ı eklendi (dizi/sayı/string biçimini doğru çözer + `purchase_roas` yoksa `action_values`/spend fallback'i); üç route da bu helper'ı kullanıyor.
+- **Dosyalar:** `lib/meta/resultExtraction.ts`, `app/api/meta/{campaigns,ads,adsets}/route.ts`
+
 ## 2026-06-20 — FAZ 0: SEO auth/SSRF + Meta webhook imza doğrulaması (denetim 3/n)
 - **Sorun:** (H4) `/api/seo/ai-visibility` auth + billing guard'sızdı → giriş yapmamış herkes ücretli Tavily/Perplexity kotasını sınırsız tüketebiliyordu. (H5) `/api/seo/analyze` kullanıcı URL'ini SSRF kontrolü olmadan fetch ediyordu (169.254.169.254 metadata, localhost, iç ağ erişimi mümkün). (H2) `/api/meta/webhook` gelen leadgen POST'unu X-Hub-Signature-256 imzası olmadan işliyordu → sahte lead enjeksiyonu + meşru kullanıcının page token tüketimi.
 - **Çözüm:** (H4) `chargeFeature({ featureKey: 'seo', requireSubscription: true })` handler başına eklendi. (H5) `assertSafeUrl` ile özel-ağ/loopback/metadata IP'leri ilk fetch öncesi reddediliyor (redirect-hop sertleştirmesi FAZ 1'e bırakıldı). (H2) `META_APP_SECRET` ile HMAC-SHA256 imza doğrulaması (`timingSafeEqual`); doğrulanmayan istek işlenmiyor.
