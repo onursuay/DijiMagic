@@ -75,7 +75,7 @@ export default function VerifyPage() {
         {/* Logo */}
         <div className="flex justify-center mb-6">
           <Link href="/">
-            <Image src="/logos/dijimagic-logo.png" alt="DijiMagic" width={80} height={28} className="brightness-0 invert" priority />
+            <Image src="/logos/dijimagic-logo.png" alt="DijiMagic" width={80} height={28} className="object-contain brightness-0 invert" priority />
           </Link>
         </div>
 

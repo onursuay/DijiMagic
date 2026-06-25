@@ -212,7 +212,7 @@ export default function BasvuruDurumuPage() {
               alt="DijiMagic"
               width={96}
               height={32}
-              className="brightness-0 invert"
+              className="object-contain brightness-0 invert"
               priority
             />
           </Link>

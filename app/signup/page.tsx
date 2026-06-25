@@ -334,7 +334,7 @@ export default function SignupPage() {
               alt="DijiMagic"
               width={80}
               height={28}
-              className="brightness-0 invert"
+              className="object-contain brightness-0 invert"
               priority
             />
           </Link>
