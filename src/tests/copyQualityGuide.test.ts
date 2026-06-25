@@ -39,25 +39,25 @@ test('copyQualityBlock: ephemeral-cache system bloğu', () => {
 })
 
 test('isExpertCopyEnabledForDijiAlgoritma: flag mantığı', () => {
-  process.env.YOALGORITHM_EXPERT_COPY_ENABLED = 'false'
+  process.env.DIJIALGORITHM_EXPERT_COPY_ENABLED = 'false'
   assert.strictEqual(isExpertCopyEnabledForDijiAlgoritma(), false)
-  process.env.YOALGORITHM_EXPERT_COPY_ENABLED = 'true'
+  process.env.DIJIALGORITHM_EXPERT_COPY_ENABLED = 'true'
   assert.strictEqual(isExpertCopyEnabledForDijiAlgoritma(), true)
 })
 
 test('REGRESYON: flag kapalı → perCampaign blokları rehber İÇERMEZ', () => {
-  delete process.env.YOALGORITHM_EXPERT_COPY_ENABLED
+  delete process.env.DIJIALGORITHM_EXPERT_COPY_ENABLED
   const blocks = buildPerCampaignSystemBlocks('Meta', undefined, undefined)
   const hasGuide = blocks.some((b) => b.text.includes('İKNA EDİCİ REKLAM METNİ KALİTE'))
   assert.strictEqual(hasGuide, false)
 })
 
 test('flag açık → perCampaign blokları rehber İÇERİR', () => {
-  process.env.YOALGORITHM_EXPERT_COPY_ENABLED = 'true'
+  process.env.DIJIALGORITHM_EXPERT_COPY_ENABLED = 'true'
   const blocks = buildPerCampaignSystemBlocks('Meta', undefined, undefined)
   const hasGuide = blocks.some((b) => b.text.includes('İKNA EDİCİ REKLAM METNİ KALİTE'))
   assert.strictEqual(hasGuide, true)
-  delete process.env.YOALGORITHM_EXPERT_COPY_ENABLED
+  delete process.env.DIJIALGORITHM_EXPERT_COPY_ENABLED
 })
 
 test('expertPlan (Strateji) prompt rehberi her zaman içerir (DRY tek kaynak)', () => {

@@ -28,5 +28,5 @@ export function copyQualityBlock(): SystemBlock {
 
 /** DijiAlgoritma ad_spec üretiminde uzman metin rehberi açık mı (default-off). */
 export function isExpertCopyEnabledForDijiAlgoritma(): boolean {
-  return process.env.YOALGORITHM_EXPERT_COPY_ENABLED === 'true'
+  return process.env.DIJIALGORITHM_EXPERT_COPY_ENABLED === 'true'
 }

@@ -687,7 +687,7 @@
 
 ## 2026-06-10 — Uzman metin kalitesi DijiAlgoritma'ya taşındı (alt-proje A, faz A2)
 - **Sorun:** A1'in ikna edici metin/CTA kalitesi yalnız Strateji'deydi; DijiAlgoritma'nın ad_spec önerileri aynı uzman kaliteden faydalanmıyordu.
-- **Çözüm:** İkna edici metin ilkeleri TEK paylaşılan rehbere çıkarıldı (`lib/dijimagic/ai/docs/copyQualityGuide.ts`). Strateji (expertPlan) bu rehberi her zaman kullanır (DRY tek kaynak); DijiAlgoritma (perCampaignPrompt) rehberi system bloğu olarak enjekte eder — flag `YOALGORITHM_EXPERT_COPY_ENABLED` default-off (kapalıyken prompt birebir aynı, sıfır regresyon). ad_spec şeması/validator, batch yapısı, AdCreationWizard, publish dokunulmadı; migration yok.
+- **Çözüm:** İkna edici metin ilkeleri TEK paylaşılan rehbere çıkarıldı (`lib/dijimagic/ai/docs/copyQualityGuide.ts`). Strateji (expertPlan) bu rehberi her zaman kullanır (DRY tek kaynak); DijiAlgoritma (perCampaignPrompt) rehberi system bloğu olarak enjekte eder — flag `DIJIALGORITHM_EXPERT_COPY_ENABLED` default-off (kapalıyken prompt birebir aynı, sıfır regresyon). ad_spec şeması/validator, batch yapısı, AdCreationWizard, publish dokunulmadı; migration yok.
 - **Dosyalar:** `lib/dijimagic/ai/docs/copyQualityGuide.ts`, `lib/dijimagic/ai/perCampaignPrompt.ts`, `lib/strategy/expertPlan.ts`, `.env.example`, `src/tests/copyQualityGuide.test.ts`
 
 ## 2026-06-10 — Uzman Kampanya Planı (alt-proje A, faz A1)

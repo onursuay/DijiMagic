@@ -18,6 +18,7 @@ s/YOALGORITMA/DIJIALGORITMA/g;
 s/yoalgoritma/dijialgoritma/g;
 s/YoAlgorithm/DijiAlgorithm/g;
 s/yoAlgorithm/dijiAlgorithm/g;
+s/YOALGORITHM/DIJIALGORITHM/g;
 s/yoalgorithm/dijialgorithm/g;
 
 # 3) Kalan yodijital (yoai.yodijital.com + info@ zaten yukarıda işlendi)
