@@ -9,7 +9,7 @@ import type {
 } from './types'
 import { createChangeSet } from './changeSetManager'
 import { getAnthropicClient, getAiEngineModel, isAnthropicReady, describeAiFallback } from '@/lib/anthropic/client'
-import { META_ANALYSIS_KNOWLEDGE } from '@/lib/yoai/ai/docs/meta_analysis_knowledge'
+import { META_ANALYSIS_KNOWLEDGE } from '@/lib/dijimagic/ai/docs/meta_analysis_knowledge'
 
 // ═══════════════════════════════════════════════════════════════════════════
 // Fallback Recommendation Templates (deterministic, always available)

@@ -4,7 +4,7 @@ import { useState } from 'react'
 import { useTranslations } from 'next-intl'
 import { ChevronDown, Mail } from 'lucide-react'
 
-const SUPPORT_EMAIL = 'info@yodijital.com'
+const SUPPORT_EMAIL = 'info@dijimagic.com'
 
 const FAQ_KEYS = [
   'platform',

@@ -11,7 +11,7 @@
 
 import { NextResponse } from 'next/server'
 import { requireOptimizationAccess } from '@/lib/meta/optimization/serverGuard'
-import { fetchGoogleDeep } from '@/lib/yoai/googleDeepFetcher'
+import { fetchGoogleDeep } from '@/lib/dijimagic/googleDeepFetcher'
 import { computeGates, riskFromScore } from '@/lib/google/optimization/gates'
 
 export const dynamic = 'force-dynamic'

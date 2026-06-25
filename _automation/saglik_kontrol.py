@@ -1,25 +1,25 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
 """
-YoAi — SİSTEM SAĞLIĞI kontrolü -> E-POSTA.
+DijiMagic — SİSTEM SAĞLIĞI kontrolü -> E-POSTA.
 launchd ile her gun 09:00 calisir (bilgisayar kapaliysa acilista bir kez telafi eder).
 
 Projedeki TUM otomasyon parcalarinin calisip calismadigini tek bakista gosterir:
   1) Canli uygulama (prod /api/health)        6) Beyin verisi tazeligi (_learnings/_data)
   2) Ana sayfa erisimi                        7) GitHub yedek — ana repo senkron
-  3) Supabase DB (omddq) erisimi              8) GitHub yedek — Beyin repo (yoai-brain)
+  3) Supabase DB (omddq) erisimi              8) GitHub yedek — Beyin repo (dijimagic-brain)
   4) Vercel deploy + 9 cron tanimi            9) Kritik API anahtarlari (.env.local)
-  5) Yerel Beyin job (com.yoai.brain.collect) 10) Saglik job'inin kendisi (self-report)
+  5) Yerel Beyin job (com.dijimagic.brain.collect) 10) Saglik job'inin kendisi (self-report)
 
 Her parca: ✓ (calisiyor) / ⚠️ (dikkat) / 🔴 (bozuk) + tek satir aciklama.
 KONU SATIRI durumu yansitir: "🟢 ... her sey yolunda" / "🔴 ... N sorun var".
 
 GUVENLIK: Token/sifre YERELDE kalir. .env.local yalniz okunur, degeri maile/buluta yazilmaz.
-Repo'ya (yoai-brain) yalniz SIR-OLMAYAN durum ozeti (emoji + zaman) push edilir — bulut
+Repo'ya (dijimagic-brain) yalniz SIR-OLMAYAN durum ozeti (emoji + zaman) push edilir — bulut
 sessizlik korumasi bunu okuyup "yerel saglik gunlerce uretilmedi mi" diye bakar.
 
 Yapilandirma:
-  ~/.yoai-saglik-automation/smtp_config.json -> {"sender","app_password","recipients":[...]}
+  ~/.dijimagic-saglik-automation/smtp_config.json -> {"sender","app_password","recipients":[...]}
 Kullanim:
   python3 saglik_kontrol.py            # kontrolleri calistirir + mail atar
   python3 saglik_kontrol.py --dry-run  # mail ATMAZ; HTML'i dosyaya yazar + ozet basar
@@ -31,13 +31,13 @@ from email.mime.multipart import MIMEMultipart
 from email.utils import formataddr
 
 HOME = os.path.expanduser("~")
-AUTO = os.path.join(HOME, ".yoai-saglik-automation")
+AUTO = os.path.join(HOME, ".dijimagic-saglik-automation")
 LOG  = os.path.join(AUTO, "saglik.log")
 DRY  = "--dry-run" in sys.argv
 
-PROD = "https://yoai.yodijital.com"
-BRAIN_JOB = "com.yoai.brain.collect"
-BRAIN_LOG_DIR = os.path.join(HOME, ".yoai-brain-automation")
+PROD = "https://dijimagic.com"
+BRAIN_JOB = "com.dijimagic.brain.collect"
+BRAIN_LOG_DIR = os.path.join(HOME, ".dijimagic-brain-automation")
 
 # Kritik env anahtarlari (mevcut & bos-degil kontrolu) — DEGERLERI okunmaz/yazilmaz
 CRITICAL_ENV = [
@@ -46,10 +46,10 @@ CRITICAL_ENV = [
     "META_APP_SECRET", "GOOGLE_ADS_DEVELOPER_TOKEN",
 ]
 VERCEL_CRONS = [
-    "/api/yoai/daily-run", "/api/cron/yoalgoritma-scan", "/api/cron/strategy-metrics",
+    "/api/dijimagic/daily-run", "/api/cron/dijialgoritma-scan", "/api/cron/strategy-metrics",
     "/api/cron/official-ads-refresh", "/api/cron/audiences-sync", "/api/cron/seo-article-run",
     "/api/cron/crm-lead-pull", "/api/cron/email-drip-process", "/api/cron/seo-brief-refresh",
-    "/api/cron/yoai-outcome-snapshots",
+    "/api/cron/dijimagic-outcome-snapshots",
 ]
 
 
@@ -63,9 +63,9 @@ def log(msg):
 
 # ---------------------------------------------------------------- repo & env kesfi
 def find_repo():
-    """Ana YoAi repo'sunu bul: icinde _learnings + .git + package.json(name=YoAi)."""
+    """Ana DijiMagic repo'sunu bul: icinde _learnings + .git + package.json(name=DijiMagic)."""
     # 1) Bilinen mutlak yol (bu makine)
-    known = os.path.join(HOME, "Desktop", "Onur Suay", "YO Dijital", "YOAİ", "YoAi_Project")
+    known = os.path.join(HOME, "Desktop", "Onur Suay", "DijiMagic", "YOAİ", "DijiMagic_Project")
     if os.path.isdir(os.path.join(known, ".git")) and os.path.isdir(os.path.join(known, "_learnings")):
         return known
     # 2) Desktop altinda ara (yeni bilgisayar telafisi)
@@ -74,7 +74,7 @@ def find_repo():
         dns[:] = [d for d in dns if d not in (".git", "node_modules", ".next", ".venv")]
         if "_learnings" in dns and ".git" in dns and "package.json" in files:
             try:
-                if json.load(open(os.path.join(dp, "package.json"))).get("name") == "YoAi":
+                if json.load(open(os.path.join(dp, "package.json"))).get("name") == "DijiMagic":
                     return dp
             except Exception:
                 pass
@@ -163,41 +163,41 @@ def check_supabase(env):
     return ("⚠️", f"Supabase DB: beklenmedik HTTP {code}")
 
 
-def check_yoalgoritma_runs(env):
-    """YoAlgoritma kart üretimi sağlığı: ai_engine_runs (platform=yoalgoritma_hier) failed/stale OKUR.
+def check_dijialgoritma_runs(env):
+    """DijiAlgoritma kart üretimi sağlığı: ai_engine_runs (platform=dijialgoritma_hier) failed/stale OKUR.
     Asıl hastalık SESSİZ HATA idi — bu kontrol failed/takılı koşuları kırmızıya çevirir."""
     url = env.get("NEXT_PUBLIC_SUPABASE_URL") or env.get("SUPABASE_URL")
     key = env.get("SUPABASE_SERVICE_ROLE_KEY") or env.get("SUPABASE_SERVICE_KEY")
     if not (url and key):
-        return ("⚠️", "YoAlgoritma kart üretimi: SUPABASE_SERVICE_ROLE_KEY yok — kontrol atlandı")
+        return ("⚠️", "DijiAlgoritma kart üretimi: SUPABASE_SERVICE_ROLE_KEY yok — kontrol atlandı")
     q = (url.rstrip("/") +
-         "/rest/v1/ai_engine_runs?platform=eq.yoalgoritma_hier"
+         "/rest/v1/ai_engine_runs?platform=eq.dijialgoritma_hier"
          "&select=status,run_date,error_message&order=run_date.desc&limit=80")
     code, body = http(q, headers={"apikey": key, "Authorization": f"Bearer {key}"}, timeout=20)
     if code is None:
-        return ("🔴", "YoAlgoritma kart üretimi: DB'ye erişilemedi")
+        return ("🔴", "DijiAlgoritma kart üretimi: DB'ye erişilemedi")
     if code != 200:
-        return ("⚠️", f"YoAlgoritma kart üretimi: HTTP {code} — kontrol atlandı")
+        return ("⚠️", f"DijiAlgoritma kart üretimi: HTTP {code} — kontrol atlandı")
     try:
         rows = json.loads(body or "[]")
     except Exception:
-        return ("⚠️", "YoAlgoritma kart üretimi: yanıt çözümlenemedi")
+        return ("⚠️", "DijiAlgoritma kart üretimi: yanıt çözümlenemedi")
     if not rows:
-        return ("⚠️", "YoAlgoritma kart üretimi: hiç koşu kaydı yok (henüz çalışmadı/tetiklenmiyor)")
+        return ("⚠️", "DijiAlgoritma kart üretimi: hiç koşu kaydı yok (henüz çalışmadı/tetiklenmiyor)")
     from datetime import date, timedelta
     today = date.today().isoformat()
     cutoff = (date.today() - timedelta(days=8)).isoformat()
     if rows[0].get("status") == "running" and (rows[0].get("run_date") or "") < today:
-        return ("🔴", f"YoAlgoritma: koşu 'running'da TAKILI ({rows[0].get('run_date')}) — büyük olasılıkla başarısız")
+        return ("🔴", f"DijiAlgoritma: koşu 'running'da TAKILI ({rows[0].get('run_date')}) — büyük olasılıkla başarısız")
     recent_failed = [r for r in rows if r.get("status") == "failed" and (r.get("run_date") or "") >= cutoff]
     ok = [r for r in rows if r.get("status") in ("completed", "partial")]
     latest_ok = ok[0]["run_date"] if ok else None
     if recent_failed:
         first = (recent_failed[0].get("error_message") or "")[:90]
-        return ("🔴", f"YoAlgoritma kart üretimi: son 8 günde {len(recent_failed)} BAŞARISIZ koşu — {first}")
+        return ("🔴", f"DijiAlgoritma kart üretimi: son 8 günde {len(recent_failed)} BAŞARISIZ koşu — {first}")
     if not latest_ok or latest_ok < cutoff:
-        return ("🔴", f"YoAlgoritma kart üretimi: 8+ gündür başarılı üretim YOK (son: {latest_ok or 'hiç'})")
-    return ("✓", f"YoAlgoritma kart üretimi: sağlıklı (son başarılı: {latest_ok})")
+        return ("🔴", f"DijiAlgoritma kart üretimi: 8+ gündür başarılı üretim YOK (son: {latest_ok or 'hiç'})")
+    return ("✓", f"DijiAlgoritma kart üretimi: sağlıklı (son başarılı: {latest_ok})")
 
 
 def check_vercel(env, repo):
@@ -247,7 +247,7 @@ def check_vercel(env, repo):
 
 
 def check_brain_job():
-    """com.yoai.brain.collect launchd'de yuklu mu + son cikis kodu + log tazeligi."""
+    """com.dijimagic.brain.collect launchd'de yuklu mu + son cikis kodu + log tazeligi."""
     try:
         r = subprocess.run(["launchctl", "list", BRAIN_JOB], capture_output=True, text=True, timeout=15)
     except Exception as e:
@@ -337,7 +337,7 @@ def send_mail(html, subject):
         log("smtp_config eksik"); print("HATA: smtp_config eksik."); return False
     msg = MIMEMultipart("alternative")
     msg["Subject"] = subject
-    msg["From"] = formataddr(("YoAi Sağlık", sender))
+    msg["From"] = formataddr(("DijiMagic Sağlık", sender))
     msg["To"] = ", ".join(rcpts)
     msg.attach(MIMEText(html, "html", "utf-8"))
     ctx = ssl.create_default_context()
@@ -376,7 +376,7 @@ def build_html(rows, reds, warns):
     return f"""<!doctype html><html><body style="margin:0;background:#f1f1f4;padding:24px 0;font-family:-apple-system,Segoe UI,Roboto,Arial,sans-serif;color:#1d1d28">
   <div style="max-width:640px;margin:0 auto;padding:0 16px">
     <div style="margin-bottom:16px">
-      <div style="font-size:22px;font-weight:800;letter-spacing:-0.03em">{pulse('#1d1d28', 22)}&nbsp; YoAi Sağlık Merkezi</div>
+      <div style="font-size:22px;font-weight:800;letter-spacing:-0.03em">{pulse('#1d1d28', 22)}&nbsp; DijiMagic Sağlık Merkezi</div>
       <div style="font-size:13px;color:#666;margin-top:3px">{now} · günlük otomatik kontrol</div>
     </div>
     <div style="border-radius:14px;overflow:hidden;border:1px solid #e6e6ea">
@@ -395,7 +395,7 @@ def build_html(rows, reds, warns):
 
 # ---------------------------------------------------------------- bulut sessizlik korumasi icin durum push'u
 def push_status(repo, rows, reds, warns):
-    """SIR-OLMAYAN durum ozetini yoai-brain repo'suna yaz + push.
+    """SIR-OLMAYAN durum ozetini dijimagic-brain repo'suna yaz + push.
     Bulut haftalik ajan bunun tazeligine bakip 'bilgisayar gunlerce kapali mi' anlar."""
     brain = os.path.join(repo, "_learnings")
     if not os.path.isdir(os.path.join(brain, ".git")):
@@ -450,14 +450,14 @@ def main():
     rows.append(check_prod_health())
     rows.append(check_homepage())
     rows.append(check_supabase(env))
-    rows.append(check_yoalgoritma_runs(env))
+    rows.append(check_dijialgoritma_runs(env))
     if repo:
         rows.append(check_vercel(env, repo))
     rows.append(check_brain_job())
     if repo:
         rows.append(check_brain_data(repo))
         rows.append(check_git_sync(repo, "ana repo", "origin/main"))
-        rows.append(check_git_sync(os.path.join(repo, "_learnings"), "Beyin repo (yoai-brain)", "origin/main"))
+        rows.append(check_git_sync(os.path.join(repo, "_learnings"), "Beyin repo (dijimagic-brain)", "origin/main"))
     rows.append(check_env_keys(env))
     rows.append(check_self())
 
@@ -465,7 +465,7 @@ def main():
     warns = sum(1 for ic, _ in rows if ic == "⚠️")
 
     # Konu satırı her durumda sabit (kullanıcı isteği)
-    subject = "YoAi Sağlık Merkezi"
+    subject = "DijiMagic Sağlık Merkezi"
 
     html = build_html(rows, reds, warns)
 

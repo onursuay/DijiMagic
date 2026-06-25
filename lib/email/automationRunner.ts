@@ -6,7 +6,7 @@ import { listEnabledAutomations, type AutomationRow, type AutomationTrigger } fr
 import { listSteps } from './automationStepsStore'
 import { enqueueFirstStep } from './dripQueue'
 
-const APP_URL = process.env.NEXT_PUBLIC_APP_URL || 'https://yoai.yodijital.com'
+const APP_URL = process.env.NEXT_PUBLIC_APP_URL || 'https://dijimagic.com'
 
 /** email_contacts'te bu e-posta opt-out işaretliyse true (KVKK). Kayıt yoksa false. */
 export async function isOptedOut(userId: string, email: string): Promise<boolean> {

@@ -1,6 +1,6 @@
 #!/usr/bin/env node
 /**
- * YoAi — Çoklu İşletme (Per-Account Business Profiles) Migration Uygulayıcı — Faz 0
+ * DijiMagic — Çoklu İşletme (Per-Account Business Profiles) Migration Uygulayıcı — Faz 0
  *
  * Uygular:
  *   20260524000000_per_account_business_profiles.sql
@@ -12,7 +12,7 @@
  * ⚠️  CANONICAL Supabase projesine (omddq) uygulanmalı.
  *     Tümü additive (ADD COLUMN IF NOT EXISTS) → idempotent, geriye dönük
  *     uyumlu. UNIQUE(user_id) DEĞİŞTİRİLMEZ. Uygulanmadan da sistem çalışır
- *     (Faz 1 kodu kolonları yalnız YOAI_PER_ACCOUNT_SCOPE flag'i açıkken kullanır).
+ *     (Faz 1 kodu kolonları yalnız DIJIMAGIC_PER_ACCOUNT_SCOPE flag'i açıkken kullanır).
  *
  * Kullanım:
  *   node scripts/apply-per-account-business-profiles-migration.mjs
@@ -54,7 +54,7 @@ if (!DATABASE_URL) {
 const FILE = 'supabase/migrations/20260524000000_per_account_business_profiles.sql'
 
 async function main() {
-  console.log('\n🚀  YoAi — Çoklu İşletme (Faz 0) Migration\n')
+  console.log('\n🚀  DijiMagic — Çoklu İşletme (Faz 0) Migration\n')
   const client = new Client({ connectionString: DATABASE_URL })
   await client.connect()
   try {

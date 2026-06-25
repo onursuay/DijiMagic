@@ -3,7 +3,7 @@
    ProblemTag/Recommendation Meta tipleriyle ortak (googleDeepFetcher zaten
    Meta-format ProblemTag üretir). */
 
-import type { StandardMetrics, RiskLevel } from '@/lib/yoai/analysisTypes'
+import type { StandardMetrics, RiskLevel } from '@/lib/dijimagic/analysisTypes'
 import type { ProblemTag } from '@/lib/meta/optimization/types'
 import type { GateBreakdown } from './gates'
 

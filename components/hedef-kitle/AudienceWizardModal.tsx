@@ -45,7 +45,7 @@ interface EditAudienceData {
   source?: AudienceSource | null
   name: string
   description?: string | null
-  yoai_spec_json: Record<string, unknown>
+  dijimagic_spec_json: Record<string, unknown>
 }
 
 interface AudienceWizardModalProps {
@@ -190,7 +190,7 @@ export default function AudienceWizardModal({ isOpen, onClose, onSuccess, onToas
         setPhase(p)
         setPrevPhase(p)
         setHasInitialType(true)
-        const spec = editAudience.yoai_spec_json
+        const spec = editAudience.dijimagic_spec_json
         if (editAudience.type === 'CUSTOM') {
           setCustomState({
             currentStep: 1,
@@ -324,13 +324,13 @@ export default function AudienceWizardModal({ isOpen, onClose, onSuccess, onToas
             name: customState.name.trim(),
             description: customState.description || null,
             source: customState.source || null,
-            yoai_spec_json: { rule: customState.rule, excludeRules: customState.excludeRules },
+            dijimagic_spec_json: { rule: customState.rule, excludeRules: customState.excludeRules },
           }
         } else if (type === 'LOOKALIKE') {
           patchBody = {
             name: lookalikeState.name.trim(),
             description: lookalikeState.description || null,
-            yoai_spec_json: {
+            dijimagic_spec_json: {
               seedAudienceId: lookalikeState.seedAudienceId,
               seedName: lookalikeState.seedName,
               countries: lookalikeState.countries,
@@ -341,7 +341,7 @@ export default function AudienceWizardModal({ isOpen, onClose, onSuccess, onToas
           patchBody = {
             name: savedState.name.trim(),
             description: savedState.description || null,
-            yoai_spec_json: {
+            dijimagic_spec_json: {
               locations: savedState.locations,
               ageMin: savedState.ageMin,
               ageMax: savedState.ageMax,
@@ -380,7 +380,7 @@ export default function AudienceWizardModal({ isOpen, onClose, onSuccess, onToas
           source: customState.source,
           name: customState.name,
           description: customState.description || null,
-          yoai_spec_json: {
+          dijimagic_spec_json: {
             rule: customState.rule,
             excludeRules: customState.excludeRules,
           },
@@ -390,7 +390,7 @@ export default function AudienceWizardModal({ isOpen, onClose, onSuccess, onToas
           type: 'LOOKALIKE',
           name: lookalikeState.name,
           description: lookalikeState.description || null,
-          yoai_spec_json: {
+          dijimagic_spec_json: {
             seedAudienceId: lookalikeState.seedAudienceId,
             seedName: lookalikeState.seedName,
             countries: lookalikeState.countries,
@@ -402,7 +402,7 @@ export default function AudienceWizardModal({ isOpen, onClose, onSuccess, onToas
           type: 'SAVED',
           name: savedState.name,
           description: savedState.description || null,
-          yoai_spec_json: {
+          dijimagic_spec_json: {
             locations: savedState.locations,
             ageMin: savedState.ageMin,
             ageMax: savedState.ageMax,

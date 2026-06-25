@@ -2,7 +2,7 @@
 
 - **Tarih:** 2026-06-17
 - **Durum:** Onaylandı (sahip onayı 2026-06-17) → writing-plans
-- **Kapsam:** YoAi "Web Site Yöneticisi" modülünün site üretim motorunun yeniden tasarımı
+- **Kapsam:** DijiMagic "Web Site Yöneticisi" modülünün site üretim motorunun yeniden tasarımı
 - **Çalışma alanı:** izole worktree `worktree-web-site-yoneticisi-codegen` (main tabanlı)
 
 > **Tek cümle:** AI'nın markaya özgü, Lovable/Bolt seviyesinde göz alıcı pazarlama/kurumsal siteleri **serbest HTML/CSS/JS** olarak ürettiği bir kod-üretim motoru kuruyoruz; ön şart, üretilen siteyi dashboard origin'inden ve provider zincirinden **izole etmek + sıkı CSP + deny-by-default sanitize**. Omurga = güvenlik/izolasyon, kalite beyni = DesignSystem + çok-aşamalı pipeline, iskelet = mevcut yayın/veri altyapısını koru.
@@ -14,7 +14,7 @@
 1. **Çıktı formatı = Serbest HTML/CSS/JS.** AI her sayfayı sıfırdan, özgür HTML + (derlenmiş) Tailwind + güvenli hareket katmanı ile yazar. Sabit bölüm şeması YOK.
 2. **Düzenleme = Chat-native.** Doğal komut → AI kodu **blok-bazlı** güvenilir yamalar → anında önizleme. Tam-dosya yeniden-yazım yasak.
 3. **Geçiş = Şablon motorunu tamamen değiştir.** Yeni kod-üretim motoru tek üretici olur; ancak **yayınlanmış eski şablon-format siteler dual-read ile bozulmadan yaşamaya devam eder.**
-4. **Yayın adresi = Alt adres (Seçenek A).** Siteler `*.yoai.yodijital.com` altında kalır (mevcut URL'ler korunur). İzolasyon kod tarafında sağlanır: provider'sız `app/(sites)/` layout + CSP. Ayrı apex (`*.sites.yodijital.com`) **kapsam dışı / ileride opsiyonel** — bu spec'te uygulanmaz.
+4. **Yayın adresi = Alt adres (Seçenek A).** Siteler `*.dijimagic.com` altında kalır (mevcut URL'ler korunur). İzolasyon kod tarafında sağlanır: provider'sız `app/(sites)/` layout + CSP. Ayrı apex (`*.sites.dijimagic.com`) **kapsam dışı / ileride opsiyonel** — bu spec'te uygulanmaz.
 5. **Kalite önceliği = dördü birden:** layout/kompozisyon çeşitliliği, görsel/imaj kalitesi, hareket/mikro-etkileşim, tipografi/içerik hiyerarşisi.
 
 ---
@@ -29,7 +29,7 @@
 
 **YAPMAZ (sınır):**
 - Genel amaçlı web-app / SaaS / uygulama üretmez (yalnız pazarlama/kurumsal site).
-- AI **keyfi `<script>` yazamaz** (yalnız declarative `data-yoai-*` + sürümlü runtime).
+- AI **keyfi `<script>` yazamaz** (yalnız declarative `data-dijimagic-*` + sürümlü runtime).
 - E-ticaret / ödeme / kullanıcı-veri formu üretmez (phishing yüzeyi).
 - Eski siteleri toplu zorla-migrate etmez.
 - Meta/Google entegrasyonuna (`lib/meta/*`, `lib/google/*`) **dokunmaz.**
@@ -55,7 +55,7 @@
   - `assembleDocument.ts` — `<head>` montajı + CSP nonce
   - `tailwindCompile.ts` — server-side JIT Tailwind derleme
   - `patchPlanner.ts` — chat-edit blok planlayıcı
-- `public/yoai-site-runtime.js` — sürümlü, parametrize edilebilir hareket runtime'ı.
+- `public/dijimagic-site-runtime.js` — sürümlü, parametrize edilebilir hareket runtime'ı.
 - `lib/website/render/HtmlSiteRenderer.tsx` — `format='html'` sayfaları sanitize + CSP'li basar.
 
 **Veri akışı (üretim):** marka girdisi (karantinalı) → DesignSystem → layout-arketip planı → tam HTML (Opus, Inngest/Batch) → görsel çözümleme + sanitize → renderGate → head montajı → `website_versions` snapshot → yayın.
@@ -71,7 +71,7 @@
 | **0** | Girdi + prompt-injection karantinası | Profil/intelligence + `referenceScanner` (SSRF-korumalı) + kullanıcı talimatı toplanır. **Site/marka-özgü kaynak öncelikli; global profile yalnız SON ÇARE** (SEO `getProfileForScope` dersinin web karşılığı). Dış metin `<untrusted_source>…</untrusted_source>` olarak **veri** konumlanır. | Kod; `buildCodegenContext.ts` |
 | **1** | DesignSystem sözleşmesi | Markadan **sayısal** tasarım sistemi: palet, font çifti, spacing/radius/gölge ölçekleri, gradyan/noise reçeteleri, spring-easing hareket dili. Çeşitlilik **üretimin başında token olarak** doğar. JSON çıktı. | Opus 4.8, effort:high |
 | **2** | Layout-arketip planı | Sayfa başına bölüm sırası + her bölüme **kompozisyon arketipi**. Ardışık bölüm aynı arketipi tekrarlayamaz. Sabit 10-bölüm şeması YOK. | Opus 4.8; DesignSystem prompt-cache prefix |
-| **3** | Tam HTML üretimi | Semantik HTML + **yalnız DesignSystem-türevli Tailwind class'ları** (allowlist). Görseller `{{IMG:query}}`. Hareket `data-yoai-reveal`. SEO: tek `<h1>`, landmark. **Streaming zorunlu.** | Opus 4.8; **Batch API** sayfa başına |
+| **3** | Tam HTML üretimi | Semantik HTML + **yalnız DesignSystem-türevli Tailwind class'ları** (allowlist). Görseller `{{IMG:query}}`. Hareket `data-dijimagic-reveal`. SEO: tek `<h1>`, landmark. **Streaming zorunlu.** | Opus 4.8; **Batch API** sayfa başına |
 | **4** | Görsel çözümleme + sanitize | `{{IMG:query}}` → `lib/website/stock` veya Magnific (Inngest step + timeout + stock fallback; polling YASAK). Sonra **deny-by-default sanitize**. | Kod + Magnific; Inngest |
 | **5** | renderGate (zorunlu kapı) | parse-hatası yok + kritik bölüm var + class-allowlist + boyut. Geçmezse 1 self-repair → fallback + kredi iade. **Bozuk/boş site ASLA yayınlanmaz.** | Kod; Inngest |
 
@@ -83,10 +83,10 @@
 
 **Tailwind — CDN DEĞİL, derlenmiş:** `cdn.tailwindcss.com` production'da kullanılmaz (LCP/CLS/FOUC + CSP çelişkisi). Üretilen class'lar DesignSystem token'larından türetilmiş **safelist/allowlist**'e bağlanır; `tailwindCompile.ts` server-side JIT ile per-site CSS üretir, kritik-CSS gömülür.
 
-**JS politikası:** AI **keyfi `<script>` yazamaz.** Etkileşim yalnız sürümlü `yoai-site-runtime.js`'ten; AI `data-yoai-*` declarative attribute'larla işaretler. Runtime nonce'lı tek `<script src>`. Parametrize (süre/easing/threshold `data-attribute`'tan).
+**JS politikası:** AI **keyfi `<script>` yazamaz.** Etkileşim yalnız sürümlü `dijimagic-site-runtime.js`'ten; AI `data-dijimagic-*` declarative attribute'larla işaretler. Runtime nonce'lı tek `<script src>`. Parametrize (süre/easing/threshold `data-attribute`'tan).
 
 **Sandbox — üç kademe:**
-- **(A) İzolasyon:** servis `app/(sites)/` altında **provider'sız / cookie-okumayan** minimal layout. URL'ler korunur (`*.yoai.yodijital.com`).
+- **(A) İzolasyon:** servis `app/(sites)/` altında **provider'sız / cookie-okumayan** minimal layout. URL'ler korunur (`*.dijimagic.com`).
 - **(B) CSP:** `default-src 'none'; script-src 'self' 'nonce-…'; style-src 'self'; img-src <stok+logo> data:; font-src https://fonts.gstatic.com; connect-src 'self'; frame-ancestors 'self'; base-uri 'none'; form-action 'self'`. Yalnız `(sites)` segmentine. **`unsafe-inline`/`eval` ASLA.**
 - **(C) Sanitize:** server-only deny-by-default allowlist. `<script src dış>`, `on*`, `javascript:`/`data:`-script, `<iframe>/<object>/<embed>`, `svg use`/`foreignObject`, CSS `url(javascript:)` strip. **Persist/publish kapısı.**
 
@@ -104,10 +104,10 @@
 
 ## 6. Önizleme & Chat-native Düzenleme
 
-**Önizleme:** mevcut `app/website-preview/[id]` iframe korunur — `HtmlSiteRenderer` çıktıyı `srcdoc` + `sandbox="allow-scripts allow-forms"` (**`allow-same-origin` ASLA**) ile basar. Taslak linkler `data-yoai-href` ile işaretlenip sunucuda çevrilir.
+**Önizleme:** mevcut `app/website-preview/[id]` iframe korunur — `HtmlSiteRenderer` çıktıyı `srcdoc` + `sandbox="allow-scripts allow-forms"` (**`allow-same-origin` ASLA**) ile basar. Taslak linkler `data-dijimagic-href` ile işaretlenip sunucuda çevrilir.
 
 **Chat-edit = blok-bazlı targeted-rewrite** (tam-dosya yeniden-yazım YASAK):
-1. Her bölüm kararlı `data-yoai-block` + `data-yoai-id`; ID'ler snapshot `blockMap`'inde.
+1. Her bölüm kararlı `data-dijimagic-block` + `data-dijimagic-id`; ID'ler snapshot `blockMap`'inde.
 2. **Planner** (Sonnet) komutu atomik op'lara çevirir: `{op, targetId, after?}`; deterministik doğrulama.
 3. AI'a **yalnız hedef blok** + komut verilir → yeni blok HTML'i döner.
 4. Birleştirme sunucuda; dokunulmayan bloklar byte-aynı.
@@ -166,7 +166,7 @@ Mevcut yayın mekaniği korunur: `publishWebsite` → `status='published'` + `pu
 
 ## 12. Fazlama
 
-- **Faz 0 — İzolasyon altyapısı (ön şart):** `app/(sites)/` route group + minimal layout, CSP, `sanitizeHtml.ts`, `tailwindCompile.ts`, `yoai-site-runtime.js`.
+- **Faz 0 — İzolasyon altyapısı (ön şart):** `app/(sites)/` route group + minimal layout, CSP, `sanitizeHtml.ts`, `tailwindCompile.ts`, `dijimagic-site-runtime.js`.
 - **Faz 1 — İlk çalışan sürüm:** Opus tek-atış HTML + DesignSystem + renderGate, **tek sayfa landing**, `format='html'` persist, `HtmlSiteRenderer` + önizleme. **Çalışan minimum.**
 - **Faz 2 — Çok-sayfa + dil:** Inngest fan-out + ana-dil-üret+çeviri + Batch/caching + layout-arketip planı.
 - **Faz 3 — Chat-native düzenleme:** blok-bazlı targeted-rewrite + planner + blockMap; opsiyonel görsel cilası; ISR/CDN flag.

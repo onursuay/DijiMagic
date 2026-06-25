@@ -12,7 +12,7 @@ const SOURCE_NAMES = [
   'tenantDefaultLeadUrl',
   'tenantPrivacyPolicyUrl',
   'formPrivacyPolicyUrl',
-  'yoaiPrivacyPolicyUrl',
+  'dijimagicPrivacyPolicyUrl',
 ] as const
 
 export type ResolveLeadCreativeLinkInput = {
@@ -21,7 +21,7 @@ export type ResolveLeadCreativeLinkInput = {
   tenantDefaultLeadUrl?: string | null
   tenantPrivacyPolicyUrl?: string | null
   formPrivacyPolicyUrl?: string | null
-  yoaiPrivacyPolicyUrl?: string | null
+  dijimagicPrivacyPolicyUrl?: string | null
 }
 
 export function normalizeUrl(input?: string | null): string {
@@ -57,7 +57,7 @@ export function resolveLeadCreativeLink(input: ResolveLeadCreativeLinkInput): st
     input.tenantDefaultLeadUrl,
     input.tenantPrivacyPolicyUrl,
     input.formPrivacyPolicyUrl,
-    input.yoaiPrivacyPolicyUrl,
+    input.dijimagicPrivacyPolicyUrl,
   ]
 
   for (let i = 0; i < candidates.length; i++) {

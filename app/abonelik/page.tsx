@@ -12,7 +12,7 @@ import type { BillingCycle } from '@/lib/subscription/types'
 import { Calendar, CreditCard, Shield } from 'lucide-react'
 
 // Sales contact for the Enterprise (contact-sales) plan — matches landing ScheduleModal
-const SALES_EMAIL = 'info@yodijital.com'
+const SALES_EMAIL = 'info@dijimagic.com'
 
 export default function AbonelikPage() {
   const t = useTranslations('subscription')

@@ -8,7 +8,7 @@
 --   - credentials_enc : AES-256-GCM ile ŞİFRELİ saklanır (lib/seo/crypto.ts).
 --                       Düz metin gizli bilgi tutulmaz.
 --   - user_id         : uuid → signups(id) ON DELETE CASCADE
---                       (yoai_articles ile tutarlı tenant izolasyonu).
+--                       (dijimagic_articles ile tutarlı tenant izolasyonu).
 --   - RLS aktiftir (savunma derinliği). Uygulama service-role ile
 --     çalışır ve user_id cookie filtresiyle izolasyonu sağlar.
 --

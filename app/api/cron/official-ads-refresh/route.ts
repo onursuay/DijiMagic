@@ -1,6 +1,6 @@
 import { NextResponse } from 'next/server'
 import { isInngestReady, inngest } from '@/inngest/client'
-import { runAndRecordOfficialAdsRefresh } from '@/lib/yoai/officialAdsRefreshRunner'
+import { runAndRecordOfficialAdsRefresh } from '@/lib/dijimagic/officialAdsRefreshRunner'
 
 export const dynamic = 'force-dynamic'
 export const maxDuration = 120

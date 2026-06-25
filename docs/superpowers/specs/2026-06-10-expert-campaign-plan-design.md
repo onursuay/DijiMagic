@@ -1,6 +1,6 @@
 # Uzman Kampanya Planı — Tasarım (Alt-Proje A, Faz A1)
 
-**Tarih:** 2026-06-10 · **Durum:** Onaylandı · **Sıra:** C ✅ → B ✅ → **A1 (bu)** → A2 (YoAlgoritma'ya taşıma)
+**Tarih:** 2026-06-10 · **Durum:** Onaylandı · **Sıra:** C ✅ → B ✅ → **A1 (bu)** → A2 (DijiAlgoritma'ya taşıma)
 
 ## Amaç
 Markadan (Strateji girdisi) **eksiksiz, gerekçeli** uzman kampanya planı üret: hedef kitle, lokasyon (akıl yürütmeli), demografi, amaç/dönüşüm, bütçe (günlük + ROI gerekçeli), CTA, ikna edici çoklu-varyant reklam metni. Mevcut **Strateji modülü genişletilir**; çıktı **advisory** (öneri+gerekçe), uygulama mevcut AdCreationWizard'dan.
@@ -8,7 +8,7 @@ Markadan (Strateji girdisi) **eksiksiz, gerekçeli** uzman kampanya planı üret
 ## Kararlar (kilitli)
 1. **Yapı:** Mevcut Strateji'yi genişlet (yeni motor değil).
 2. **Davranış:** Advisory — plan + gerekçe üret/göster; publish'e dokunma.
-3. **Kapsam (A1):** Akıl yürütme + metin birlikte. **Yalnız Strateji** (YoAlgoritma'ya taşıma = A2, sonra).
+3. **Kapsam (A1):** Akıl yürütme + metin birlikte. **Yalnız Strateji** (DijiAlgoritma'ya taşıma = A2, sonra).
 4. **Güvenlik:** Flag `EXPERT_PLAN_ENABLED` default-off; Strateji abonelik guard'ı yeniden kullanılır.
 
 ## Çekirdek tip: ExpertCampaignPlan (platform başına)
@@ -40,7 +40,7 @@ Tüm `reasoning` sade Türkçe; ham enum gerekçe metninde YASAK (yalnız `value
    - `isClaudeReady()` false → boş plan + warning (sahte veri yok).
 
 ## İstanbul/İ lokasyon bug fix
-Yeni paylaşılan util `lib/yoai/turkishText.ts` (`normalizeTrLower`, `cityIncludes`). `businessSourceScanner.extractLocations` Türkçe-bilinçli eşlemeye geçer (büyük "İstanbul" artık yakalanır). Regresyon testi.
+Yeni paylaşılan util `lib/dijimagic/turkishText.ts` (`normalizeTrLower`, `cityIncludes`). `businessSourceScanner.extractLocations` Türkçe-bilinçli eşlemeye geçer (büyük "İstanbul" artık yakalanır). Regresyon testi.
 
 ## API
 `POST /api/strategy/instances/[id]/expert-plan` — abonelik/owner guard; instance `InputPayload` oku; aktif kanal(lar) (channels.meta/google) için plan üret; `{ plans: { meta?, google? }, generatedAt }` döner. Flag kapalıysa `{ disabled: true }`.
@@ -57,4 +57,4 @@ Yeni paylaşılan util `lib/yoai/turkishText.ts` (`normalizeTrLower`, `cityInclu
 Motor (claudeJson mock: alanlar + reasoning, boş-claude, guardrail'ler), bütçe clamp, CTA doğrulama, objective deterministik map, Türkçe normalize/İstanbul fix (+ extractLocations regresyon), platform seçimi. UI i18n.
 
 ## Kapsam dışı (A2 / sonra)
-YoAlgoritma ad_spec'e taşıma, plan→wizard otomatik prefill, rakip-veri derin entegrasyonu, otomatik publish.
+DijiAlgoritma ad_spec'e taşıma, plan→wizard otomatik prefill, rakip-veri derin entegrasyonu, otomatik publish.

@@ -1,5 +1,5 @@
 import 'server-only'
-import type { BusinessProfileRow, BusinessIntelligenceRow } from '@/lib/yoai/businessProfileStore'
+import type { BusinessProfileRow, BusinessIntelligenceRow } from '@/lib/dijimagic/businessProfileStore'
 import type { WebsitePageInput, SectionBlock, SiteType, PageRole } from '../types'
 import { pickStockImage, pickStockImages, isStockReady } from '../stock'
 import { stockThemeForSector } from '../render/theme'

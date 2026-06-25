@@ -1,6 +1,6 @@
 #!/usr/bin/env node
 /**
- * YoAi — Web Site Yöneticisi temel tablolar migration uygulayıcı.
+ * DijiMagic — Web Site Yöneticisi temel tablolar migration uygulayıcı.
  * Additive + idempotent. CANONICAL (omddq) projeye uygulanır.
  * Gerekli env (.env.local): DATABASE_URL (Transaction mode, port 6543).
  */

@@ -55,7 +55,7 @@ Map çıktısından öncelik sırasıyla seçer (regex/keyword eşleme):
 
 ## 4. Entegrasyon Noktası
 
-Tek dokunma noktası: **`lib/yoai/businessSourceScanner.ts`** — bu dosya zaten hem kullanıcının kendi web/marketplace/google_business URL'lerini **hem de rakip URL'lerini** tarar. Tek yere Firecrawl eklemek marka + rakip web taramasının ikisini birden kapsar.
+Tek dokunma noktası: **`lib/dijimagic/businessSourceScanner.ts`** — bu dosya zaten hem kullanıcının kendi web/marketplace/google_business URL'lerini **hem de rakip URL'lerini** tarar. Tek yere Firecrawl eklemek marka + rakip web taramasının ikisini birden kapsar.
 
 **Cerrahi yaklaşım — yalnızca "içerik getirme" adımı değişir, çıkarım değişmez:**
 

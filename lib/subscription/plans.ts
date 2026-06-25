@@ -84,7 +84,7 @@ export function getYearlyMonthlyPrice(planId: string, adAccounts: number): numbe
  * Kademe dağılımı (onaylı):
  *  - Basic   : reklam yönetimi + raporlar + temel hedef kitle + tasarım
  *  - Starter : + Optimizasyon + AI Hedef Kitle + SEO Plus
- *  - Premium : + AI Strateji + YoAlgoritma + CRM + Email Marketing + Dönüşüm Sihirbazı
+ *  - Premium : + AI Strateji + DijiAlgoritma + CRM + Email Marketing + Dönüşüm Sihirbazı
  *  - Enterprise: hepsi sınırsız + sınırsız reklam hesabı
  */
 const BASIC_FEATURES = [
@@ -106,7 +106,7 @@ const STARTER_FEATURES = [
 
 const PREMIUM_FEATURES = [
   'aiStrateji',
-  'yoAlgoritma',
+  'dijiAlgoritma',
   'crm',
   'emailMarketing',
   'donusumSihirbazi',
@@ -117,7 +117,7 @@ const PREMIUM_FEATURES = [
 
 const ENTERPRISE_FEATURES = [
   'aiStratejiSinirsiz',
-  'yoAlgoritma',
+  'dijiAlgoritma',
   'crm',
   'emailMarketing',
   'donusumSihirbazi',

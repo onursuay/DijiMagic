@@ -319,7 +319,7 @@ async function resolveContainer(
 
   // mode === 'create' — reuse a web container named for the site if one exists.
   const host = hostFromUrl(opts.siteUrl)
-  const wantedName = `YoAi — ${host}`
+  const wantedName = `DijiMagic — ${host}`
   const existingRes = await gtmFetch<{ container?: GtmContainer[] }>(
     accessToken,
     `/accounts/${account.accountId}/containers`,
@@ -344,7 +344,7 @@ async function resolveWorkspace(
     accessToken,
     `/accounts/${accountId}/containers/${containerId}/workspaces`,
   )
-  const wsName = 'YoAi Setup'
+  const wsName = 'DijiMagic Setup'
   const existing = (wsRes.workspace ?? []).find((w) => w.name === wsName)
   if (existing) return existing
   // Fall back to the default workspace if present, otherwise create ours.
@@ -436,7 +436,7 @@ export async function deployGtm(
   const measurementId = opts.ga4MeasurementId?.trim()
   if (measurementId) {
     await upsertTag(accessToken, accountId, containerId, workspaceId, existingTags, {
-      name: 'YoAi — GA4 Yapılandırma',
+      name: 'DijiMagic — GA4 Yapılandırma',
       type: 'googtag',
       parameter: ga4ConfigParams(measurementId),
       firingTriggerId: ['2147479553'], // All Pages (built-in)
@@ -448,7 +448,7 @@ export async function deployGtm(
   //    swap it later); pixel id is normally present from the Meta step.
   const pixelId = opts.metaPixelId?.trim() || '{{Meta Pixel ID}}'
   await upsertTag(accessToken, accountId, containerId, workspaceId, existingTags, {
-    name: 'YoAi — Meta Pixel Base',
+    name: 'DijiMagic — Meta Pixel Base',
     type: 'html',
     parameter: [
       tpl('html', metaPixelBaseHtml(pixelId)),
@@ -464,7 +464,7 @@ export async function deployGtm(
 
     // Custom event trigger keyed on the dataLayer event name (ga4Event).
     const trigger = await upsertTrigger(accessToken, accountId, containerId, workspaceId, existingTriggers, {
-      name: `YoAi — ${def.ga4Event}`,
+      name: `DijiMagic — ${def.ga4Event}`,
       type: 'customEvent',
       customEventFilter: [
         {
@@ -479,7 +479,7 @@ export async function deployGtm(
     // GA4 event tag.
     if (measurementId) {
       await upsertTag(accessToken, accountId, containerId, workspaceId, existingTags, {
-        name: `YoAi GA4 — ${def.ga4Event}`,
+        name: `DijiMagic GA4 — ${def.ga4Event}`,
         type: 'gaawe',
         parameter: ga4EventParams(measurementId, def.ga4Event, def.hasValue),
         firingTriggerId: [triggerId],
@@ -488,7 +488,7 @@ export async function deployGtm(
 
     // Meta event tag (Custom HTML — fbq track <metaEvent>).
     await upsertTag(accessToken, accountId, containerId, workspaceId, existingTags, {
-      name: `YoAi Meta — ${def.metaEvent}`,
+      name: `DijiMagic Meta — ${def.metaEvent}`,
       type: 'html',
       parameter: [
         tpl('html', metaEventHtml(def.metaEvent, def.hasValue)),
@@ -510,7 +510,7 @@ export async function deployGtm(
       `${wsBase(accountId, containerId, workspaceId)}:create_version`,
       {
         method: 'POST',
-        body: JSON.stringify({ name: `YoAi Setup ${new Date().toISOString()}` }),
+        body: JSON.stringify({ name: `DijiMagic Setup ${new Date().toISOString()}` }),
       },
     )
     versionId = versionRes.containerVersion?.containerVersionId

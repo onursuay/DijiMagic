@@ -622,7 +622,7 @@ async function createAssetGroupWithAssets(
         .map((s) => buildPMaxAudienceSegment(s))
         .filter((x): x is Record<string, unknown> => x != null)
       if (segments.length > 0) {
-        const audName = `YoAi PMax Sinyal - ${params.campaignName} ${Date.now()}`.slice(0, 250)
+        const audName = `DijiMagic PMax Sinyal - ${params.campaignName} ${Date.now()}`.slice(0, 250)
         const audRes = await postMutate<{ results: Array<{ resourceName: string }> }>(ctx, 'audiences', [{
           create: { name: audName, dimensions: [{ audienceSegments: { segments } }] },
         }])

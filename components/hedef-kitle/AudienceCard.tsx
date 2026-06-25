@@ -193,7 +193,7 @@ export default function AudienceCard({
                 ? 'bg-green-50 text-green-600'
                 : 'bg-blue-50 text-blue-600'
             }`}>
-              {audience.origin === 'local' ? 'YoAi' : 'Meta'}
+              {audience.origin === 'local' ? 'DijiMagic' : 'Meta'}
             </span>
           </div>
           <div className="flex items-center gap-2 mt-0.5">

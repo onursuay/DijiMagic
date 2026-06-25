@@ -17,7 +17,7 @@ const productItems = [
   { icon: 'users', label: { tr: 'Hedef Kitle', en: 'Audience' }, desc: { tr: 'Yapay zeka algoritmaları ile en doğru hedef kitlelere ulaş', en: 'Reach the right audiences with AI' }, href: '/#ozellikler' },
   { icon: 'search', label: { tr: 'SEO', en: 'SEO' }, desc: { tr: 'SEO analizini saniyeler içinde gerçekleştir, ekstra araçlara gerek kalmadan öne çık', en: 'Run SEO analysis in seconds' }, href: '/#ozellikler' },
   { icon: 'image', label: { tr: 'Tasarım', en: 'Design' }, desc: { tr: 'Reklam tasarımlarını kolayca hazırla', en: 'Easily prepare ad designs' }, href: '/#ozellikler' },
-  { icon: 'sparkle', label: { tr: 'YoAi', en: 'YoAi' }, desc: { tr: 'Blog ve görsel içeriklerinizi anında üret', en: 'Generate content instantly' }, href: '/#ozellikler' },
+  { icon: 'sparkle', label: { tr: 'DijiMagic', en: 'DijiMagic' }, desc: { tr: 'Blog ve görsel içeriklerinizi anında üret', en: 'Generate content instantly' }, href: '/#ozellikler' },
 ]
 
 const integrationItems = [
@@ -73,7 +73,7 @@ export default function LandingHeader({ locale, ctaSchedule, ctaTrial }: Props) 
 
         {/* Logo — smaller */}
         <Link href="/" className="shrink-0">
-          <Image src="/logos/yoai-logo.png" alt="YoAi" width={56} height={22} className="object-contain brightness-0 invert" />
+          <Image src="/logos/dijimagic-logo.png" alt="DijiMagic" width={56} height={22} className="object-contain brightness-0 invert" />
         </Link>
 
         {/* Center nav — all pills */}

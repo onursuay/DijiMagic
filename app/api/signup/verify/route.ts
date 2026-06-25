@@ -4,7 +4,7 @@ import { supabase } from '@/lib/supabase/client'
 import { checkBlocklist, extractDomain } from '@/lib/admin/blocklist'
 import { signUserId } from '@/lib/auth/userCookie'
 
-const APP_URL = process.env.NEXT_PUBLIC_APP_URL || 'https://yoai.yodijital.com'
+const APP_URL = process.env.NEXT_PUBLIC_APP_URL || 'https://dijimagic.com'
 
 /**
  * Email doğrulama callback'i.

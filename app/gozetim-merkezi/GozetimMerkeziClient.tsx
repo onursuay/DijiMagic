@@ -90,7 +90,7 @@ interface OverviewPayload {
     totalSources: number
   }
   profiles: ProfileEntry[]
-  yoalgoritmaHealth?: {
+  dijialgoritmaHealth?: {
     totalRuns: number
     failedRuns: number
     runningRuns: number
@@ -295,56 +295,56 @@ export default function GozetimMerkeziClient() {
         </div>
       )}
 
-      {/* YoAlgoritma kart üretimi sağlığı — asıl hastalık SESSİZ HATA idi: failed/stale koşuları yüzeye çıkar */}
-      {data?.yoalgoritmaHealth && (
+      {/* DijiAlgoritma kart üretimi sağlığı — asıl hastalık SESSİZ HATA idi: failed/stale koşuları yüzeye çıkar */}
+      {data?.dijialgoritmaHealth && (
         <div
           className={`mb-4 rounded-xl border px-4 py-3 ${
-            data.yoalgoritmaHealth.isUnhealthy
+            data.dijialgoritmaHealth.isUnhealthy
               ? 'border-red-200 bg-red-50'
               : 'border-emerald-200 bg-emerald-50'
           }`}
         >
           <div className="flex items-center justify-between gap-3">
             <div className="flex items-center gap-2">
-              {data.yoalgoritmaHealth.isUnhealthy ? (
+              {data.dijialgoritmaHealth.isUnhealthy ? (
                 <AlertTriangle className="h-4 w-4 text-red-600" />
               ) : (
                 <CheckCircle2 className="h-4 w-4 text-emerald-600" />
               )}
               <span
                 className={`text-base font-semibold ${
-                  data.yoalgoritmaHealth.isUnhealthy ? 'text-red-700' : 'text-emerald-700'
+                  data.dijialgoritmaHealth.isUnhealthy ? 'text-red-700' : 'text-emerald-700'
                 }`}
               >
-                {t('yoalgoritmaHealth.title')} —{' '}
-                {data.yoalgoritmaHealth.isUnhealthy
-                  ? t('yoalgoritmaHealth.unhealthy')
-                  : t('yoalgoritmaHealth.healthy')}
+                {t('dijialgoritmaHealth.title')} —{' '}
+                {data.dijialgoritmaHealth.isUnhealthy
+                  ? t('dijialgoritmaHealth.unhealthy')
+                  : t('dijialgoritmaHealth.healthy')}
               </span>
             </div>
             <div className="flex items-center gap-3 text-xs text-gray-600">
               <span>
-                {t('yoalgoritmaHealth.completedRuns')}: {data.yoalgoritmaHealth.completedRuns}
+                {t('dijialgoritmaHealth.completedRuns')}: {data.dijialgoritmaHealth.completedRuns}
               </span>
-              <span className={data.yoalgoritmaHealth.failedRuns > 0 ? 'font-semibold text-red-700' : ''}>
-                {t('yoalgoritmaHealth.failedRuns')}: {data.yoalgoritmaHealth.failedRuns}
-              </span>
-              <span>
-                {t('yoalgoritmaHealth.runningRuns')}: {data.yoalgoritmaHealth.runningRuns}
+              <span className={data.dijialgoritmaHealth.failedRuns > 0 ? 'font-semibold text-red-700' : ''}>
+                {t('dijialgoritmaHealth.failedRuns')}: {data.dijialgoritmaHealth.failedRuns}
               </span>
               <span>
-                {t('yoalgoritmaHealth.latestSuccess')}:{' '}
-                {data.yoalgoritmaHealth.latestSuccessDate || t('yoalgoritmaHealth.noRuns')}
+                {t('dijialgoritmaHealth.runningRuns')}: {data.dijialgoritmaHealth.runningRuns}
+              </span>
+              <span>
+                {t('dijialgoritmaHealth.latestSuccess')}:{' '}
+                {data.dijialgoritmaHealth.latestSuccessDate || t('dijialgoritmaHealth.noRuns')}
               </span>
             </div>
           </div>
-          {data.yoalgoritmaHealth.recentFailures.length > 0 && (
+          {data.dijialgoritmaHealth.recentFailures.length > 0 && (
             <div className="mt-2 border-t border-red-100 pt-2">
               <p className="mb-1 text-xs font-medium text-gray-700">
-                {t('yoalgoritmaHealth.recentFailuresTitle')}
+                {t('dijialgoritmaHealth.recentFailuresTitle')}
               </p>
               <ul className="space-y-1">
-                {data.yoalgoritmaHealth.recentFailures.map((f, i) => (
+                {data.dijialgoritmaHealth.recentFailures.map((f, i) => (
                   <li key={i} className="text-xs text-red-700">
                     <span className="font-mono">{f.run_date}</span> · {f.account_id || '—'} ·{' '}
                     {f.error_message || '—'}

@@ -1,4 +1,4 @@
-/* YoAi — Firecrawl REST v2 client.
+/* DijiMagic — Firecrawl REST v2 client.
    Apify pattern'i ile aynı: isFirecrawlReady() flag + key kontrolü;
    hata/limit/timeout durumunda çağıran taraf HTTP fetch'e düşer. */
 import type { FirecrawlPage, MapLink } from './types'

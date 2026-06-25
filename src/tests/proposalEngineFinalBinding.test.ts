@@ -9,11 +9,11 @@
  */
 
 import assert from 'assert'
-import { buildDeterministicQueryPlan } from '../../lib/yoai/competitorQueryExpander'
-import type { QueryExpanderInput, CompetitorQueryPlan } from '../../lib/yoai/competitorQueryExpander'
-import { validateProposalPolicy, applyPolicyGuardToProposals } from '../../lib/yoai/proposalPolicyGuard'
-import type { FullAdProposal } from '../../lib/yoai/adCreator'
-import type { CampaignIntentProfile } from '../../lib/yoai/campaignIntentEngine'
+import { buildDeterministicQueryPlan } from '../../lib/dijimagic/competitorQueryExpander'
+import type { QueryExpanderInput, CompetitorQueryPlan } from '../../lib/dijimagic/competitorQueryExpander'
+import { validateProposalPolicy, applyPolicyGuardToProposals } from '../../lib/dijimagic/proposalPolicyGuard'
+import type { FullAdProposal } from '../../lib/dijimagic/adCreator'
+import type { CampaignIntentProfile } from '../../lib/dijimagic/campaignIntentEngine'
 
 // ── Test helpers ──────────────────────────────────────────────────────────────
 

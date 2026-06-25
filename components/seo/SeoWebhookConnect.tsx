@@ -16,9 +16,9 @@ interface Props {
 }
 
 /* Geliştiriciye gösterilen örnek kodlar — API alanı adlarıdır, çeviriye tabi değildir. */
-const HEADERS_SAMPLE = `X-YoAi-Event: article.publish
-X-YoAi-Timestamp: 1716700000000
-X-YoAi-Signature: sha256=<hmac>
+const HEADERS_SAMPLE = `X-DijiMagic-Event: article.publish
+X-DijiMagic-Timestamp: 1716700000000
+X-DijiMagic-Signature: sha256=<hmac>
 Content-Type: application/json`
 
 const PAYLOAD_SAMPLE = `{
@@ -40,13 +40,13 @@ const PAYLOAD_SAMPLE = `{
 const NODE_SAMPLE = `// Node.js / Express
 const crypto = require('crypto')
 
-app.post('/api/yoai-webhook', express.raw({ type: '*/*' }), (req, res) => {
+app.post('/api/dijimagic-webhook', express.raw({ type: '*/*' }), (req, res) => {
   const raw = req.body                 // ham gövde (parse edilmemiş!)
   const expected = 'sha256=' + crypto
-    .createHmac('sha256', YOAI_SECRET)
+    .createHmac('sha256', DIJIMAGIC_SECRET)
     .update(raw)
     .digest('hex')
-  const sig = req.get('X-YoAi-Signature') || ''
+  const sig = req.get('X-DijiMagic-Signature') || ''
   if (!crypto.timingSafeEqual(Buffer.from(expected), Buffer.from(sig))) {
     return res.status(401).end()
   }
@@ -57,8 +57,8 @@ app.post('/api/yoai-webhook', express.raw({ type: '*/*' }), (req, res) => {
 
 const PHP_SAMPLE = `<?php // PHP
 $raw = file_get_contents('php://input');
-$expected = 'sha256=' . hash_hmac('sha256', $raw, $YOAI_SECRET);
-$sig = $_SERVER['HTTP_X_YOAI_SIGNATURE'] ?? '';
+$expected = 'sha256=' . hash_hmac('sha256', $raw, $DIJIMAGIC_SECRET);
+$sig = $_SERVER['HTTP_X_DIJIMAGIC_SIGNATURE'] ?? '';
 if (!hash_equals($expected, $sig)) { http_response_code(401); exit; }
 $data = json_decode($raw, true);
 // ...$data['article'] ile kendi sisteminizde kayıt oluşturun...

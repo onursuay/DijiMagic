@@ -3,7 +3,7 @@
 /**
  * Panel-içi analitik script yükleyici (Google Tag Manager ve/veya GA4).
  *
- * Bu, YoAi PANELİNİN KENDİSİ için birinci-taraf ürün analitiğidir — RouteTracker
+ * Bu, DijiMagic PANELİNİN KENDİSİ için birinci-taraf ürün analitiğidir — RouteTracker
  * + lib/analytics/track.ts'in window.dataLayer'a pushladığı `page_view` ve
  * `tab_view` event'lerini tüketen tag yöneticisi/ölçüm script'ini yükler.
  *

@@ -110,7 +110,7 @@ ALTER TABLE public.article_schedules
 ```js
 #!/usr/bin/env node
 /**
- * YoAi — SEO site_content_briefs migration uygulayıcı.
+ * DijiMagic — SEO site_content_briefs migration uygulayıcı.
  * Additive + idempotent. CANONICAL (omddq) projeye uygulanır.
  * Gerekli env (.env.local): DATABASE_URL (Transaction mode, port 6543).
  */
@@ -306,7 +306,7 @@ git push
 ```ts
 import 'server-only'
 import { supabase } from '@/lib/supabase/client'
-import { scanBusinessSource } from '@/lib/yoai/businessSourceScanner'
+import { scanBusinessSource } from '@/lib/dijimagic/businessSourceScanner'
 import { claudeText, isClaudeReady } from '@/lib/anthropic/text'
 import { upsertBrief } from '@/lib/seo/siteContentBriefStore'
 
@@ -1356,7 +1356,7 @@ git push
 CRON_SECRET ile:
 
 ```bash
-curl -s -H "Authorization: Bearer $CRON_SECRET" "https://yoai.yodijital.com/api/cron/seo-brief-refresh" | python3 -m json.tool
+curl -s -H "Authorization: Bearer $CRON_SECRET" "https://dijimagic.com/api/cron/seo-brief-refresh" | python3 -m json.tool
 ```
 Expected: `{"ok": true, "candidates": >=1, "ran": >=1}`
 
@@ -1381,9 +1381,9 @@ Expected: `scan_status: "completed"`, `categories` site hizmetlerini içerir, `c
 UI'da otomasyonu kaydet (Anahtar Kelime Havuzu boş bırak, hedef site ustasiniyolla.com). Bir sonraki üretimde (veya `selectDailyTopic` mantığıyla) konunun site kategorilerinden (örn. "Koltuk Yıkama …") geldiğini, Belgemod/MYK temalı OLMADIĞINI teyit et. Manuel hızlı tetik için cron:
 
 ```bash
-curl -s -H "Authorization: Bearer $CRON_SECRET" "https://yoai.yodijital.com/api/cron/seo-article-run" | python3 -m json.tool
+curl -s -H "Authorization: Bearer $CRON_SECRET" "https://dijimagic.com/api/cron/seo-article-run" | python3 -m json.tool
 ```
-Expected: dönen `keyword` site hizmetiyle ilgili; `yoai_articles` son kaydı site kategorisinde.
+Expected: dönen `keyword` site hizmetiyle ilgili; `dijimagic_articles` son kaydı site kategorisinde.
 
 - [ ] **Step 5: Havuz override doğrula**
 

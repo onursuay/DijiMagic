@@ -3,8 +3,8 @@
  * Çalıştırma: npx tsx src/tests/copyQualityGuide.test.ts
  */
 import assert from 'assert'
-import { COPY_QUALITY_GUIDE, copyQualityBlock, isExpertCopyEnabledForYoAlgoritma } from '../../lib/yoai/ai/docs/copyQualityGuide'
-import { buildPerCampaignSystemBlocks } from '../../lib/yoai/ai/perCampaignPrompt'
+import { COPY_QUALITY_GUIDE, copyQualityBlock, isExpertCopyEnabledForDijiAlgoritma } from '../../lib/dijimagic/ai/docs/copyQualityGuide'
+import { buildPerCampaignSystemBlocks } from '../../lib/dijimagic/ai/perCampaignPrompt'
 import { buildExpertPlanPrompt } from '../../lib/strategy/expertPlan'
 
 let passed = 0
@@ -38,11 +38,11 @@ test('copyQualityBlock: ephemeral-cache system bloğu', () => {
   assert.ok(b.text.includes('HOOK'))
 })
 
-test('isExpertCopyEnabledForYoAlgoritma: flag mantığı', () => {
+test('isExpertCopyEnabledForDijiAlgoritma: flag mantığı', () => {
   process.env.YOALGORITHM_EXPERT_COPY_ENABLED = 'false'
-  assert.strictEqual(isExpertCopyEnabledForYoAlgoritma(), false)
+  assert.strictEqual(isExpertCopyEnabledForDijiAlgoritma(), false)
   process.env.YOALGORITHM_EXPERT_COPY_ENABLED = 'true'
-  assert.strictEqual(isExpertCopyEnabledForYoAlgoritma(), true)
+  assert.strictEqual(isExpertCopyEnabledForDijiAlgoritma(), true)
 })
 
 test('REGRESYON: flag kapalı → perCampaign blokları rehber İÇERMEZ', () => {

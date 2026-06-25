@@ -131,7 +131,7 @@ COMMENT ON TABLE public.websites IS 'Web Site Yöneticisi Faz 1 — site kaydı 
 ```javascript
 #!/usr/bin/env node
 /**
- * YoAi — Web Site Yöneticisi temel tablolar migration uygulayıcı.
+ * DijiMagic — Web Site Yöneticisi temel tablolar migration uygulayıcı.
  * Additive + idempotent. CANONICAL (omddq) projeye uygulanır.
  * Gerekli env (.env.local): DATABASE_URL (Transaction mode, port 6543).
  */
@@ -926,7 +926,7 @@ git commit -m "feat(web-site-yoneticisi): Faz 1a — nav + route + slug + TR/EN 
 'use client'
 
 import SidebarNav from '@/components/SidebarNav'
-import BusinessProfileGuard from '@/components/yoai/BusinessProfileGuard'
+import BusinessProfileGuard from '@/components/dijimagic/BusinessProfileGuard'
 import AccountApprovalGuard from '@/components/auth/AccountApprovalGuard'
 
 export default function WebSiteYoneticisiLayout({

@@ -6,13 +6,13 @@ import crypto from 'node:crypto'
 /**
  * WordPress "Uygulama Şifresi Yetkilendirme" (tek-tık) akışını başlatır.
  *
- * Kullanıcı yalnızca site adresini girer; şifresini YoAi'ye GİRMEZ — kendi
+ * Kullanıcı yalnızca site adresini girer; şifresini DijiMagic'e GİRMEZ — kendi
  * WordPress panelinde "Onayla" der ve WP, otomatik üretilen uygulama
  * şifresini callback'e geri gönderir.
  *
  * Akış (WP Application Passwords Integration Guide):
  *   {site}/wp-admin/authorize-application.php
- *     ?app_name=YoAi SEO&app_id={uuid}&success_url={callback}&reject_url={callback}
+ *     ?app_name=DijiMagic SEO&app_id={uuid}&success_url={callback}&reject_url={callback}
  *   → onay → success_url'e site_url, user_login, password eklenerek redirect.
  *
  * Güvenlik: state cookie (CSRF) + success_url HTTPS zorunlu (WP şartı).
@@ -21,7 +21,7 @@ import crypto from 'node:crypto'
  */
 export const dynamic = 'force-dynamic'
 
-const APP_ID = '7b3f2c1a-9e44-4a21-8c2b-0a1b2c3d4e5f' // sabit YoAi uygulama kimliği (geçerli UUID — WP şartı)
+const APP_ID = '7b3f2c1a-9e44-4a21-8c2b-0a1b2c3d4e5f' // sabit DijiMagic uygulama kimliği (geçerli UUID — WP şartı)
 
 function normalizeSite(raw: string): string | null {
   let url = raw.trim()
@@ -90,7 +90,7 @@ export async function GET(request: Request) {
   const rejectUrl = `${callbackBase}?state=${state}&rejected=1`
 
   const authUrl = new URL(authEndpoint)
-  authUrl.searchParams.set('app_name', 'YoAi SEO')
+  authUrl.searchParams.set('app_name', 'DijiMagic SEO')
   authUrl.searchParams.set('app_id', APP_ID)
   authUrl.searchParams.set('success_url', successUrl)
   authUrl.searchParams.set('reject_url', rejectUrl)

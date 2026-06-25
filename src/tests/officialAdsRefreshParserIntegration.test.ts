@@ -6,7 +6,7 @@ import assert from 'assert'
 import {
   runOfficialAdsDocsRefresh,
   type OfficialAdsSource,
-} from '../../lib/yoai/officialAdsDocsRefresh'
+} from '../../lib/dijimagic/officialAdsDocsRefresh'
 
 let passed = 0
 let failed = 0

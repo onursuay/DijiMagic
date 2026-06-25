@@ -8,7 +8,7 @@
    Key decisions:
    - Uses Opus 4.8 with adaptive thinking + effort:high for rich
      creative output — DO NOT send temperature/top_p/top_k/budget_tokens.
-   - Full color freedom: the YoAi dashboard's amber/yellow ban does NOT
+   - Full color freedom: the DijiMagic dashboard's amber/yellow ban does NOT
      apply here — customer marketing sites may use any brand-appropriate
      palette. A honey brand SHOULD get amber/gold. (See DesignSystem JSDoc.)
    - Soft-fail: returns the safe default DesignSystem on any error so the

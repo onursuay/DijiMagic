@@ -27,8 +27,8 @@ export const dynamic = 'force-dynamic'
  *   - format='sections' → renderSectionsDocument(...)         [/s/ ile birebir]
  * Sonra thumbnail'e özel iki hafif post-process uygulanır (assembleDocument'e dokunmadan):
  *   1. Reveal nötrleme: küçük, kaydırılmayan kutuda alt bölümler IntersectionObserver
- *      tetiklenmediği için gizli kalır → `[data-yoai-reveal]` görünür yapılır (settled state).
- *   2. Runtime sökme: kartta etkileşim yok → `/yoai-site-runtime.js` script'i kaldırılır
+ *      tetiklenmediği için gizli kalır → `[data-dijimagic-reveal]` görünür yapılır (settled state).
+ *   2. Runtime sökme: kartta etkileşim yok → `/dijimagic-site-runtime.js` script'i kaldırılır
  *      (gereksiz animasyon/motion thumbnail'i bozmasın). sections sitelerinde runtime zaten yok.
  *
  * İZOLASYON: yanıta `/s/` ile AYNI `SITE_CSP` yazılır (defense-in-depth). Kart `<iframe>`'i
@@ -38,14 +38,14 @@ export const dynamic = 'force-dynamic'
 
 /** Thumbnail'e özel head enjeksiyonu: reveal'i kalıcı görünür yapan stil (motion yok). */
 const THUMB_HEAD_STYLE =
-  '<style>[data-yoai-reveal]{opacity:1!important;transform:none!important;transition:none!important}' +
+  '<style>[data-dijimagic-reveal]{opacity:1!important;transform:none!important;transition:none!important}' +
   '*{animation:none!important}</style>'
 
 /** Runtime script tag'lerini söker (serve: external; preview: inline) — thumbnail etkileşimsizdir. */
 function stripRuntime(html: string): string {
   return html
-    .replace(/<script[^>]*src=["']\/yoai-site-runtime\.js["'][^>]*><\/script>/gi, '')
-    .replace(/<script>[\s\S]*?yoai-site-runtime[\s\S]*?<\/script>/gi, '')
+    .replace(/<script[^>]*src=["']\/dijimagic-site-runtime\.js["'][^>]*><\/script>/gi, '')
+    .replace(/<script>[\s\S]*?dijimagic-site-runtime[\s\S]*?<\/script>/gi, '')
 }
 
 /** Thumbnail post-process: reveal stilini head'e ekle + runtime'ı sök. */

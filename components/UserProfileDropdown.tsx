@@ -63,8 +63,8 @@ export default function UserProfileDropdown({ collapsed, hasGozetimAccess = fals
     try {
       await fetch('/api/auth/logout', { method: 'POST' })
     } catch {}
-    // Clear all YoAi localStorage
-    const keys = Object.keys(localStorage).filter(k => k.startsWith('yoai-'))
+    // Clear all DijiMagic localStorage
+    const keys = Object.keys(localStorage).filter(k => k.startsWith('dijimagic-'))
     keys.forEach(k => localStorage.removeItem(k))
     setOpen(false)
     router.push('/login')

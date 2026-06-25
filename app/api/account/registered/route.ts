@@ -11,7 +11,7 @@ import {
   normAcct,
   type AdPlatform,
 } from '@/lib/account/registeredAccounts'
-import { isPerAccountScopeEnabled } from '@/lib/yoai/featureFlag'
+import { isPerAccountScopeEnabled } from '@/lib/dijimagic/featureFlag'
 import { COOKIE } from '@/lib/google-ads/constants'
 import { updateSelectedMetaAdAccount, updateMetaConnectionHealth } from '@/lib/metaConnectionStore'
 import { upsertConnection as upsertGoogleConnection, revokeConnection as revokeGoogleConnection } from '@/lib/googleAdsConnectionStore'
@@ -55,7 +55,7 @@ export async function GET() {
   return NextResponse.json({
     ok: true,
     enabled: true,
-    // YoAlgoritma işletme-scope modu açık mı (UI seçiciyi işletme moduna alır)
+    // DijiAlgoritma işletme-scope modu açık mı (UI seçiciyi işletme moduna alır)
     perAccountScope: isPerAccountScopeEnabled(),
     accounts,
     count,

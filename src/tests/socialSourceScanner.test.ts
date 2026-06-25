@@ -13,8 +13,8 @@ import {
   scanSocialSource,
   isSocialSourceType,
   getSocialScanProviderInfo,
-} from '../../lib/yoai/socialSourceScanner'
-import { scanBusinessSource } from '../../lib/yoai/businessSourceScanner'
+} from '../../lib/dijimagic/socialSourceScanner'
+import { scanBusinessSource } from '../../lib/dijimagic/businessSourceScanner'
 
 let passed = 0
 let failed = 0

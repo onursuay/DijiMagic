@@ -7,8 +7,8 @@ import { notifyOwnersOfSignupEvent } from '@/lib/notifications/ownerNotifier'
 import { checkBlocklist, extractDomain } from '@/lib/admin/blocklist'
 
 const resend = process.env.RESEND_API_KEY ? new Resend(process.env.RESEND_API_KEY) : null
-const APP_URL = process.env.NEXT_PUBLIC_APP_URL || 'https://yoai.yodijital.com'
-const FROM_EMAIL = process.env.FROM_EMAIL || 'YO Dijital Medya Anonim Şirketi <info@yodijital.com>'
+const APP_URL = process.env.NEXT_PUBLIC_APP_URL || 'https://dijimagic.com'
+const FROM_EMAIL = process.env.FROM_EMAIL || 'DijiMagic <info@dijimagic.com>'
 
 export async function POST(request: NextRequest) {
   try {
@@ -145,7 +145,7 @@ export async function POST(request: NextRequest) {
             <div style="font-family: 'Inter', Arial, sans-serif; max-width: 480px; margin: 0 auto; padding: 40px 24px; background: #060609; color: #ffffff; border-radius: 16px;">
               <div style="text-align: center; margin-bottom: 32px;">
                 <h1 style="font-size: 24px; font-weight: 700; margin: 0 0 8px;">Hoş geldiniz, ${cleanName}!</h1>
-                <p style="font-size: 15px; color: #9ca3af; margin: 0;">YoAi hesabınızı aktifleştirmek için aşağıdaki butona tıklayın.</p>
+                <p style="font-size: 15px; color: #9ca3af; margin: 0;">DijiMagic hesabınızı aktifleştirmek için aşağıdaki butona tıklayın.</p>
               </div>
               <div style="text-align: center; margin: 32px 0;">
                 <a href="${verifyUrl}" style="display: inline-block; background: linear-gradient(135deg, #10b981, #14b8a6); color: #000; font-weight: 600; font-size: 15px; padding: 14px 32px; border-radius: 12px; text-decoration: none;">
@@ -157,7 +157,7 @@ export async function POST(request: NextRequest) {
                 Bu işlemi siz yapmadıysanız bu e-postayı görmezden gelebilirsiniz.
               </p>
               <hr style="border: none; border-top: 1px solid #1f2937; margin: 24px 0;" />
-              <p style="font-size: 12px; color: #4b5563; text-align: center;">YoAi — Yapay Zeka Destekli Pazarlama Yönetimi</p>
+              <p style="font-size: 12px; color: #4b5563; text-align: center;">DijiMagic — Yapay Zeka Destekli Pazarlama Yönetimi</p>
             </div>
           `,
         })

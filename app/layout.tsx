@@ -17,8 +17,8 @@ const inter = Inter({
 })
 
 export const metadata: Metadata = {
-  metadataBase: new URL('https://yoai.yodijital.com'),
-  title: 'YoAI Dashboard',
+  metadataBase: new URL('https://dijimagic.com'),
+  title: 'DijiMagic Dashboard',
   description: 'Reklam ve pazarlama yönetim platformu',
 }
 

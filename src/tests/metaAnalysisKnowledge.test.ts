@@ -8,13 +8,13 @@ import {
   META_ANALYSIS_KNOWLEDGE,
   META_CREATIVE_PRINCIPLES,
   metaAnalysisBlock,
-} from '../../lib/yoai/ai/docs/meta_analysis_knowledge'
-import { buildPerCampaignSystemBlocks } from '../../lib/yoai/ai/perCampaignPrompt'
-import { buildPerAdSystemBlocks } from '../../lib/yoai/ai/perAdPrompt'
-import { buildSystemBlocks } from '../../lib/yoai/ai/systemPrompt'
+} from '../../lib/dijimagic/ai/docs/meta_analysis_knowledge'
+import { buildPerCampaignSystemBlocks } from '../../lib/dijimagic/ai/perCampaignPrompt'
+import { buildPerAdSystemBlocks } from '../../lib/dijimagic/ai/perAdPrompt'
+import { buildSystemBlocks } from '../../lib/dijimagic/ai/systemPrompt'
 import { buildOptimizationSystemPrompt } from '../../lib/meta/optimization/aiRecommender'
 import { buildStrategySystemPrompt } from '../../lib/strategy/ai-generator'
-import { buildGenerationPrompt } from '../../lib/yoai/prompts'
+import { buildGenerationPrompt } from '../../lib/dijimagic/prompts'
 // <<BUILDER IMPORTS — yeni import'ları BU SATIRIN ÜSTÜNE ekle>>
 
 const FULL_MARKER = 'Meta Reklam Analiz Bilgisi'

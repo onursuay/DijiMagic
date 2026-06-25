@@ -24,7 +24,7 @@ export async function createCustomConversionGoal(
     throw new Error('Dönüşüm eylemi seçilmedi')
   }
 
-  const goalName = `YoAi - ${campaignName ?? 'Campaign'} - ${Date.now()}`
+  const goalName = `DijiMagic - ${campaignName ?? 'Campaign'} - ${Date.now()}`
   const createRes = await fetch(
     `${GOOGLE_ADS_BASE}/customers/${ctx.customerId}/customConversionGoals:mutate`,
     {

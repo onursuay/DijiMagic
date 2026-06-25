@@ -25,7 +25,7 @@ import type { ConversionActionForWizard } from '../shared/WizardTypes'
 import { inputCls, CAMPAIGN_TYPE_BIDDING } from '../shared/WizardTypes'
 import { getBudgetRecommendation } from '../shared/WizardValidation'
 import WizardSelect from '@/components/meta/wizard/WizardSelect'
-import { translateEnum } from '@/lib/yoai/translations'
+import { translateEnum } from '@/lib/dijimagic/translations'
 
 const EU_POLICY_URL = 'https://support.google.com/adspolicy/answer/6014595'
 

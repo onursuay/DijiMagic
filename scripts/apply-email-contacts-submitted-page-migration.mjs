@@ -1,6 +1,6 @@
 #!/usr/bin/env node
 /**
- * YoAi — Email Marketing email_contacts.submitted_at + page_id migration uygulayıcı.
+ * DijiMagic — Email Marketing email_contacts.submitted_at + page_id migration uygulayıcı.
  * Additive + idempotent. CANONICAL (omddq) projeye uygulanır.
  * Gerekli env (.env.local): DATABASE_URL (Transaction mode, port 6543).
  */

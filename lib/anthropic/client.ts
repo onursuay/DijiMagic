@@ -1,6 +1,6 @@
 /* ──────────────────────────────────────────────────────────
    Anthropic SDK Client (singleton)
-   Faz 2: YoAlgoritma AI Engine için resmî SDK kullanımı.
+   Faz 2: DijiAlgoritma AI Engine için resmî SDK kullanımı.
    ────────────────────────────────────────────────────────── */
 
 import Anthropic from '@anthropic-ai/sdk'

@@ -5,15 +5,15 @@
       "schedule": "0 5 * * *"
     },
     {
-      "path": "/api/yoai/daily-run",
+      "path": "/api/dijimagic/daily-run",
       "schedule": "0 5 * * *"
     },
     {
-      "path": "/api/cron/yoalgoritma-scan",
+      "path": "/api/cron/dijialgoritma-scan",
       "schedule": "0 3 * * 0"
     },
     {
-      "path": "/api/cron/yoai-outcome-snapshots",
+      "path": "/api/cron/dijimagic-outcome-snapshots",
       "schedule": "0 7 * * *"
     },
     {

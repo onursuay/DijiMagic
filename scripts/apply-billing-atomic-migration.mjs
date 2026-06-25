@@ -1,6 +1,6 @@
 #!/usr/bin/env node
 /**
- * YoAi Billing — Atomik Kredi + Ledger Migration Uygulayıcı
+ * DijiMagic Billing — Atomik Kredi + Ledger Migration Uygulayıcı
  *
  * Uygular:
  *   20260521000000_billing_atomic_credits_and_ledger.sql
@@ -52,7 +52,7 @@ if (!DATABASE_URL) {
 const FILE = 'supabase/migrations/20260521000000_billing_atomic_credits_and_ledger.sql'
 
 async function main() {
-  console.log('\n🚀  YoAi Billing Atomik Kredi + Ledger Migration\n')
+  console.log('\n🚀  DijiMagic Billing Atomik Kredi + Ledger Migration\n')
   const client = new Client({ connectionString: DATABASE_URL })
   await client.connect()
   try {

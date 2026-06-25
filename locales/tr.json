@@ -89,7 +89,7 @@
       "features": {
         "optimization": "Optimizasyon",
         "strategy": "Strateji",
-        "yoalgoritma": "YoAlgoritma",
+        "dijialgoritma": "DijiAlgoritma",
         "seo": "SEO Plus",
         "audience_ai": "AI Tabanlı Hedef Kitle",
         "ad_account_slot": "Reklam Hesabı",
@@ -99,12 +99,12 @@
         "optimization_ai_scan_pro": "AI ile Tara Pro",
         "design_generation": "Tasarım Üretimi",
         "strategy_overage": "Ek Strateji",
-        "yoalgoritma_chat": "YoAlgoritma Sohbet"
+        "dijialgoritma_chat": "DijiAlgoritma Sohbet"
       },
       "featureDescriptions": {
         "optimization": "Optimizasyon paneli ve kampanya skoru için aktif bir abonelik planına sahip olmanız gerekir.",
         "strategy": "AI destekli strateji motorunu kullanmak için aktif bir abonelik planına sahip olmanız gerekir.",
-        "yoalgoritma": "YoAlgoritma komut merkezi ve AI önerileri için aktif bir abonelik planına sahip olmanız gerekir.",
+        "dijialgoritma": "DijiAlgoritma komut merkezi ve AI önerileri için aktif bir abonelik planına sahip olmanız gerekir.",
         "seo": "SEO analiz aracını kullanmak için aktif bir abonelik planına sahip olmanız gerekir.",
         "audience_ai": "AI tabanlı hedef kitle üretimi için aktif bir abonelik planına sahip olmanız gerekir.",
         "ad_account_slot": "Planınızın reklam hesabı limitine ulaştınız. Daha fazla reklam hesabı eklemek için planınızı yükseltin.",
@@ -114,7 +114,7 @@
         "optimization_ai_scan_pro": "AI ile Tara Pro derinlemesine analizi için yeterli kredi bakiyesine sahip olmanız gerekir.",
         "design_generation": "AI tasarım üretimini çalıştırmak için yeterli kredi bakiyesine sahip olmanız gerekir.",
         "strategy_overage": "Aylık strateji limitiniz doldu. Ek strateji oluşturmak için yeterli kredi bakiyesine sahip olmanız gerekir.",
-        "yoalgoritma_chat": "YoAlgoritma içerik üretimi için yeterli kredi bakiyesine sahip olmanız gerekir."
+        "dijialgoritma_chat": "DijiAlgoritma içerik üretimi için yeterli kredi bakiyesine sahip olmanız gerekir."
       }
     }
   },
@@ -125,28 +125,28 @@
       "backToHome": "Ana Sayfaya Dön",
       "intro": {
         "title": "Giriş",
-        "content": "YO Dijital Medya A.Ş. (\"YoAi\", \"Biz\") olarak kişisel verilerinizin güvenliğine önem veriyoruz. Bu politika, YoAi platformunu kullanırken hangi verileri topladığımızı, nasıl kullandığımızı, ne kadar süre sakladığımızı ve haklarınızı açıklar."
+        "content": "DijiMagic (\"DijiMagic\", \"Biz\") olarak kişisel verilerinizin güvenliğine önem veriyoruz. Bu politika, DijiMagic platformunu kullanırken hangi verileri topladığımızı, nasıl kullandığımızı, ne kadar süre sakladığımızı ve haklarınızı açıklar."
       },
       "section1Title": "1) Kapsam",
-      "section1Content": "Bu politika, YoAi web sitesi ve YoAi SaaS paneli üzerinden sunulan hizmetleri kapsar.",
+      "section1Content": "Bu politika, DijiMagic web sitesi ve DijiMagic SaaS paneli üzerinden sunulan hizmetleri kapsar.",
       "section2Title": "2) Hizmet Tanımı",
-      "section2Content": "YoAi; kullanıcıların reklam hesaplarını bağlayarak performans verilerini görüntülemesine, raporlama yapmasına ve (varsa) belirli reklam yönetimi aksiyonlarını yürütmesine yardımcı olan bir platformdur.",
+      "section2Content": "DijiMagic; kullanıcıların reklam hesaplarını bağlayarak performans verilerini görüntülemesine, raporlama yapmasına ve (varsa) belirli reklam yönetimi aksiyonlarını yürütmesine yardımcı olan bir platformdur.",
       "section3Title": "3) Bağlanan Entegrasyonlar ve Erişilen Veri Türleri",
       "section3MetaTitle": "3.1 Meta (Facebook, Instagram, WhatsApp) Entegrasyonu",
-      "section3MetaContent": "Kullanıcı, Facebook Giriş aracılığıyla Meta hesabını bağladığında YoAi aşağıdaki veri kategorilerine erişim talep eder:\n\n(a) Reklam Verileri (ads_read, ads_management, pages_manage_ads): Reklam hesabı kimlikleri, kampanyalar, reklam setleri, reklamlar, bütçeler, teklif stratejileri, hedefleme ayarları ve performans metrikleri (gösterim, tıklama, harcama, dönüşüm, ROAS).\n\n(b) Sayfa Verileri (pages_show_list, pages_read_engagement, pages_manage_posts): Facebook Sayfa adları, kimlikleri, profil görselleri, etkileşim metrikleri, yayımlanmış gönderiler (metin, görsel, video, bağlantılar) ve kullanıcının kendi Facebook Sayfasına içerik yayınlama (akış gönderileri, Reels) yeteneği.\n\n(c) Lead Verileri (leads_retrieval): Bağlı Sayfalarla ilişkili aktif lead oluşturma formları; form adları, alan yapılandırmaları ve gönderilen lead kayıtları (ad, e-posta, telefon ve reklamveren tarafından tanımlanan diğer alanlar).\n\n(d) İşletme Verileri (business_management): Business Manager hesap kimlikleri ve adları, sahip olunan Sayfalar ve sahip olunan WhatsApp Business Hesapları — kurumsal varlıkların eşlenmesi için kullanılır.\n\n(e) Instagram Verileri (instagram_basic, instagram_content_publish): Instagram İşletme Hesabı profil bilgileri (kullanıcı adı, profil fotoğrafı), yayımlanmış medya (görseller, videolar, açıklamalar, bağlantılar) ve kullanıcının Instagram İşletme Hesabına içerik yayınlama (akış gönderileri, Reels, Stories) yeteneği.\n\n(f) WhatsApp Verileri (whatsapp_business_management, whatsapp_business_messaging): WhatsApp Business Hesap kimlikleri, ilişkili telefon numaraları (görünen numara, doğrulanmış ad, kalite puanı) ve Click-to-WhatsApp (CTWA) reklam hedefi oluşturma yeteneği.\n\nTüm Meta verileri yalnızca YoAi platformu içindeki reklam yönetimi, raporlama ve kampanya oluşturma özelliklerini sağlamak amacıyla kullanılır. Veriler üçüncü taraflara aktarılmaz, satılmaz veya kullanıcının reklam operasyonlarıyla ilgisiz amaçlarla kullanılmaz.",
+      "section3MetaContent": "Kullanıcı, Facebook Giriş aracılığıyla Meta hesabını bağladığında DijiMagic aşağıdaki veri kategorilerine erişim talep eder:\n\n(a) Reklam Verileri (ads_read, ads_management, pages_manage_ads): Reklam hesabı kimlikleri, kampanyalar, reklam setleri, reklamlar, bütçeler, teklif stratejileri, hedefleme ayarları ve performans metrikleri (gösterim, tıklama, harcama, dönüşüm, ROAS).\n\n(b) Sayfa Verileri (pages_show_list, pages_read_engagement, pages_manage_posts): Facebook Sayfa adları, kimlikleri, profil görselleri, etkileşim metrikleri, yayımlanmış gönderiler (metin, görsel, video, bağlantılar) ve kullanıcının kendi Facebook Sayfasına içerik yayınlama (akış gönderileri, Reels) yeteneği.\n\n(c) Lead Verileri (leads_retrieval): Bağlı Sayfalarla ilişkili aktif lead oluşturma formları; form adları, alan yapılandırmaları ve gönderilen lead kayıtları (ad, e-posta, telefon ve reklamveren tarafından tanımlanan diğer alanlar).\n\n(d) İşletme Verileri (business_management): Business Manager hesap kimlikleri ve adları, sahip olunan Sayfalar ve sahip olunan WhatsApp Business Hesapları — kurumsal varlıkların eşlenmesi için kullanılır.\n\n(e) Instagram Verileri (instagram_basic, instagram_content_publish): Instagram İşletme Hesabı profil bilgileri (kullanıcı adı, profil fotoğrafı), yayımlanmış medya (görseller, videolar, açıklamalar, bağlantılar) ve kullanıcının Instagram İşletme Hesabına içerik yayınlama (akış gönderileri, Reels, Stories) yeteneği.\n\n(f) WhatsApp Verileri (whatsapp_business_management, whatsapp_business_messaging): WhatsApp Business Hesap kimlikleri, ilişkili telefon numaraları (görünen numara, doğrulanmış ad, kalite puanı) ve Click-to-WhatsApp (CTWA) reklam hedefi oluşturma yeteneği.\n\nTüm Meta verileri yalnızca DijiMagic platformu içindeki reklam yönetimi, raporlama ve kampanya oluşturma özelliklerini sağlamak amacıyla kullanılır. Veriler üçüncü taraflara aktarılmaz, satılmaz veya kullanıcının reklam operasyonlarıyla ilgisiz amaçlarla kullanılmaz.",
       "section3GoogleTitle": "3.2 Google Ads Entegrasyonu",
       "section3GoogleContent": "Kullanıcı, Google OAuth üzerinden kendi Google Ads hesabına erişim izni verir. Erişilen veriler; Google Ads müşteri hesabı kimliği, kampanya/ad group/ad gibi reklam varlıkları, bütçe/ayarlar ve performans metrikleridir (ör. gösterimler, tıklamalar, maliyet ve ilgili raporlama alanları). Erişim kapsamı: Google Ads API (adwords scope).",
       "section3GA4Title": "3.3 Google Analytics Entegrasyonu (GA4)",
-      "section3GA4Content": "Kullanıcı Google hesabını bağladığında YoAi, aşağıdaki OAuth kapsamları (scope) aracılığıyla Google Analytics 4 verilerine erişim talep eder:\n\n(a) analytics.readonly: GA4 hesap kimliklerine, mülk (property) yapılandırmalarına, veri akışlarına, kitlelere ve rapor verilerine (oturumlar, kullanıcılar, etkinlikler, dönüşümler, trafik kaynakları) okuma erişimi.\n\n(b) analytics.edit: Kullanıcı adına GA4 mülkleri oluşturma, veri akışlarını yapılandırma, özel etkinlik tanımları belirleme, kitleler oluşturma ve dönüşüm hedefleri kurma yazma erişimi — yalnızca kullanıcı bu işlemleri YoAi'nin kurulum sihirbazları aracılığıyla açıkça başlattığında.\n\nTüm Google Analytics verileri yalnızca YoAi içinde analiz panellerini görüntülemek ve kullanıcının başlattığı yapılandırma işlemlerini gerçekleştirmek amacıyla kullanılır. Veriler hiçbir zaman üçüncü taraflara aktarılmaz, satılmaz veya reklam amaçlı kullanılmaz.",
+      "section3GA4Content": "Kullanıcı Google hesabını bağladığında DijiMagic, aşağıdaki OAuth kapsamları (scope) aracılığıyla Google Analytics 4 verilerine erişim talep eder:\n\n(a) analytics.readonly: GA4 hesap kimliklerine, mülk (property) yapılandırmalarına, veri akışlarına, kitlelere ve rapor verilerine (oturumlar, kullanıcılar, etkinlikler, dönüşümler, trafik kaynakları) okuma erişimi.\n\n(b) analytics.edit: Kullanıcı adına GA4 mülkleri oluşturma, veri akışlarını yapılandırma, özel etkinlik tanımları belirleme, kitleler oluşturma ve dönüşüm hedefleri kurma yazma erişimi — yalnızca kullanıcı bu işlemleri DijiMagic'in kurulum sihirbazları aracılığıyla açıkça başlattığında.\n\nTüm Google Analytics verileri yalnızca DijiMagic içinde analiz panellerini görüntülemek ve kullanıcının başlattığı yapılandırma işlemlerini gerçekleştirmek amacıyla kullanılır. Veriler hiçbir zaman üçüncü taraflara aktarılmaz, satılmaz veya reklam amaçlı kullanılmaz.",
       "section3GTMTitle": "3.4 Google Tag Manager Entegrasyonu",
-      "section3GTMContent": "Kullanıcı Google hesabını bağladığında YoAi, aşağıdaki OAuth kapsamları (scope) aracılığıyla Google Tag Manager verilerine erişim talep eder:\n\n(a) tagmanager.readonly: Kullanıcının GTM hesap kimliklerine, kapsayıcılarına (container), çalışma alanlarına (workspace), etiketlerine (tag), tetikleyicilerine (trigger), değişkenlerine (variable) ve sürüm geçmişine okuma erişimi — kullanıcının mevcut kurulumunu YoAi panelinde görüntülemek için kullanılır.\n\n(b) tagmanager.edit.containers: Kullanıcının GTM kapsayıcısı içinde etiketler (GA4 yapılandırması, GA4 etkinlikleri, dönüşüm takibi), tetikleyiciler (sayfa görüntüleme, form gönderimi, tıklama etkinlikleri) ve değişkenler oluşturma ve değiştirme yazma erişimi — yalnızca kullanıcı bu işlemleri YoAi'nin kurulum sihirbazları aracılığıyla açıkça başlattığında.\n\n(c) tagmanager.publish: GTM kapsayıcısı sürümlerini yayımlama izni — yalnızca kullanıcı, YoAi tarafından oluşturulan değişiklikleri uygulama içi tek tıkla işlem aracılığıyla inceleyip onayladıktan sonra. Açık kullanıcı işlemi olmadan otomatik yayımlama asla yapılmaz.\n\nTüm Google Tag Manager verileri yalnızca kullanıcının GTM kurulumunu YoAi içinde görüntülemek ve kullanıcı tarafından yapılandırılan etiketleri devreye almak amacıyla kullanılır. Veriler hiçbir zaman üçüncü taraflara aktarılmaz veya reklam amaçlı kullanılmaz.",
+      "section3GTMContent": "Kullanıcı Google hesabını bağladığında DijiMagic, aşağıdaki OAuth kapsamları (scope) aracılığıyla Google Tag Manager verilerine erişim talep eder:\n\n(a) tagmanager.readonly: Kullanıcının GTM hesap kimliklerine, kapsayıcılarına (container), çalışma alanlarına (workspace), etiketlerine (tag), tetikleyicilerine (trigger), değişkenlerine (variable) ve sürüm geçmişine okuma erişimi — kullanıcının mevcut kurulumunu DijiMagic panelinde görüntülemek için kullanılır.\n\n(b) tagmanager.edit.containers: Kullanıcının GTM kapsayıcısı içinde etiketler (GA4 yapılandırması, GA4 etkinlikleri, dönüşüm takibi), tetikleyiciler (sayfa görüntüleme, form gönderimi, tıklama etkinlikleri) ve değişkenler oluşturma ve değiştirme yazma erişimi — yalnızca kullanıcı bu işlemleri DijiMagic'in kurulum sihirbazları aracılığıyla açıkça başlattığında.\n\n(c) tagmanager.publish: GTM kapsayıcısı sürümlerini yayımlama izni — yalnızca kullanıcı, DijiMagic tarafından oluşturulan değişiklikleri uygulama içi tek tıkla işlem aracılığıyla inceleyip onayladıktan sonra. Açık kullanıcı işlemi olmadan otomatik yayımlama asla yapılmaz.\n\nTüm Google Tag Manager verileri yalnızca kullanıcının GTM kurulumunu DijiMagic içinde görüntülemek ve kullanıcı tarafından yapılandırılan etiketleri devreye almak amacıyla kullanılır. Veriler hiçbir zaman üçüncü taraflara aktarılmaz veya reklam amaçlı kullanılmaz.",
       "section3GmailTitle": "3.5 Gmail / E-posta Gönderim Entegrasyonu",
-      "section3GmailContent": "Kullanıcı, YoAi'nin E-posta Pazarlama modülünde Gmail hesabını bağladığında YoAi aşağıdaki OAuth kapsamları (scope) aracılığıyla erişim talep eder:\n\n(a) gmail.send: Kullanıcının YoAi içinde hazırlayıp açıkça başlattığı e-posta iletilerini (pazarlama kampanyaları, gönderim dizileri, raporlar veya bildirimler gibi) kullanıcının kendi bağlı Gmail hesabından gönderme izni.\n\n(b) userinfo.email: Yalnızca hangi Gmail hesabının bağlı olduğunu göstermek için kullanılan okuma erişimi.\n\nYoAi, gmail.send kapsamını yalnızca kullanıcının başlattığı iletileri göndermek için kullanır. YoAi, kullanıcının mevcut e-postalarını, gelen kutusunu, taslaklarını, etiketlerini veya kişilerini okumaz, erişmez, saklamaz, değiştirmez, silmez veya analiz etmez; gmail.send yalnızca göndermeye izin verir. Kullanıcı Gmail hesabını istediği zaman kaldırabilir; bu işlem saklanan yetkilendirme jetonunu iptal eder ve gönderimi durdurur. Tüm Gmail verisi işleme, Limited Use gereksinimleri dahil olmak üzere Google API Hizmetleri Kullanıcı Verileri Politikası ile uyumludur. Veriler hiçbir zaman üçüncü taraflara aktarılmaz, satılmaz veya reklam amaçlı kullanılmaz.",
+      "section3GmailContent": "Kullanıcı, DijiMagic'in E-posta Pazarlama modülünde Gmail hesabını bağladığında DijiMagic aşağıdaki OAuth kapsamları (scope) aracılığıyla erişim talep eder:\n\n(a) gmail.send: Kullanıcının DijiMagic içinde hazırlayıp açıkça başlattığı e-posta iletilerini (pazarlama kampanyaları, gönderim dizileri, raporlar veya bildirimler gibi) kullanıcının kendi bağlı Gmail hesabından gönderme izni.\n\n(b) userinfo.email: Yalnızca hangi Gmail hesabının bağlı olduğunu göstermek için kullanılan okuma erişimi.\n\nDijiMagic, gmail.send kapsamını yalnızca kullanıcının başlattığı iletileri göndermek için kullanır. DijiMagic, kullanıcının mevcut e-postalarını, gelen kutusunu, taslaklarını, etiketlerini veya kişilerini okumaz, erişmez, saklamaz, değiştirmez, silmez veya analiz etmez; gmail.send yalnızca göndermeye izin verir. Kullanıcı Gmail hesabını istediği zaman kaldırabilir; bu işlem saklanan yetkilendirme jetonunu iptal eder ve gönderimi durdurur. Tüm Gmail verisi işleme, Limited Use gereksinimleri dahil olmak üzere Google API Hizmetleri Kullanıcı Verileri Politikası ile uyumludur. Veriler hiçbir zaman üçüncü taraflara aktarılmaz, satılmaz veya reklam amaçlı kullanılmaz.",
       "section4Title": "4) Platform Veri Politikası Uyumu",
       "section4SubATitle": "4.1 Google API Services User Data Policy (Limited Use)",
-      "section4SubAContent": "YoAi'nin Google API'lerinden aldığı bilgilerin kullanımı ve herhangi bir uygulamaya aktarımı, Google API Services User Data Policy (https://developers.google.com/terms/api-services-user-data-policy) ve Limited Use gereklilikleri ile uyumludur. Özellikle: (a) Google kullanıcı verileri yalnızca YoAi içinde kullanıcının talep ettiği raporlama, izleme ve kampanya yönetimi özelliklerini sağlamak ve iyileştirmek için kullanılır. (b) Google kullanıcı verileri, kullanıcıya yönelik özellikleri sağlamak veya iyileştirmek için gerekli olmadıkça, kullanıcının açık onayı alınmadıkça, güvenlik amaçlı olmadıkça veya yürürlükteki yasalara uymak gerekmiyorsa üçüncü taraflara aktarılmaz. (c) Google kullanıcı verileri; reklam sunma, yeniden hedefleme, kişiselleştirilmiş reklamcılık veya ilgi alanına dayalı reklamcılık amacıyla kullanılmaz. (d) Google kullanıcı verileri hiçbir tarafa satılmaz. (e) Kullanıcı olumlu onay vermedikçe, güvenlik amacıyla gerekli olmadıkça, yürürlükteki yasalara uymak gerekmediği sürece veya veriler dahili operasyonlar için toplu ve anonimleştirilmiş hale getirilmedikçe, insanların Google kullanıcı verilerini okumasına izin verilmez.",
+      "section4SubAContent": "DijiMagic'in Google API'lerinden aldığı bilgilerin kullanımı ve herhangi bir uygulamaya aktarımı, Google API Services User Data Policy (https://developers.google.com/terms/api-services-user-data-policy) ve Limited Use gereklilikleri ile uyumludur. Özellikle: (a) Google kullanıcı verileri yalnızca DijiMagic içinde kullanıcının talep ettiği raporlama, izleme ve kampanya yönetimi özelliklerini sağlamak ve iyileştirmek için kullanılır. (b) Google kullanıcı verileri, kullanıcıya yönelik özellikleri sağlamak veya iyileştirmek için gerekli olmadıkça, kullanıcının açık onayı alınmadıkça, güvenlik amaçlı olmadıkça veya yürürlükteki yasalara uymak gerekmiyorsa üçüncü taraflara aktarılmaz. (c) Google kullanıcı verileri; reklam sunma, yeniden hedefleme, kişiselleştirilmiş reklamcılık veya ilgi alanına dayalı reklamcılık amacıyla kullanılmaz. (d) Google kullanıcı verileri hiçbir tarafa satılmaz. (e) Kullanıcı olumlu onay vermedikçe, güvenlik amacıyla gerekli olmadıkça, yürürlükteki yasalara uymak gerekmediği sürece veya veriler dahili operasyonlar için toplu ve anonimleştirilmiş hale getirilmedikçe, insanların Google kullanıcı verilerini okumasına izin verilmez.",
       "section4SubBTitle": "4.2 Meta Platform Politikası Uyumu",
-      "section4SubBContent": "YoAi'nin Meta Platform API'lerinden (Facebook, Instagram, WhatsApp) aldığı verilerin kullanımı, Meta Platform Şartları (https://developers.facebook.com/terms/) ve Meta'nın Veri Kullanımı Kısıtlamaları ile uyumludur. Özellikle:\n\n(a) Meta kullanıcı verileri yalnızca kullanıcının YoAi platformu içinde açıkça başlattığı reklam yönetimi, raporlama, kampanya oluşturma ve analiz özelliklerini sağlamak amacıyla kullanılır.\n\n(b) Meta kullanıcı verileri hiçbir üçüncü tarafa — veri simsarları, reklam ağları veya analiz sağlayıcıları dahil — hiçbir amaçla satılmaz, lisanslanmaz veya aktarılmaz.\n\n(c) Meta kullanıcı verileri; gözetim, reklamcılıkla ilgisi olmayan profilleme, kredi veya sigorta uygunluk kararları, istihdam taraması veya kullanıcının kendi reklam operasyonlarıyla ilgisiz herhangi bir amaç için kullanılmaz.\n\n(d) leads_retrieval izni aracılığıyla alınan lead form verileri yalnızca formu oluşturan Sayfa sahibi adına erişilir ve münhasıran o kullanıcının YoAi panelinde görüntülenir.\n\n(e) Instagram hesap verileri yalnızca kampanya hedeflemesi (Instagram hesaplarını reklam hedefi olarak seçme) ve reklam kreatifi seçimi için yayımlanmış medyanın görüntülenmesi amacıyla kullanılır.\n\n(f) WhatsApp Business Hesap verileri yalnızca Click-to-WhatsApp reklam oluşturmayı sağlamak ve telefon numarası kullanılabilirliğini doğrulamak için kullanılır.\n\n(g) Erişim token'ları güvenli bir şekilde httpOnly çerezlerde ve sunucu tarafı depolamada saklanır. Token'lar hiçbir zaman istemci tarafı JavaScript'e maruz bırakılmaz veya düz metin olarak loglanmaz.\n\n(h) Kullanıcı Meta entegrasyonunu kaldırdığında veya uygulamayı yetkilendirmeden çıkardığında, saklanan tüm token'lar, hesap eşlemeleri ve önbellek verileri iptal edilir ve 90 gün içinde silinmek üzere kuyruğa alınır.\n\n(i) Kullanıcılar info@yodijital.com adresine başvurarak veya uygulama içi veri silme akışı aracılığıyla anında veri silme talep edebilir.",
+      "section4SubBContent": "DijiMagic'in Meta Platform API'lerinden (Facebook, Instagram, WhatsApp) aldığı verilerin kullanımı, Meta Platform Şartları (https://developers.facebook.com/terms/) ve Meta'nın Veri Kullanımı Kısıtlamaları ile uyumludur. Özellikle:\n\n(a) Meta kullanıcı verileri yalnızca kullanıcının DijiMagic platformu içinde açıkça başlattığı reklam yönetimi, raporlama, kampanya oluşturma ve analiz özelliklerini sağlamak amacıyla kullanılır.\n\n(b) Meta kullanıcı verileri hiçbir üçüncü tarafa — veri simsarları, reklam ağları veya analiz sağlayıcıları dahil — hiçbir amaçla satılmaz, lisanslanmaz veya aktarılmaz.\n\n(c) Meta kullanıcı verileri; gözetim, reklamcılıkla ilgisi olmayan profilleme, kredi veya sigorta uygunluk kararları, istihdam taraması veya kullanıcının kendi reklam operasyonlarıyla ilgisiz herhangi bir amaç için kullanılmaz.\n\n(d) leads_retrieval izni aracılığıyla alınan lead form verileri yalnızca formu oluşturan Sayfa sahibi adına erişilir ve münhasıran o kullanıcının DijiMagic panelinde görüntülenir.\n\n(e) Instagram hesap verileri yalnızca kampanya hedeflemesi (Instagram hesaplarını reklam hedefi olarak seçme) ve reklam kreatifi seçimi için yayımlanmış medyanın görüntülenmesi amacıyla kullanılır.\n\n(f) WhatsApp Business Hesap verileri yalnızca Click-to-WhatsApp reklam oluşturmayı sağlamak ve telefon numarası kullanılabilirliğini doğrulamak için kullanılır.\n\n(g) Erişim token'ları güvenli bir şekilde httpOnly çerezlerde ve sunucu tarafı depolamada saklanır. Token'lar hiçbir zaman istemci tarafı JavaScript'e maruz bırakılmaz veya düz metin olarak loglanmaz.\n\n(h) Kullanıcı Meta entegrasyonunu kaldırdığında veya uygulamayı yetkilendirmeden çıkardığında, saklanan tüm token'lar, hesap eşlemeleri ve önbellek verileri iptal edilir ve 90 gün içinde silinmek üzere kuyruğa alınır.\n\n(i) Kullanıcılar info@dijimagic.com adresine başvurarak veya uygulama içi veri silme akışı aracılığıyla anında veri silme talep edebilir.",
       "section5Title": "5) Verilerin Kullanım Amaçları",
       "section5Content": "Hesap bağlama ve kimlik doğrulama işlemleri; performans raporları, KPI panelleri ve analizlerin sunulması; ürün içi hata ayıklama ve destek (kredi kartı/şifre/token gibi hassas bilgiler loglanmaz); güvenlik önlemleri ve kötüye kullanımın önlenmesi.",
       "section6Title": "6) Saklama Süresi (Retention)",
@@ -156,12 +156,12 @@
       "section8Title": "8) Güvenlik",
       "section8Content": "Tokenlar ve hassas kimlik doğrulama verileri istemci tarafında açık şekilde tutulmaz. Erişim anahtarları URL içinde paylaşılmaz; yalnızca güvenli başlıklarda kullanılır. Yetkisiz erişimi önlemek için teknik ve idari önlemler uygulanır.",
       "section9Title": "9) Kullanıcı Hakları ve Talepler",
-      "section9Content": "Kişisel verilerinizin işlenmesine ilişkin taleplerinizi aşağıdaki kanaldan iletebilirsiniz:\n\nE-posta: info@yodijital.com",
+      "section9Content": "Kişisel verilerinizin işlenmesine ilişkin taleplerinizi aşağıdaki kanaldan iletebilirsiniz:\n\nE-posta: info@dijimagic.com",
       "section10Title": "10) Politika Güncellemeleri",
       "section10Content": "Bu politika gerektiğinde güncellenebilir. Güncellemeler bu sayfada yayımlanır.",
       "contact": {
         "title": "İletişim",
-        "email": "info@yodijital.com"
+        "email": "info@dijimagic.com"
       }
     },
     "dataDeletion": {
@@ -169,19 +169,19 @@
       "backToHome": "Ana Sayfaya Dön",
       "intro": {
         "title": "Giriş",
-        "content": "YoAi'de bağladığınız entegrasyonları dilediğiniz zaman kaldırabilir ve verilerinizin silinmesini talep edebilirsiniz."
+        "content": "DijiMagic'de bağladığınız entegrasyonları dilediğiniz zaman kaldırabilir ve verilerinizin silinmesini talep edebilirsiniz."
       },
       "section1Title": "1) Entegrasyon Kaldırma (Disconnect)",
       "section1GoogleTitle": "1.1 Google Ads",
-      "section1GoogleContent": "YoAi panelinden \"Google Ads Bağlantısını Kaldır\" işlemi yapıldığında: Senkronizasyon durdurulur. Saklanan yetkilendirme bilgileri (token/refresh token) iptal edilir ve/veya geçersizleştirilir. İlgili hesap eşlemesi silme kuyruğuna alınır.",
+      "section1GoogleContent": "DijiMagic panelinden \"Google Ads Bağlantısını Kaldır\" işlemi yapıldığında: Senkronizasyon durdurulur. Saklanan yetkilendirme bilgileri (token/refresh token) iptal edilir ve/veya geçersizleştirilir. İlgili hesap eşlemesi silme kuyruğuna alınır.",
       "section1MetaTitle": "1.2 Meta",
-      "section1MetaContent": "YoAi panelinden \"Meta Bağlantısını Kaldır\" işlemi yapıldığında: Senkronizasyon durdurulur. Yetkilendirme bilgileri iptal edilir ve/veya geçersizleştirilir. İlgili hesap eşlemesi silme kuyruğuna alınır.",
+      "section1MetaContent": "DijiMagic panelinden \"Meta Bağlantısını Kaldır\" işlemi yapıldığında: Senkronizasyon durdurulur. Yetkilendirme bilgileri iptal edilir ve/veya geçersizleştirilir. İlgili hesap eşlemesi silme kuyruğuna alınır.",
       "section2Title": "2) Silinen Veri Kapsamı",
       "section2Content": "Entegrasyon tokenları ve yetkilendirme kayıtları; bağlı hesap eşlemesi ve bağlantı metadatası; ürün işlevi için tutulmuş rapor/önbellek özetleri.",
       "section3Title": "3) Silme Süresi",
       "section3Content": "Disconnect sonrası veriler en geç 90 gün içinde sistemden temizlenir. Daha erken silme talebi için bize yazabilirsiniz.",
       "section4Title": "4) Silme Talebi İletişim",
-      "section4Content": "E-posta: info@yodijital.com | Konu: \"YoAi Veri Silme Talebi\" | İçerik: Hesap e-postanız + silinmesini istediğiniz entegrasyon(lar)",
+      "section4Content": "E-posta: info@dijimagic.com | Konu: \"DijiMagic Veri Silme Talebi\" | İçerik: Hesap e-postanız + silinmesini istediğiniz entegrasyon(lar)",
       "confirmationCode": {
         "label": "Onay Kodu"
       }
@@ -190,10 +190,10 @@
       "title": "Çerez Politikası",
       "backToHome": "Ana Sayfaya Dön",
       "lastUpdated": "Son güncelleme: 2026-03-23",
-      "company": "YO Dijital Medya A.Ş. · yoai.yodijital.com",
+      "company": "DijiMagic · dijimagic.com",
       "intro": {
         "title": "Giriş",
-        "content": "Bu Çerez Politikası, YO Dijital Medya Anonim Şirketi ('YoAi') tarafından yoai.yodijital.com adresinde sunulan platformda kullanılan çerezler ve benzer teknolojiler hakkında sizi bilgilendirmek amacıyla hazırlanmıştır."
+        "content": "Bu Çerez Politikası, DijiMagic ('DijiMagic') tarafından dijimagic.com adresinde sunulan platformda kullanılan çerezler ve benzer teknolojiler hakkında sizi bilgilendirmek amacıyla hazırlanmıştır."
       },
       "section1Title": "1) Çerez Nedir?",
       "section1Content": "Çerezler, web siteleri tarafından tarayıcınıza yerleştirilen küçük metin dosyalarıdır. Bu dosyalar, tercihlerinizi hatırlamak, oturumunuzu yönetmek ve kullanım istatistiklerini toplamak gibi amaçlarla kullanılır.",
@@ -214,28 +214,28 @@
       "section7Content": "Bu Çerez Politikası zaman zaman güncellenebilir. Güncel versiyon her zaman bu sayfada yayınlanır.",
       "contact": {
         "title": "İletişim",
-        "email": "info@yodijital.com"
+        "email": "info@dijimagic.com"
       }
     },
     "terms": {
       "title": "Kullanım Şartları",
       "backToHome": "Ana Sayfaya Dön",
       "lastUpdated": "Son güncelleme: 2026-01-30",
-      "company": "YO Dijital Medya A.Ş. · yoai.yodijital.com",
+      "company": "DijiMagic · dijimagic.com",
       "section1Title": "1) Taraflar ve Tanımlar",
-      "section1Body": "Bu şartlar, YO Dijital Medya A.Ş. tarafından sağlanan YoAi platformunu kullanan kullanıcılar için geçerlidir.",
+      "section1Body": "Bu şartlar, DijiMagic tarafından sağlanan DijiMagic platformunu kullanan kullanıcılar için geçerlidir.",
       "section2Title": "2) Hizmetin Kapsamı",
-      "section2Body": "YoAi; reklam hesaplarınızı bağlayarak performans verilerini görüntülemenizi ve (varsa) belirli reklam yönetimi aksiyonlarını yürütmenizi sağlayan bir yazılımdır.",
+      "section2Body": "DijiMagic; reklam hesaplarınızı bağlayarak performans verilerini görüntülemenizi ve (varsa) belirli reklam yönetimi aksiyonlarını yürütmenizi sağlayan bir yazılımdır.",
       "section3Title": "3) Kullanıcı Yetkisi",
-      "section3Body": "Kullanıcı, yalnızca yetkili olduğu reklam hesaplarını YoAi'ye bağlamalıdır. Kullanıcı, üçüncü kişilere ait hesaplara izinsiz erişim sağlayamaz.",
+      "section3Body": "Kullanıcı, yalnızca yetkili olduğu reklam hesaplarını DijiMagic'e bağlamalıdır. Kullanıcı, üçüncü kişilere ait hesaplara izinsiz erişim sağlayamaz.",
       "section4Title": "4) Politika ve API Uyumu",
-      "section4Body": "YoAi üzerinden yapılan işlemler ilgili platformların (Google Ads, Meta vb.) politika ve şartlarına tabidir. Kullanıcı, platform politikalarını ihlal edecek kullanım yapamaz (ör. izinsiz veri toplama, kötüye kullanım, yanıltıcı içerik).",
+      "section4Body": "DijiMagic üzerinden yapılan işlemler ilgili platformların (Google Ads, Meta vb.) politika ve şartlarına tabidir. Kullanıcı, platform politikalarını ihlal edecek kullanım yapamaz (ör. izinsiz veri toplama, kötüye kullanım, yanıltıcı içerik).",
       "section5Title": "5) Sorumluluk Sınırı",
-      "section5Body": "YoAi'de gösterilen veriler, bağlı platformlardan (Google/Meta) sağlanan verilere dayanır; gecikme, kota, kesinti veya platform değişiklikleri nedeniyle farklılıklar oluşabilir. YoAi; üçüncü taraf platformların kesintileri, API limitleri veya politika değişikliklerinden kaynaklanan durumlardan dolayı doğabilecek zararlardan sınırlı ölçüde sorumludur.",
+      "section5Body": "DijiMagic'de gösterilen veriler, bağlı platformlardan (Google/Meta) sağlanan verilere dayanır; gecikme, kota, kesinti veya platform değişiklikleri nedeniyle farklılıklar oluşabilir. DijiMagic; üçüncü taraf platformların kesintileri, API limitleri veya politika değişikliklerinden kaynaklanan durumlardan dolayı doğabilecek zararlardan sınırlı ölçüde sorumludur.",
       "section6Title": "6) Hesap Güvenliği",
       "section6Body": "Kullanıcı, hesabının güvenliğinden ve erişim bilgilerinin korunmasından sorumludur.",
       "section7Title": "7) Fesih",
-      "section7Body": "YoAi, kötüye kullanım veya ihlal durumunda erişimi askıya alabilir veya sonlandırabilir.",
+      "section7Body": "DijiMagic, kötüye kullanım veya ihlal durumunda erişimi askıya alabilir veya sonlandırabilir.",
       "section8Title": "8) Değişiklikler",
       "section8Body": "Şartlar güncellenebilir. Güncel sürüm bu sayfada yayımlanır."
     }
@@ -436,7 +436,7 @@
       "sections": {
         "strateji": "Yapay zeka destekli reklam stratejileri oluşturun",
         "optimizasyon": "Kampanyalarınızı optimize edin ve performans arttırın",
-        "yoai": "YoAi asistanı ile sorularınızı sorun",
+        "dijimagic": "DijiMagic asistanı ile sorularınızı sorun",
         "hedefKitle": "Hedef kitle analizi ve segmentasyonu",
         "tasarim": "Reklam görselleri ve kreatifler tasarlayın",
         "raporlar": "Detaylı raporları görüntüleyin",
@@ -1320,7 +1320,7 @@
         },
         "aiMax": {
           "title": "AI Max",
-          "description": "YoAi, kampanyanızın performansını artırmak için AI destekli özellikleri kullanır. Bu ayarlar geniş eşleme, hedefleme genişletmesi ve reklam optimizasyonunu etkiler.",
+          "description": "DijiMagic, kampanyanızın performansını artırmak için AI destekli özellikleri kullanır. Bu ayarlar geniş eşleme, hedefleme genişletmesi ve reklam optimizasyonunu etkiler.",
           "enabled": "AI Max etkinleştir",
           "disabled": "AI Max kapalı",
           "broadMatchWithAI": "Geniş eşleme ile AI",
@@ -3103,7 +3103,7 @@
         "networkError": "Ağ hatası",
         "gaNoUserSession": "Google Analytics bağlantısı için önce uygulamaya giriş yapmalısınız. Çıkış yapıp tekrar giriş yapın.",
         "gscNoUserSession": "Search Console bağlantısı için önce uygulamaya giriş yapmalısınız. Çıkış yapıp tekrar giriş yapın.",
-        "noRefreshToken": "Google, refresh token göndermedi. https://myaccount.google.com/permissions sayfasından YoAi iznini kaldırıp tekrar deneyin.",
+        "noRefreshToken": "Google, refresh token göndermedi. https://myaccount.google.com/permissions sayfasından DijiMagic iznini kaldırıp tekrar deneyin.",
         "dbSaveFailed": "Bağlantı veritabanına kaydedilemedi. Lütfen tekrar deneyin.",
         "gaConnectFailed": "Google Analytics bağlantı hatası: {reason}",
         "gscConnectFailed": "Search Console bağlantı hatası: {reason}",
@@ -3116,10 +3116,10 @@
         "selectSiteFailed": "Site seçilemedi"
       }
     },
-    "yoai": {
-      "title": "YoAi",
+    "dijimagic": {
+      "title": "DijiMagic",
       "description": "AI destekli pazarlama asistanınız",
-      "welcome": "YoAi'ye Hoş Geldiniz",
+      "welcome": "DijiMagic'e Hoş Geldiniz",
       "welcomeDescription": "Pazarlama kampanyalarınız için AI destekli öneriler ve analizler alın. Aşağıdaki önerilerden birini seçebilir veya doğrudan soru sorabilirsiniz.",
       "suggestions": {
         "campaign": {
@@ -3191,7 +3191,7 @@
         }
       },
       "hierarchy": {
-        "title": "YoAlgoritma Geliştirme Kartları",
+        "title": "DijiAlgoritma Geliştirme Kartları",
         "subtitle": "Hesap → kampanya → ad set → reklam hiyerarşisinde AI önerileri",
         "alertsTitle": "Hesap Sağlık Durumu",
         "flipHint": "detay için üzerine gelin",
@@ -3269,7 +3269,7 @@
         "descriptionPlaceholder": "Her satır bir açıklama"
       },
       "commandCenter": {
-        "title": "YoAlgoritma Merkezi",
+        "title": "DijiAlgoritma Merkezi",
         "description": "Reklam hesaplarınızı AI ile izleyin, riskleri tespit edin, fırsatları değerlendirin.",
         "connectedPlatforms": "Bağlı Platformlar",
         "activeCampaigns": "Aktif Kampanya",
@@ -3392,7 +3392,7 @@
       },
       "oneClickApprove": {
         "title": "Tek Tıkla Onayla",
-        "subtitle": "YoAlgoritma hazır taslağı oluşturur — onay sende",
+        "subtitle": "DijiAlgoritma hazır taslağı oluşturur — onay sende",
         "publishDisabled": "Canlı yayın özelliği şu anda kapalı. Reklamı yayına almak için yayın ayarlarının etkinleştirilmesi gerekiyor.",
         "draftWord": "taslak",
         "preparingDraft": "Taslak hazırlanıyor — görsel üretiliyor, Meta'ya yükleniyor, kampanya kuruluyor…",
@@ -3529,7 +3529,7 @@
         "reconnect": "Yeniden Bağla",
         "thinking": "Düşünüyorum...",
         "analyzing": "Analiz ediliyor...",
-        "generating": "YoAi içerik üretiyor...",
+        "generating": "DijiMagic içerik üretiyor...",
         "newConversation": "Yeni Konuşma Başlat"
       },
       "insightStream": {
@@ -3712,7 +3712,7 @@
       },
       "businessProfile": {
         "title": "İşletme Profili",
-        "subtitle": "Bu bilgileri YoAi reklam önerileri, strateji ve hedef kitle analizlerinde referans olarak kullanır.",
+        "subtitle": "Bu bilgileri DijiMagic reklam önerileri, strateji ve hedef kitle analizlerinde referans olarak kullanır.",
         "saveProfile": "Profili Kaydet",
         "steps": {
           "company": "Firma",
@@ -3741,7 +3741,7 @@
           "extraNotes": "Ek Notlar"
         },
         "hints": {
-          "businessDescription": "YoAi bu açıklamadan reklam dilinizi ve tonunuzu çıkaracak."
+          "businessDescription": "DijiMagic bu açıklamadan reklam dilinizi ve tonunuzu çıkaracak."
         },
         "placeholders": {
           "companyName": "Örn: Ankara Restaurant",
@@ -3755,7 +3755,7 @@
           "mostProfitableServices": "Örn: özel etkinlik, kurumsal yemek paketleri",
           "forbiddenClaims": "Örn: sağlık iddiası, %100 garanti vaadi",
           "complianceNotes": "Örn: Sağlık reklamı için mevzuat sınırları, izin belgeleri",
-          "extraNotes": "YoAi'nin bilmesi gereken başka bir bilgi"
+          "extraNotes": "DijiMagic'in bilmesi gereken başka bir bilgi"
         },
         "sources": {
           "intro": "En az 1 kaynak girilmesi zorunludur. Kaynaklar gerçek olarak taranır.",
@@ -5593,7 +5593,7 @@
           "connectWordPress": "WordPress Sitesi Bağla",
           "siteUrlLabel": "Site Adresi",
           "siteUrlPlaceholder": "https://siteniz.com",
-          "connectHint": "Yalnızca site adresinizi girin. Şifrenizi YoAi'ye girmezsiniz — kendi WordPress panelinizde tek tıkla onaylarsınız.",
+          "connectHint": "Yalnızca site adresinizi girin. Şifrenizi DijiMagic'e girmezsiniz — kendi WordPress panelinizde tek tıkla onaylarsınız.",
           "connecting": "Yönlendiriliyor...",
           "noSites": "Henüz bağlı site yok",
           "noSitesDesc": "Otomatik yayın için önce bir WordPress sitesi bağlayın.",
@@ -5631,7 +5631,7 @@
           "publishTargetDesc": "Makaleleriniz işletme profilinizdeki web sitesine yayınlanır.",
           "yourSiteFromProfile": "Web siteniz (işletme profilinizden)",
           "authorize": "Yayın için yetkilendir",
-          "authorizeHint": "Siteniz WordPress ise tek tıkla kendi panelinizde onaylarsınız; şifreniz YoAi'ye girilmez. Farklı bir altyapı kullanıyorsanız makaleyi üretip Kopyala / HTML İndir ile yayınlayabilirsiniz.",
+          "authorizeHint": "Siteniz WordPress ise tek tıkla kendi panelinizde onaylarsınız; şifreniz DijiMagic'e girilmez. Farklı bir altyapı kullanıyorsanız makaleyi üretip Kopyala / HTML İndir ile yayınlayabilirsiniz.",
           "notAuthorizedDesc": "Makaleleri sitenize yayınlamak için bir kez yetki vermeniz gerekir.",
           "noProfileUrl": "İşletme profilinizde web sitesi adresi bulunamadı. Önce profilinizi tamamlayın.",
           "openProfile": "İşletme Profilini Aç",
@@ -5640,7 +5640,7 @@
             "title": "Başka bir site / özel yazılım",
             "subtitle": "WordPress dışı / özel yazılım siteler için.",
             "urlLabel": "Webhook adresi",
-            "urlPlaceholder": "https://siteniz.com/api/yoai-webhook",
+            "urlPlaceholder": "https://siteniz.com/api/dijimagic-webhook",
             "secretLabel": "Gizli anahtar",
             "secretPlaceholder": "En az 8 karakter",
             "generate": "Üret",
@@ -5654,12 +5654,12 @@
             "errWeakSecret": "Gizli anahtar en az 8 karakter olmalı.",
             "errSaveFailed": "Webhook kaydedilemedi. Lütfen tekrar deneyin.",
             "howTitle": "Nasıl çalışır? (geliştiriciniz için)",
-            "howIntro": "YoAi her yayında aşağıdaki JSON'u webhook adresinize POST eder ve isteği gizli anahtarınızla imzalar (HMAC-SHA256). Siz imzayı doğrulayıp makaleyi kendi sisteminizde oluşturursunuz.",
+            "howIntro": "DijiMagic her yayında aşağıdaki JSON'u webhook adresinize POST eder ve isteği gizli anahtarınızla imzalar (HMAC-SHA256). Siz imzayı doğrulayıp makaleyi kendi sisteminizde oluşturursunuz.",
             "howHeaders": "Gönderilen başlıklar",
             "howPayload": "Örnek gövde",
             "howVerifyNode": "İmza doğrulama — Node.js",
             "howVerifyPhp": "İmza doğrulama — PHP",
-            "howResponse": "Yanıt olarak 2xx dönün. İsteğe bağlı olarak { \"url\": \"...\" } dönerseniz YoAi yayın bağlantısını kaydeder."
+            "howResponse": "Yanıt olarak 2xx dönün. İsteğe bağlı olarak { \"url\": \"...\" } dönerseniz DijiMagic yayın bağlantısını kaydeder."
           },
           "wpManual": {
             "title": "Uygulama Parolası ile bağlan",
@@ -5678,7 +5678,7 @@
             "howTitle": "Uygulama parolası nasıl alınır?",
             "how1": "1) WordPress panelinize girin → Kullanıcılar → Profil.",
             "how2": "2) Sayfanın altındaki “Uygulama Parolaları” bölümüne inin.",
-            "how3": "3) Yeni parola adına “YoAi SEO” yazıp “Yeni Uygulama Parolası Ekle”ye tıklayın.",
+            "how3": "3) Yeni parola adına “DijiMagic SEO” yazıp “Yeni Uygulama Parolası Ekle”ye tıklayın.",
             "how4": "4) Üretilen parolayı kopyalayıp kullanıcı adınızla birlikte buraya yapıştırın.",
             "openProfile": "WordPress profil sayfasını aç",
             "errInvalidUrl": "Geçerli bir site adresi girin (https).",
@@ -6013,7 +6013,7 @@
       "style_luxury": "Lüks",
       "style_minimal": "Minimal",
       "style_vibrant": "Canlı",
-      "preparingTitle": "YoAI Sihirbazı Siteni Hazırlıyor",
+      "preparingTitle": "DijiMagic Sihirbazı Siteni Hazırlıyor",
       "preparingDesc": "Markana uygun, görsel-zengin bir site oluşturuyoruz. Bu birkaç dakika sürebilir; bittiğinde önizleyip onaylayabilirsin.",
       "retry": "Yeniden Dene",
       "designTitle": "Tasarım",
@@ -6064,7 +6064,7 @@
     "tiktok": "TikTok",
     "strateji": "Strateji",
     "optimizasyon": "Optimizasyon",
-    "yoai": "YoAlgoritma",
+    "dijimagic": "DijiAlgoritma",
     "hedefKitle": "Hedef Kitle",
     "tasarim": "Tasarım",
     "sosyalmedya": "Sosyal Medya",
@@ -6794,7 +6794,7 @@
       "seoPlus": "SEO Plus",
       "aiStrateji": "AI Strateji",
       "aiStratejiSinirsiz": "AI Strateji (Sınırsız)",
-      "yoAlgoritma": "YoAlgoritma",
+      "dijiAlgoritma": "DijiAlgoritma",
       "crm": "CRM Sistemi",
       "emailMarketing": "Email Marketing",
       "donusumSihirbazi": "Dönüşüm Sihirbazı",
@@ -6862,7 +6862,7 @@
     "planDescriptions": {
       "basic": "Reklam yönetiminde temel ihtiyaçlarınız için tüm araçlar.",
       "starter": "Büyümek için gereken optimizasyon çözümleri.",
-      "premium": "AI Strateji, YoAlgoritma, CRM ve Email Marketing dahil tam pazarlama suite'i.",
+      "premium": "AI Strateji, DijiAlgoritma, CRM ve Email Marketing dahil tam pazarlama suite'i.",
       "enterprise": "Reklam veren ajanslar için sınırsız reklam gücü."
     },
     "paymentSuccessBanner": "Ödemeniz alındı. Aboneliğiniz güncelleniyor.",
@@ -6995,7 +6995,7 @@
       "completed": "Tamamlandı"
     },
     "welcome": "Meta Reklam Hesabınızı Bağlayın",
-    "welcomeDesc": "YoAI Dashboard üzerinden Meta reklamlarınızı yönetmek için hesabınızı bağlayın.",
+    "welcomeDesc": "DijiMagic Dashboard üzerinden Meta reklamlarınızı yönetmek için hesabınızı bağlayın.",
     "connectButton": "Başlayın",
     "connect": "Meta ile Bağlantı Kurun",
     "connectDesc": "Meta hesabınıza giriş yapın ve gerekli izinleri verin.",
@@ -7052,20 +7052,20 @@
     "contactCta": "E-posta Gönder",
     "faq": {
       "platform": {
-        "q": "YoAi nedir ve neler yapabilirim?",
-        "a": "YoAi; Meta ve Google reklamlarınızı tek panelden yönetmenizi sağlayan yapay zekâ destekli bir pazarlama platformudur. Reklam yönetimi, strateji planlama, optimizasyon önerileri, hedef kitle oluşturma, tasarım üretimi, raporlama, SEO analizi, CRM ve e-posta pazarlama modüllerini içerir."
+        "q": "DijiMagic nedir ve neler yapabilirim?",
+        "a": "DijiMagic; Meta ve Google reklamlarınızı tek panelden yönetmenizi sağlayan yapay zekâ destekli bir pazarlama platformudur. Reklam yönetimi, strateji planlama, optimizasyon önerileri, hedef kitle oluşturma, tasarım üretimi, raporlama, SEO analizi, CRM ve e-posta pazarlama modüllerini içerir."
       },
       "connectAccounts": {
         "q": "Reklam hesaplarımı nasıl bağlarım?",
-        "a": "Entegrasyon sayfasından Meta ve Google hesaplarınızı resmî yetkilendirme (OAuth) ile güvenle bağlayabilirsiniz. Şifreniz YoAi tarafından görülmez; yetkilendirme doğrudan ilgili platform üzerinde yapılır."
+        "a": "Entegrasyon sayfasından Meta ve Google hesaplarınızı resmî yetkilendirme (OAuth) ile güvenle bağlayabilirsiniz. Şifreniz DijiMagic tarafından görülmez; yetkilendirme doğrudan ilgili platform üzerinde yapılır."
       },
       "recommendations": {
-        "q": "YoAlgoritma önerileri hesabımda otomatik değişiklik yapar mı?",
-        "a": "Hayır. YoAlgoritma reklam hesabınızı analiz ederek geliştirme önerileri sunar; siz onaylamadan hiçbir öneri reklam hesabınıza uygulanmaz."
+        "q": "DijiAlgoritma önerileri hesabımda otomatik değişiklik yapar mı?",
+        "a": "Hayır. DijiAlgoritma reklam hesabınızı analiz ederek geliştirme önerileri sunar; siz onaylamadan hiçbir öneri reklam hesabınıza uygulanmaz."
       },
       "creditsVsSubscription": {
         "q": "Abonelik ile AI kredisi arasındaki fark nedir?",
-        "a": "Abonelik; Strateji, Optimizasyon, YoAlgoritma ve SEO gibi modüllere erişim sağlar. AI kredileri ise tasarım üretimi gibi kullanım bazlı yapay zekâ işlemlerinde harcanır. İkisini de Abonelik sayfasından yönetebilirsiniz."
+        "a": "Abonelik; Strateji, Optimizasyon, DijiAlgoritma ve SEO gibi modüllere erişim sağlar. AI kredileri ise tasarım üretimi gibi kullanım bazlı yapay zekâ işlemlerinde harcanır. İkisini de Abonelik sayfasından yönetebilirsiniz."
       },
       "language": {
         "q": "Arayüz dilini nasıl değiştiririm?",
@@ -7086,7 +7086,7 @@
       "approval": {
         "badge": "ÖN GÖRÜŞME",
         "title": "Başvurunuz Alındı",
-        "body1": "YoAi hesabınızı aktif kullanıma açmadan önce, işletmenizi ve ihtiyaçlarınızı daha doğru anlayabilmemiz için <strong>30 dakikalık</strong> kısa bir ön görüşme planlıyoruz.",
+        "body1": "DijiMagic hesabınızı aktif kullanıma açmadan önce, işletmenizi ve ihtiyaçlarınızı daha doğru anlayabilmemiz için <strong>30 dakikalık</strong> kısa bir ön görüşme planlıyoruz.",
         "body2": "Uygun olduğunuz günü ve saati takvim üzerinden seçerek başvurunuzu tamamlayabilirsiniz.",
         "scheduleCta": "Görüşme Planla",
         "declineCta": "Şimdilik Planlamak İstemiyorum"
@@ -7243,8 +7243,8 @@
         "keywordThemes": "Anahtar Kelime Temaları",
         "missingData": "Eksik Veri"
       },
-      "yoalgoritmaHealth": {
-        "title": "YoAlgoritma Kart Üretimi",
+      "dijialgoritmaHealth": {
+        "title": "DijiAlgoritma Kart Üretimi",
         "healthy": "Sağlıklı",
         "unhealthy": "Dikkat — kart üretimi sorunlu",
         "latestSuccess": "Son başarılı koşu",

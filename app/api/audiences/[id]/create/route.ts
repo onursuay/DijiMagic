@@ -55,7 +55,7 @@ export async function POST(_request: Request, { params }: { params: Promise<{ id
     .eq('id', id)
 
   try {
-    const spec = audience.yoai_spec_json as Record<string, unknown>
+    const spec = audience.dijimagic_spec_json as Record<string, unknown>
     const type = audience.type as string
     let metaResponse: { ok: boolean; data?: Record<string, unknown>; error?: Record<string, unknown>; status?: number }
 
@@ -91,7 +91,7 @@ export async function POST(_request: Request, { params }: { params: Promise<{ id
 
       // Lookalike'ta seed meta_audience_id gerekli — DB'deki seedAudienceId'yi çöz
       let originAudienceId = payload.origin_audience_id
-      // Eğer seedAudienceId bir YoAi UUID ise, meta_audience_id'yi bul
+      // Eğer seedAudienceId bir DijiMagic UUID ise, meta_audience_id'yi bul
       if (originAudienceId && !originAudienceId.match(/^\d+$/)) {
         const { data: seedRow } = await supabase
           .from('audiences')

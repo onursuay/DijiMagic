@@ -535,7 +535,7 @@ async function detectRedirects(url: string): Promise<RedirectHop[]> {
       const res = await fetch(currentUrl, {
         redirect: 'manual',
         signal: AbortSignal.timeout(5000),
-        headers: { 'User-Agent': 'Mozilla/5.0 (compatible; YoAI SEO Analyzer/1.0)' },
+        headers: { 'User-Agent': 'Mozilla/5.0 (compatible; DijiMagic SEO Analyzer/1.0)' },
       })
       hops.push({ url: currentUrl, status: res.status })
       if (res.status >= 300 && res.status < 400) {
@@ -576,7 +576,7 @@ async function checkBrokenLinks($: cheerio.CheerioAPI, baseUrl: string): Promise
         method: 'HEAD',
         signal: AbortSignal.timeout(5000),
         redirect: 'follow',
-        headers: { 'User-Agent': 'Mozilla/5.0 (compatible; YoAI SEO Analyzer/1.0)' },
+        headers: { 'User-Agent': 'Mozilla/5.0 (compatible; DijiMagic SEO Analyzer/1.0)' },
       })
       if (res.status >= 400) {
         broken.push({ url: link.href, status: res.status, anchor: link.anchor })
@@ -849,7 +849,7 @@ export async function POST(request: NextRequest) {
         signal: AbortSignal.timeout(15000),
         redirect: 'follow',
         headers: {
-          'User-Agent': 'Mozilla/5.0 (compatible; YoAI SEO Analyzer/1.0)',
+          'User-Agent': 'Mozilla/5.0 (compatible; DijiMagic SEO Analyzer/1.0)',
           'Accept': 'text/html,application/xhtml+xml',
           'Accept-Language': 'tr,en;q=0.9',
         },

@@ -9,7 +9,7 @@ import MultiAccountDropdown from '@/components/account/MultiAccountDropdown'
 import BusinessSwitcherDropdown from '@/components/account/BusinessSwitcherDropdown'
 import AccessRequiredModal from '@/components/billing/AccessRequiredModal'
 import { groupIntoBusinesses, type BusinessGroup } from '@/lib/account/businessGroups'
-import { clearYoAlgoritmaClientCache } from '@/lib/yoai/clientCache'
+import { clearDijiAlgoritmaClientCache } from '@/lib/dijimagic/clientCache'
 
 interface AdAccount {
   id: string
@@ -23,12 +23,12 @@ const stripDash = (v: string) => v.replace(/-/g, '')
 
 /**
  * Kendi kendine yeten birleşik hesap seçici (Madde 2 — Faz 3.3 / 3.4).
- * Topbar kullanmayan sayfalar (YoAlgoritma özel header) için.
+ * Topbar kullanmayan sayfalar (DijiAlgoritma özel header) için.
  *
  * İki mod:
  *  - perAccountScope KAPALI → mevcut Meta+Google hesap dropdown'ı (MultiAccountDropdown).
  *  - perAccountScope AÇIK   → İŞLETME seçici: kayıtlı hesapları isim eşleştirmesiyle
- *    işletmelere gruplar; seçilince YoAlgoritma yalnız o işletmenin Meta+Google'ını gösterir.
+ *    işletmelere gruplar; seçilince DijiAlgoritma yalnız o işletmenin Meta+Google'ını gösterir.
  * Flag kapalıyken (reg.enabled=false) hiçbir şey render etmez.
  */
 export default function UnifiedAccountSwitcher() {
@@ -61,7 +61,7 @@ export default function UnifiedAccountSwitcher() {
   // İşletme modunda mevcut scope'u çek (vurgu için)
   useEffect(() => {
     if (!reg.perAccountScope) return
-    fetch('/api/yoai/business-scope', { cache: 'no-store' }).then(r => (r.ok ? r.json() : null)).then(d => {
+    fetch('/api/dijimagic/business-scope', { cache: 'no-store' }).then(r => (r.ok ? r.json() : null)).then(d => {
       if (d?.scope) {
         setScopeBusinessId(d.scope.businessId ?? null)
         setScopeMeta(d.scope.metaAccountId ?? null)
@@ -106,18 +106,18 @@ export default function UnifiedAccountSwitcher() {
   }, [businesses, scopeBusinessId, scopeMeta, scopeGoogle, activeMeta, activeGoogle])
 
   // Auto-init: işletme modunda scope cookie YOKSA, UI'da fallback ile seçili görünen
-  // işletmeyi sunucuya da yaz. Aksi halde resolveYoaiScope scoped=false döner ve
-  // YoAlgoritma kartları tüm hesapların birleşimini gösterir (kullanıcı bir hesap
+  // işletmeyi sunucuya da yaz. Aksi halde resolveDijiMagicScope scoped=false döner ve
+  // DijiAlgoritma kartları tüm hesapların birleşimini gösterir (kullanıcı bir hesap
   // seçili sansa bile). Cookie yazılınca veriler o işletmeye scope'lanır.
   useEffect(() => {
     if (!reg.perAccountScope || !scopeLoaded || !selectedBusiness) return
     const hasCookieScope = !!(scopeBusinessId || scopeMeta || scopeGoogle)
     if (hasCookieScope) return // kullanıcının açık seçimi var — dokunma
-    try { if (sessionStorage.getItem('yoai_scope_autoinit') === '1') return } catch {}
-    try { sessionStorage.setItem('yoai_scope_autoinit', '1') } catch {}
+    try { if (sessionStorage.getItem('dijimagic_scope_autoinit') === '1') return } catch {}
+    try { sessionStorage.setItem('dijimagic_scope_autoinit', '1') } catch {}
     ;(async () => {
       try {
-        const res = await fetch('/api/yoai/business-scope', {
+        const res = await fetch('/api/dijimagic/business-scope', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
           credentials: 'include',
@@ -128,7 +128,7 @@ export default function UnifiedAccountSwitcher() {
             googleLoginCustomerId: selectedBusiness.google?.loginCustomerId ?? null,
           }),
         })
-        if (res.ok) { clearYoAlgoritmaClientCache(); window.location.reload() }
+        if (res.ok) { clearDijiAlgoritmaClientCache(); window.location.reload() }
       } catch { /* sessiz — sonraki etkileşimde yeniden denenir */ }
     })()
   }, [reg.perAccountScope, scopeLoaded, selectedBusiness, scopeBusinessId, scopeMeta, scopeGoogle])
@@ -140,7 +140,7 @@ export default function UnifiedAccountSwitcher() {
     if (selectedBusiness?.id === b.id && cookieScoped) { setOpen(false); return }
     setBusyId(b.id)
     try {
-      const res = await fetch('/api/yoai/business-scope', {
+      const res = await fetch('/api/dijimagic/business-scope', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         credentials: 'include',
@@ -152,7 +152,7 @@ export default function UnifiedAccountSwitcher() {
         }),
       })
       if (!res.ok) { setBusyId(null); return }
-      clearYoAlgoritmaClientCache()
+      clearDijiAlgoritmaClientCache()
       window.location.reload()
     } catch {
       setBusyId(null)

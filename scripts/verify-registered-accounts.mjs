@@ -1,6 +1,6 @@
 #!/usr/bin/env node
 /**
- * YoAi — Çoklu Reklam Hesabı (Madde 2) doğrulama
+ * DijiMagic — Çoklu Reklam Hesabı (Madde 2) doğrulama
  *
  * Kullanım:
  *   node scripts/verify-registered-accounts.mjs          → read-only (tablo + kolon varlığı)

@@ -1,5 +1,5 @@
 import MetaPage from '@/app/dashboard/reklam/meta/MetaPage'
-import BusinessProfileGuard from '@/components/yoai/BusinessProfileGuard'
+import BusinessProfileGuard from '@/components/dijimagic/BusinessProfileGuard'
 
 export default function MetaAdsRoute() {
   return (

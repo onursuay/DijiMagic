@@ -1,6 +1,6 @@
 #!/usr/bin/env node
 /* ──────────────────────────────────────────────────────────
-   YoAi Beyin — Yerel Outcome Toplayıcı (Layer 4 — yerel parça)
+   DijiMagic Beyin — Yerel Outcome Toplayıcı (Layer 4 — yerel parça)
 
    Supabase (omddq) üzerinden öneri-sonucu verisini SALT-OKUNUR çeker,
    ANONİM + SIR-OLMAYAN agregalar üretip _learnings/_data/latest.json'a yazar.
@@ -10,7 +10,7 @@
    - user_id / kampanya adı-ID'si / proposal_id / snapshot ham detayı / token ÇIKTIYA GİRMEZ.
    - SUPABASE_SERVICE_* anahtarı .env.local'dan okunur, YERELDE kalır, asla yazılmaz/push edilmez.
 
-   Kaynak tablolar: yoai_recommendation_results, yoai_action_outcomes.
+   Kaynak tablolar: dijimagic_recommendation_results, dijimagic_action_outcomes.
    Sözleşme: _learnings/global/outcome-measurement.md
    ────────────────────────────────────────────────────────── */
 
@@ -99,7 +99,7 @@ function addOutcome(bucket, outcome) {
  * Öneri kaydından reklam HESABINI (account_id) çıkarır.
  * account_id (Meta act_xxxxx / Google müşteri kimliği) operasyonel tanımlayıcıdır,
  * sır/PII DEĞİLDİR → beyne girebilir. Bulunamazsa null (atfedilemeyen).
- * NOT: yoai_recommendation_results'ta account_id kolonu YOK; metadata.account_id'den okunur.
+ * NOT: dijimagic_recommendation_results'ta account_id kolonu YOK; metadata.account_id'den okunur.
  * Bu alan 2026-06-10'da magic-scan persist'ine eklendi (client+server) — yeni kayıtlar dolu,
  * o tarihten ÖNCEKİ kayıtlar null (unattributed) kalır.
  */
@@ -114,11 +114,11 @@ function extractAccount(row) {
 
 async function main() {
   const results = await fetchAll(
-    'yoai_recommendation_results',
+    'dijimagic_recommendation_results',
     'platform, recommendation_type, campaign_type, outcome, status, metric_delta, after_window_days, created_at, after_recorded_at, metadata, source_campaign_id',
   )
   const actions = await fetchAll(
-    'yoai_action_outcomes',
+    'dijimagic_action_outcomes',
     'root_cause, action_type, applied, created_at',
   )
 
@@ -183,7 +183,7 @@ async function main() {
     schema_version: 1,
     generated_at: new Date().toISOString(),
     generated_by: 'scripts/brain/collect-outcomes.mjs',
-    source: 'yoai_recommendation_results + yoai_action_outcomes (omddq, read-only, anonymized)',
+    source: 'dijimagic_recommendation_results + dijimagic_action_outcomes (omddq, read-only, anonymized)',
     window,
     totals: {
       recommendation_results: results.length,

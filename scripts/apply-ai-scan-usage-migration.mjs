@@ -1,6 +1,6 @@
 #!/usr/bin/env node
 /**
- * YoAi Optimizasyon — Sunucu-otoriter AI Scan Limiti Migration Uygulayıcı
+ * DijiMagic Optimizasyon — Sunucu-otoriter AI Scan Limiti Migration Uygulayıcı
  *
  * Uygular:
  *   20260522000000_ai_scan_usage.sql
@@ -52,7 +52,7 @@ if (!DATABASE_URL) {
 const FILE = 'supabase/migrations/20260522000000_ai_scan_usage.sql'
 
 async function main() {
-  console.log('\n🚀  YoAi Optimizasyon — AI Scan Limiti Migration\n')
+  console.log('\n🚀  DijiMagic Optimizasyon — AI Scan Limiti Migration\n')
   const client = new Client({ connectionString: DATABASE_URL })
   await client.connect()
   try {

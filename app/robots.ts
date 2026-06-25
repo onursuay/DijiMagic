@@ -1,6 +1,6 @@
 import type { MetadataRoute } from 'next'
 
-const BASE_URL = 'https://yoai.yodijital.com'
+const BASE_URL = 'https://dijimagic.com'
 
 /**
  * Public robots.txt. Previously /robots.txt fell through to the app shell and
@@ -23,7 +23,7 @@ export default function robots(): MetadataRoute.Robots {
         '/meta-ads',
         '/google-ads',
         '/tiktok-ads',
-        '/yoalgoritma',
+        '/dijialgoritma',
         '/seo-plus',
         '/strateji',
         '/optimizasyon',

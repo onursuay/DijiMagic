@@ -1,5 +1,5 @@
 import GooglePage from '@/app/dashboard/reklam/google/GooglePage'
-import BusinessProfileGuard from '@/components/yoai/BusinessProfileGuard'
+import BusinessProfileGuard from '@/components/dijimagic/BusinessProfileGuard'
 
 export default function GoogleAdsRoute() {
   return (

@@ -47,7 +47,7 @@ export interface CreateCampaignParams {
   targetCpaMicros?: number
   targetRoas?: number
   /** Kampanya başlangıç durumu. Verilmezse ENABLED (manuel sihirbaz davranışı korunur).
-   *  YoAlgoritma onay→yayın akışı 'PAUSED' geçer → kullanıcı Google Ads'te inceleyip
+   *  DijiAlgoritma onay→yayın akışı 'PAUSED' geçer → kullanıcı Google Ads'te inceleyip
    *  elle aktive edene kadar harcama olmaz (Meta paritesi). PAUSED kampanya, alt
    *  öğeleri ENABLED olsa bile yayın yapmaz. */
   status?: 'PAUSED' | 'ENABLED'

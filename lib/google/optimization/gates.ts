@@ -9,7 +9,7 @@
    Ağırlıklar Meta ile aynı: Teslimat %40, Verim %30, Kalite %15, Doygunluk %15.
    ────────────────────────────────────────────────────────── */
 
-import type { StandardMetrics, RiskLevel } from '@/lib/yoai/analysisTypes'
+import type { StandardMetrics, RiskLevel } from '@/lib/dijimagic/analysisTypes'
 
 export type GateStatus = 'pass' | 'warn' | 'fail'
 

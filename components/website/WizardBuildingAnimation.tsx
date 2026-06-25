@@ -2,7 +2,7 @@
 
 /* ──────────────────────────────────────────────────────────
    Web Site Yöneticisi — "AI siteni kuruyor" yükleme animasyonu.
-   Emerald (YoAi marka) bir mini-tarayıcı içinde sayfanın blokları
+   Emerald (DijiMagic marka) bir mini-tarayıcı içinde sayfanın blokları
    sırayla belirir (assemble + shimmer); tepeden inen "AI tarama ışığı"
    ve arkada nabız gibi parlama AI üretimini andırır. Altta gerçek
    üretim aşamaları (tasarım sistemi → sayfalar → son rötuş) döner.

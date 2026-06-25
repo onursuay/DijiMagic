@@ -11,10 +11,10 @@ import { markMetaSync, type CrmLeadRow, type CrmLeadStatus } from './leadStore'
  *
  * Mailchimp ↔ Meta modeli: olumlu/olumsuz işaretlenen lead'ler Meta'ya
  * senkronlanır:
- *   - Olumlu → "YoAi CRM — Olumlu Lead'ler" CUSTOMER_LIST custom audience'a
+ *   - Olumlu → "DijiMagic CRM — Olumlu Lead'ler" CUSTOMER_LIST custom audience'a
  *     hash'li (SHA-256) e-posta/telefon ile eklenir (lookalike / retargeting
  *     tohumu) + opsiyonel CAPI "QualifiedLead" olayı (reklam optimizasyonu).
- *   - Olumsuz → "YoAi CRM — Olumsuz Lead'ler" audience'a eklenir (hedeflemeden
+ *   - Olumsuz → "DijiMagic CRM — Olumsuz Lead'ler" audience'a eklenir (hedeflemeden
  *     hariç tutma için) ve olumlu audience'tan çıkarılır.
  *   - Yeni (geri alma) → her iki audience'tan çıkarılır.
  *
@@ -31,10 +31,10 @@ import { markMetaSync, type CrmLeadRow, type CrmLeadStatus } from './leadStore'
  * aşama değişince lead diğer kitlelerden çıkarılır.
  */
 const STAGE_AUDIENCE: Partial<Record<CrmLeadStatus, string>> = {
-  uygun: 'YoAi CRM — Uygun',
-  donusum: 'YoAi CRM — Dönüşüm',
-  kayip: 'YoAi CRM — Kayıp',
-  uygun_degil: 'YoAi CRM — Uygun Değil',
+  uygun: 'DijiMagic CRM — Uygun',
+  donusum: 'DijiMagic CRM — Dönüşüm',
+  kayip: 'DijiMagic CRM — Kayıp',
+  uygun_degil: 'DijiMagic CRM — Uygun Değil',
 }
 const ALL_STAGE_AUDIENCES = Object.values(STAGE_AUDIENCE) as string[]
 
@@ -193,7 +193,7 @@ async function sendStageEvent(
       fn,
       ln,
     },
-    customData: { lead_event_source: 'yoai_crm', source: lead.source, stage: lead.status },
+    customData: { lead_event_source: 'dijimagic_crm', source: lead.source, stage: lead.status },
   })
   return true
 }

@@ -13,9 +13,9 @@ interface Props {
 }
 
 /**
- * YoAlgoritma İşletme Seçici dropdown (Faz 3.4 — per-account).
+ * DijiAlgoritma İşletme Seçici dropdown (Faz 3.4 — per-account).
  * Kayıtlı Meta+Google hesaplarını isim eşleştirmesiyle gruplanmış "işletme"
- * olarak listeler. Bir işletme seçilince YoAlgoritma yalnız o işletmenin
+ * olarak listeler. Bir işletme seçilince DijiAlgoritma yalnız o işletmenin
  * Meta+Google verisini gösterir (başka hesabın verisi karışmaz).
  */
 export default function BusinessSwitcherDropdown({

@@ -215,7 +215,7 @@ export class WordPressXmlRpcConnector implements SiteConnector {
       headers: {
         'Content-Type': 'text/xml; charset=UTF-8',
         Accept: 'text/xml, application/xml',
-        'User-Agent': 'YoAi-SEO/1.0 (+https://yoai)',
+        'User-Agent': 'DijiMagic-SEO/1.0 (+https://dijimagic)',
       },
       body: buildMethodCall(method, params),
       signal: AbortSignal.timeout(timeoutMs),

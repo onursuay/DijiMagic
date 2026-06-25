@@ -1,6 +1,6 @@
 #!/usr/bin/env node
 /**
- * YoAi — Çoklu Reklam Hesabı (Madde 2) Migration Uygulayıcı
+ * DijiMagic — Çoklu Reklam Hesabı (Madde 2) Migration Uygulayıcı
  *
  * Uygular:
  *   20260522010000_create_user_registered_ad_accounts.sql
@@ -52,7 +52,7 @@ if (!DATABASE_URL) {
 const FILE = 'supabase/migrations/20260522010000_create_user_registered_ad_accounts.sql'
 
 async function main() {
-  console.log('\n🚀  YoAi — Çoklu Reklam Hesabı Migration\n')
+  console.log('\n🚀  DijiMagic — Çoklu Reklam Hesabı Migration\n')
   const client = new Client({ connectionString: DATABASE_URL })
   await client.connect()
   try {

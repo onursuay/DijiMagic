@@ -8,7 +8,7 @@ import { useEffect, useRef, useState } from 'react'
  * Web Site Yöneticisi boş-durum (henüz site yokken) görseli.
  * Yazısız, salt görsel, sonsuz döngülü bir "web sitesi inşası" animasyonu:
  *   1) Masaüstü ekranında gri wireframe bloklar sırayla yerine oturur (build)
- *   2) İskelet markaya bürünür (colorize — YoAi yeşili)
+ *   2) İskelet markaya bürünür (colorize — DijiMagic yeşili)
  *   3) Tablet + telefon süzülerek girer, responsive uyum gösterir
  *   4) Yeşil "yayın" nabzı atar, kısa bir nefes payı, sonra yumuşakça baştan
  *

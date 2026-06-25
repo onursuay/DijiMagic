@@ -1,6 +1,6 @@
 /**
  * Meta Audience Payload Builder
- * Transforms YoAi wizard spec into Meta Graph API payload
+ * Transforms DijiMagic wizard spec into Meta Graph API payload
  */
 
 /* ── Custom Audience (Retargeting) ── */

@@ -2,7 +2,7 @@
  * Access Required Modal — Source-level Unit Tests
  *
  * Yeni global standart: kredi gerektiren ve abonelik gerektiren tüm
- * YoAi alanlarında `AccessRequiredModal` kullanılır. Bu test paketi
+ * DijiMagic alanlarında `AccessRequiredModal` kullanılır. Bu test paketi
  * statik metin denetimleriyle aşağıdaki garantileri korur:
  *   - Modal kapatılamaz (X yok, ESC yutulur, dış tıklama yutulur)
  *   - İki tür ('credit' / 'subscription') ayırt edilebilir
@@ -41,7 +41,7 @@ const ownerClientFile = path.join(repoRoot, 'lib', 'admin', 'superAdminClient.ts
 const ownerServerFile = path.join(repoRoot, 'lib', 'admin', 'superAdmin.ts')
 const optimizasyonPage = path.join(repoRoot, 'app', 'optimizasyon', 'page.tsx')
 const stratejiPage = path.join(repoRoot, 'app', 'strateji', 'page.tsx')
-const yoaiPage = path.join(repoRoot, 'app', 'yoai', 'page.tsx')
+const dijimagicPage = path.join(repoRoot, 'app', 'dijimagic', 'page.tsx')
 const tasarimPage = path.join(repoRoot, 'app', 'tasarim', 'page.tsx')
 const seoPage = path.join(repoRoot, 'app', 'seo', 'page.tsx')
 const hedefKitlePage = path.join(repoRoot, 'app', 'hedef-kitle', 'page.tsx')
@@ -49,7 +49,7 @@ const billingApi = path.join(repoRoot, 'app', 'api', 'billing', 'current', 'rout
 const creditProvider = path.join(repoRoot, 'components', 'providers', 'CreditProvider.tsx')
 const subscriptionProvider = path.join(repoRoot, 'components', 'providers', 'SubscriptionProvider.tsx')
 const serverGuard = path.join(repoRoot, 'lib', 'meta', 'optimization', 'serverGuard.ts')
-const businessProfileGuardFile = path.join(repoRoot, 'components', 'yoai', 'BusinessProfileGuard.tsx')
+const businessProfileGuardFile = path.join(repoRoot, 'components', 'dijimagic', 'BusinessProfileGuard.tsx')
 const claudeMd = path.join(repoRoot, 'CLAUDE.md')
 
 const accessSrc = fs.readFileSync(accessModalFile, 'utf-8')
@@ -59,7 +59,7 @@ const ownerClientSrc = fs.readFileSync(ownerClientFile, 'utf-8')
 const ownerServerSrc = fs.readFileSync(ownerServerFile, 'utf-8')
 const optimizasyonSrc = fs.readFileSync(optimizasyonPage, 'utf-8')
 const stratejiSrc = fs.readFileSync(stratejiPage, 'utf-8')
-const yoaiSrc = fs.readFileSync(yoaiPage, 'utf-8')
+const dijimagicSrc = fs.readFileSync(dijimagicPage, 'utf-8')
 const tasarimSrc = fs.readFileSync(tasarimPage, 'utf-8')
 const seoSrc = fs.readFileSync(seoPage, 'utf-8')
 const hedefKitleSrc = fs.readFileSync(hedefKitlePage, 'utf-8')
@@ -221,13 +221,13 @@ test('credit_required tier tanımlı', () => {
 const requiredFeatureKeys = [
   'optimization',
   'strategy',
-  'yoalgoritma',
+  'dijialgoritma',
   'seo',
   'audience_ai',
   'optimization_ai_scan_pro',
   'design_generation',
   'strategy_overage',
-  'yoalgoritma_chat',
+  'dijialgoritma_chat',
 ]
 for (const key of requiredFeatureKeys) {
   test(`feature key '${key}' kayıtlı`, () => {
@@ -376,19 +376,19 @@ test('Strateji subscription guard hasSubscription kontrol ediyor', () => {
   )
 })
 
-test('YoAlgoritma sayfası AccessRequiredModal kullanıyor', () => {
+test('DijiAlgoritma sayfası AccessRequiredModal kullanıyor', () => {
   assert.ok(
-    /AccessRequiredModal/.test(yoaiSrc) &&
-      /yoalgoritma/.test(yoaiSrc) &&
-      /yoalgoritma_chat/.test(yoaiSrc),
-    'YoAlgoritma access modal entegrasyonu eksik',
+    /AccessRequiredModal/.test(dijimagicSrc) &&
+      /dijialgoritma/.test(dijimagicSrc) &&
+      /dijialgoritma_chat/.test(dijimagicSrc),
+    'DijiAlgoritma access modal entegrasyonu eksik',
   )
 })
 
-test('YoAlgoritma inline "Yeterli krediniz bulunmuyor" mesajı kaldırıldı', () => {
+test('DijiAlgoritma inline "Yeterli krediniz bulunmuyor" mesajı kaldırıldı', () => {
   assert.ok(
-    !/Yeterli krediniz bulunmuyor/.test(yoaiSrc),
-    'Inline credit error mesajı hâlâ YoAlgoritma sayfasında',
+    !/Yeterli krediniz bulunmuyor/.test(dijimagicSrc),
+    'Inline credit error mesajı hâlâ DijiAlgoritma sayfasında',
   )
 })
 
@@ -443,10 +443,10 @@ test('Strateji sayfası inline "kredi gerek" mesajı modal\'a taşındı', () =>
   )
 })
 
-test('YoAlgoritma sayfası inline kredi hatası içermiyor', () => {
+test('DijiAlgoritma sayfası inline kredi hatası içermiyor', () => {
   assert.ok(
-    !/Yeterli krediniz bulunmuyor/.test(yoaiSrc),
-    'YoAlgoritma hâlâ inline kredi hatası içeriyor',
+    !/Yeterli krediniz bulunmuyor/.test(dijimagicSrc),
+    'DijiAlgoritma hâlâ inline kredi hatası içeriyor',
   )
 })
 

@@ -12,7 +12,7 @@ interface ProfileData {
   referralCode: string
 }
 
-const HELP_KEY = 'yoai-help-access'
+const HELP_KEY = 'dijimagic-help-access'
 
 export default function HesabimPage() {
   const t = useTranslations('account')
@@ -91,7 +91,7 @@ export default function HesabimPage() {
 
   const initials = `${firstName.charAt(0)}${lastName.charAt(0)}`.toUpperCase() || '?'
   const fullName = `${firstName} ${lastName}`.trim()
-  const referralLink = `https://yoai.yodijital.com/?referralCode=${profile.referralCode}`
+  const referralLink = `https://dijimagic.com/?referralCode=${profile.referralCode}`
 
   const handleSaveProfile = async () => {
     setProfileSaving(true)

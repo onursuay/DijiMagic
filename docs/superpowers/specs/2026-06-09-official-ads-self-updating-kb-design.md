@@ -25,8 +25,8 @@ cron → runOfficialAdsDocsRefresh
 ```
 
 ## Bileşenler
-- **B1 (backend):** `lib/yoai/officialAdsKnowledgeParser.ts` (AI parser + versiyonlu/idempotent persist), `fetchOfficialAdsSource` Firecrawl entegrasyonu, `runOfficialAdsDocsRefresh` parser+email çağrısı (flag-gated), `lib/yoai/officialAdsChangeNotifier.ts` (best-effort e-posta).
-- **B2 (UI + injection):** `lib/yoai/ai/docs/officialKnowledgeBlock.ts` (+ systemPrompt/perCampaignPrompt enjeksiyon), karar store + `/api/admin/gozetim-merkezi/official-ads/{pending,decision}`, Gözetim Merkezi admin sayfası (i18n).
+- **B1 (backend):** `lib/dijimagic/officialAdsKnowledgeParser.ts` (AI parser + versiyonlu/idempotent persist), `fetchOfficialAdsSource` Firecrawl entegrasyonu, `runOfficialAdsDocsRefresh` parser+email çağrısı (flag-gated), `lib/dijimagic/officialAdsChangeNotifier.ts` (best-effort e-posta).
+- **B2 (UI + injection):** `lib/dijimagic/ai/docs/officialKnowledgeBlock.ts` (+ systemPrompt/perCampaignPrompt enjeksiyon), karar store + `/api/admin/gozetim-merkezi/official-ads/{pending,decision}`, Gözetim Merkezi admin sayfası (i18n).
 
 ## AI Parser
 Girdi: değişen `normalized_text` (≤16k) + kaynak meta + platformun onaylı item özetleri + diff. `claudeJson` (temp 0.2) şema: `items[]{category,title,normalized_key,summary,rules_json,allowed_values,forbidden_values,change_type,change_explanation,confidence}`. Direktifler: yalnız verilen metinden (uydurma yok), Türkçe summary, ham enum yalnız rules_json'da, hepsi review_required. Versiyon: yeni key→v1; mevcut+farklı→v+1; idempotent (normalized_key+source_hash bekleyen taslak varsa atla). Hata→parser_status='failed' (job patlamaz).

@@ -15,7 +15,7 @@ import assert from 'assert'
 import {
   normalizeApifyMetaAd,
   normalizeApifyGoogleAd,
-} from '../../lib/yoai/apifyCompetitorProvider'
+} from '../../lib/dijimagic/apifyCompetitorProvider'
 
 let passed = 0
 let failed = 0

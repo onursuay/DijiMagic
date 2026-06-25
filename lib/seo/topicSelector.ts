@@ -1,6 +1,6 @@
 import 'server-only'
 import { supabase } from '@/lib/supabase/client'
-import { getProfileByUserId, getIntelligenceByUserId } from '@/lib/yoai/businessProfileStore'
+import { getProfileByUserId, getIntelligenceByUserId } from '@/lib/dijimagic/businessProfileStore'
 import { claudeText } from '@/lib/anthropic/text'
 import { getBriefByConnection, type SiteContentBriefRow } from '@/lib/seo/siteContentBriefStore'
 import { runSiteBriefPipeline } from '@/lib/seo/siteBriefPipeline'
@@ -35,7 +35,7 @@ async function getSiteBaseUrl(siteConnectionId: string): Promise<string | null> 
 async function fetchRecentTitles(userId: string, limit = 14): Promise<string[]> {
   if (!supabase) return []
   const { data } = await supabase
-    .from('yoai_articles')
+    .from('dijimagic_articles')
     .select('title')
     .eq('user_id', userId)
     .order('created_at', { ascending: false })

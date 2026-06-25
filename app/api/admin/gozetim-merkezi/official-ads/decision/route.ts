@@ -8,8 +8,8 @@
 import { NextResponse } from 'next/server'
 import { supabase } from '@/lib/supabase/client'
 import { checkAdminAccess } from '@/lib/admin/superAdmin'
-import { approveKnowledgeItem, rejectKnowledgeItem } from '@/lib/yoai/officialAdsKnowledgeDecision'
-import { clearKnowledgeCache } from '@/lib/yoai/officialAdsKnowledgeStore'
+import { approveKnowledgeItem, rejectKnowledgeItem } from '@/lib/dijimagic/officialAdsKnowledgeDecision'
+import { clearKnowledgeCache } from '@/lib/dijimagic/officialAdsKnowledgeStore'
 
 export const dynamic = 'force-dynamic'
 

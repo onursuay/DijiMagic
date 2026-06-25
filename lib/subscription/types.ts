@@ -93,7 +93,7 @@ export const USER_DEFAULTS: UserProfile = {
   email: '',
   avatarUrl: null,
   helpAccessEnabled: true,
-  referralCode: 'YOAI-' + Math.random().toString(36).substring(2, 8).toUpperCase(),
+  referralCode: 'DIJIMAGIC-' + Math.random().toString(36).substring(2, 8).toUpperCase(),
 }
 
 // ── Invoice System ─────────────────────────────────────────────

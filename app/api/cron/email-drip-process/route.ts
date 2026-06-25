@@ -12,7 +12,7 @@ import { isOptedOut } from '@/lib/email/automationRunner'
 export const dynamic = 'force-dynamic'
 export const maxDuration = 60
 
-const APP_URL = process.env.NEXT_PUBLIC_APP_URL || 'https://yoai.yodijital.com'
+const APP_URL = process.env.NEXT_PUBLIC_APP_URL || 'https://dijimagic.com'
 
 export async function GET(request: Request) {
   const auth = request.headers.get('authorization')

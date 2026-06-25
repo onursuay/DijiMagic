@@ -17,8 +17,8 @@ import {
   resolveRefreshDeps,
   applySourceOutcome,
   type RefreshResult,
-} from '@/lib/yoai/officialAdsDocsRefresh'
-import { openRefreshRun, closeRefreshRun, notifyRefresh } from '@/lib/yoai/officialAdsRefreshRunner'
+} from '@/lib/dijimagic/officialAdsDocsRefresh'
+import { openRefreshRun, closeRefreshRun, notifyRefresh } from '@/lib/dijimagic/officialAdsRefreshRunner'
 
 export const officialAdsRefresh = inngest.createFunction(
   {

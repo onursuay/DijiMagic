@@ -3,7 +3,7 @@
 
    Tek bir zamanlama (article_schedules) için tam akış:
      load → resolve-site → credit → topic → generate → image →
-     persist (yoai_articles) → publish (auto_publish ise) → mark-run
+     persist (dijimagic_articles) → publish (auto_publish ise) → mark-run
 
    İki yerden çağrılır:
      - Inngest fonksiyonu (seoArticleGeneratePublish) — prod'da Inngest varsa
@@ -147,12 +147,12 @@ export async function runScheduleArticle(
     }
   }
 
-  // 7) Taslağı kaydet (yoai_articles)
+  // 7) Taslağı kaydet (dijimagic_articles)
   const articleParams: Record<string, unknown> = { keyword: topic.keyword, wordCount: s.word_count, tone: s.tone }
   let articleId: string | null = null
   if (supabase) {
     const { data, error } = await supabase
-      .from('yoai_articles')
+      .from('dijimagic_articles')
       .insert({
         user_id: userId,
         category: 'seo_article',
@@ -198,7 +198,7 @@ export async function runScheduleArticle(
         await setConnectionStatus(site.id, userId, 'active', null)
         if (supabase && articleId) {
           await supabase
-            .from('yoai_articles')
+            .from('dijimagic_articles')
             .update({
               status: 'published',
               published_url: res.postUrl ?? null,
@@ -223,7 +223,7 @@ export async function runScheduleArticle(
   // sorusuyla baş başa kalmaz. (migration yok — mevcut params jsonb genişletilir.)
   if (s.auto_publish && !publishResult.ok && supabase && articleId) {
     await supabase
-      .from('yoai_articles')
+      .from('dijimagic_articles')
       .update({
         params: { ...articleParams, autoPublishError: publishResult.error ?? 'publish_failed' },
         updated_at: new Date().toISOString(),

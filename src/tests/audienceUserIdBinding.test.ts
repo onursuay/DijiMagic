@@ -203,7 +203,7 @@ test('meta-create: ana audience fetch user_id filtreli', () => {
 test('lookalike seed lookup: user_id cross-user engeli var', () => {
   const content = read(CREATE_ROUTE)
   // seedRow lookup bloğu
-  const seedBlock = content.match(/seedAudienceId bir YoAi UUID[\s\S]{0,400}/)?.[0] ?? ''
+  const seedBlock = content.match(/seedAudienceId bir DijiMagic UUID[\s\S]{0,400}/)?.[0] ?? ''
   assert.ok(
     seedBlock.includes(".eq('user_id', ctx.userId)"),
     'Lookalike seed lookup user_id filtresi eksik — cross-user seed erişimi mümkün!'
@@ -212,7 +212,7 @@ test('lookalike seed lookup: user_id cross-user engeli var', () => {
 
 test('lookalike seed lookup: ad_account_id cross-account engeli var', () => {
   const content = read(CREATE_ROUTE)
-  const seedBlock = content.match(/seedAudienceId bir YoAi UUID[\s\S]{0,400}/)?.[0] ?? ''
+  const seedBlock = content.match(/seedAudienceId bir DijiMagic UUID[\s\S]{0,400}/)?.[0] ?? ''
   assert.ok(
     seedBlock.includes(".eq('ad_account_id', ctx.accountId)"),
     'Lookalike seed lookup ad_account_id filtresi eksik'

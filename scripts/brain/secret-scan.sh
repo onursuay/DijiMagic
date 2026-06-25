@@ -1,8 +1,8 @@
 #!/usr/bin/env bash
 # ──────────────────────────────────────────────────────────
-# YoAi Beyin — Push-öncesi Sır Taraması
+# DijiMagic Beyin — Push-öncesi Sır Taraması
 #
-# yoai-brain repo'suna (varsayılan: _learnings) push edilecek dosyaları,
+# dijimagic-brain repo'suna (varsayılan: _learnings) push edilecek dosyaları,
 # git'in KENDİ ignore mantığıyla (NFC/NFD-safe; string karşılaştırması YOK)
 # seçip bilinen sır desenlerine karşı tarar. Eşleşme varsa exit 1 → PUSH İPTAL.
 #
@@ -31,7 +31,7 @@ if [ ${#files[@]} -eq 0 ]; then
   exit 0
 fi
 
-# Bilinen sır desenleri (YoAi gerçek formatları)
+# Bilinen sır desenleri (DijiMagic gerçek formatları)
 patterns=(
   'EAA[A-Za-z0-9]{40,}'                       # Meta access token
   'GOCSPX-[A-Za-z0-9_-]{20,}'                 # Google OAuth client secret

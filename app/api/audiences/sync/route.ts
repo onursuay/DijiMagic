@@ -6,7 +6,7 @@ export const dynamic = 'force-dynamic'
 
 /**
  * POST /api/audiences/sync
- * Syncs audience(s) from Meta → YoAi (meta-wins policy).
+ * Syncs audience(s) from Meta → DijiMagic (meta-wins policy).
  *
  * Body:
  *   { audienceId?: string }  — sync single audience, or omit for all

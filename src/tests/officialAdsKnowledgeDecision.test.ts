@@ -8,7 +8,7 @@ import {
   listPendingKnowledge,
   approveKnowledgeItem,
   rejectKnowledgeItem,
-} from '../../lib/yoai/officialAdsKnowledgeDecision'
+} from '../../lib/dijimagic/officialAdsKnowledgeDecision'
 
 let passed = 0
 let failed = 0

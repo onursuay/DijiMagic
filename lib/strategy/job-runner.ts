@@ -206,13 +206,13 @@ async function runGeneratePlanJob(job: SyncJob): Promise<void> {
 
   // Blueprint üret — AI varsa AI, yoksa template fallback
   // Business context prompt block: API route business profile'ı çekip
-  // payload._yoai_business_context_prompt alanına yazmış olabilir.
-  const rawPayload = inputRow.payload as InputPayload & { _yoai_business_context_prompt?: string | null }
-  let businessContextPromptBlock = typeof rawPayload._yoai_business_context_prompt === 'string'
-    ? rawPayload._yoai_business_context_prompt
+  // payload._dijimagic_business_context_prompt alanına yazmış olabilir.
+  const rawPayload = inputRow.payload as InputPayload & { _dijimagic_business_context_prompt?: string | null }
+  let businessContextPromptBlock = typeof rawPayload._dijimagic_business_context_prompt === 'string'
+    ? rawPayload._dijimagic_business_context_prompt
     : null
   const cleanPayload = { ...rawPayload }
-  delete (cleanPayload as Record<string, unknown>)._yoai_business_context_prompt
+  delete (cleanPayload as Record<string, unknown>)._dijimagic_business_context_prompt
 
   // (#4) Marka bağlamını (kullanıcı beyanı + iş zekası) motora besle — plan
   // jenerik değil markaya özgü olsun. Payload'da hazır blok yoksa instance
@@ -358,7 +358,7 @@ async function createAudiencesFromPersonas(
       type: 'SAVED',
       status: 'DRAFT',
       source: 'STRATEGY',
-      yoai_spec_json: {
+      dijimagic_spec_json: {
         strategy_instance_id: strategyInstanceId,
         targeting: {
           geo_locations: { countries: input.geographies?.length ? input.geographies.map(g => g === 'Türkiye' ? 'TR' : g) : ['TR'] },
@@ -549,7 +549,7 @@ async function runOptimizeJob(job: SyncJob): Promise<void> {
     .order('created_at', { ascending: false })
     .limit(3)
 
-  // Blueprint + instance sahibi (YoAlgoritma uyarıları için)
+  // Blueprint + instance sahibi (DijiAlgoritma uyarıları için)
   const [outputRes, instanceRes] = await Promise.all([
     supabase.from('strategy_outputs').select('blueprint').eq('strategy_instance_id', job.strategy_instance_id).order('version', { ascending: false }).limit(1).single(),
     supabase.from('strategy_instances').select('user_id').eq('id', job.strategy_instance_id).single(),
@@ -558,9 +558,9 @@ async function runOptimizeJob(job: SyncJob): Promise<void> {
 
   await supabase.from('sync_jobs').update({ progress: 40 }).eq('id', job.id)
 
-  // (#6) Strateji ↔ YoAlgoritma köprüsü: aynı kullanıcının açık hesap uyarıları
+  // (#6) Strateji ↔ DijiAlgoritma köprüsü: aynı kullanıcının açık hesap uyarıları
   // (Pixel/CAPI/dönüşüm takibi/bütçe dağılımı) optimizasyon önerilerine beslenir.
-  const yoalgoritmaAlerts = await loadYoalgoritmaAlertContext(instanceRes.data?.user_id)
+  const dijialgoritmaAlerts = await loadDijialgoritmaAlertContext(instanceRes.data?.user_id)
 
   let suggestions: string[] = [
     'Düşük performanslı kreatifi durdur',
@@ -573,13 +573,13 @@ async function runOptimizeJob(job: SyncJob): Promise<void> {
     try {
       const blueprint = output.blueprint as Blueprint
       const content = await strategyClaudeText({
-        system: `Sen bir dijital reklam optimizasyon uzmanısın. Mevcut performans metriklerini, strateji planını ve (varsa) YoAlgoritma hesap uyarılarını analiz ederek 5-8 adet somut, uygulanabilir Türkçe öneri üret. YoAlgoritma uyarıları varsa onları önceliklendir. Çıktını SADECE JSON array olarak ver: ["öneri 1", "öneri 2", ...]`,
+        system: `Sen bir dijital reklam optimizasyon uzmanısın. Mevcut performans metriklerini, strateji planını ve (varsa) DijiAlgoritma hesap uyarılarını analiz ederek 5-8 adet somut, uygulanabilir Türkçe öneri üret. DijiAlgoritma uyarıları varsa onları önceliklendir. Çıktını SADECE JSON array olarak ver: ["öneri 1", "öneri 2", ...]`,
         user: `KPI Hedefleri: CPA ${blueprint.kpi_targets.cpa_range[0]}-${blueprint.kpi_targets.cpa_range[1]} TL, ROAS ${blueprint.kpi_targets.roas_range[0]}-${blueprint.kpi_targets.roas_range[1]}
 
 Son Metrikler:
 ${metrics.map(m => `- Harcama: ${m.spend_try}₺, Tıklama: ${m.clicks}, Dönüşüm: ${m.conversions}, ROAS: ${m.roas}, CPA: ${m.cpa_try}₺, CTR: ${m.ctr}%`).join('\n')}
 
-Huni Dağılımı: TOFU %${blueprint.funnel_split.tofu}, MOFU %${blueprint.funnel_split.mofu}, BOFU %${blueprint.funnel_split.bofu}${yoalgoritmaAlerts ? `\n\nYoAlgoritma Hesap Uyarıları (önceliklendir):\n${yoalgoritmaAlerts}` : ''}`,
+Huni Dağılımı: TOFU %${blueprint.funnel_split.tofu}, MOFU %${blueprint.funnel_split.mofu}, BOFU %${blueprint.funnel_split.bofu}${dijialgoritmaAlerts ? `\n\nDijiAlgoritma Hesap Uyarıları (önceliklendir):\n${dijialgoritmaAlerts}` : ''}`,
         maxTokens: 1500,
         temperature: 0.3,
         // 15s çok kısaydı → Claude çağrısı abort olup şablona düşüyordu
@@ -677,7 +677,7 @@ async function loadStrategyBusinessContext(instanceId: string): Promise<string |
       .eq('id', instanceId)
       .single()
     if (!inst?.user_id) return null
-    const { getBusinessContextForUser, buildBusinessContextPromptBlock } = await import('@/lib/yoai/businessContextStore')
+    const { getBusinessContextForUser, buildBusinessContextPromptBlock } = await import('@/lib/dijimagic/businessContextStore')
     const ctx = await getBusinessContextForUser(inst.user_id)
     if (!ctx) return null
     return buildBusinessContextPromptBlock(ctx)
@@ -687,12 +687,12 @@ async function loadStrategyBusinessContext(instanceId: string): Promise<string |
   }
 }
 
-// (#6) Kullanıcının açık YoAlgoritma hesap uyarılarını optimizasyon promptu için
+// (#6) Kullanıcının açık DijiAlgoritma hesap uyarılarını optimizasyon promptu için
 // kısa metne çevirir. Yoksa null.
-async function loadYoalgoritmaAlertContext(userId?: string | null): Promise<string | null> {
+async function loadDijialgoritmaAlertContext(userId?: string | null): Promise<string | null> {
   if (!userId) return null
   try {
-    const { listAccountAlertsForUser } = await import('@/lib/yoai/ai/hierarchicalStore')
+    const { listAccountAlertsForUser } = await import('@/lib/dijimagic/ai/hierarchicalStore')
     const alerts = await listAccountAlertsForUser(userId, ['pending'])
     if (!alerts.length) return null
     return alerts
@@ -700,7 +700,7 @@ async function loadYoalgoritmaAlertContext(userId?: string | null): Promise<stri
       .map((a) => `- [${a.severity}] ${a.title}${a.recommended_action ? ` → ${a.recommended_action}` : ''}`)
       .join('\n')
   } catch (e) {
-    console.warn('[Strategy] YoAlgoritma uyarıları yüklenemedi:', e)
+    console.warn('[Strategy] DijiAlgoritma uyarıları yüklenemedi:', e)
     return null
   }
 }

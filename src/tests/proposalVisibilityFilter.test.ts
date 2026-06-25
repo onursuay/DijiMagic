@@ -6,9 +6,9 @@
  */
 
 import assert from 'assert'
-import { filterVisibleYoaiProposals } from '../../lib/yoai/proposalVisibilityFilter'
-import { isGenericProposalContent, isEmptyCompetitorInsight, sanitizeProposalForDisplay } from '../../lib/yoai/competitorDisplay'
-import type { FullAdProposal } from '../../lib/yoai/adCreator'
+import { filterVisibleDijiMagicProposals } from '../../lib/dijimagic/proposalVisibilityFilter'
+import { isGenericProposalContent, isEmptyCompetitorInsight, sanitizeProposalForDisplay } from '../../lib/dijimagic/competitorDisplay'
+import type { FullAdProposal } from '../../lib/dijimagic/adCreator'
 
 let passed = 0
 let failed = 0
@@ -105,30 +105,30 @@ test('Meta kartında Meta Ad Library içeren insight temizlenir', () => {
 // ── Test 3: policyStatus rejected filtrelenir ──
 console.log('\n[3] policyStatus rejected filtering')
 
-test('policyStatus rejected olan proposal filterVisibleYoaiProposals ile kaldırılır', () => {
+test('policyStatus rejected olan proposal filterVisibleDijiMagicProposals ile kaldırılır', () => {
   const p = makeProposal({ policyStatus: 'rejected' })
-  const result = filterVisibleYoaiProposals([p])
+  const result = filterVisibleDijiMagicProposals([p])
   assert.strictEqual(result.length, 0)
 })
 
 test('policyStatus publishable olan proposal korunur', () => {
   const p = makeProposal({ policyStatus: 'publishable' })
-  const result = filterVisibleYoaiProposals([p])
+  const result = filterVisibleDijiMagicProposals([p])
   assert.strictEqual(result.length, 1)
 })
 
 // ── Test 4: approvalStatus expired filtrelenir ──
 console.log('\n[4] expired approval filtering')
 
-test('expiredIds içindeki proposal filterVisibleYoaiProposals ile kaldırılır', () => {
+test('expiredIds içindeki proposal filterVisibleDijiMagicProposals ile kaldırılır', () => {
   const p = makeProposal({ id: 'expired-id' })
-  const result = filterVisibleYoaiProposals([p], { expiredIds: new Set(['expired-id']) })
+  const result = filterVisibleDijiMagicProposals([p], { expiredIds: new Set(['expired-id']) })
   assert.strictEqual(result.length, 0)
 })
 
 test('expiredIds dışındaki proposal korunur', () => {
   const p = makeProposal({ id: 'active-id' })
-  const result = filterVisibleYoaiProposals([p], { expiredIds: new Set(['different-id']) })
+  const result = filterVisibleDijiMagicProposals([p], { expiredIds: new Set(['different-id']) })
   assert.strictEqual(result.length, 1)
 })
 
@@ -155,7 +155,7 @@ test('gerçek içerikli proposal tüm filtrelerden geçer', () => {
     description: "Google'da öne çıkın, müşteri kazanın.",
     policyStatus: 'publishable',
   })
-  const result = filterVisibleYoaiProposals([p])
+  const result = filterVisibleDijiMagicProposals([p])
   assert.strictEqual(result.length, 1)
   assert.strictEqual(isGenericProposalContent(p), false)
 })
@@ -203,13 +203,13 @@ test('Google platform için geçerli Google insight korunur', () => {
   assert.notStrictEqual(sanitized.competitorInsight, undefined)
 })
 
-// ── Test 9: filterVisibleYoaiProposals generic içeriği filtreler ──
-console.log('\n[9] filterVisibleYoaiProposals integration')
+// ── Test 9: filterVisibleDijiMagicProposals generic içeriği filtreler ──
+console.log('\n[9] filterVisibleDijiMagicProposals integration')
 
 test('generic ve temiz proposal karışık listede sadece temizi döner', () => {
   const generic = makeProposal({ id: 'g1', headline: 'Hemen Tıklayın!' })
   const valid = makeProposal({ id: 'v1', headline: 'Profesyonel Dijital Pazarlama' })
-  const result = filterVisibleYoaiProposals([generic, valid])
+  const result = filterVisibleDijiMagicProposals([generic, valid])
   assert.strictEqual(result.length, 1)
   assert.strictEqual(result[0].id, 'v1')
 })

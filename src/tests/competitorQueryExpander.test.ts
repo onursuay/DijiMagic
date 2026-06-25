@@ -13,8 +13,8 @@ import {
   buildDeterministicQueryPlan,
   type QueryExpanderInput,
   type CompetitorQueryPlan,
-} from '../../lib/yoai/competitorQueryExpander'
-import type { CampaignIntentProfile } from '../../lib/yoai/campaignIntentEngine'
+} from '../../lib/dijimagic/competitorQueryExpander'
+import type { CampaignIntentProfile } from '../../lib/dijimagic/campaignIntentEngine'
 
 // ── Test helpers ──────────────────────────────────────────────────────────────
 

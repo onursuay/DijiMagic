@@ -2,7 +2,7 @@
    Strateji Motoru — Claude (Anthropic) tek-atış JSON tamamlaması
 
    Strateji blueprint üretimi ve optimizasyon önerileri için OpenAI
-   yerine projenin standart Claude motorunu kullanır (YoAlgoritma ile
+   yerine projenin standart Claude motorunu kullanır (DijiAlgoritma ile
    aynı SDK + model). Sistem promptu prompt-cache'lenir (ephemeral) —
    aynı sistem bloğu tekrar çağrıldığında cache-read.
 

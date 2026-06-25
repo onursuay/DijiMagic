@@ -1,4 +1,4 @@
-/* YoAi — Firecrawl tip tanımları */
+/* DijiMagic — Firecrawl tip tanımları */
 
 /** map endpoint'inden dönen tek bir bağlantı */
 export interface MapLink {

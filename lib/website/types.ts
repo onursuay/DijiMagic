@@ -39,7 +39,7 @@ export interface ThemeTokens {
   /**
    * Codegen (format='html') siteleri için mobil menü açılış animasyonu (perde yönü):
    * 'left' (soldan), 'right' (sağdan), 'top' (yukarıdan). Üretimde
-   * `data-yoai-mobile-anim="<value>"` olarak basılır. Tanımsızsa 'left' varsayılır
+   * `data-dijimagic-mobile-anim="<value>"` olarak basılır. Tanımsızsa 'left' varsayılır
    * (geriye dönük uyumlu). theme jsonb'sinde tutulur — migration gerekmez.
    */
   mobileMenuAnim?: 'left' | 'right' | 'top' | null

@@ -1,6 +1,6 @@
 #!/usr/bin/env node
 /**
- * YoAlgoritma — Resmi Reklam Bilgi Tabanı Migration Uygulayıcı (Alt-proje B)
+ * DijiAlgoritma — Resmi Reklam Bilgi Tabanı Migration Uygulayıcı (Alt-proje B)
  *
  * Uygular:
  *   1. 20260512000000_create_official_ads_knowledge_base.sql

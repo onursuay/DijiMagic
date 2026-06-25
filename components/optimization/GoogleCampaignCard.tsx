@@ -10,7 +10,7 @@ import { useTranslations, useLocale } from 'next-intl'
 import { ChevronDown, Loader2, Sparkles, Zap, AlertTriangle } from 'lucide-react'
 import ScoreBadge from './ScoreBadge'
 import ScanOverlay from './ScanOverlay'
-import { translateEnum } from '@/lib/yoai/translations'
+import { translateEnum } from '@/lib/dijimagic/translations'
 import type { ScoreStatus } from '@/lib/meta/optimization/types'
 import type { GoogleOptimizationCampaign } from '@/lib/google/optimization/types'
 

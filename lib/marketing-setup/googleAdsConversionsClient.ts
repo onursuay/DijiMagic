@@ -41,7 +41,7 @@ export interface DeployGoogleAdsConversionsResult {
   resourceNames: string[]
 }
 
-const NAME_PREFIX = 'YoAi'
+const NAME_PREFIX = 'DijiMagic'
 
 /** Drill into the nested Google Ads error JSON for the most specific message. */
 function extractError(data: unknown): string {

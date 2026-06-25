@@ -1,5 +1,5 @@
 /* ──────────────────────────────────────────────────────────
-   Inngest Function: yoalgoritma/improvements.user
+   Inngest Function: dijialgoritma/improvements.user
 
    Per-Ad Improvement Cards (Faz 2). Tek kullanıcı için:
      1. fetch      — aktif Meta + Google reklamları (full creative dahil)
@@ -19,17 +19,17 @@
 
 import { inngest } from '../client'
 import { getAnthropicClient } from '@/lib/anthropic/client'
-import { gatherUserScanInputs, type UserScanInputs } from '@/lib/yoai/ai/scanUser'
-import { buildPerAdBatchRequestParams, parsePerAdBatchResult } from '@/lib/yoai/ai/perAdAgent'
-import type { PerAdContext } from '@/lib/yoai/ai/perAdPrompt'
+import { gatherUserScanInputs, type UserScanInputs } from '@/lib/dijimagic/ai/scanUser'
+import { buildPerAdBatchRequestParams, parsePerAdBatchResult } from '@/lib/dijimagic/ai/perAdAgent'
+import type { PerAdContext } from '@/lib/dijimagic/ai/perAdPrompt'
 import {
   listRecentImprovements,
   cancelImprovement,
   supersedeImprovement,
   insertImprovement,
-} from '@/lib/yoai/ai/improvementStore'
-import type { AiPlatform } from '@/lib/yoai/ai/types'
-import type { AdInsight } from '@/lib/yoai/analysisTypes'
+} from '@/lib/dijimagic/ai/improvementStore'
+import type { AiPlatform } from '@/lib/dijimagic/ai/types'
+import type { AdInsight } from '@/lib/dijimagic/analysisTypes'
 
 const POLL_INTERVAL = '60s'
 const MAX_POLLS = 1440 // ~24h (Anthropic batch SLA)
@@ -81,13 +81,13 @@ function sanitizeCustomId(platform: string, adId: string): string {
   return `${platform}_${adId}`.replace(/[^a-zA-Z0-9_-]/g, '_').slice(0, 64)
 }
 
-export const yoalgoritmaPerAdImprovements = inngest.createFunction(
+export const dijialgoritmaPerAdImprovements = inngest.createFunction(
   {
-    id: 'yoalgoritma-per-ad-improvements',
-    name: 'YoAlgoritma — Per-Ad Improvement Cards',
+    id: 'dijialgoritma-per-ad-improvements',
+    name: 'DijiAlgoritma — Per-Ad Improvement Cards',
     concurrency: { limit: 5 },
     retries: 2,
-    triggers: [{ event: 'yoalgoritma/improvements.user' }],
+    triggers: [{ event: 'dijialgoritma/improvements.user' }],
   },
   async ({ event, step, logger }) => {
     const userId = String(event.data?.userId ?? '')

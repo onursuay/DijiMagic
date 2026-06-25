@@ -7,7 +7,7 @@
 import { NextResponse } from 'next/server'
 import { supabase } from '@/lib/supabase/client'
 import { resolveMetaContext } from '@/lib/meta/context'
-import { getApprovedKnowledgeByPlatform } from '@/lib/yoai/officialAdsKnowledgeStore'
+import { getApprovedKnowledgeByPlatform } from '@/lib/dijimagic/officialAdsKnowledgeStore'
 import { generateExpertPlan, type ExpertPlanContext, type PlatformKey } from '@/lib/strategy/expertPlan'
 import type { InputPayload } from '@/lib/strategy/types'
 

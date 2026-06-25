@@ -2,19 +2,19 @@
 -- ai_engine_runs.platform CHECK genişletme
 --
 -- SORUN: 20260519000000 ile gelen constraint platform'u yalnız ('Meta','Google')
--- ile sınırlıyordu. YoAlgoritma hiyerarşik akış (writeHierRunStatus) koşu-durumunu
--- platform='yoalgoritma_hier' satırıyla yazar → CHECK 23514 ile REDDEDİYORDU.
+-- ile sınırlıyordu. DijiAlgoritma hiyerarşik akış (writeHierRunStatus) koşu-durumunu
+-- platform='dijialgoritma_hier' satırıyla yazar → CHECK 23514 ile REDDEDİYORDU.
 -- Sonuç: tüm hiyerarşik run-status yazımları SESSİZCE başarısız (try/catch yutuyordu),
 -- Sağlık Merkezi + Gözetim Merkezi hiçbir failed/stale koşu göremiyordu (gözlemlenebilirlik kör).
 --
--- ÇÖZÜM: CHECK'i 'yoalgoritma_hier' içerecek şekilde GENİŞLET. Additive/güvenli —
+-- ÇÖZÜM: CHECK'i 'dijialgoritma_hier' içerecek şekilde GENİŞLET. Additive/güvenli —
 -- mevcut satırlar ('Meta'/'Google') yeni constraint'i zaten sağlar, çalışan akış bozulmaz.
 -- ──────────────────────────────────────────────────────────
 
 ALTER TABLE ai_engine_runs DROP CONSTRAINT IF EXISTS ai_engine_runs_platform_check;
 
 ALTER TABLE ai_engine_runs ADD CONSTRAINT ai_engine_runs_platform_check
-  CHECK (platform IN ('Meta', 'Google', 'yoalgoritma_hier'));
+  CHECK (platform IN ('Meta', 'Google', 'dijialgoritma_hier'));
 
 -- AYNI SINIF 2. BUG: status CHECK yalnız ('pending','running','completed','failed') idi;
 -- writeHierRunStatus 'partial' da yazar (bazı kampanyalar başarısız — hata ayıklama için EN

@@ -7,7 +7,7 @@ import { Globe, ChevronDown } from 'lucide-react'
 
 /**
  * Landing footer dil seçici — referans tasarımı (dark dropdown + bayraklar)
- * YoAi'nin gerçek i18n mekanizmasıyla: NEXT_LOCALE cookie + mapPathToLocale.
+ * DijiMagic'in gerçek i18n mekanizmasıyla: NEXT_LOCALE cookie + mapPathToLocale.
  */
 export default function FooterLangSwitcher() {
   const [currentLocale, setCurrentLocale] = useState('tr')

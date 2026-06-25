@@ -1,6 +1,6 @@
 #!/usr/bin/env node
 /**
- * YoAi Billing — Kullanıcı Fatura Profili Migration Uygulayıcı (H9)
+ * DijiMagic Billing — Kullanıcı Fatura Profili Migration Uygulayıcı (H9)
  *
  * Uygular:
  *   20260620000000_user_billing_profile.sql
@@ -47,7 +47,7 @@ if (!DATABASE_URL) {
 const FILE = 'supabase/migrations/20260620000000_user_billing_profile.sql'
 
 async function main() {
-  console.log('\n🚀  YoAi Billing — Kullanıcı Fatura Profili Migration\n')
+  console.log('\n🚀  DijiMagic Billing — Kullanıcı Fatura Profili Migration\n')
   const client = new Client({ connectionString: DATABASE_URL })
   await client.connect()
   try {

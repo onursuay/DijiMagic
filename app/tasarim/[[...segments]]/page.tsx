@@ -12,7 +12,7 @@ import PublishModal from '@/components/tasarim/PublishModal'
 import TextOverlayControls, { DEFAULT_OVERLAY, type OverlayConfig, type TextPosition } from '@/components/tasarim/TextOverlayControls'
 import { ToastContainer, type Toast, type ToastType } from '@/components/Toast'
 import { usePathTab } from '@/hooks/usePathTab'
-const LIBRARY_STORAGE_KEY = 'yoai-tasarim-library'
+const LIBRARY_STORAGE_KEY = 'dijimagic-tasarim-library'
 
 type Mode = 'gorsel' | 'video'
 type AspectRatio = '1:1' | '16:9' | '9:16' | '4:3'

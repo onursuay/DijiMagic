@@ -258,7 +258,7 @@ export async function removeRegisteredAccount(
   // (best-effort). Görünüm filtresi zaten pasif/silinmiş hesabı eler; bu ek temizlik
   // sayaçların da şişmemesini sağlar. Hatası silme sonucunu etkilemez.
   try {
-    const { supersedePendingAccountAlerts } = await import('@/lib/yoai/ai/hierarchicalStore')
+    const { supersedePendingAccountAlerts } = await import('@/lib/dijimagic/ai/hierarchicalStore')
     await supersedePendingAccountAlerts(userId, accountId)
   } catch (e) {
     console.warn('[registeredAccounts] supersede account_alerts after removal skipped:', e instanceof Error ? e.message : e)

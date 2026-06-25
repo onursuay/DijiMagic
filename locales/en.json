@@ -89,7 +89,7 @@
       "features": {
         "optimization": "Optimization",
         "strategy": "Strategy",
-        "yoalgoritma": "YoAlgorithm",
+        "dijialgoritma": "DijiAlgorithm",
         "seo": "SEO Plus",
         "audience_ai": "AI-Based Audience",
         "ad_account_slot": "Ad Account",
@@ -99,12 +99,12 @@
         "optimization_ai_scan_pro": "AI Scan Pro",
         "design_generation": "Design Generation",
         "strategy_overage": "Extra Strategy",
-        "yoalgoritma_chat": "YoAlgorithm Chat"
+        "dijialgoritma_chat": "DijiAlgorithm Chat"
       },
       "featureDescriptions": {
         "optimization": "You need an active subscription plan for the optimization panel and campaign score.",
         "strategy": "You need an active subscription plan to use the AI-powered strategy engine.",
-        "yoalgoritma": "You need an active subscription plan for the YoAlgorithm command center and AI suggestions.",
+        "dijialgoritma": "You need an active subscription plan for the DijiAlgorithm command center and AI suggestions.",
         "seo": "You need an active subscription plan to use the SEO analysis tool.",
         "audience_ai": "You need an active subscription plan for AI-based audience generation.",
         "ad_account_slot": "You've reached your plan's ad account limit. Upgrade your plan to add more ad accounts.",
@@ -114,7 +114,7 @@
         "optimization_ai_scan_pro": "You need a sufficient credit balance for the AI Scan Pro deep analysis.",
         "design_generation": "You need a sufficient credit balance to run AI design generation.",
         "strategy_overage": "Your monthly strategy limit is reached. You need a sufficient credit balance to create extra strategies.",
-        "yoalgoritma_chat": "You need a sufficient credit balance for YoAlgorithm content generation."
+        "dijialgoritma_chat": "You need a sufficient credit balance for DijiAlgorithm content generation."
       }
     }
   },
@@ -125,28 +125,28 @@
       "backToHome": "Back to Home",
       "intro": {
         "title": "Introduction",
-        "content": "At YO Dijital Medya A.Ş. (\"YoAi\", \"we\"), we take the security of your personal data seriously. This policy explains what data we collect when you use the YoAi platform, how we use it, how long we keep it, and your rights."
+        "content": "At DijiMagic (\"DijiMagic\", \"we\"), we take the security of your personal data seriously. This policy explains what data we collect when you use the DijiMagic platform, how we use it, how long we keep it, and your rights."
       },
       "section1Title": "1) Scope",
-      "section1Content": "This policy applies to the services provided through the YoAi website and YoAi SaaS dashboard.",
+      "section1Content": "This policy applies to the services provided through the DijiMagic website and DijiMagic SaaS dashboard.",
       "section2Title": "2) Service Description",
-      "section2Content": "YoAi is a platform that helps users connect their ad accounts to view performance data, run reporting, and (where applicable) perform certain ad management actions.",
+      "section2Content": "DijiMagic is a platform that helps users connect their ad accounts to view performance data, run reporting, and (where applicable) perform certain ad management actions.",
       "section3Title": "3) Connected Integrations and Types of Data Accessed",
       "section3MetaTitle": "3.1 Meta (Facebook, Instagram, WhatsApp) Integration",
-      "section3MetaContent": "When a user connects their Meta account via Facebook Login, YoAi requests access to the following categories of data, each tied to a specific permission scope:\n\n(a) Advertising Data (ads_read, ads_management, pages_manage_ads): Ad account identifiers, campaigns, ad sets, ads, budgets, bid strategies, targeting settings, and performance metrics (impressions, clicks, spend, conversions, ROAS).\n\n(b) Page Data (pages_show_list, pages_read_engagement, pages_manage_posts): Facebook Page names, IDs, profile pictures, engagement metrics, published posts (text, images, videos, permalinks), and the ability to publish content (feed posts, Reels) to the user's own Facebook Page.\n\n(c) Lead Data (leads_retrieval): Active lead generation forms associated with connected Pages, including form names, field configurations, and submitted lead entries (name, email, phone, and other fields defined by the advertiser).\n\n(d) Business Data (business_management): Business Manager account identifiers and names, owned Pages, and owned WhatsApp Business Accounts — used to map organizational assets.\n\n(e) Instagram Data (instagram_basic, instagram_content_publish): Instagram Business Account profile information (username, profile picture), published media (images, videos, captions, permalinks), and the ability to publish content (feed posts, Reels, Stories) to the user's Instagram Business Account.\n\n(f) WhatsApp Data (whatsapp_business_management, whatsapp_business_messaging): WhatsApp Business Account identifiers, associated phone numbers (display number, verified name, quality rating), and the ability to create Click-to-WhatsApp (CTWA) ad destinations.\n\nAll Meta data is used exclusively to provide the ad management, reporting, and campaign creation features within the YoAi platform. Data is not transferred to third parties, sold, or used for purposes unrelated to the user's advertising operations.",
+      "section3MetaContent": "When a user connects their Meta account via Facebook Login, DijiMagic requests access to the following categories of data, each tied to a specific permission scope:\n\n(a) Advertising Data (ads_read, ads_management, pages_manage_ads): Ad account identifiers, campaigns, ad sets, ads, budgets, bid strategies, targeting settings, and performance metrics (impressions, clicks, spend, conversions, ROAS).\n\n(b) Page Data (pages_show_list, pages_read_engagement, pages_manage_posts): Facebook Page names, IDs, profile pictures, engagement metrics, published posts (text, images, videos, permalinks), and the ability to publish content (feed posts, Reels) to the user's own Facebook Page.\n\n(c) Lead Data (leads_retrieval): Active lead generation forms associated with connected Pages, including form names, field configurations, and submitted lead entries (name, email, phone, and other fields defined by the advertiser).\n\n(d) Business Data (business_management): Business Manager account identifiers and names, owned Pages, and owned WhatsApp Business Accounts — used to map organizational assets.\n\n(e) Instagram Data (instagram_basic, instagram_content_publish): Instagram Business Account profile information (username, profile picture), published media (images, videos, captions, permalinks), and the ability to publish content (feed posts, Reels, Stories) to the user's Instagram Business Account.\n\n(f) WhatsApp Data (whatsapp_business_management, whatsapp_business_messaging): WhatsApp Business Account identifiers, associated phone numbers (display number, verified name, quality rating), and the ability to create Click-to-WhatsApp (CTWA) ad destinations.\n\nAll Meta data is used exclusively to provide the ad management, reporting, and campaign creation features within the DijiMagic platform. Data is not transferred to third parties, sold, or used for purposes unrelated to the user's advertising operations.",
       "section3GoogleTitle": "3.2 Google Ads Integration",
       "section3GoogleContent": "The user grants access to their Google Ads account via Google OAuth. Data accessed includes Google Ads customer account ID, ad entities such as campaigns/ad groups/ads, budget/settings, and performance metrics (e.g. impressions, clicks, cost, and related reporting fields). Access scope: Google Ads API (adwords scope).",
       "section3GA4Title": "3.3 Google Analytics Integration (GA4)",
-      "section3GA4Content": "When a user connects their Google account, YoAi requests access to Google Analytics 4 data via the following OAuth scopes:\n\n(a) analytics.readonly: Read access to GA4 account identifiers, property configurations, data streams, audiences, and report data (sessions, users, events, conversions, traffic sources).\n\n(b) analytics.edit: Write access to create GA4 properties on behalf of the user, configure data streams, define custom event definitions, create audiences, and set up conversion goals — only when the user explicitly initiates these actions through YoAi's setup wizards.\n\nAll Google Analytics data is used exclusively to display analytics dashboards within YoAi and to perform user-initiated configuration actions. Data is never transferred to third parties, sold, or used for advertising purposes.",
+      "section3GA4Content": "When a user connects their Google account, DijiMagic requests access to Google Analytics 4 data via the following OAuth scopes:\n\n(a) analytics.readonly: Read access to GA4 account identifiers, property configurations, data streams, audiences, and report data (sessions, users, events, conversions, traffic sources).\n\n(b) analytics.edit: Write access to create GA4 properties on behalf of the user, configure data streams, define custom event definitions, create audiences, and set up conversion goals — only when the user explicitly initiates these actions through DijiMagic's setup wizards.\n\nAll Google Analytics data is used exclusively to display analytics dashboards within DijiMagic and to perform user-initiated configuration actions. Data is never transferred to third parties, sold, or used for advertising purposes.",
       "section3GTMTitle": "3.4 Google Tag Manager Integration",
-      "section3GTMContent": "When a user connects their Google account, YoAi requests access to Google Tag Manager data via the following OAuth scopes:\n\n(a) tagmanager.readonly: Read access to the user's GTM account identifiers, containers, workspaces, tags, triggers, variables, and version history — used to display the user's existing setup within YoAi's dashboard.\n\n(b) tagmanager.edit.containers: Write access to create and modify tags (GA4 configuration, GA4 events, conversion tracking), triggers (page view, form submit, click events), and variables within the user's GTM container — only when the user explicitly initiates these actions through YoAi's setup wizards.\n\n(c) tagmanager.publish: Permission to publish GTM container versions, only after the user reviews and approves YoAi-generated changes via in-app one-click action. Auto-publishing is never performed without explicit user action.\n\nAll Google Tag Manager data is used exclusively to display the user's GTM setup within YoAi and to deploy tags configured by the user. Data is never transferred to third parties or used for advertising purposes.",
+      "section3GTMContent": "When a user connects their Google account, DijiMagic requests access to Google Tag Manager data via the following OAuth scopes:\n\n(a) tagmanager.readonly: Read access to the user's GTM account identifiers, containers, workspaces, tags, triggers, variables, and version history — used to display the user's existing setup within DijiMagic's dashboard.\n\n(b) tagmanager.edit.containers: Write access to create and modify tags (GA4 configuration, GA4 events, conversion tracking), triggers (page view, form submit, click events), and variables within the user's GTM container — only when the user explicitly initiates these actions through DijiMagic's setup wizards.\n\n(c) tagmanager.publish: Permission to publish GTM container versions, only after the user reviews and approves DijiMagic-generated changes via in-app one-click action. Auto-publishing is never performed without explicit user action.\n\nAll Google Tag Manager data is used exclusively to display the user's GTM setup within DijiMagic and to deploy tags configured by the user. Data is never transferred to third parties or used for advertising purposes.",
       "section3GmailTitle": "3.5 Gmail / Email Sending Integration",
-      "section3GmailContent": "When a user connects their Gmail account in YoAi's Email Marketing module, YoAi requests access via the following OAuth scopes:\n\n(a) gmail.send: Permission to send email messages (such as marketing campaigns, outreach sequences, reports, or notifications) that the user composes and explicitly initiates within YoAi, delivered from the user's own connected Gmail account.\n\n(b) userinfo.email: Read access used only to display which Gmail account is connected.\n\nYoAi uses the gmail.send scope exclusively to send user-initiated messages. YoAi does not read, access, store, modify, delete, or analyze the user's existing emails, inbox, drafts, labels, or contacts; the gmail.send scope only permits sending. Users can disconnect their Gmail account at any time, which revokes the stored authorization token and stops further sending. All Gmail data handling complies with the Google API Services User Data Policy, including the Limited Use requirements. Data is never transferred to third parties, sold, or used for advertising purposes.",
+      "section3GmailContent": "When a user connects their Gmail account in DijiMagic's Email Marketing module, DijiMagic requests access via the following OAuth scopes:\n\n(a) gmail.send: Permission to send email messages (such as marketing campaigns, outreach sequences, reports, or notifications) that the user composes and explicitly initiates within DijiMagic, delivered from the user's own connected Gmail account.\n\n(b) userinfo.email: Read access used only to display which Gmail account is connected.\n\nDijiMagic uses the gmail.send scope exclusively to send user-initiated messages. DijiMagic does not read, access, store, modify, delete, or analyze the user's existing emails, inbox, drafts, labels, or contacts; the gmail.send scope only permits sending. Users can disconnect their Gmail account at any time, which revokes the stored authorization token and stops further sending. All Gmail data handling complies with the Google API Services User Data Policy, including the Limited Use requirements. Data is never transferred to third parties, sold, or used for advertising purposes.",
       "section4Title": "4) Platform Data Policy Compliance",
       "section4SubATitle": "4.1 Google API Services User Data Policy (Limited Use)",
-      "section4SubAContent": "YoAi's use and transfer to any other app of information received from Google APIs will adhere to the Google API Services User Data Policy (https://developers.google.com/terms/api-services-user-data-policy), including the Limited Use requirements. Specifically: (a) Google user data is used only to provide and improve the reporting, monitoring, and campaign management features requested by the user within YoAi. (b) Google user data is not transferred to third parties except as necessary to provide or improve user-facing features, with the user's explicit consent, for security purposes, or to comply with applicable laws. (c) Google user data is not used for serving ads, including retargeting, personalized advertising, or interest-based advertising. (d) Google user data is not sold to any party. (e) Humans are not allowed to read Google user data unless the user has provided affirmative consent, it is necessary for security purposes, it is required to comply with applicable law, or the data is aggregated and anonymized for internal operations.",
+      "section4SubAContent": "DijiMagic's use and transfer to any other app of information received from Google APIs will adhere to the Google API Services User Data Policy (https://developers.google.com/terms/api-services-user-data-policy), including the Limited Use requirements. Specifically: (a) Google user data is used only to provide and improve the reporting, monitoring, and campaign management features requested by the user within DijiMagic. (b) Google user data is not transferred to third parties except as necessary to provide or improve user-facing features, with the user's explicit consent, for security purposes, or to comply with applicable laws. (c) Google user data is not used for serving ads, including retargeting, personalized advertising, or interest-based advertising. (d) Google user data is not sold to any party. (e) Humans are not allowed to read Google user data unless the user has provided affirmative consent, it is necessary for security purposes, it is required to comply with applicable law, or the data is aggregated and anonymized for internal operations.",
       "section4SubBTitle": "4.2 Meta Platform Policy Compliance",
-      "section4SubBContent": "YoAi's use of data received from Meta Platform APIs (Facebook, Instagram, WhatsApp) complies with the Meta Platform Terms (https://developers.facebook.com/terms/) and Meta's Data Use Restrictions. Specifically:\n\n(a) Meta user data is used solely to provide the advertising management, reporting, campaign creation, and analytics features that the user explicitly initiates within the YoAi platform.\n\n(b) Meta user data is not sold, licensed, or transferred to any third party — including data brokers, ad networks, or analytics providers — for any purpose.\n\n(c) Meta user data is not used for surveillance, profiling unrelated to advertising, credit or insurance eligibility decisions, employment screening, or any purpose unrelated to the user's own advertising operations.\n\n(d) Lead form data retrieved via the leads_retrieval permission is accessed only on behalf of the Page owner who created the form and is displayed exclusively within the YoAi dashboard for that user's own use.\n\n(e) Instagram account data is used only for campaign targeting (selecting Instagram accounts as ad destinations) and displaying published media for ad creative selection.\n\n(f) WhatsApp Business Account data is used only to enable Click-to-WhatsApp ad creation and to verify phone number availability.\n\n(g) Access tokens are stored securely in httpOnly cookies and server-side storage. Tokens are never exposed to client-side JavaScript or logged in plain text.\n\n(h) When a user disconnects their Meta integration or deauthorizes the app, all stored tokens, account mappings, and cached data are revoked and queued for deletion within 90 days.\n\n(i) Users may request immediate data deletion by contacting info@yodijital.com or through the in-app data deletion flow.",
+      "section4SubBContent": "DijiMagic's use of data received from Meta Platform APIs (Facebook, Instagram, WhatsApp) complies with the Meta Platform Terms (https://developers.facebook.com/terms/) and Meta's Data Use Restrictions. Specifically:\n\n(a) Meta user data is used solely to provide the advertising management, reporting, campaign creation, and analytics features that the user explicitly initiates within the DijiMagic platform.\n\n(b) Meta user data is not sold, licensed, or transferred to any third party — including data brokers, ad networks, or analytics providers — for any purpose.\n\n(c) Meta user data is not used for surveillance, profiling unrelated to advertising, credit or insurance eligibility decisions, employment screening, or any purpose unrelated to the user's own advertising operations.\n\n(d) Lead form data retrieved via the leads_retrieval permission is accessed only on behalf of the Page owner who created the form and is displayed exclusively within the DijiMagic dashboard for that user's own use.\n\n(e) Instagram account data is used only for campaign targeting (selecting Instagram accounts as ad destinations) and displaying published media for ad creative selection.\n\n(f) WhatsApp Business Account data is used only to enable Click-to-WhatsApp ad creation and to verify phone number availability.\n\n(g) Access tokens are stored securely in httpOnly cookies and server-side storage. Tokens are never exposed to client-side JavaScript or logged in plain text.\n\n(h) When a user disconnects their Meta integration or deauthorizes the app, all stored tokens, account mappings, and cached data are revoked and queued for deletion within 90 days.\n\n(i) Users may request immediate data deletion by contacting info@dijimagic.com or through the in-app data deletion flow.",
       "section5Title": "5) Purposes of Data Use",
       "section5Content": "Account linking and authentication; providing performance reports, KPI dashboards, and analytics; in-product debugging and support (sensitive information such as credit card, password, or tokens is not logged); security measures and prevention of misuse.",
       "section6Title": "6) Retention",
@@ -156,12 +156,12 @@
       "section8Title": "8) Security",
       "section8Content": "Tokens and sensitive authentication data are not held in plain form on the client. Access keys are not shared in URLs; they are used only in secure headers. Technical and organizational measures are in place to prevent unauthorized access.",
       "section9Title": "9) Your Rights and Requests",
-      "section9Content": "You may submit requests regarding the processing of your personal data through the following channel:\n\nEmail: info@yodijital.com",
+      "section9Content": "You may submit requests regarding the processing of your personal data through the following channel:\n\nEmail: info@dijimagic.com",
       "section10Title": "10) Policy Updates",
       "section10Content": "This policy may be updated as needed. Updates will be published on this page.",
       "contact": {
         "title": "Contact",
-        "email": "info@yodijital.com"
+        "email": "info@dijimagic.com"
       }
     },
     "dataDeletion": {
@@ -169,19 +169,19 @@
       "backToHome": "Back to Home",
       "intro": {
         "title": "Introduction",
-        "content": "You may remove integrations you have connected in YoAi at any time and request deletion of your data."
+        "content": "You may remove integrations you have connected in DijiMagic at any time and request deletion of your data."
       },
       "section1Title": "1) Integration Removal (Disconnect)",
       "section1GoogleTitle": "1.1 Google Ads",
-      "section1GoogleContent": "When you disconnect Google Ads from the YoAi dashboard: Synchronization is stopped. Stored authorization data (token/refresh token) is revoked and/or invalidated. The related account mapping is queued for deletion.",
+      "section1GoogleContent": "When you disconnect Google Ads from the DijiMagic dashboard: Synchronization is stopped. Stored authorization data (token/refresh token) is revoked and/or invalidated. The related account mapping is queued for deletion.",
       "section1MetaTitle": "1.2 Meta",
-      "section1MetaContent": "When you disconnect Meta from the YoAi dashboard: Synchronization is stopped. Authorization data is revoked and/or invalidated. The related account mapping is queued for deletion.",
+      "section1MetaContent": "When you disconnect Meta from the DijiMagic dashboard: Synchronization is stopped. Authorization data is revoked and/or invalidated. The related account mapping is queued for deletion.",
       "section2Title": "2) Scope of Deleted Data",
       "section2Content": "Integration tokens and authorization records; linked account mapping and connection metadata; report/cache summaries retained for product functionality.",
       "section3Title": "3) Deletion Timeline",
       "section3Content": "After disconnect, data is removed from our systems within 90 days at the latest. You may contact us to request earlier deletion.",
       "section4Title": "4) Data Deletion Request Contact",
-      "section4Content": "Email: info@yodijital.com | Subject: \"YoAi Data Deletion Request\" | Body: Your account email + the integration(s) you want deleted",
+      "section4Content": "Email: info@dijimagic.com | Subject: \"DijiMagic Data Deletion Request\" | Body: Your account email + the integration(s) you want deleted",
       "confirmationCode": {
         "label": "Confirmation Code"
       }
@@ -190,10 +190,10 @@
       "title": "Cookie Policy",
       "backToHome": "Back to Home",
       "lastUpdated": "Last updated: 2026-03-23",
-      "company": "YO Dijital Medya A.Ş. · yoai.yodijital.com",
+      "company": "DijiMagic · dijimagic.com",
       "intro": {
         "title": "Introduction",
-        "content": "This Cookie Policy explains the cookies and similar technologies used on the platform provided by YO Dijital Medya Anonim Şirketi ('YoAi') at yoai.yodijital.com."
+        "content": "This Cookie Policy explains the cookies and similar technologies used on the platform provided by DijiMagic ('DijiMagic') at dijimagic.com."
       },
       "section1Title": "1) What Are Cookies?",
       "section1Content": "Cookies are small text files placed on your browser by websites. They are used to remember your preferences, manage your session, and collect usage statistics.",
@@ -214,28 +214,28 @@
       "section7Content": "This Cookie Policy may be updated from time to time. The current version is always published on this page.",
       "contact": {
         "title": "Contact",
-        "email": "info@yodijital.com"
+        "email": "info@dijimagic.com"
       }
     },
     "terms": {
       "title": "Terms of Service",
       "backToHome": "Back to Home",
       "lastUpdated": "Last updated: 2026-01-30",
-      "company": "YO Dijital Medya A.Ş. · yoai.yodijital.com",
+      "company": "DijiMagic · dijimagic.com",
       "section1Title": "1) Parties and Definitions",
-      "section1Body": "These terms apply to users of the YoAi platform provided by YO Dijital Medya A.Ş.",
+      "section1Body": "These terms apply to users of the DijiMagic platform provided by DijiMagic",
       "section2Title": "2) Scope of Service",
-      "section2Body": "YoAi is software that enables you to view performance data by connecting your ad accounts and (where applicable) to perform certain ad management actions.",
+      "section2Body": "DijiMagic is software that enables you to view performance data by connecting your ad accounts and (where applicable) to perform certain ad management actions.",
       "section3Title": "3) User Authority",
       "section3Body": "Users may connect only ad accounts they are authorized to use. Users may not provide unauthorized access to third-party accounts.",
       "section4Title": "4) Policy and API Compliance",
-      "section4Body": "Operations carried out through YoAi are subject to the policies and terms of the relevant platforms (Google Ads, Meta, etc.). Users may not use the service in ways that violate platform policies (e.g. unauthorized data collection, misuse, or misleading content).",
+      "section4Body": "Operations carried out through DijiMagic are subject to the policies and terms of the relevant platforms (Google Ads, Meta, etc.). Users may not use the service in ways that violate platform policies (e.g. unauthorized data collection, misuse, or misleading content).",
       "section5Title": "5) Limitation of Liability",
-      "section5Body": "Data displayed in YoAi is based on data provided by connected platforms (Google/Meta); discrepancies may occur due to delay, quotas, outages, or platform changes. YoAi is liable only to a limited extent for damage arising from third-party platform outages, API limits, or policy changes.",
+      "section5Body": "Data displayed in DijiMagic is based on data provided by connected platforms (Google/Meta); discrepancies may occur due to delay, quotas, outages, or platform changes. DijiMagic is liable only to a limited extent for damage arising from third-party platform outages, API limits, or policy changes.",
       "section6Title": "6) Account Security",
       "section6Body": "The user is responsible for the security of their account and the protection of access credentials.",
       "section7Title": "7) Termination",
-      "section7Body": "YoAi may suspend or terminate access in case of misuse or violation.",
+      "section7Body": "DijiMagic may suspend or terminate access in case of misuse or violation.",
       "section8Title": "8) Changes",
       "section8Body": "These terms may be updated. The current version is published on this page."
     }
@@ -436,7 +436,7 @@
       "sections": {
         "strateji": "Create AI-powered advertising strategies",
         "optimizasyon": "Optimize your campaigns and boost performance",
-        "yoai": "Ask questions with the YoAi assistant",
+        "dijimagic": "Ask questions with the DijiMagic assistant",
         "hedefKitle": "Audience analysis and segmentation",
         "tasarim": "Design ad visuals and creatives",
         "raporlar": "View detailed reports",
@@ -1320,7 +1320,7 @@
         },
         "aiMax": {
           "title": "AI Max",
-          "description": "YoAi uses AI-powered features to improve your campaign performance. These settings affect broad match, targeting expansion, and ad optimization.",
+          "description": "DijiMagic uses AI-powered features to improve your campaign performance. These settings affect broad match, targeting expansion, and ad optimization.",
           "enabled": "Enable AI Max",
           "disabled": "AI Max disabled",
           "broadMatchWithAI": "Broad match with AI",
@@ -3103,7 +3103,7 @@
         "networkError": "Network error",
         "gaNoUserSession": "You must sign in to the app first to connect Google Analytics. Please sign out and sign in again.",
         "gscNoUserSession": "You must sign in to the app first to connect Search Console. Please sign out and sign in again.",
-        "noRefreshToken": "Google did not send a refresh token. Remove YoAi's permission from https://myaccount.google.com/permissions and try again.",
+        "noRefreshToken": "Google did not send a refresh token. Remove DijiMagic's permission from https://myaccount.google.com/permissions and try again.",
         "dbSaveFailed": "The connection could not be saved to the database. Please try again.",
         "gaConnectFailed": "Google Analytics connection error: {reason}",
         "gscConnectFailed": "Search Console connection error: {reason}",
@@ -3116,10 +3116,10 @@
         "selectSiteFailed": "Failed to select site"
       }
     },
-    "yoai": {
-      "title": "YoAi",
+    "dijimagic": {
+      "title": "DijiMagic",
       "description": "Your AI-powered marketing assistant",
-      "welcome": "Welcome to YoAi",
+      "welcome": "Welcome to DijiMagic",
       "welcomeDescription": "Get AI-powered recommendations and analysis for your marketing campaigns. You can select one of the suggestions below or ask a question directly.",
       "suggestions": {
         "campaign": {
@@ -3191,7 +3191,7 @@
         }
       },
       "hierarchy": {
-        "title": "YoAlgorithm Improvement Cards",
+        "title": "DijiAlgorithm Improvement Cards",
         "subtitle": "AI suggestions across account → campaign → ad set → ad",
         "alertsTitle": "Account Health Status",
         "flipHint": "hover for details",
@@ -3269,7 +3269,7 @@
         "descriptionPlaceholder": "One description per line"
       },
       "commandCenter": {
-        "title": "YoAlgorithm Center",
+        "title": "DijiAlgorithm Center",
         "description": "Monitor your ad accounts with AI, detect risks, evaluate opportunities.",
         "connectedPlatforms": "Connected Platforms",
         "activeCampaigns": "Active Campaigns",
@@ -3392,7 +3392,7 @@
       },
       "oneClickApprove": {
         "title": "One-Click Approve",
-        "subtitle": "YoAlgorithm prepares the draft — approval is yours",
+        "subtitle": "DijiAlgorithm prepares the draft — approval is yours",
         "publishDisabled": "Live publishing is currently disabled. Publishing settings must be enabled to put the ad live.",
         "draftWord": "draft",
         "preparingDraft": "Preparing draft — generating creative, uploading to Meta, setting up campaign…",
@@ -3529,7 +3529,7 @@
         "reconnect": "Reconnect",
         "thinking": "Thinking...",
         "analyzing": "Analyzing...",
-        "generating": "YoAi is generating content...",
+        "generating": "DijiMagic is generating content...",
         "newConversation": "Start New Conversation"
       },
       "insightStream": {
@@ -3712,7 +3712,7 @@
       },
       "businessProfile": {
         "title": "Business Profile",
-        "subtitle": "YoAi uses this information as a reference for ad suggestions, strategy and audience analyses.",
+        "subtitle": "DijiMagic uses this information as a reference for ad suggestions, strategy and audience analyses.",
         "saveProfile": "Save Profile",
         "steps": {
           "company": "Company",
@@ -3741,7 +3741,7 @@
           "extraNotes": "Additional Notes"
         },
         "hints": {
-          "businessDescription": "YoAi will derive your ad language and tone from this description."
+          "businessDescription": "DijiMagic will derive your ad language and tone from this description."
         },
         "placeholders": {
           "companyName": "e.g. Boston Bistro",
@@ -3755,7 +3755,7 @@
           "mostProfitableServices": "e.g. private events, corporate catering packages",
           "forbiddenClaims": "e.g. health claims, 100% guarantee promises",
           "complianceNotes": "e.g. Regulatory limits for health advertising, permits",
-          "extraNotes": "Any other information YoAi should know"
+          "extraNotes": "Any other information DijiMagic should know"
         },
         "sources": {
           "intro": "At least 1 source is required. Sources are actually scanned.",
@@ -5593,7 +5593,7 @@
           "connectWordPress": "Connect WordPress Site",
           "siteUrlLabel": "Site Address",
           "siteUrlPlaceholder": "https://yoursite.com",
-          "connectHint": "Just enter your site address. You won't enter your password into YoAi — you approve it in one click from your own WordPress panel.",
+          "connectHint": "Just enter your site address. You won't enter your password into DijiMagic — you approve it in one click from your own WordPress panel.",
           "connecting": "Redirecting...",
           "noSites": "No connected sites yet",
           "noSitesDesc": "Connect a WordPress site first to enable automatic publishing.",
@@ -5631,7 +5631,7 @@
           "publishTargetDesc": "Your articles are published to the website in your business profile.",
           "yourSiteFromProfile": "Your website (from your business profile)",
           "authorize": "Authorize publishing",
-          "authorizeHint": "If your site runs on WordPress, you approve it in one click from your own panel — your password is never entered into YoAi. On a different platform, generate the article and publish it via Copy / Download HTML.",
+          "authorizeHint": "If your site runs on WordPress, you approve it in one click from your own panel — your password is never entered into DijiMagic. On a different platform, generate the article and publish it via Copy / Download HTML.",
           "notAuthorizedDesc": "You need to authorize once to publish articles to your site.",
           "noProfileUrl": "No website address found in your business profile. Please complete your profile first.",
           "openProfile": "Open Business Profile",
@@ -5640,7 +5640,7 @@
             "title": "Another site / custom software",
             "subtitle": "For non-WordPress or custom-built sites.",
             "urlLabel": "Webhook URL",
-            "urlPlaceholder": "https://yoursite.com/api/yoai-webhook",
+            "urlPlaceholder": "https://yoursite.com/api/dijimagic-webhook",
             "secretLabel": "Secret key",
             "secretPlaceholder": "At least 8 characters",
             "generate": "Generate",
@@ -5654,12 +5654,12 @@
             "errWeakSecret": "The secret key must be at least 8 characters.",
             "errSaveFailed": "Couldn't save the webhook. Please try again.",
             "howTitle": "How it works (for your developer)",
-            "howIntro": "On each publish, YoAi POSTs the JSON below to your webhook URL and signs the request with your secret (HMAC-SHA256). You verify the signature and create the article in your own system.",
+            "howIntro": "On each publish, DijiMagic POSTs the JSON below to your webhook URL and signs the request with your secret (HMAC-SHA256). You verify the signature and create the article in your own system.",
             "howHeaders": "Sent headers",
             "howPayload": "Sample body",
             "howVerifyNode": "Signature verification — Node.js",
             "howVerifyPhp": "Signature verification — PHP",
-            "howResponse": "Respond with 2xx. Optionally return { \"url\": \"...\" } and YoAi will save the published link."
+            "howResponse": "Respond with 2xx. Optionally return { \"url\": \"...\" } and DijiMagic will save the published link."
           },
           "wpManual": {
             "title": "Connect with an Application Password",
@@ -5678,7 +5678,7 @@
             "howTitle": "How to get an application password?",
             "how1": "1) Log in to your WordPress admin → Users → Profile.",
             "how2": "2) Scroll to the “Application Passwords” section at the bottom.",
-            "how3": "3) Enter “YoAi SEO” as the name and click “Add New Application Password”.",
+            "how3": "3) Enter “DijiMagic SEO” as the name and click “Add New Application Password”.",
             "how4": "4) Copy the generated password and paste it here along with your username.",
             "openProfile": "Open WordPress profile page",
             "errInvalidUrl": "Enter a valid site address (https).",
@@ -6013,7 +6013,7 @@
       "style_luxury": "Luxury",
       "style_minimal": "Minimal",
       "style_vibrant": "Vibrant",
-      "preparingTitle": "YoAI Wizard is building your site",
+      "preparingTitle": "DijiMagic Wizard is building your site",
       "preparingDesc": "We're creating an image-rich site tailored to your brand. This may take a minute; you can preview and approve it when ready.",
       "retry": "Try Again",
       "designTitle": "Design",
@@ -6064,7 +6064,7 @@
     "tiktok": "TikTok",
     "strateji": "Strategy",
     "optimizasyon": "Optimization",
-    "yoai": "YoAlgorithm",
+    "dijimagic": "DijiAlgorithm",
     "hedefKitle": "Target Audience",
     "tasarim": "Design",
     "sosyalmedya": "Social Media",
@@ -6794,7 +6794,7 @@
       "seoPlus": "SEO Plus",
       "aiStrateji": "AI Strategy",
       "aiStratejiSinirsiz": "AI Strategy (Unlimited)",
-      "yoAlgoritma": "YoAlgorithm",
+      "dijiAlgoritma": "DijiAlgorithm",
       "crm": "CRM System",
       "emailMarketing": "Email Marketing",
       "donusumSihirbazi": "Conversion Wizard",
@@ -6862,7 +6862,7 @@
     "planDescriptions": {
       "basic": "All the tools you need for basic ad management.",
       "starter": "Optimization solutions for growth.",
-      "premium": "The full marketing suite — AI Strategy, YoAlgorithm, CRM and Email Marketing included.",
+      "premium": "The full marketing suite — AI Strategy, DijiAlgorithm, CRM and Email Marketing included.",
       "enterprise": "Unlimited ad power for agencies."
     },
     "paymentSuccessBanner": "Your payment was received. Your subscription is being updated.",
@@ -6995,7 +6995,7 @@
       "completed": "Completed"
     },
     "welcome": "Connect Your Meta Ad Account",
-    "welcomeDesc": "Connect your account to manage your Meta ads through YoAI Dashboard.",
+    "welcomeDesc": "Connect your account to manage your Meta ads through DijiMagic Dashboard.",
     "connectButton": "Get Started",
     "connect": "Connect with Meta",
     "connectDesc": "Sign in to your Meta account and grant the necessary permissions.",
@@ -7052,20 +7052,20 @@
     "contactCta": "Send Email",
     "faq": {
       "platform": {
-        "q": "What is YoAi and what can I do with it?",
-        "a": "YoAi is an AI-powered marketing platform that lets you manage your Meta and Google ads from a single panel. It includes ad management, strategy planning, optimization recommendations, audience building, design generation, reporting, SEO analysis, CRM and email marketing modules."
+        "q": "What is DijiMagic and what can I do with it?",
+        "a": "DijiMagic is an AI-powered marketing platform that lets you manage your Meta and Google ads from a single panel. It includes ad management, strategy planning, optimization recommendations, audience building, design generation, reporting, SEO analysis, CRM and email marketing modules."
       },
       "connectAccounts": {
         "q": "How do I connect my ad accounts?",
-        "a": "You can securely connect your Meta and Google accounts from the Integration page using official authorization (OAuth). YoAi never sees your password; authorization happens directly on the platform itself."
+        "a": "You can securely connect your Meta and Google accounts from the Integration page using official authorization (OAuth). DijiMagic never sees your password; authorization happens directly on the platform itself."
       },
       "recommendations": {
-        "q": "Do YoAlgorithm recommendations change my account automatically?",
-        "a": "No. YoAlgorithm analyzes your ad account and offers improvement recommendations; nothing is applied to your ad account until you approve it."
+        "q": "Do DijiAlgorithm recommendations change my account automatically?",
+        "a": "No. DijiAlgorithm analyzes your ad account and offers improvement recommendations; nothing is applied to your ad account until you approve it."
       },
       "creditsVsSubscription": {
         "q": "What is the difference between a subscription and AI credits?",
-        "a": "A subscription gives access to modules such as Strategy, Optimization, YoAlgorithm and SEO. AI credits are spent on usage-based AI operations such as design generation. You can manage both from the Subscription page."
+        "a": "A subscription gives access to modules such as Strategy, Optimization, DijiAlgorithm and SEO. AI credits are spent on usage-based AI operations such as design generation. You can manage both from the Subscription page."
       },
       "language": {
         "q": "How do I change the interface language?",
@@ -7086,7 +7086,7 @@
       "approval": {
         "badge": "PRE-MEETING",
         "title": "Your Application Has Been Received",
-        "body1": "Before activating your YoAi account, we schedule a short <strong>30-minute</strong> pre-meeting so we can better understand your business and needs.",
+        "body1": "Before activating your DijiMagic account, we schedule a short <strong>30-minute</strong> pre-meeting so we can better understand your business and needs.",
         "body2": "You can complete your application by selecting a convenient day and time from the calendar.",
         "scheduleCta": "Schedule a Meeting",
         "declineCta": "I Don't Want to Schedule for Now"
@@ -7243,8 +7243,8 @@
         "keywordThemes": "Keyword Themes",
         "missingData": "Missing Data"
       },
-      "yoalgoritmaHealth": {
-        "title": "YoAlgorithm Card Generation",
+      "dijialgoritmaHealth": {
+        "title": "DijiAlgorithm Card Generation",
         "healthy": "Healthy",
         "unhealthy": "Attention — card generation failing",
         "latestSuccess": "Last successful run",

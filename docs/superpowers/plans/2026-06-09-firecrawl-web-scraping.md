@@ -4,7 +4,7 @@
 
 **Goal:** Marka ve rakip web sitelerini Firecrawl ile derin (JS-render, çok sayfa) tarayıp, mevcut istihbarat hattını daha zengin içerikle beslemek; Firecrawl yoksa mevcut HTTP fetch'e sorunsuz düşmek.
 
-**Architecture:** Yeni bağımsız `lib/firecrawl/` katmanı Firecrawl REST v2 API'sini kapsüller (`map` → kilit sayfa seçimi → `scrape` → birleşik markdown). `lib/yoai/businessSourceScanner.ts`'de yalnızca "içerik getirme" adımı değişir; mevcut sinyal-çıkarım fonksiyonları (`extractKeywords`, `findHints`, `extractLocations`, `detectBrandTone`) ortak bir `analyzeContent` yardımcısına taşınıp her iki içerik kaynağında (HTTP/Firecrawl) aynen çalışır. Default-off flag ile sıfır regresyon.
+**Architecture:** Yeni bağımsız `lib/firecrawl/` katmanı Firecrawl REST v2 API'sini kapsüller (`map` → kilit sayfa seçimi → `scrape` → birleşik markdown). `lib/dijimagic/businessSourceScanner.ts`'de yalnızca "içerik getirme" adımı değişir; mevcut sinyal-çıkarım fonksiyonları (`extractKeywords`, `findHints`, `extractLocations`, `detectBrandTone`) ortak bir `analyzeContent` yardımcısına taşınıp her iki içerik kaynağında (HTTP/Firecrawl) aynen çalışır. Default-off flag ile sıfır regresyon.
 
 **Tech Stack:** TypeScript, Next.js, Firecrawl REST v2 (`https://api.firecrawl.dev/v2`), node `fetch`, `assert` + `tsx` test harness'i (`npx tsx`).
 
@@ -20,7 +20,7 @@
 | `lib/firecrawl/client.ts` (yeni) | `isFirecrawlReady()`, `firecrawlMap()`, `firecrawlScrape()` — REST v2 sarmalayıcı |
 | `lib/firecrawl/pageSelector.ts` (yeni) | `selectKeyPages()` — map çıktısından kilit sayfa seçimi (deterministik) |
 | `lib/firecrawl/scrapeSite.ts` (yeni) | `scrapeSite()` — map → seç → scrape → birleşik markdown orkestrasyonu |
-| `lib/yoai/businessSourceScanner.ts` (değiştir) | `analyzeContent()` ortak yardımcısı + Firecrawl yolu + dispatcher (fallback) |
+| `lib/dijimagic/businessSourceScanner.ts` (değiştir) | `analyzeContent()` ortak yardımcısı + Firecrawl yolu + dispatcher (fallback) |
 | `src/tests/firecrawlClient.test.ts` (yeni) | `isFirecrawlReady` + map/scrape parse + hata sınıflandırma testleri |
 | `src/tests/firecrawlPageSelector.test.ts` (yeni) | Sayfa seçim önceliği / dedup / max / boş liste testleri |
 | `src/tests/firecrawlScrapeSite.test.ts` (yeni) | Orkestrasyon: birleştirme, all-fail→null, deadline kesintisi |
@@ -42,7 +42,7 @@
 `lib/firecrawl/types.ts`:
 
 ```ts
-/* YoAi — Firecrawl tip tanımları */
+/* DijiMagic — Firecrawl tip tanımları */
 
 /** map endpoint'inden dönen tek bir bağlantı */
 export interface MapLink {
@@ -217,7 +217,7 @@ Expected: FAIL — `Cannot find module '../../lib/firecrawl/client'`
 `lib/firecrawl/client.ts`:
 
 ```ts
-/* YoAi — Firecrawl REST v2 client.
+/* DijiMagic — Firecrawl REST v2 client.
    Apify pattern'i ile aynı: isFirecrawlReady() flag + key kontrolü;
    hata/limit/timeout durumunda çağıran taraf HTTP fetch'e düşer. */
 import type { FirecrawlPage, MapLink } from './types'
@@ -412,7 +412,7 @@ Expected: FAIL — `Cannot find module '../../lib/firecrawl/pageSelector'`
 `lib/firecrawl/pageSelector.ts`:
 
 ```ts
-/* YoAi — Firecrawl kilit sayfa seçici (deterministik).
+/* DijiMagic — Firecrawl kilit sayfa seçici (deterministik).
    map çıktısından markaya dair en bilgilendirici sayfaları seçer. */
 import type { MapLink } from './types'
 
@@ -598,7 +598,7 @@ Expected: FAIL — `Cannot find module '../../lib/firecrawl/scrapeSite'`
 `lib/firecrawl/scrapeSite.ts`:
 
 ```ts
-/* YoAi — Firecrawl akıllı seçki orkestrasyonu.
+/* DijiMagic — Firecrawl akıllı seçki orkestrasyonu.
    map → kilit sayfa seç → her sayfayı scrape → birleşik temiz markdown.
    Hiçbir sayfa taranamazsa null döner (çağıran HTTP fetch'e düşer). */
 import { firecrawlMap, firecrawlScrape } from './client'
@@ -680,7 +680,7 @@ git commit -m "feat(firecrawl): scrapeSite orkestrasyonu (map→seç→scrape→
 ## Task 4: businessSourceScanner entegrasyonu (analyzeContent + Firecrawl yolu + fallback)
 
 **Files:**
-- Modify: `lib/yoai/businessSourceScanner.ts`
+- Modify: `lib/dijimagic/businessSourceScanner.ts`
 - Test: `src/tests/businessSourceScannerFirecrawl.test.ts`
 
 ### 4a — Önce regresyon testi (refactor güvenliği)
@@ -696,7 +696,7 @@ git commit -m "feat(firecrawl): scrapeSite orkestrasyonu (map→seç→scrape→
  * global.fetch monkey-patch: hem HTTP site fetch'i hem Firecrawl API'si mock'lanır.
  */
 import assert from 'assert'
-import { scanBusinessSource } from '../../lib/yoai/businessSourceScanner'
+import { scanBusinessSource } from '../../lib/dijimagic/businessSourceScanner'
 
 let passed = 0
 let failed = 0
@@ -825,7 +825,7 @@ Expected: Regresyon ve sosyal testi PASS olabilir ama `scanProvider` assert'leri
 
 - [ ] **Step 3: `SourceScanOutput`'a opsiyonel `scanProvider` ekle**
 
-`lib/yoai/businessSourceScanner.ts` — interface'e ekle (satır ~52, `scanned_at` öncesi):
+`lib/dijimagic/businessSourceScanner.ts` — interface'e ekle (satır ~52, `scanned_at` öncesi):
 
 ```ts
   error_message: string | null
@@ -836,7 +836,7 @@ Expected: Regresyon ve sosyal testi PASS olabilir ama `scanProvider` assert'leri
 
 - [ ] **Step 4: `analyzeContent` yardımcısını ekle**
 
-`lib/yoai/businessSourceScanner.ts` — `computeConfidence` fonksiyonundan **sonra**, `scanHttp`'ten **önce** ekle:
+`lib/dijimagic/businessSourceScanner.ts` — `computeConfidence` fonksiyonundan **sonra**, `scanHttp`'ten **önce** ekle:
 
 ```ts
 /* ── Ortak içerik analizi (HTTP + Firecrawl paylaşır) ─────────── */
@@ -897,7 +897,7 @@ function analyzeContent(
 
 - [ ] **Step 5: `scanHttp`'in başarı bloğunu `analyzeContent`'e delege et**
 
-`lib/yoai/businessSourceScanner.ts` — `scanHttp` içinde `const html = await res.text()` satırından sonraki **tüm başarı bloğunu** (satır ~269-312, `const title = ...`'dan `return { ... }`'a kadar) şununla değiştir:
+`lib/dijimagic/businessSourceScanner.ts` — `scanHttp` içinde `const html = await res.text()` satırından sonraki **tüm başarı bloğunu** (satır ~269-312, `const title = ...`'dan `return { ... }`'a kadar) şununla değiştir:
 
 ```ts
     const html = await res.text()
@@ -931,7 +931,7 @@ Expected: PASS (mevcut davranış korunur).
 
 - [ ] **Step 7: Firecrawl import'larını ve `scanFirecrawl`'ı ekle**
 
-`lib/yoai/businessSourceScanner.ts` — dosya başındaki import'a ekle (satır 1 civarı):
+`lib/dijimagic/businessSourceScanner.ts` — dosya başındaki import'a ekle (satır 1 civarı):
 
 ```ts
 import { scanSocialSource } from './socialSourceScanner'
@@ -979,7 +979,7 @@ async function scanFirecrawl(input: SourceScanInput): Promise<SourceScanOutput |
 
 - [ ] **Step 8: `scanBusinessSource` dispatcher'ına Firecrawl-önce-fallback ekle**
 
-`lib/yoai/businessSourceScanner.ts` — `scanBusinessSource` sonundaki şu satırları:
+`lib/dijimagic/businessSourceScanner.ts` — `scanBusinessSource` sonundaki şu satırları:
 
 ```ts
   if (SOCIAL_TYPES.includes(input.source_type)) {
@@ -1022,7 +1022,7 @@ Expected: Yeni dosyalarla ilgili hata yok. (Var olan, ilgisiz hatalar varsa not 
 - [ ] **Step 12: Commit**
 
 ```bash
-git add lib/yoai/businessSourceScanner.ts src/tests/businessSourceScannerFirecrawl.test.ts
+git add lib/dijimagic/businessSourceScanner.ts src/tests/businessSourceScannerFirecrawl.test.ts
 git commit -m "feat(firecrawl): businessSourceScanner Firecrawl yolu + HTTP fallback (default-off)"
 ```
 
@@ -1055,7 +1055,7 @@ FIRECRAWL_MAX_PAGES=6
 ## 2026-06-09 — Firecrawl web tarama entegrasyonu (alt-proje C)
 - **Sorun:** Marka/rakip web siteleri yalnız basit HTTP fetch + regex ile taranıyordu; JS-render içerik ve çok sayfalı bilgi kaçıyordu.
 - **Çözüm:** Yeni `lib/firecrawl/` katmanı (map → kilit sayfa seç → scrape → birleşik markdown). `businessSourceScanner` web kaynaklarında Firecrawl hazırsa derin tarar, değilse HTTP fetch'e düşer (default-off `FIRECRAWL_ENABLED` flag, sıfır regresyon). Sosyal/Meta/Google (Apify) değişmedi.
-- **Dosyalar:** lib/firecrawl/{types,client,pageSelector,scrapeSite}.ts, lib/yoai/businessSourceScanner.ts, src/tests/firecrawl*.test.ts, .env.example
+- **Dosyalar:** lib/firecrawl/{types,client,pageSelector,scrapeSite}.ts, lib/dijimagic/businessSourceScanner.ts, src/tests/firecrawl*.test.ts, .env.example
 ```
 
 - [ ] **Step 3: Tüm yeni testleri son kez çalıştır**

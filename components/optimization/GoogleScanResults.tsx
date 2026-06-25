@@ -51,7 +51,7 @@ export default function GoogleScanResults({ result, onClose, onSuccess, onError,
   useEffect(() => {
     if (!result?.timestamp || persistedRef.current === result.timestamp) return
     persistedRef.current = result.timestamp
-    void fetch('/api/yoai/optimization/recommendations', {
+    void fetch('/api/dijimagic/optimization/recommendations', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({

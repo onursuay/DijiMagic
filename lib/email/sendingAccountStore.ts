@@ -70,11 +70,11 @@ export async function createPlatformAccount(
   input: { fromName: string; replyTo: string },
 ): Promise<SendingAccountRow | null> {
   if (!supabase) return null
-  const platformFrom = process.env.PLATFORM_FROM_ADDRESS || 'info@yodijital.com'
+  const platformFrom = process.env.PLATFORM_FROM_ADDRESS || 'info@dijimagic.com'
   const existing = await listAccounts(userId)
   const dup = existing.find((a) => a.type === 'platform')
   const patch = {
-    from_name: input.fromName.trim() || 'YoAi',
+    from_name: input.fromName.trim() || 'DijiMagic',
     reply_to: input.replyTo.trim().toLowerCase() || null,
     status: 'active' as const,
     updated_at: new Date().toISOString(),

@@ -9,7 +9,7 @@ import DictateButton from '@/components/website/DictateButton'
 import { FONT_PAIRINGS, FONT_PAIRING_LIST, SITE_STYLE_PRESETS } from '@/lib/website/render/theme'
 import type { SiteType } from '@/lib/website/types'
 
-// Tarz temsili noktalar (YoAi UI — amber/sarı yok).
+// Tarz temsili noktalar (DijiMagic UI — amber/sarı yok).
 const STYLE_DOT: Record<string, string> = {
   modern: '#0E7C73', corporate: '#2C57A8', playful: '#B23A6B', luxury: '#1A2E45', minimal: '#18202B', vibrant: '#159A47',
 }

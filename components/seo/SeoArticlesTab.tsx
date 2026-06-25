@@ -136,7 +136,7 @@ export default function SeoArticlesTab({ activeSiteUrl }: Props) {
   /* ═══════ İşletme profilindeki web sitesi (SEO bu URL'den beslenir) ═══════ */
   const fetchProfileUrl = useCallback(async () => {
     try {
-      const res = await fetch('/api/yoai/business-profile', { cache: 'no-store' })
+      const res = await fetch('/api/dijimagic/business-profile', { cache: 'no-store' })
       const data = await res.json()
       setProfileUrl(data?.data?.profile?.website_url ?? null)
     } catch {
@@ -163,7 +163,7 @@ export default function SeoArticlesTab({ activeSiteUrl }: Props) {
     setLoading(true)
     setError(null)
     try {
-      const res = await fetch('/api/yoai/articles', { cache: 'no-store' })
+      const res = await fetch('/api/dijimagic/articles', { cache: 'no-store' })
       const data = await res.json()
       if (data.ok) setArticles(data.articles)
       else setError(data.error || 'fetch_failed')
@@ -198,7 +198,7 @@ export default function SeoArticlesTab({ activeSiteUrl }: Props) {
         setShowCreditGate(true)
       }
       if (data.url) {
-        await fetch(`/api/yoai/articles/${article.id}`, {
+        await fetch(`/api/dijimagic/articles/${article.id}`, {
           method: 'PATCH',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({ featured_image_url: data.url, featured_image_alt: article.title }),
@@ -225,7 +225,7 @@ export default function SeoArticlesTab({ activeSiteUrl }: Props) {
     streamRef.current = controller
 
     try {
-      const res = await fetch('/api/yoai/chat', {
+      const res = await fetch('/api/dijimagic/chat', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
@@ -280,7 +280,7 @@ export default function SeoArticlesTab({ activeSiteUrl }: Props) {
     if (!generatedContent) return
     setSaving(true)
     try {
-      const res = await fetch('/api/yoai/articles', {
+      const res = await fetch('/api/dijimagic/articles', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
@@ -324,7 +324,7 @@ export default function SeoArticlesTab({ activeSiteUrl }: Props) {
     if (!editingArticle) return
     setSaving(true)
     try {
-      const res = await fetch(`/api/yoai/articles/${editingArticle.id}`, {
+      const res = await fetch(`/api/dijimagic/articles/${editingArticle.id}`, {
         method: 'PATCH',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ title: editTitle, content: editContent }),
@@ -342,7 +342,7 @@ export default function SeoArticlesTab({ activeSiteUrl }: Props) {
   const handleToggleStatus = async (article: Article) => {
     const newStatus = article.status === 'draft' ? 'published' : 'draft'
     try {
-      const res = await fetch(`/api/yoai/articles/${article.id}`, {
+      const res = await fetch(`/api/dijimagic/articles/${article.id}`, {
         method: 'PATCH',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ status: newStatus }),
@@ -356,7 +356,7 @@ export default function SeoArticlesTab({ activeSiteUrl }: Props) {
   const handleDelete = async (article: Article) => {
     if (!confirm(t('deleteConfirm'))) return
     try {
-      const res = await fetch(`/api/yoai/articles/${article.id}`, { method: 'DELETE' })
+      const res = await fetch(`/api/dijimagic/articles/${article.id}`, { method: 'DELETE' })
       const data = await res.json()
       if (data.ok) setArticles((prev) => prev.filter((a) => a.id !== article.id))
     } catch { /* ignore */ }

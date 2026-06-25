@@ -30,14 +30,14 @@ export interface AssembleDocumentArgs {
   /** Google Fonts stylesheet href, e.g. "https://fonts.googleapis.com/css2?family=Inter:wght@400;600&display=swap" */
   fontHref?: string | null
   /**
-   * serve:   <script src="/yoai-site-runtime.js" defer></script>
+   * serve:   <script src="/dijimagic-site-runtime.js" defer></script>
    *          (CSP script-src 'self' — NO inline scripts)
    * preview: runtime JS inlined into <script>...</script>
    *          (srcdoc iframe has no same-origin fetch)
    */
   mode: 'serve' | 'preview'
   /**
-   * MULTIPAGE: base path used to rewrite shared-nav `data-yoai-href="<slug>"`
+   * MULTIPAGE: base path used to rewrite shared-nav `data-dijimagic-href="<slug>"`
    * links into real hrefs. Absent/empty → no rewrite (single-page 'landing').
    *   serve:   '/s/<subdomain>'        (navMode 'path'  → base/slug)
    *   preview: '/website-preview/<id>' (navMode 'query' → base?slug=…)
@@ -49,21 +49,21 @@ export interface AssembleDocumentArgs {
   localeQuery?: string
   /**
    * MULTIPAGE: slugs of pages that ACTUALLY exist for this site (incl. home).
-   * Makes the nav rewrite slug-set-aware — a `data-yoai-href` pointing at a page
+   * Makes the nav rewrite slug-set-aware — a `data-dijimagic-href` pointing at a page
    * that was never planned/generated resolves to the home base instead of a 404.
    * Omitted (back-compat) → legacy shape-only url-safe check.
    */
   knownSlugs?: string[]
   /**
-   * CONTACT FORM: same-origin lead path injected as `data-yoai-form-action` on
-   * every `<form data-yoai-form>` (e.g. `/s/<sub>/lead`). Set ONLY in real serve
+   * CONTACT FORM: same-origin lead path injected as `data-dijimagic-form-action` on
+   * every `<form data-dijimagic-form>` (e.g. `/s/<sub>/lead`). Set ONLY in real serve
    * mode (the `/s/` routes). Omitted in preview/thumb → the runtime falls back to
    * OPTIMISTIC success (reveal, no real send). Server-controlled string; escaped.
    */
   formActionBase?: string
   /**
    * EDIT OVERLAY: when true (PREVIEW mode ONLY), inline the click-select overlay
-   * (public/yoai-select.js) so the owner önizleme "Düzenle" toggle can select a
+   * (public/dijimagic-select.js) so the owner önizleme "Düzenle" toggle can select a
    * block via postMessage. NEVER injected in serve mode or when false/absent —
    * the published /s/ output and the normal preview stay byte-clean of it.
    */

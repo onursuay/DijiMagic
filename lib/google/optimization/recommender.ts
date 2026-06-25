@@ -20,7 +20,7 @@ import type {
   MetricEvidence,
   ChangeSet,
 } from '@/lib/meta/optimization/types'
-import type { StandardMetrics } from '@/lib/yoai/analysisTypes'
+import type { StandardMetrics } from '@/lib/dijimagic/analysisTypes'
 
 export interface GoogleScanCampaign {
   id: string

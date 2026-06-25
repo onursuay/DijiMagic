@@ -18,7 +18,7 @@ export default async function RootPage() {
     badge: 'AI-Powered All-in-One Marketing',
     heroLine1: 'AI-Powered All-in-One',
     heroLine2: 'Marketing Management',
-    heroSub: 'YoAi lets you create ad campaigns, generate creatives and manage SEO processes from a single hub. Built for agencies, brands and digital experts — reduce operational overhead, sharpen your performance focus.',
+    heroSub: 'DijiMagic lets you create ad campaigns, generate creatives and manage SEO processes from a single hub. Built for agencies, brands and digital experts — reduce operational overhead, sharpen your performance focus.',
     ctaTrial: '14-Day Free Trial',
     ctaSchedule: 'Book a Call',
     ctaDemo: 'Platform Demo',
@@ -61,12 +61,12 @@ export default async function RootPage() {
     ],
     panelAI: 'AI Optimization: Active',
     panelPlatforms: '2 platforms synced',
-    footer: '2025 YO Dijital. All rights reserved.',
+    footer: '2025 DijiMagic. All rights reserved.',
   } : {
     badge: 'Yapay Zeka Destekli Hepsi Bir Arada Pazarlama',
     heroLine1: 'Yapay Zeka Destekli',
     heroLine2: 'Hepsi Bir Arada Pazarlama Yönetimi',
-    heroSub: 'YoAi, reklam kampanyalarınızı oluşturmanızı, kreatiflerinizi üretmenizi ve SEO süreçlerinizi tek merkezden kolayca yönetmenizi sağlar. Ajanslar, markalar ve dijital uzmanlar için geliştirilen bu yapı sayesinde operasyonel yükünüz azalır, performans odağınız güçlenir.',
+    heroSub: 'DijiMagic, reklam kampanyalarınızı oluşturmanızı, kreatiflerinizi üretmenizi ve SEO süreçlerinizi tek merkezden kolayca yönetmenizi sağlar. Ajanslar, markalar ve dijital uzmanlar için geliştirilen bu yapı sayesinde operasyonel yükünüz azalır, performans odağınız güçlenir.',
     ctaTrial: '14 Gün Ücretsiz Dene',
     ctaSchedule: 'Görüşme Planla',
     ctaDemo: 'Panelin Demosu',
@@ -109,7 +109,7 @@ export default async function RootPage() {
     ],
     panelAI: 'AI Optimizasyon: Aktif',
     panelPlatforms: '2 platform senkron',
-    footer: '2025 YO Dijital. Tüm hakları saklıdır.',
+    footer: '2025 DijiMagic. Tüm hakları saklıdır.',
   }
 
   // Legal links — locale-aware URLs (EN uses /en/ prefix for compliance)
@@ -167,7 +167,7 @@ export default async function RootPage() {
           30% { opacity: 0; }
           100% { opacity: 0; left: 100%; }
         }
-        /* Başlık akan gradyan — voiceagent.yodijital.com tagline animasyonu ile aynı teknik (gradient-shift 3s) */
+        /* Başlık akan gradyan — gradient-shift 3s tekniği */
         @keyframes gradient-shift {
           0% { background-position: 0% center; }
           50% { background-position: 100% center; }
@@ -398,7 +398,7 @@ export default async function RootPage() {
       <footer className="w-full border-t border-white/[0.05] py-6 px-6 bg-[#060609]">
         <div className="max-w-7xl mx-auto flex flex-col sm:flex-row flex-wrap items-center justify-between gap-3 text-sm">
           <div className="flex items-center gap-3 text-gray-500">
-            <Image src="/logos/yoai-logo.png" alt="YoAI" width={40} height={16} className="object-contain brightness-0 invert opacity-40" />
+            <Image src="/logos/dijimagic-logo.png" alt="DijiMagic" width={40} height={16} className="object-contain brightness-0 invert opacity-40" />
             <span>{c.footer}</span>
           </div>
           <div className="flex flex-wrap items-center gap-x-5 gap-y-3">

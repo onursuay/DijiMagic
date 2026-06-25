@@ -1,9 +1,9 @@
 -- ─────────────────────────────────────────────────────────────
--- YoAlgoritma — AI Engine Tables (Faz 2)
+-- DijiAlgoritma — AI Engine Tables (Faz 2)
 --
 -- Claude API + tool use + agentic loop ile üretilen sonuçların
 -- persiste edildiği tablolar. Eski rule-engine sonuçları
--- yoai_daily_runs.command_center_data içinde yaşamaya devam eder;
+-- dijimagic_daily_runs.command_center_data içinde yaşamaya devam eder;
 -- bu tablolar yeni AI engine'in queryable çıktısıdır.
 --
 -- Yapı:

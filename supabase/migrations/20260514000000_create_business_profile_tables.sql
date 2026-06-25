@@ -1,4 +1,4 @@
--- YoAi Business Profile Tables
+-- DijiMagic Business Profile Tables
 -- user_business_profiles, user_business_competitors,
 -- user_business_source_scans, user_business_intelligence
 

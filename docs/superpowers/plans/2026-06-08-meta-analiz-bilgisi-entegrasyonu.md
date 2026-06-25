@@ -2,9 +2,9 @@
 
 > **For agentic workers:** REQUIRED SUB-SKILL: Use superpowers:subagent-driven-development (recommended) or superpowers:executing-plans to implement this plan task-by-task. Steps use checkbox (`- [ ]`) syntax for tracking.
 
-**Goal:** `meta-ads-analyzer` reposunun Meta Ads analiz bilgisini (Breakdown Effect, learning phase, auction, pacing, ad relevance) tek Türkçe küratörlü dokümana damıtıp 4 AI motoruna (YoAlgoritma, Optimizasyon, Strateji, sohbet-kreatif) Meta-only enjekte etmek.
+**Goal:** `meta-ads-analyzer` reposunun Meta Ads analiz bilgisini (Breakdown Effect, learning phase, auction, pacing, ad relevance) tek Türkçe küratörlü dokümana damıtıp 4 AI motoruna (DijiAlgoritma, Optimizasyon, Strateji, sohbet-kreatif) Meta-only enjekte etmek.
 
-**Architecture:** Tek yeni dosya `lib/yoai/ai/docs/meta_analysis_knowledge.ts` iki sabit export eder: `META_ANALYSIS_KNOWLEDGE` (tam teşhis dokümanı, 3 analiz motoru için) + `META_CREATIVE_PRINCIPLES` (kreatif alt-küme, sohbet için) + `metaAnalysisBlock()` (cached system block helper). Her motor yalnız Meta yolunda bu bilgiyi prompt'una ekler; Meta/Google API, fetch, change-set, publish katmanlarına dokunulmaz — yalnız prompt string'leri / system block dizileri zenginleşir.
+**Architecture:** Tek yeni dosya `lib/dijimagic/ai/docs/meta_analysis_knowledge.ts` iki sabit export eder: `META_ANALYSIS_KNOWLEDGE` (tam teşhis dokümanı, 3 analiz motoru için) + `META_CREATIVE_PRINCIPLES` (kreatif alt-küme, sohbet için) + `metaAnalysisBlock()` (cached system block helper). Her motor yalnız Meta yolunda bu bilgiyi prompt'una ekler; Meta/Google API, fetch, change-set, publish katmanlarına dokunulmaz — yalnız prompt string'leri / system block dizileri zenginleşir.
 
 **Tech Stack:** TypeScript, Next.js, Anthropic SDK (cached system blocks, `cache_control: ephemeral`). Testler: Node `assert` + projedeki mini-runner, `npx tsx src/tests/<x>.test.ts` ile çalışır (jest/vitest YOK).
 
@@ -13,16 +13,16 @@
 ## File Structure
 
 **Yeni dosyalar:**
-- `lib/yoai/ai/docs/meta_analysis_knowledge.ts` — Damıtılmış Türkçe bilgi (iki export + helper). Tek sorumluluk: bilgi içeriği + cached block sarmalayıcı.
+- `lib/dijimagic/ai/docs/meta_analysis_knowledge.ts` — Damıtılmış Türkçe bilgi (iki export + helper). Tek sorumluluk: bilgi içeriği + cached block sarmalayıcı.
 - `src/tests/metaAnalysisKnowledge.test.ts` — Tüm enjeksiyon noktalarını + içerik kontratını doğrulayan tek test dosyası (görevler boyunca büyür).
 
 **Değişen dosyalar (yalnız prompt/sistem-blok katmanı):**
-- `lib/yoai/ai/perCampaignPrompt.ts` — `buildPerCampaignSystemBlocks` (Meta-only block ekler)
-- `lib/yoai/ai/perAdPrompt.ts` — `buildPerAdSystemBlocks` (Meta-only block ekler)
-- `lib/yoai/ai/systemPrompt.ts` — `buildSystemBlocks` (Meta-only block ekler)
+- `lib/dijimagic/ai/perCampaignPrompt.ts` — `buildPerCampaignSystemBlocks` (Meta-only block ekler)
+- `lib/dijimagic/ai/perAdPrompt.ts` — `buildPerAdSystemBlocks` (Meta-only block ekler)
+- `lib/dijimagic/ai/systemPrompt.ts` — `buildSystemBlocks` (Meta-only block ekler)
 - `lib/meta/optimization/aiRecommender.ts` — systemPrompt'u pure `buildOptimizationSystemPrompt()`'a çıkarır + bilgi ekler (Meta-only modül)
 - `lib/strategy/ai-generator.ts` — `buildStrategySystemPrompt(channels)` ekler; Meta kanalı seçiliyse bilgi ekler
-- `lib/yoai/prompts.ts` — `buildGenerationPrompt` kreatif kategorilerde `META_CREATIVE_PRINCIPLES` ekler
+- `lib/dijimagic/prompts.ts` — `buildGenerationPrompt` kreatif kategorilerde `META_CREATIVE_PRINCIPLES` ekler
 - `docs/CHANGELOG.md` — giriş
 
 **Dokunulmaz:** `lib/meta/*` ve `lib/google/*` veri/fetch/normalize/change-set/**publish**, çıktı JSON şemaları, `locales/tr.json`/`en.json`, UI bileşenleri.
@@ -32,12 +32,12 @@
 ## Task 1: Bilgi dokümanını oluştur (`meta_analysis_knowledge.ts`)
 
 **Files:**
-- Create: `lib/yoai/ai/docs/meta_analysis_knowledge.ts`
+- Create: `lib/dijimagic/ai/docs/meta_analysis_knowledge.ts`
 - Test: `src/tests/metaAnalysisKnowledge.test.ts`
 
 - [ ] **Step 1: Bilgi dokümanını yaz**
 
-Create `lib/yoai/ai/docs/meta_analysis_knowledge.ts`:
+Create `lib/dijimagic/ai/docs/meta_analysis_knowledge.ts`:
 
 ```typescript
 /* ──────────────────────────────────────────────────────────
@@ -154,7 +154,7 @@ import {
   META_ANALYSIS_KNOWLEDGE,
   META_CREATIVE_PRINCIPLES,
   metaAnalysisBlock,
-} from '../../lib/yoai/ai/docs/meta_analysis_knowledge'
+} from '../../lib/dijimagic/ai/docs/meta_analysis_knowledge'
 // <<BUILDER IMPORTS — yeni import'ları BU SATIRIN ÜSTÜNE ekle>>
 
 const FULL_MARKER = 'Meta Reklam Analiz Bilgisi'
@@ -214,16 +214,16 @@ Expected: `3 test: 3 geçti, 0 başarısız` (Task 1 hem dosyayı hem testi ayn�
 - [ ] **Step 4: Commit**
 
 ```bash
-git add lib/yoai/ai/docs/meta_analysis_knowledge.ts src/tests/metaAnalysisKnowledge.test.ts
-git commit -m "feat(yoai): Meta Ads analiz bilgisi küratörlü dokümanı + içerik testleri"
+git add lib/dijimagic/ai/docs/meta_analysis_knowledge.ts src/tests/metaAnalysisKnowledge.test.ts
+git commit -m "feat(dijimagic): Meta Ads analiz bilgisi küratörlü dokümanı + içerik testleri"
 ```
 
 ---
 
-## Task 2: YoAlgoritma — perCampaign enjeksiyonu (aktif ana yol)
+## Task 2: DijiAlgoritma — perCampaign enjeksiyonu (aktif ana yol)
 
 **Files:**
-- Modify: `lib/yoai/ai/perCampaignPrompt.ts:16-18` (import) ve `:162-179` (`buildPerCampaignSystemBlocks`)
+- Modify: `lib/dijimagic/ai/perCampaignPrompt.ts:16-18` (import) ve `:162-179` (`buildPerCampaignSystemBlocks`)
 - Modify: `src/tests/metaAnalysisKnowledge.test.ts` (test + import ekle)
 
 - [ ] **Step 1: Başarısız testi ekle**
@@ -231,7 +231,7 @@ git commit -m "feat(yoai): Meta Ads analiz bilgisi küratörlü dokümanı + iç
 `src/tests/metaAnalysisKnowledge.test.ts` içinde `// <<BUILDER IMPORTS ...>>` satırının ÜSTÜNE ekle:
 
 ```typescript
-import { buildPerCampaignSystemBlocks } from '../../lib/yoai/ai/perCampaignPrompt'
+import { buildPerCampaignSystemBlocks } from '../../lib/dijimagic/ai/perCampaignPrompt'
 ```
 
 Aynı dosyada `// <<INJECTION TESTS ...>>` satırının ÜSTÜNE ekle:
@@ -252,7 +252,7 @@ Expected: FAIL — "Meta bloğunda bilgi yok" (henüz enjekte edilmedi).
 
 - [ ] **Step 3: Import ekle**
 
-`lib/yoai/ai/perCampaignPrompt.ts` — mevcut satır 16-18:
+`lib/dijimagic/ai/perCampaignPrompt.ts` — mevcut satır 16-18:
 
 ```typescript
 import { META_AD_RULES_CURATED } from './docs/meta_ad_rules_curated'
@@ -271,7 +271,7 @@ import { BENCHMARKS } from './accountSerializer'
 
 - [ ] **Step 4: Meta-only block enjekte et**
 
-`lib/yoai/ai/perCampaignPrompt.ts` `buildPerCampaignSystemBlocks` içinde — mevcut:
+`lib/dijimagic/ai/perCampaignPrompt.ts` `buildPerCampaignSystemBlocks` içinde — mevcut:
 
 ```typescript
   const rules = platform === 'Meta' ? META_AD_RULES_CURATED : GOOGLE_ADS_RULES_CURATED
@@ -304,16 +304,16 @@ Expected: PASS — perCampaign testi geçer (toplam 4 test geçti).
 - [ ] **Step 6: Commit**
 
 ```bash
-git add lib/yoai/ai/perCampaignPrompt.ts src/tests/metaAnalysisKnowledge.test.ts
-git commit -m "feat(yoai): perCampaign Meta yoluna analiz bilgisi bloğu"
+git add lib/dijimagic/ai/perCampaignPrompt.ts src/tests/metaAnalysisKnowledge.test.ts
+git commit -m "feat(dijimagic): perCampaign Meta yoluna analiz bilgisi bloğu"
 ```
 
 ---
 
-## Task 3: YoAlgoritma — perAd enjeksiyonu
+## Task 3: DijiAlgoritma — perAd enjeksiyonu
 
 **Files:**
-- Modify: `lib/yoai/ai/perAdPrompt.ts:16-18` (import) ve `:100-104` (`buildPerAdSystemBlocks`)
+- Modify: `lib/dijimagic/ai/perAdPrompt.ts:16-18` (import) ve `:100-104` (`buildPerAdSystemBlocks`)
 - Modify: `src/tests/metaAnalysisKnowledge.test.ts`
 
 - [ ] **Step 1: Başarısız testi ekle**
@@ -321,7 +321,7 @@ git commit -m "feat(yoai): perCampaign Meta yoluna analiz bilgisi bloğu"
 `// <<BUILDER IMPORTS ...>>` üstüne ekle:
 
 ```typescript
-import { buildPerAdSystemBlocks } from '../../lib/yoai/ai/perAdPrompt'
+import { buildPerAdSystemBlocks } from '../../lib/dijimagic/ai/perAdPrompt'
 ```
 
 `// <<INJECTION TESTS ...>>` üstüne ekle:
@@ -342,7 +342,7 @@ Expected: FAIL — "Meta bloğunda bilgi yok" (perAd).
 
 - [ ] **Step 3: Import ekle**
 
-`lib/yoai/ai/perAdPrompt.ts` — mevcut satır 16-18:
+`lib/dijimagic/ai/perAdPrompt.ts` — mevcut satır 16-18:
 
 ```typescript
 import { META_AD_RULES_CURATED } from './docs/meta_ad_rules_curated'
@@ -361,7 +361,7 @@ import { BENCHMARKS } from './accountSerializer'
 
 - [ ] **Step 4: Meta-only block enjekte et**
 
-`lib/yoai/ai/perAdPrompt.ts` `buildPerAdSystemBlocks` içinde — mevcut:
+`lib/dijimagic/ai/perAdPrompt.ts` `buildPerAdSystemBlocks` içinde — mevcut:
 
 ```typescript
   const rules = platform === 'Meta' ? META_AD_RULES_CURATED : GOOGLE_ADS_RULES_CURATED
@@ -394,16 +394,16 @@ Expected: PASS (5 test geçti).
 - [ ] **Step 6: Commit**
 
 ```bash
-git add lib/yoai/ai/perAdPrompt.ts src/tests/metaAnalysisKnowledge.test.ts
-git commit -m "feat(yoai): perAd Meta yoluna analiz bilgisi bloğu"
+git add lib/dijimagic/ai/perAdPrompt.ts src/tests/metaAnalysisKnowledge.test.ts
+git commit -m "feat(dijimagic): perAd Meta yoluna analiz bilgisi bloğu"
 ```
 
 ---
 
-## Task 4: YoAlgoritma — legacy `buildSystemBlocks` enjeksiyonu
+## Task 4: DijiAlgoritma — legacy `buildSystemBlocks` enjeksiyonu
 
 **Files:**
-- Modify: `lib/yoai/ai/systemPrompt.ts:9-10` (import) ve `:236-244` (`buildSystemBlocks`)
+- Modify: `lib/dijimagic/ai/systemPrompt.ts:9-10` (import) ve `:236-244` (`buildSystemBlocks`)
 - Modify: `src/tests/metaAnalysisKnowledge.test.ts`
 
 - [ ] **Step 1: Başarısız testi ekle**
@@ -411,7 +411,7 @@ git commit -m "feat(yoai): perAd Meta yoluna analiz bilgisi bloğu"
 `// <<BUILDER IMPORTS ...>>` üstüne ekle:
 
 ```typescript
-import { buildSystemBlocks } from '../../lib/yoai/ai/systemPrompt'
+import { buildSystemBlocks } from '../../lib/dijimagic/ai/systemPrompt'
 ```
 
 `// <<INJECTION TESTS ...>>` üstüne ekle:
@@ -432,7 +432,7 @@ Expected: FAIL — "Meta bloğunda bilgi yok" (legacy buildSystemBlocks).
 
 - [ ] **Step 3: Import ekle**
 
-`lib/yoai/ai/systemPrompt.ts` — mevcut satır 9-10:
+`lib/dijimagic/ai/systemPrompt.ts` — mevcut satır 9-10:
 
 ```typescript
 import { META_AD_RULES_CURATED } from './docs/meta_ad_rules_curated'
@@ -449,7 +449,7 @@ import { metaAnalysisBlock } from './docs/meta_analysis_knowledge'
 
 - [ ] **Step 4: Meta-only block enjekte et**
 
-`lib/yoai/ai/systemPrompt.ts` `buildSystemBlocks` içinde — mevcut:
+`lib/dijimagic/ai/systemPrompt.ts` `buildSystemBlocks` içinde — mevcut:
 
 ```typescript
   const rules = platform === 'Meta' ? META_AD_RULES_CURATED : GOOGLE_ADS_RULES_CURATED
@@ -483,8 +483,8 @@ Expected: PASS (6 test geçti).
 - [ ] **Step 6: Commit**
 
 ```bash
-git add lib/yoai/ai/systemPrompt.ts src/tests/metaAnalysisKnowledge.test.ts
-git commit -m "feat(yoai): legacy buildSystemBlocks Meta yoluna analiz bilgisi"
+git add lib/dijimagic/ai/systemPrompt.ts src/tests/metaAnalysisKnowledge.test.ts
+git commit -m "feat(dijimagic): legacy buildSystemBlocks Meta yoluna analiz bilgisi"
 ```
 
 ---
@@ -532,7 +532,7 @@ import { getAnthropicClient, getAiEngineModel, isAnthropicReady } from '@/lib/an
 bu satırın ALTINA ekle:
 
 ```typescript
-import { META_ANALYSIS_KNOWLEDGE } from '@/lib/yoai/ai/docs/meta_analysis_knowledge'
+import { META_ANALYSIS_KNOWLEDGE } from '@/lib/dijimagic/ai/docs/meta_analysis_knowledge'
 ```
 
 - [ ] **Step 4: systemPrompt'u pure fonksiyona çıkar + bilgi ekle**
@@ -677,7 +677,7 @@ import { extractJsonObject } from '@/lib/anthropic/text'
 `extractJsonObject` satırının ALTINA ekle:
 
 ```typescript
-import { META_ANALYSIS_KNOWLEDGE } from '@/lib/yoai/ai/docs/meta_analysis_knowledge'
+import { META_ANALYSIS_KNOWLEDGE } from '@/lib/dijimagic/ai/docs/meta_analysis_knowledge'
 ```
 
 - [ ] **Step 4: Helper fonksiyonu ekle**
@@ -721,10 +721,10 @@ git commit -m "feat(strategy): Meta kanalı seçiliyse stratejiye Meta analiz bi
 
 ---
 
-## Task 7: YoAi sohbet — kreatif kategorilere `META_CREATIVE_PRINCIPLES`
+## Task 7: DijiMagic sohbet — kreatif kategorilere `META_CREATIVE_PRINCIPLES`
 
 **Files:**
-- Modify: `lib/yoai/prompts.ts:1` (import) ve `:147` (`return categoryPrompts[category]`)
+- Modify: `lib/dijimagic/prompts.ts:1` (import) ve `:147` (`return categoryPrompts[category]`)
 - Modify: `src/tests/metaAnalysisKnowledge.test.ts`
 
 > Yalnız `ad_copy`, `social_media`, `landing_page` kategorilerine eklenir. `seo_article`, `email_marketing`, `product_description`, `slogan` ETKİLENMEZ.
@@ -734,7 +734,7 @@ git commit -m "feat(strategy): Meta kanalı seçiliyse stratejiye Meta analiz bi
 `// <<BUILDER IMPORTS ...>>` üstüne ekle:
 
 ```typescript
-import { buildGenerationPrompt } from '../../lib/yoai/prompts'
+import { buildGenerationPrompt } from '../../lib/dijimagic/prompts'
 ```
 
 `// <<INJECTION TESTS ...>>` üstüne ekle:
@@ -758,7 +758,7 @@ Expected: FAIL — "ad_copy kreatif ilke içermeli".
 
 - [ ] **Step 3: Import ekle**
 
-`lib/yoai/prompts.ts` — mevcut satır 1:
+`lib/dijimagic/prompts.ts` — mevcut satır 1:
 
 ```typescript
 import type { ContentCategory } from './types'
@@ -772,7 +772,7 @@ import { META_CREATIVE_PRINCIPLES } from './ai/docs/meta_analysis_knowledge'
 
 - [ ] **Step 4: Kreatif kategorilerde ekle**
 
-`lib/yoai/prompts.ts` `buildGenerationPrompt` sonunda — mevcut (satır 147):
+`lib/dijimagic/prompts.ts` `buildGenerationPrompt` sonunda — mevcut (satır 147):
 
 ```typescript
   return categoryPrompts[category]
@@ -798,8 +798,8 @@ Expected: PASS (9 test geçti).
 - [ ] **Step 6: Commit**
 
 ```bash
-git add lib/yoai/prompts.ts src/tests/metaAnalysisKnowledge.test.ts
-git commit -m "feat(yoai): sohbet kreatif kategorilerine Meta kreatif ilkeleri"
+git add lib/dijimagic/prompts.ts src/tests/metaAnalysisKnowledge.test.ts
+git commit -m "feat(dijimagic): sohbet kreatif kategorilerine Meta kreatif ilkeleri"
 ```
 
 ---
@@ -821,7 +821,7 @@ Expected: Dokunulan dosyalardan kaynaklı YENİ hata yok. (Repoda önceden var o
 
 - [ ] **Step 3: Lint (dokunulan dosyalar)**
 
-Run: `npx next lint --file lib/yoai/ai/docs/meta_analysis_knowledge.ts --file lib/yoai/ai/perCampaignPrompt.ts --file lib/yoai/ai/perAdPrompt.ts --file lib/yoai/ai/systemPrompt.ts --file lib/meta/optimization/aiRecommender.ts --file lib/strategy/ai-generator.ts --file lib/yoai/prompts.ts`
+Run: `npx next lint --file lib/dijimagic/ai/docs/meta_analysis_knowledge.ts --file lib/dijimagic/ai/perCampaignPrompt.ts --file lib/dijimagic/ai/perAdPrompt.ts --file lib/dijimagic/ai/systemPrompt.ts --file lib/meta/optimization/aiRecommender.ts --file lib/strategy/ai-generator.ts --file lib/dijimagic/prompts.ts`
 Expected: Hata yok (uyarı kabul edilebilir).
 
 - [ ] **Step 4: Koruma kontrolü — Meta/Google API/publish dokunulmamış**
@@ -838,9 +838,9 @@ Expected: Boş çıktı (yalnız prompt string + helper eklendi; API/veri satır
 
 ```markdown
 ## 2026-06-08 — Meta Ads analiz bilgisi 4 AI motoruna entegre edildi
-- **Sorun:** YoAlgoritma/Optimizasyon/Strateji/sohbet, Meta'nın sistem mekaniğini (Breakdown Effect, learning phase, marjinal CPA, pacing, ad relevance) bilmeden öneri/kopya üretiyordu.
+- **Sorun:** DijiAlgoritma/Optimizasyon/Strateji/sohbet, Meta'nın sistem mekaniğini (Breakdown Effect, learning phase, marjinal CPA, pacing, ad relevance) bilmeden öneri/kopya üretiyordu.
 - **Çözüm:** `meta-ads-analyzer` reposunun 9 dokümanı tek Türkçe küratörlü dosyaya damıtıldı (`meta_analysis_knowledge.ts`); 3 analiz motoruna tam doküman (Meta-only cached block), sohbetin kreatif kategorilerine (reklam metni/sosyal/landing) kreatif alt-küme enjekte edildi. Meta/Google API, fetch ve publish akışlarına dokunulmadı (yalnız prompt katmanı).
-- **Dosyalar:** `lib/yoai/ai/docs/meta_analysis_knowledge.ts` (yeni), `lib/yoai/ai/perCampaignPrompt.ts`, `lib/yoai/ai/perAdPrompt.ts`, `lib/yoai/ai/systemPrompt.ts`, `lib/meta/optimization/aiRecommender.ts`, `lib/strategy/ai-generator.ts`, `lib/yoai/prompts.ts`, `src/tests/metaAnalysisKnowledge.test.ts`
+- **Dosyalar:** `lib/dijimagic/ai/docs/meta_analysis_knowledge.ts` (yeni), `lib/dijimagic/ai/perCampaignPrompt.ts`, `lib/dijimagic/ai/perAdPrompt.ts`, `lib/dijimagic/ai/systemPrompt.ts`, `lib/meta/optimization/aiRecommender.ts`, `lib/strategy/ai-generator.ts`, `lib/dijimagic/prompts.ts`, `src/tests/metaAnalysisKnowledge.test.ts`
 ```
 
 - [ ] **Step 6: Commit + push**
@@ -855,7 +855,7 @@ git push
 
 ## Self-Review (yazar kontrolü)
 
-**Spec kapsamı:** 4 motor → Task 2-4 (YoAlgoritma: perCampaign/perAd/legacy; agent'lar otomatik), Task 5 (Optimizasyon), Task 6 (Strateji), Task 7 (sohbet-kreatif). Bilgi dokümanı Task 1. Kapsam dışı (MCP/scripts) hiçbir task'ta yok ✓. CHANGELOG + koruma kontrolü Task 8 ✓.
+**Spec kapsamı:** 4 motor → Task 2-4 (DijiAlgoritma: perCampaign/perAd/legacy; agent'lar otomatik), Task 5 (Optimizasyon), Task 6 (Strateji), Task 7 (sohbet-kreatif). Bilgi dokümanı Task 1. Kapsam dışı (MCP/scripts) hiçbir task'ta yok ✓. CHANGELOG + koruma kontrolü Task 8 ✓.
 
 **Placeholder taraması:** Tüm test ve kaynak kodları tam yazıldı; "TODO/TBD" yok ✓.
 

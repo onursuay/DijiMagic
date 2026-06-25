@@ -6,7 +6,7 @@ import 'server-only'
  *
  * Flow (design doc §6):
  *   1. Load the target page (slug + locale) from the site's persisted pages.
- *   2. extractBlocks(body) — byte-exact top-level data-yoai-id sections.
+ *   2. extractBlocks(body) — byte-exact top-level data-dijimagic-id sections.
  *   3. planPatchOps(...) — Sonnet → VALIDATED atomic ops (security-gated).
  *      No valid op → { ok:false, reason:'no_ops' } (caller falls back to full regen).
  *   4. regenerateBlock(...) for each edit/insert — Sonnet rewrites ONE block.
@@ -19,7 +19,7 @@ import 'server-only'
  * NEVER throws — every failure path returns { ok:false, reason } so the route can
  * fall back to the existing full regenerate-with-instruction (edit never dead-ends).
  *
- * Reuses the SAME var/data-yoai-* contract (block prompts in htmlGenerateShared)
+ * Reuses the SAME var/data-dijimagic-* contract (block prompts in htmlGenerateShared)
  * and the SAME publish gate (renderGate) as the full-page path. lib/meta/* and
  * lib/google/* are untouched.
  */
@@ -200,7 +200,7 @@ export async function applyTargetedBlockPatch(
     // 4. EDIT / AI_REWRITE — regenerate just this block, then merge + re-gate.
     //    'edit' carries the literal new text; 'ai_rewrite' a free-form instruction.
     //    Both flow through the SAME block prompt (regenerateBlock 'edit' kind),
-    //    keeping the var/data-yoai-* contract + image resolution identical.
+    //    keeping the var/data-dijimagic-* contract + image resolution identical.
     const blockInstruction =
       op === 'edit'
         ? `Bu bölümün ana metnini aşağıdaki yeni metinle güncelle; düzen, sınıflar ve görseller korunur. Yeni metin: ${instruction}`
@@ -415,7 +415,7 @@ async function buildAndGate(
  * Guarantees the merge did not silently gut the page (the H Critical data-loss bug).
  *
  * Asserts, against the ORIGINAL source body:
- *   1. NO SILENT DISAPPEARANCE — every data-yoai-id present in the source is still
+ *   1. NO SILENT DISAPPEARANCE — every data-dijimagic-id present in the source is still
  *      present in the merged body UNLESS an explicit `delete` op targeted that id.
  *   2. WRAPPER PRESERVED — every top-level structural wrapper the source had
  *      (<main>, <header>, <footer>) is still opened in the merged body. The H bug
@@ -441,7 +441,7 @@ function assertStructuralInvariants(
   //    model-rewritten edit that re-quotes the attribute still passes (it keeps the id).
   for (const b of blocks) {
     if (deletedIds.has(b.id)) continue
-    const idRe = new RegExp(`data-yoai-id\\s*=\\s*["']${escapeRegExp(b.id)}["']`)
+    const idRe = new RegExp(`data-dijimagic-id\\s*=\\s*["']${escapeRegExp(b.id)}["']`)
     if (!idRe.test(mergedBody)) {
       return { ok: false, reason: 'invariant_block_lost' }
     }

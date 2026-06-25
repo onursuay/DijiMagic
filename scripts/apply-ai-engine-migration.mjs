@@ -1,6 +1,6 @@
 #!/usr/bin/env node
 /**
- * YoAlgoritma AI Engine — Migration Uygulayıcı
+ * DijiAlgoritma AI Engine — Migration Uygulayıcı
  *
  * Uygular:
  *   1. 20260519000000_create_ai_engine_tables.sql
@@ -48,7 +48,7 @@ const MIGRATIONS = [
 ]
 
 async function main() {
-  console.log('\n🚀  YoAlgoritma AI Engine Migration Başlıyor...\n')
+  console.log('\n🚀  DijiAlgoritma AI Engine Migration Başlıyor...\n')
 
   const client = new Client({ connectionString: DATABASE_URL })
   await client.connect()

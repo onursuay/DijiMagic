@@ -86,8 +86,8 @@ export default function TermsContent({ locale = 'tr' }: { locale?: 'tr' | 'en' }
       <footer className="w-full border-t border-white/[0.05] py-6 px-6 bg-[#060609]">
         <div className="max-w-7xl mx-auto flex flex-col sm:flex-row items-center justify-between gap-3 text-sm">
           <div className="flex items-center gap-3 text-gray-500">
-            <Image src="/logos/yoai-logo.png" alt="YoAI" width={40} height={16} className="object-contain brightness-0 invert opacity-40" />
-            <span>© 2025 YoAI. {isEn ? 'All rights reserved.' : 'Tüm hakları saklıdır.'}</span>
+            <Image src="/logos/dijimagic-logo.png" alt="DijiMagic" width={40} height={16} className="object-contain brightness-0 invert opacity-40" />
+            <span>© 2025 DijiMagic. {isEn ? 'All rights reserved.' : 'Tüm hakları saklıdır.'}</span>
           </div>
           <nav className="flex gap-5 text-gray-500">
             <Link href="/gizlilik-politikasi" className="hover:text-gray-300 transition-colors">{isEn ? 'Privacy Policy' : 'Gizlilik Politikası'}</Link>

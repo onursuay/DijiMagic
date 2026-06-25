@@ -42,7 +42,7 @@ export default function SeoSitesPanel({ banner, profileUrl }: Props) {
   const [wpIncompatible, setWpIncompatible] = useState(false)
   const [activeModal, setActiveModal] = useState<'wordpress' | 'webhook' | null>(null)
 
-  const wpKey = profileUrl ? `yoai_seo_wp_incompatible:${profileUrl}` : null
+  const wpKey = profileUrl ? `dijimagic_seo_wp_incompatible:${profileUrl}` : null
 
   useEffect(() => {
     if (!wpKey) { setWpIncompatible(false); return }
@@ -180,7 +180,7 @@ export default function SeoSitesPanel({ banner, profileUrl }: Props) {
                 <div className="bg-primary/5 border border-primary/20 rounded-xl p-4">
                   <p className="text-sm text-gray-700">{t('noProfileUrl')}</p>
                   <a
-                    href="/yoalgoritma"
+                    href="/dijialgoritma"
                     className="inline-flex items-center gap-1.5 mt-3 px-4 py-2 text-sm text-white bg-primary rounded-lg hover:bg-primary/90 transition-colors"
                   >
                     {t('openProfile')} <ArrowRight className="w-3.5 h-3.5" />

@@ -38,7 +38,7 @@ export interface CodegenContext {
   /**
    * Mobil menü açılış animasyonu (perde yönü) — kullanıcı sihirbazda seçer.
    * 'left' (soldan), 'right' (sağdan), 'top' (yukarıdan). buildHtmlSystemPrompt
-   * bunu `data-yoai-mobile-anim="<value>"` olarak basar. Tanımsız/geçersiz → 'left'.
+   * bunu `data-dijimagic-mobile-anim="<value>"` olarak basar. Tanımsız/geçersiz → 'left'.
    */
   mobileMenuAnim?: 'left' | 'right' | 'top'
   instruction: string
@@ -59,10 +59,10 @@ export interface CodegenContext {
  * All token values are validated to be CSS-safe (no injection vectors).
  * These values become CSS custom properties in :root{ --x: VALUE }.
  *
- * Color freedom: the palette is UNCONSTRAINED by the YoAi dashboard's
+ * Color freedom: the palette is UNCONSTRAINED by the DijiMagic dashboard's
  * amber/yellow ban — customer marketing sites may use any brand-appropriate
  * palette (amber/gold included). The ban in CLAUDE.md applies only to the
- * YoAi dashboard UI, not to generated site assets.
+ * DijiMagic dashboard UI, not to generated site assets.
  */
 export interface DesignSystem {
   palette: {

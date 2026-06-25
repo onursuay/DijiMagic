@@ -51,7 +51,7 @@ export async function POST(request: Request) {
       }
       itemType = 'subscription'
       amount = priced.amount
-      itemName = `YoAi ${priced.planId} (${priced.billingCycle}, ${priced.adAccounts} reklam hesabı)`
+      itemName = `DijiMagic ${priced.planId} (${priced.billingCycle}, ${priced.adAccounts} reklam hesabı)`
       txInput = {
         userId: user.id,
         conversationId: '',
@@ -69,7 +69,7 @@ export async function POST(request: Request) {
       }
       itemType = 'credit_pack'
       amount = priced.amount
-      itemName = `YoAi ${priced.credits} Kredi Paketi`
+      itemName = `DijiMagic ${priced.credits} Kredi Paketi`
       txInput = {
         userId: user.id,
         conversationId: '',

@@ -2,7 +2,7 @@
 
 > **For agentic workers:** REQUIRED SUB-SKILL: Use superpowers:subagent-driven-development (recommended) or superpowers:executing-plans to implement this plan task-by-task. Steps use checkbox (`- [ ]`) syntax for tracking.
 
-**Goal:** AI'nın markaya özgü, göz alıcı **tek sayfalık** bir pazarlama sitesini **serbest HTML/CSS/JS** olarak üretip güvenli (izole + CSP + sanitize) biçimde mevcut `*.yoai.yodijital.com` altında yayınladığı çalışan ilk sürümü kurmak.
+**Goal:** AI'nın markaya özgü, göz alıcı **tek sayfalık** bir pazarlama sitesini **serbest HTML/CSS/JS** olarak üretip güvenli (izole + CSP + sanitize) biçimde mevcut `*.dijimagic.com` altında yayınladığı çalışan ilk sürümü kurmak.
 
 **Architecture:** Mevcut `lib/website` veri modeli + yayın yolu korunur; `website_pages`'e `html`/`format` kolonları eklenir (dual-read). Üretim: Stage 0 girdi karantinası → Stage 1 DesignSystem (Opus) → Stage 3 tek-sayfa HTML (Opus, streaming) → görsel çözümleme (mevcut stock) → sanitize → renderGate → `assembleDocument` (head + nonce'lı CSS/runtime). Servis: yeni `app/(sites)/` route group içinde provider'sız minimal layout + `/s/:path*` segmentine CSP; `format='html'` → `HtmlSiteRenderer`, `'sections'` → mevcut `SiteRenderer`. Tümü `WEBSITE_CODEGEN_V2` bayrağı arkasında.
 
@@ -14,7 +14,7 @@
 - **Model:** ilk üretim/DesignSystem = `claude-opus-4-8`; revizyon/planner/çeviri = `claude-sonnet-4-6`. Opus 4.8 → `thinking: { type: 'adaptive' }` + `output_config: { effort: 'high' }`; `budget_tokens` YASAK (400 verir). `temperature`/`top_p` YASAK. Yeni env: `ANTHROPIC_MODEL_WEBSITE_INITIAL` (default `claude-opus-4-8`), `ANTHROPIC_MODEL_WEBSITE_REVISION` (default `claude-sonnet-4-6`).
 - **Bayrak:** Yeni üretim yalnız `WEBSITE_CODEGEN_V2 === '1'` iken çalışır; kapalıyken mevcut `generateSitePages` yolu korunur. **Render her zaman `page.format`'a bakar (bayrağa değil).**
 - **Renk yasağı:** amber/sarı/hardal hiçbir koşulda yok (üretim prompt'unda da yasak).
-- **i18n:** YoAi panel metinleri `locales/tr.json` + `locales/en.json`'a additive eklenir (mevcut anahtar değiştirilmez). Üretilen SİTE içeriği `website.defaultLocale`'e göre.
+- **i18n:** DijiMagic panel metinleri `locales/tr.json` + `locales/en.json`'a additive eklenir (mevcut anahtar değiştirilmez). Üretilen SİTE içeriği `website.defaultLocale`'e göre.
 - **Dokunma:** `lib/meta/*`, `lib/google/*` ve reklam publish akışları — DEĞİŞTİRİLMEZ.
 - **Paralel oturum:** ortak dosyalarda (`tailwind.config.ts`, `middleware.ts`, `next.config.mjs`, `package.json`, `locales/*`) additive davran; mevcut satırları yeniden yazma.
 - **İzolasyon:** Tüm iş bu worktree'de (`worktree-web-site-yoneticisi-codegen`).
@@ -34,7 +34,7 @@
 - `lib/website/codegen/generateHtmlSite.ts` — orkestratör (0→1→3→stock→sanitize→gate)
 - `lib/website/codegen/types.ts` — DesignSystem, CodegenContext, GateResult tipleri
 - `lib/website/render/HtmlSiteRenderer.tsx` — `format='html'` render bileşeni
-- `public/yoai-site-runtime.js` — sürümlü declarative hareket runtime'ı
+- `public/dijimagic-site-runtime.js` — sürümlü declarative hareket runtime'ı
 - `app/(sites)/layout.tsx` — minimal, provider'sız layout
 - `scripts/verify-website-codegen.mjs` — sanitize + renderGate + tailwindCompile doğrulama
 
@@ -214,7 +214,7 @@ git commit -m "feat(web-site-yoneticisi): (sites) route group + /s public site p
 - Modify: `next.config.mjs`
 
 **Interfaces:**
-- Produces: `/s/*` yanıtlarına `Content-Security-Policy` header'ı. Nonce dinamik olduğundan (Task 8), header'da `script-src 'self'` + `style-src 'self'`; inline `<style>`/`<script>` için Task 8 nonce kullanır → header'a `'nonce-...'` koyamayız (statik). **Karar:** runtime ve CSS harici dosya olarak servis edilir (`/yoai-site-runtime.js` = `'self'`; per-site CSS Task 8'de `<style>` yerine `'self'` linkli olamaz çünkü dinamik). Bu yüzden CSP `style-src 'self' 'unsafe-inline'` DEĞİL — bunun yerine per-site CSS'i nonce'suz çözmek için Task 8 CSS'i `<style>` ile gömer ve CSP `style-src` hash tabanlı olur. **Basitleştirme (Faz 1):** CSS gömülü `<style>` → CSP'de `style-src 'self' 'unsafe-inline'` GEÇİCİ; script tarafı sıkı (`script-src 'self'`). Faz 3'te style nonce/hash'e geçilir. (Bu ödün belgelenir; script-injection riski — asıl tehlike — kapalı kalır.)
+- Produces: `/s/*` yanıtlarına `Content-Security-Policy` header'ı. Nonce dinamik olduğundan (Task 8), header'da `script-src 'self'` + `style-src 'self'`; inline `<style>`/`<script>` için Task 8 nonce kullanır → header'a `'nonce-...'` koyamayız (statik). **Karar:** runtime ve CSS harici dosya olarak servis edilir (`/dijimagic-site-runtime.js` = `'self'`; per-site CSS Task 8'de `<style>` yerine `'self'` linkli olamaz çünkü dinamik). Bu yüzden CSP `style-src 'self' 'unsafe-inline'` DEĞİL — bunun yerine per-site CSS'i nonce'suz çözmek için Task 8 CSS'i `<style>` ile gömer ve CSP `style-src` hash tabanlı olur. **Basitleştirme (Faz 1):** CSS gömülü `<style>` → CSP'de `style-src 'self' 'unsafe-inline'` GEÇİCİ; script tarafı sıkı (`script-src 'self'`). Faz 3'te style nonce/hash'e geçilir. (Bu ödün belgelenir; script-injection riski — asıl tehlike — kapalı kalır.)
 
 - [ ] **Step 1: `headers()` ekle**
 
@@ -255,19 +255,19 @@ git commit -m "feat(web-site-yoneticisi): /s segmentine CSP (script-src self)"
 
 ---
 
-## Task 5: `yoai-site-runtime.js` (declarative hareket runtime'ı)
+## Task 5: `dijimagic-site-runtime.js` (declarative hareket runtime'ı)
 
 **Files:**
-- Create: `public/yoai-site-runtime.js`
+- Create: `public/dijimagic-site-runtime.js`
 
 **Interfaces:**
-- Produces: `data-yoai-reveal`, `data-yoai-toggle="<targetId>"`, `data-yoai-nav-toggle`, `data-yoai-smooth` attribute'larını işleyen, parametreleri (`data-yoai-duration`, `data-yoai-delay`, `data-yoai-threshold`) `data-*`'tan okuyan, harici bağımlılıksız IIFE. Sürüm: dosya başında `/* yoai-site-runtime v1 */`.
+- Produces: `data-dijimagic-reveal`, `data-dijimagic-toggle="<targetId>"`, `data-dijimagic-nav-toggle`, `data-dijimagic-smooth` attribute'larını işleyen, parametreleri (`data-dijimagic-duration`, `data-dijimagic-delay`, `data-dijimagic-threshold`) `data-*`'tan okuyan, harici bağımlılıksız IIFE. Sürüm: dosya başında `/* dijimagic-site-runtime v1 */`.
 
 - [ ] **Step 1: Runtime yaz** (IntersectionObserver ile reveal; click ile toggle/nav; smooth scroll). Tam, bağımlılıksız, `'use strict'` IIFE. `prefers-reduced-motion` guard.
 
-- [ ] **Step 2: Doğrula** — `node -e "require('fs').readFileSync('public/yoai-site-runtime.js','utf8')"` parse hatası vermez; basit bir HTML'de elle aç (Task 18'de e2e).
+- [ ] **Step 2: Doğrula** — `node -e "require('fs').readFileSync('public/dijimagic-site-runtime.js','utf8')"` parse hatası vermez; basit bir HTML'de elle aç (Task 18'de e2e).
 
-- [ ] **Step 3: Commit** — `git add public/yoai-site-runtime.js && git commit -m "feat(web-site-yoneticisi): site runtime (declarative reveal/toggle/smooth)"`
+- [ ] **Step 3: Commit** — `git add public/dijimagic-site-runtime.js && git commit -m "feat(web-site-yoneticisi): site runtime (declarative reveal/toggle/smooth)"`
 
 ---
 
@@ -279,9 +279,9 @@ git commit -m "feat(web-site-yoneticisi): /s segmentine CSP (script-src self)"
 - Test: `scripts/verify-website-codegen.mjs` (bu task'ta sanitize bölümü)
 
 **Interfaces:**
-- Produces: `sanitizeSiteHtml(bodyHtml: string): string` — yalnız beyaz-listeli etiket/attribute bırakır; `<script>`, `on*`, `javascript:`/`data:`-script URI, `<iframe>/<object>/<embed>`, `<form action>` dış host, `style` attr içinde `url(javascript:)` strip. `data-yoai-*` attribute'larına ve Tailwind `class`'a izin verir. Allowlist sabit: `SAFE_TAGS`, `SAFE_ATTRS` export edilir (renderGate kullanır).
+- Produces: `sanitizeSiteHtml(bodyHtml: string): string` — yalnız beyaz-listeli etiket/attribute bırakır; `<script>`, `on*`, `javascript:`/`data:`-script URI, `<iframe>/<object>/<embed>`, `<form action>` dış host, `style` attr içinde `url(javascript:)` strip. `data-dijimagic-*` attribute'larına ve Tailwind `class`'a izin verir. Allowlist sabit: `SAFE_TAGS`, `SAFE_ATTRS` export edilir (renderGate kullanır).
 
-- [ ] **Step 1: Allowlist + sanitize fonksiyonu yaz** (`sanitize-html` ile; `allowedTags`, `allowedAttributes` deny-by-default; `data-yoai-*` için `allowedAttributes['*']` regex; `a[href]` yalnız `http/https/#/mailto/tel`; `img[src]` yalnız `https/data:image`).
+- [ ] **Step 1: Allowlist + sanitize fonksiyonu yaz** (`sanitize-html` ile; `allowedTags`, `allowedAttributes` deny-by-default; `data-dijimagic-*` için `allowedAttributes['*']` regex; `a[href]` yalnız `http/https/#/mailto/tel`; `img[src]` yalnız `https/data:image`).
 
 - [ ] **Step 2: verify script — sanitize assertions**
 
@@ -291,7 +291,7 @@ import assert from 'node:assert'
 import { sanitizeSiteHtml } from '../lib/website/codegen/sanitizeHtml.ts' // tsx/loader gerekiyorsa derlenmiş yol; aşağıdaki nota bak
 assert.ok(!sanitizeSiteHtml('<script>alert(1)</script><h1>ok</h1>').includes('script'))
 assert.ok(!sanitizeSiteHtml('<a href="javascript:x">y</a>').includes('javascript:'))
-assert.ok(sanitizeSiteHtml('<section data-yoai-reveal class="grid"><h1>x</h1></section>').includes('data-yoai-reveal'))
+assert.ok(sanitizeSiteHtml('<section data-dijimagic-reveal class="grid"><h1>x</h1></section>').includes('data-dijimagic-reveal'))
 console.log('sanitize OK')
 ```
 > **TS yükleme notu:** verify script'leri `.mjs`. TS modüllerini çağırmak için ya (a) ilgili saf-mantık modüllerini `.mjs`-uyumlu (dependency'siz) yaz ve `import` et, ya da (b) script başında `tsx`/`esbuild-register` kullan. Proje `tsx` içermiyor → **tercih:** saf-mantık modüllerini (sanitize/gate/tailwindCompile) Node'dan çağrılabilecek şekilde yaz; verify script `node --import tsx` yerine, modülleri test eden ince bir derleme adımı kullan. Basitlik: verify script kendi içinde `sanitize-html` ile aynı allowlist'i çağırıp davranışı doğrular (modülle paylaşılan sabitleri JSON olarak import ederek tekrarı önle). (Uygulayıcı en az tekrarlı yolu seçer.)
@@ -327,13 +327,13 @@ console.log('sanitize OK')
 
 **Interfaces:**
 - Consumes: `sanitizeSiteHtml` (Task 6), `compileSiteCss` (Task 7).
-- Produces: `async assembleDocument(args: { bodyHtml: string; designVars: Record<string,string>; seo: { title?: string; description?: string }; lang: string; fontHref?: string | null; mode: 'serve' | 'preview' }): Promise<string>` — tam `<!doctype html>` döner. `mode='serve'`: runtime `<script src="/yoai-site-runtime.js">` (CSP `'self'`), CSS `<style>` gömülü. `mode='preview'`: runtime INLINE gömülü (srcdoc'ta harici fetch yok), CSS inline. Head'i biz kurarız (charset, viewport, title, meta description, `og:`, canonical yok, `<link>` Google fonts preconnect + fontHref).
+- Produces: `async assembleDocument(args: { bodyHtml: string; designVars: Record<string,string>; seo: { title?: string; description?: string }; lang: string; fontHref?: string | null; mode: 'serve' | 'preview' }): Promise<string>` — tam `<!doctype html>` döner. `mode='serve'`: runtime `<script src="/dijimagic-site-runtime.js">` (CSP `'self'`), CSS `<style>` gömülü. `mode='preview'`: runtime INLINE gömülü (srcdoc'ta harici fetch yok), CSS inline. Head'i biz kurarız (charset, viewport, title, meta description, `og:`, canonical yok, `<link>` Google fonts preconnect + fontHref).
 
-- [ ] **Step 1: assembleDocument yaz** — `bodyHtml`'i `sanitizeSiteHtml`'den geçir, `compileSiteCss` çağır, head'i deterministik kur. `mode='preview'` ise `public/yoai-site-runtime.js` içeriğini `fs.readFileSync` ile oku ve `<script>` içine göm.
+- [ ] **Step 1: assembleDocument yaz** — `bodyHtml`'i `sanitizeSiteHtml`'den geçir, `compileSiteCss` çağır, head'i deterministik kur. `mode='preview'` ise `public/dijimagic-site-runtime.js` içeriğini `fs.readFileSync` ile oku ve `<script>` içine göm.
 
 - [ ] **Step 2: verify — tam belge yapısı**
 
-`verify`'e ekle: çıktı `<!doctype html`, tek `<title>`, `<meta name="viewport"`, `</html>` içerir; `mode='serve'` çıktısında `<script src="/yoai-site-runtime.js">`. Run: `node scripts/verify-website-codegen.mjs`.
+`verify`'e ekle: çıktı `<!doctype html`, tek `<title>`, `<meta name="viewport"`, `</html>` içerir; `mode='serve'` çıktısında `<script src="/dijimagic-site-runtime.js">`. Run: `node scripts/verify-website-codegen.mjs`.
 
 - [ ] **Step 3: Commit** — `git commit -m "feat(web-site-yoneticisi): assembleDocument (head + css + runtime montajı)"`
 
@@ -400,7 +400,7 @@ console.log('sanitize OK')
 
 **Interfaces:**
 - Consumes: `CodegenContext`, `DesignSystem`, `getAnthropicClient()`, mevcut stok görsel çözümleyici (`lib/website/stock` — generate.ts'in kullandığı; uygulayıcı imzayı oradan alır).
-- Produces: `generateHomePageHtml(ctx, ds): Promise<string>` — Opus 4.8 **streaming** (`client.messages.stream({...}).finalMessage()`), `max_tokens: 16000`, `thinking:{type:'adaptive'}`, `output_config:{effort:'high'}`. Çıktı: yalnız `<body>` iç HTML (doctype/head YOK). Görseller `{{IMG:query}}` placeholder. Prompt: yalnız DesignSystem-türevli Tailwind class'ları; `data-yoai-block`/`data-yoai-id` her üst bölüme; tek `<h1>`; hareket `data-yoai-reveal`; amber/sarı yasak; off-brand içerik yok; ödeme/login formu yok. Dönüşte `{{IMG:...}}` → stok URL ile değiştir (mevcut stock fonksiyonu).
+- Produces: `generateHomePageHtml(ctx, ds): Promise<string>` — Opus 4.8 **streaming** (`client.messages.stream({...}).finalMessage()`), `max_tokens: 16000`, `thinking:{type:'adaptive'}`, `output_config:{effort:'high'}`. Çıktı: yalnız `<body>` iç HTML (doctype/head YOK). Görseller `{{IMG:query}}` placeholder. Prompt: yalnız DesignSystem-türevli Tailwind class'ları; `data-dijimagic-block`/`data-dijimagic-id` her üst bölüme; tek `<h1>`; hareket `data-dijimagic-reveal`; amber/sarı yasak; off-brand içerik yok; ödeme/login formu yok. Dönüşte `{{IMG:...}}` → stok URL ile değiştir (mevcut stock fonksiyonu).
 
 - [ ] **Step 1: Prompt + streaming çağrı + `{{IMG}}` çözümleme yaz.**
 
@@ -497,7 +497,7 @@ console.log('sanitize OK')
 - [ ] **Step 1: Saf-mantık doğrulaması** — `node scripts/verify-website-codegen.mjs` (sanitize+gate+tailwind+assemble) → tüm assert geçer.
 - [ ] **Step 2: Build + lint** — `npm run build && npm run lint` → hatasız.
 - [ ] **Step 3: Canlı üretim (lokal)** — `.env.local`'e `WEBSITE_CODEGEN_V2=1` + `ANTHROPIC_API_KEY` ile `npm run dev`; bir test sitesi oluştur → AI üret → önizlemede tek sayfalık göz alıcı site görünür.
-- [ ] **Step 4: Yayınla + /s doğrula** — publish → `/s/<subdomain>` aç; `curl -sI` ile CSP header; sayfa kaynağında dashboard provider/analytics YOK; `<script src="/yoai-site-runtime.js">` var.
+- [ ] **Step 4: Yayınla + /s doğrula** — publish → `/s/<subdomain>` aç; `curl -sI` ile CSP header; sayfa kaynağında dashboard provider/analytics YOK; `<script src="/dijimagic-site-runtime.js">` var.
 - [ ] **Step 5: Screenshot** — üretilen sitenin ekran görüntüsünü al (frontend-design skill / Playwright veya proje screenshot yöntemi), referans kalite (Lovable/Bolt) ile karşılaştır; en az 2 tur iyileştir.
 - [ ] **Step 6: Regresyon** — `format='sections'` eski bir yayınlanmış site hâlâ doğru render → kanıtla.
 - [ ] **Step 7: CHANGELOG** — `docs/CHANGELOG.md`'ye giriş (Sorun/Çözüm/Dosyalar).

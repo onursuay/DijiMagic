@@ -1,5 +1,5 @@
 -- ─────────────────────────────────────────────────────────────
--- YoAi — audiences tablosu ŞEMA YENİDEN OLUŞTURMA
+-- DijiMagic — audiences tablosu ŞEMA YENİDEN OLUŞTURMA
 --
 -- Tespit: omddq'daki audiences tablosu repo şemasıyla UYUŞMUYOR. Repo'da
 -- olmayan, NOT NULL fazla kolonlar içeriyor (platform, audience_id, …) ve
@@ -21,7 +21,7 @@ CREATE TABLE public.audiences (
   source            text,                       -- PIXEL | IG | ... | STRATEGY (null olabilir)
   name              text NOT NULL,
   description       text,
-  yoai_spec_json    jsonb NOT NULL DEFAULT '{}'::jsonb,
+  dijimagic_spec_json    jsonb NOT NULL DEFAULT '{}'::jsonb,
   meta_payload_json jsonb,
   meta_audience_id  text,
   status            text NOT NULL DEFAULT 'DRAFT',

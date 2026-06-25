@@ -8,7 +8,7 @@ import { SUBSCRIPTION_PLANS, MIN_AD_ACCOUNTS, ENTERPRISE_MIN_AD_ACCOUNTS } from 
 import type { BillingCycle } from '@/lib/subscription/types'
 
 // Sales contact for the Enterprise (contact-sales) plan — matches /abonelik + landing ScheduleModal
-const SALES_EMAIL = 'info@yodijital.com'
+const SALES_EMAIL = 'info@dijimagic.com'
 
 /**
  * Public pricing plans block (no auth).

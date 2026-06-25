@@ -7,7 +7,7 @@ import {
   Plus, X, Loader2, Key, MapPin, Clock, Trash2, Users,
   Banknote, Globe, Settings2, Check, Monitor,
 } from 'lucide-react'
-import { translateEnum } from '@/lib/yoai/translations'
+import { translateEnum } from '@/lib/dijimagic/translations'
 import { CAMPAIGN_TYPE_BIDDING, type AdvertisingChannelType } from './wizard/shared/WizardTypes'
 import CampaignSearchTermsTab from './detail/CampaignSearchTermsTab'
 import CampaignAssetsTab from './detail/CampaignAssetsTab'

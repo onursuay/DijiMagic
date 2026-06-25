@@ -203,8 +203,8 @@ export async function GET(req: NextRequest) {
       ? supabase.from('user_business_intelligence').select('*').in('user_id', userIds)
       : Promise.resolve({ data: [] as any[], error: null })
 
-    // YoAlgoritma kart üretimi sağlığı — asıl hastalık SESSİZ HATA idi:
-    // hiyerarşik akış (writeHierRunStatus) ai_engine_runs'a platform='yoalgoritma_hier'
+    // DijiAlgoritma kart üretimi sağlığı — asıl hastalık SESSİZ HATA idi:
+    // hiyerarşik akış (writeHierRunStatus) ai_engine_runs'a platform='dijialgoritma_hier'
     // satırı yazar. Burada son 14 günü okuyup failed/stale koşuları yüzeye çıkarıyoruz.
     const engineCutoff = new Date(Date.now() - 14 * 86_400_000).toISOString().slice(0, 10)
     const fetchEngineRuns = supabase
@@ -393,18 +393,18 @@ export async function GET(req: NextRequest) {
         }
       })
 
-    // YoAlgoritma kart üretimi koşu sağlığı (hiyerarşik akış)
+    // DijiAlgoritma kart üretimi koşu sağlığı (hiyerarşik akış)
     const engineRuns = ((engineRunsRes as any).data || []) as Array<{
       user_id: string; platform: string; account_id: string | null
       run_date: string; status: string; error_message: string | null
     }>
-    const hierRuns = engineRuns.filter((r) => r.platform === 'yoalgoritma_hier')
+    const hierRuns = engineRuns.filter((r) => r.platform === 'dijialgoritma_hier')
     const hierFailed = hierRuns.filter((r) => r.status === 'failed')
     const hierRunning = hierRuns.filter((r) => r.status === 'running')
     const hierCompleted = hierRuns.filter((r) => r.status === 'completed' || r.status === 'partial')
     const engineCutoff8d = new Date(Date.now() - 8 * 86_400_000).toISOString().slice(0, 10)
     const latestHierSuccess = hierCompleted[0]?.run_date || null
-    const yoalgoritmaHealth = {
+    const dijialgoritmaHealth = {
       totalRuns: hierRuns.length,
       failedRuns: hierFailed.length,
       runningRuns: hierRunning.length,
@@ -466,7 +466,7 @@ export async function GET(req: NextRequest) {
       recentSignups,
       errorTypeCounts,
       recentFailedScans,
-      yoalgoritmaHealth,
+      dijialgoritmaHealth,
       diagnostics,
       via: access.via,
     })

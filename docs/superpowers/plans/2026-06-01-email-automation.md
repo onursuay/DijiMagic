@@ -123,8 +123,8 @@ export async function buildDispatch(userId: string): Promise<{ dispatch: Dispatc
   }
   if (account && account.type === 'platform') {
     if (!resend) return null
-    const platformFrom = account.from_email || process.env.PLATFORM_FROM_ADDRESS || 'info@yodijital.com'
-    const from = `${account.from_name || 'YoAi'} <${platformFrom}>`
+    const platformFrom = account.from_email || process.env.PLATFORM_FROM_ADDRESS || 'info@dijimagic.com'
+    const from = `${account.from_name || 'DijiMagic'} <${platformFrom}>`
     const replyTo = account.reply_to || undefined
     return {
       via: 'shared',
@@ -299,7 +299,7 @@ import { buildDispatch, buildHtml } from './sender'
 import { unsubscribeUrl } from './unsubscribe'
 import { listEnabledAutomations, type AutomationRow } from './automationStore'
 
-const APP_URL = process.env.NEXT_PUBLIC_APP_URL || 'https://yoai.yodijital.com'
+const APP_URL = process.env.NEXT_PUBLIC_APP_URL || 'https://dijimagic.com'
 
 /** email_contacts'te bu e-posta opt-out işaretliyse true (KVKK). Kayıt yoksa false. */
 async function isOptedOut(userId: string, email: string): Promise<boolean> {

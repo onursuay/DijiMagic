@@ -27,7 +27,7 @@ export default function SiteScanner({ state, update, goNext }: StepProps) {
   useEffect(() => {
     if (state.siteUrl || siteUrl) return
     let cancelled = false
-    fetch('/api/yoai/business-profile', { cache: 'no-store' })
+    fetch('/api/dijimagic/business-profile', { cache: 'no-store' })
       .then((r) => (r.ok ? r.json() : null))
       .then((d) => {
         if (cancelled) return

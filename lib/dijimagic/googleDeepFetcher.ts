@@ -1,0 +1,581 @@
+/* ──────────────────────────────────────────────────────────
+   Google Ads Deep Fetcher — hierarchical campaign+adgroup+ad data
+   ────────────────────────────────────────────────────────── */
+
+import { getGoogleAdsAccessToken, searchGAds } from '@/lib/googleAdsAuth'
+import { computeDerivedMetrics } from '@/lib/google-ads/helpers'
+import { runGoogleRuleEngine, type GoogleRuleContext } from './googleRuleEngine'
+import type { DeepCampaignInsight, AdsetInsight, AdInsight, StandardMetrics, GoogleProblemTag, AdsetTargetingSummary } from './analysisTypes'
+import type { ProblemTag } from '@/lib/meta/optimization/types'
+import { computeCreativeHash } from './creativeHash'
+
+const MAX_CAMPAIGNS = 15
+
+/* ── Helpers ── */
+function microsToUnits(micros: string | number | undefined): number {
+  return micros != null ? Number(micros) / 1_000_000 : 0
+}
+
+function num(v: string | number | undefined): number {
+  return Number(v ?? 0) || 0
+}
+
+function googleProblemToMeta(gp: GoogleProblemTag): ProblemTag {
+  // Map Google problem tags to Meta format for unified rendering
+  const metaIdMap: Record<string, string> = {
+    NO_DELIVERY: 'NO_DELIVERY',
+    INSUFFICIENT_DATA: 'INSUFFICIENT_DATA',
+    LOW_CTR: 'LOW_CTR',
+    HIGH_CPC: 'HIGH_CPC',
+    LOW_CONVERSIONS: 'HIGH_CPA',
+    LOW_ROAS: 'LOW_ROAS',
+    LOW_QUALITY_SCORE: 'QUALITY_BELOW_AVERAGE',
+    IMPRESSION_SHARE_BUDGET_LOST: 'BUDGET_UNDERUTILIZED',
+    IMPRESSION_SHARE_RANK_LOST: 'LOW_CTR',
+    AD_GROUP_IMBALANCE: 'ADSET_IMBALANCE',
+    SINGLE_AD_GROUP_RISK: 'SINGLE_ADSET_RISK',
+    LOW_OPT_SCORE: 'QUALITY_BELOW_AVERAGE',
+  }
+  return {
+    id: (metaIdMap[gp.id] || 'LOW_CTR') as ProblemTag['id'],
+    severity: gp.severity,
+    evidence: gp.evidence,
+  }
+}
+
+function scoreFromProblems(problems: GoogleProblemTag[], metrics: StandardMetrics): number {
+  let score = 100
+  for (const p of problems) {
+    if (p.severity === 'critical') score -= 25
+    else if (p.severity === 'warning') score -= 10
+    else score -= 3
+  }
+  // Bonus for good CTR
+  if (metrics.ctr > 5) score += 5
+  // Bonus for conversions
+  if (metrics.conversions > 10) score += 5
+  return Math.max(0, Math.min(100, score))
+}
+
+function scoreToRisk(score: number): 'low' | 'medium' | 'high' | 'critical' {
+  if (score >= 75) return 'low'
+  if (score >= 50) return 'medium'
+  if (score >= 25) return 'high'
+  return 'critical'
+}
+
+/* ── Types for GAQL rows ── */
+type CampaignRow = {
+  campaign?: { id?: string; name?: string; status?: string; advertisingChannelType?: string; advertising_channel_type?: string; biddingStrategyType?: string; bidding_strategy_type?: string; optimizationScore?: number; optimization_score?: number; campaignBudget?: string; campaign_budget?: string }
+  campaignBudget?: { amountMicros?: string; amount_micros?: string }
+  campaign_budget?: { amountMicros?: string; amount_micros?: string }
+  metrics?: Record<string, string | number | undefined>
+}
+
+type AdGroupRow = {
+  adGroup?: { id?: string; name?: string; status?: string; cpcBidMicros?: string; cpc_bid_micros?: string }
+  ad_group?: { id?: string; name?: string; status?: string; cpcBidMicros?: string; cpc_bid_micros?: string }
+  campaign?: { id?: string }
+  metrics?: Record<string, string | number | undefined>
+}
+
+// RSA creative: GAQL response camelCase (responsiveSearchAd) veya snake (responsive_search_ad)
+type RsaAsset = { text?: string; pinnedField?: string; pinned_field?: string }
+type GAdObj = {
+  id?: string
+  name?: string
+  type?: string
+  finalUrls?: string[]
+  final_urls?: string[]
+  responsiveSearchAd?: { headlines?: RsaAsset[]; descriptions?: RsaAsset[] }
+  responsive_search_ad?: { headlines?: RsaAsset[]; descriptions?: RsaAsset[] }
+}
+type AdRow = {
+  adGroupAd?: { ad?: GAdObj; status?: string }
+  ad_group_ad?: { ad?: GAdObj; status?: string }
+  adGroup?: { id?: string }
+  ad_group?: { id?: string }
+  campaign?: { id?: string }
+  metrics?: Record<string, string | number | undefined>
+}
+
+/* ── Main Fetch ──
+   override (DijiAlgoritma işletme scope'u): hangi Google müşterisinin çekileceğini
+   açıkça belirler. customerId === null → bu işletmenin Google'ı yok, hiç çekme
+   (disconnected). customerId string → refreshToken aynı kalır, yalnız müşteri değişir. */
+export async function fetchGoogleDeep(
+  userId?: string,
+  override?: { customerId: string | null; loginCustomerId?: string | null },
+): Promise<{ campaigns: DeepCampaignInsight[]; errors: string[]; connected: boolean; fetchError?: boolean }> {
+  const errors: string[] = []
+  const campaigns: DeepCampaignInsight[] = []
+  // R5: çekim başarısızlığı (token/5xx/exception) → reconcile pending kartları SİLMEMELİ.
+  let fetchError = false
+
+  // İşletmede Google hesabı yoksa hiç bağlanma (örn. yalnız-Meta işletmesi).
+  if (override && override.customerId === null) {
+    return { campaigns, errors: [], connected: false }
+  }
+
+  // Resolve Google Ads credentials — same approach as working management endpoints.
+  // Bypass getGoogleAdsContext() which has proven unreliable in this context.
+  let refreshToken: string | undefined
+  let customerId: string | undefined
+  let loginCustomerId: string | undefined
+
+  // 1) Try cookies (browser context)
+  try {
+    const { cookies } = await import('next/headers')
+    const cookieStore = await cookies()
+    refreshToken = cookieStore.get('google_refresh_token')?.value
+    customerId = cookieStore.get('google_ads_customer_id')?.value
+    loginCustomerId = cookieStore.get('google_ads_login_customer_id')?.value
+    if (!userId) userId = cookieStore.get('session_id')?.value
+  } catch { /* cookies not available */ }
+
+  // 2) If no cookie credentials, try DB (cron context or cookie-less)
+  if (!refreshToken && userId) {
+    try {
+      const { getConnection } = await import('@/lib/googleAdsConnectionStore')
+      const dbCtx = await getConnection(userId)
+      if (dbCtx?.refreshToken && dbCtx?.customerId) {
+        refreshToken = dbCtx.refreshToken
+        customerId = dbCtx.customerId
+        loginCustomerId = dbCtx.loginCustomerId
+      }
+    } catch (e) {
+      console.error('[GoogleDeepFetcher] DB lookup error:', e)
+    }
+  }
+
+  // İşletme scope'u: refreshToken korunur, yalnız hangi müşterinin çekileceği değişir.
+  if (override?.customerId) {
+    customerId = override.customerId
+    loginCustomerId = override.loginCustomerId || override.customerId
+  }
+
+  if (!refreshToken || !customerId) {
+    return { campaigns, errors: [], connected: false, fetchError: true }
+  }
+
+  let googleCtx
+  try {
+    const accessToken = await getGoogleAdsAccessToken(refreshToken)
+    googleCtx = {
+      accessToken,
+      customerId: customerId.replace(/-/g, ''),
+      loginCustomerId: (loginCustomerId || customerId).replace(/-/g, ''),
+      locale: 'tr',
+    }
+  } catch (e) {
+    console.error('[GoogleDeepFetcher] Token exchange error:', e)
+    return { campaigns, errors: ['Google Ads token hatası'], connected: false, fetchError: true }
+  }
+
+  const now = new Date()
+  const to = now.toISOString().slice(0, 10)
+  const from = new Date(now.getTime() - 7 * 86400000).toISOString().slice(0, 10)
+
+  try {
+    // 1. Fetch campaigns
+    const campaignQuery = `
+      SELECT campaign.id, campaign.name, campaign.status,
+        campaign.advertising_channel_type, campaign.bidding_strategy_type,
+        campaign.optimization_score, campaign.campaign_budget,
+        campaign_budget.amount_micros,
+        metrics.cost_micros, metrics.impressions, metrics.clicks, metrics.ctr,
+        metrics.average_cpc, metrics.conversions, metrics.conversions_value,
+        metrics.search_impression_share, metrics.search_budget_lost_impression_share,
+        metrics.search_rank_lost_impression_share
+      FROM campaign
+      WHERE segments.date BETWEEN '${from}' AND '${to}'
+        AND campaign.status = 'ENABLED'
+      ORDER BY metrics.cost_micros DESC
+      LIMIT ${MAX_CAMPAIGNS}
+    `.trim()
+
+    const campaignRows = await searchGAds<CampaignRow>(googleCtx, campaignQuery)
+    // Sessiz truncation görünürlüğü: LIMIT dolduysa daha fazla kampanya olabilir (cap=maliyet)
+    if (campaignRows.length >= MAX_CAMPAIGNS) {
+      console.warn(`[GoogleDeepFetcher] Kısmi tarama: en yüksek harcamalı ${MAX_CAMPAIGNS} aktif kampanya analiz edildi; hesapta daha fazlası olabilir.`)
+    }
+
+    // Aggregate by campaign ID
+    const campaignMap = new Map<string, {
+      id: string; name: string; status: string; channelType: string; biddingStrategy: string
+      optScore: number | null; budgetMicros: number | null
+      impressions: number; clicks: number; costMicros: number; conversions: number; conversionsValue: number
+      impressionShareBudgetLost: number | null; impressionShareRankLost: number | null
+    }>()
+
+    for (const r of campaignRows) {
+      const c = r.campaign
+      const m = r.metrics
+      const cb = r.campaignBudget ?? r.campaign_budget
+      const id = c?.id ?? ''
+      if (!id) continue
+
+      const optRaw = c?.optimizationScore ?? c?.optimization_score
+      const optScore = optRaw != null && Number.isFinite(Number(optRaw))
+        ? Number(optRaw) <= 1 ? Number(optRaw) * 100 : Number(optRaw)
+        : null
+
+      const existing = campaignMap.get(id)
+      if (existing) {
+        existing.impressions += num(m?.impressions)
+        existing.clicks += num(m?.clicks)
+        existing.costMicros += num(m?.cost_micros ?? m?.costMicros)
+        existing.conversions += num(m?.conversions)
+        existing.conversionsValue += num(m?.conversions_value ?? m?.conversionsValue)
+      } else {
+        campaignMap.set(id, {
+          id,
+          name: c?.name ?? '',
+          status: c?.status ?? 'UNKNOWN',
+          channelType: c?.advertisingChannelType ?? c?.advertising_channel_type ?? 'SEARCH',
+          biddingStrategy: c?.biddingStrategyType ?? c?.bidding_strategy_type ?? '',
+          optScore,
+          budgetMicros: cb?.amountMicros ?? cb?.amount_micros ? Number(cb?.amountMicros ?? cb?.amount_micros) : null,
+          impressions: num(m?.impressions),
+          clicks: num(m?.clicks),
+          costMicros: num(m?.cost_micros ?? m?.costMicros),
+          conversions: num(m?.conversions),
+          conversionsValue: num(m?.conversions_value ?? m?.conversionsValue),
+          impressionShareBudgetLost: m?.search_budget_lost_impression_share != null ? num(m.search_budget_lost_impression_share) * 100 : null,
+          impressionShareRankLost: m?.search_rank_lost_impression_share != null ? num(m.search_rank_lost_impression_share) * 100 : null,
+        })
+      }
+    }
+
+    // 2. Fetch ad groups
+    // R6 (PARİTE): yalnız sayısal kampanya ID'leri (GAQL IN sayısal değer bekler — enjeksiyon yok).
+    const campaignIds = Array.from(campaignMap.keys()).filter((id) => /^\d+$/.test(id))
+    if (campaignIds.length === 0) return { campaigns, errors, connected: true }
+    // R6 (PARİTE): ad group + ad sorguları analiz edilen TOP-15 kampanyaya scope'lanır.
+    // Aksi halde tüm hesabın en pahalı 200/300 alt-öğesi çekilir; bunlar bizim 15 kampanyaya
+    // ait OLMAYABİLİR → kampanyalar yanlış/eksik alt-ağaçla eşleşir.
+    const campaignInClause = `campaign.id IN (${campaignIds.join(', ')})`
+
+    // R6 (DAYANIKLILIK): ad group çekimi kendi try/catch'inde — patlarsa kampanya verisi
+    // KORUNUR (kart yine üretilir, alt-ağaç boş kalır), tüm tarama çökmez.
+    let adGroupRows: AdGroupRow[] = []
+    try {
+      const adGroupQuery = `
+        SELECT ad_group.id, ad_group.name, ad_group.status,
+          ad_group.cpc_bid_micros, campaign.id,
+          metrics.cost_micros, metrics.impressions, metrics.clicks, metrics.ctr,
+          metrics.average_cpc, metrics.conversions, metrics.conversions_value
+        FROM ad_group
+        WHERE segments.date BETWEEN '${from}' AND '${to}'
+          AND ad_group.status = 'ENABLED'
+          AND ${campaignInClause}
+        ORDER BY metrics.cost_micros DESC
+        LIMIT 200
+      `.trim()
+      adGroupRows = await searchGAds<AdGroupRow>(googleCtx, adGroupQuery)
+    } catch (e) {
+      console.warn('[GoogleDeepFetcher] ad group çekimi başarısız (kampanya verisi korunuyor):', e instanceof Error ? e.message : e)
+      errors.push('Google ad group verisi alınamadı')
+    }
+
+    // Group ad groups by campaign
+    const adGroupsByCampaign = new Map<string, Map<string, { id: string; name: string; status: string; impressions: number; clicks: number; costMicros: number; conversions: number; conversionsValue: number }>>()
+
+    for (const r of adGroupRows) {
+      const ag = r.adGroup ?? r.ad_group
+      const m = r.metrics
+      const cId = r.campaign?.id ?? ''
+      const agId = ag?.id ?? ''
+      if (!cId || !agId) continue
+
+      if (!adGroupsByCampaign.has(cId)) adGroupsByCampaign.set(cId, new Map())
+      const map = adGroupsByCampaign.get(cId)!
+      const existing = map.get(agId)
+      if (existing) {
+        existing.impressions += num(m?.impressions)
+        existing.clicks += num(m?.clicks)
+        existing.costMicros += num(m?.cost_micros ?? m?.costMicros)
+        existing.conversions += num(m?.conversions)
+        existing.conversionsValue += num(m?.conversions_value ?? m?.conversionsValue)
+      } else {
+        map.set(agId, {
+          id: agId,
+          name: ag?.name ?? '',
+          status: ag?.status ?? 'UNKNOWN',
+          impressions: num(m?.impressions),
+          clicks: num(m?.clicks),
+          costMicros: num(m?.cost_micros ?? m?.costMicros),
+          conversions: num(m?.conversions),
+          conversionsValue: num(m?.conversions_value ?? m?.conversionsValue),
+        })
+      }
+    }
+
+    // 3. Fetch ads — per-ad improvement için RSA full creative (additive alanlar)
+    // R6: top-15 kampanyaya scope'lu + kendi try/catch'i (patlarsa kampanya+adgroup korunur).
+    let adRows: AdRow[] = []
+    try {
+      const adQuery = `
+        SELECT ad_group_ad.ad.id, ad_group_ad.ad.name, ad_group_ad.ad.type,
+          ad_group_ad.ad.final_urls,
+          ad_group_ad.ad.responsive_search_ad.headlines,
+          ad_group_ad.ad.responsive_search_ad.descriptions,
+          ad_group_ad.status, ad_group.id, campaign.id,
+          metrics.cost_micros, metrics.impressions, metrics.clicks, metrics.ctr,
+          metrics.average_cpc, metrics.conversions, metrics.conversions_value
+        FROM ad_group_ad
+        WHERE segments.date BETWEEN '${from}' AND '${to}'
+          AND ad_group_ad.status = 'ENABLED'
+          AND ${campaignInClause}
+        ORDER BY metrics.cost_micros DESC
+        LIMIT 300
+      `.trim()
+      adRows = await searchGAds<AdRow>(googleCtx, adQuery)
+    } catch (e) {
+      console.warn('[GoogleDeepFetcher] reklam çekimi başarısız (kampanya+adgroup korunuyor):', e instanceof Error ? e.message : e)
+      errors.push('Google reklam verisi alınamadı')
+    }
+
+    // Group ads by ad group
+    const adsByAdGroup = new Map<string, AdInsight[]>()
+
+    for (const r of adRows) {
+      const adGroupAd = r.adGroupAd ?? r.ad_group_ad
+      const ad = adGroupAd?.ad
+      const agId = (r.adGroup ?? r.ad_group)?.id ?? ''
+      const m = r.metrics
+      if (!agId || !ad?.id) continue
+
+      const amountSpent = microsToUnits(m?.cost_micros ?? m?.costMicros)
+      const clicks = num(m?.clicks)
+      const impressions = num(m?.impressions)
+
+      // RSA full creative (per-ad improvement) — camelCase veya snake_case
+      const rsa = ad.responsiveSearchAd ?? ad.responsive_search_ad
+      const headlines = Array.isArray(rsa?.headlines)
+        ? rsa!.headlines.map((h) => (h?.text ?? '').trim()).filter(Boolean)
+        : []
+      const descriptions = Array.isArray(rsa?.descriptions)
+        ? rsa!.descriptions.map((d) => (d?.text ?? '').trim()).filter(Boolean)
+        : []
+      const finalUrls = ad.finalUrls ?? ad.final_urls ?? []
+      const finalUrl = Array.isArray(finalUrls) && finalUrls.length ? String(finalUrls[0]) : undefined
+
+      const adInsight: AdInsight = {
+        id: ad.id,
+        name: ad.name || `Ad ${ad.id}`,
+        status: adGroupAd?.status ?? 'UNKNOWN',
+        platform: 'Google',
+        format: ad.type || undefined,
+        creativeHeadlines: headlines.length ? headlines : undefined,
+        creativeDescriptions: descriptions.length ? descriptions : undefined,
+        linkUrl: finalUrl,
+        creativeHash: computeCreativeHash([...headlines, ...descriptions, finalUrl, ad.name]) || undefined,
+        metrics: {
+          spend: amountSpent,
+          impressions,
+          clicks,
+          ctr: impressions > 0 ? (clicks / impressions) * 100 : 0,
+          cpc: clicks > 0 ? amountSpent / clicks : 0,
+          conversions: num(m?.conversions),
+          roas: amountSpent > 0 && num(m?.conversions_value ?? m?.conversionsValue) > 0
+            ? num(m?.conversions_value ?? m?.conversionsValue) / amountSpent
+            : null,
+        },
+      }
+
+      if (!adsByAdGroup.has(agId)) adsByAdGroup.set(agId, [])
+      adsByAdGroup.get(agId)!.push(adInsight)
+    }
+
+    // 3b. Hedefleme verisi — Arama Ağı'nın kalbi anahtar kelimeler + lokasyon + dil.
+    //     Hepsi defensive (try/catch): hata olursa hedefleme boş kalır, ana akış kırılmaz.
+    const keywordsByAdGroup = new Map<string, string[]>()
+    const geoIdsByCampaign = new Map<string, Set<string>>()
+    const langIdsByCampaign = new Map<string, Set<string>>()
+    const geoNameById = new Map<string, string>()
+    const langNameById = new Map<string, string>()
+    const lastSeg = (rn?: string): string => (rn ? String(rn).split('/').pop() ?? '' : '')
+
+    try {
+      const kwQuery = `
+        SELECT ad_group.id, campaign.id,
+          ad_group_criterion.keyword.text, ad_group_criterion.keyword.match_type
+        FROM ad_group_criterion
+        WHERE ad_group_criterion.type = 'KEYWORD'
+          AND ad_group_criterion.status = 'ENABLED'
+          AND ad_group_criterion.negative = FALSE
+          AND ad_group.status = 'ENABLED'
+          AND campaign.status = 'ENABLED'
+          AND ${campaignInClause}
+        LIMIT 1000
+      `.trim()
+      const kwRows = await searchGAds<any>(googleCtx, kwQuery)
+      for (const r of kwRows) {
+        const agId = (r.adGroup ?? r.ad_group)?.id ?? ''
+        const text = (r.adGroupCriterion ?? r.ad_group_criterion)?.keyword?.text
+        if (!agId || !text) continue
+        if (!keywordsByAdGroup.has(agId)) keywordsByAdGroup.set(agId, [])
+        const arr = keywordsByAdGroup.get(agId)!
+        if (arr.length < 50 && !arr.includes(text)) arr.push(text)
+      }
+    } catch (e) {
+      console.warn('[GoogleDeepFetcher] keyword fetch skipped:', e instanceof Error ? e.message : e)
+    }
+
+    try {
+      const critQuery = `
+        SELECT campaign.id, campaign_criterion.type, campaign_criterion.negative,
+          campaign_criterion.location.geo_target_constant,
+          campaign_criterion.language.language_constant
+        FROM campaign_criterion
+        WHERE campaign_criterion.status = 'ENABLED'
+          AND campaign.status = 'ENABLED'
+          AND campaign_criterion.type IN ('LOCATION', 'LANGUAGE')
+          AND ${campaignInClause}
+        LIMIT 2000
+      `.trim()
+      const critRows = await searchGAds<any>(googleCtx, critQuery)
+      for (const r of critRows) {
+        const cId = r.campaign?.id ?? ''
+        const crit = r.campaignCriterion ?? r.campaign_criterion
+        if (!cId || !crit || crit.negative === true) continue
+        const geoRn = crit.location?.geoTargetConstant ?? crit.location?.geo_target_constant
+        const langRn = crit.language?.languageConstant ?? crit.language?.language_constant
+        if (geoRn) {
+          if (!geoIdsByCampaign.has(cId)) geoIdsByCampaign.set(cId, new Set())
+          geoIdsByCampaign.get(cId)!.add(lastSeg(geoRn))
+        }
+        if (langRn) {
+          if (!langIdsByCampaign.has(cId)) langIdsByCampaign.set(cId, new Set())
+          langIdsByCampaign.get(cId)!.add(lastSeg(langRn))
+        }
+      }
+
+      // İsim çözümleme — geo_target_constant + language_constant (ham ID değil, insan-okur ad)
+      const allGeoIds = Array.from(new Set(Array.from(geoIdsByCampaign.values()).flatMap((s) => Array.from(s)))).filter(Boolean).slice(0, 200)
+      const allLangIds = Array.from(new Set(Array.from(langIdsByCampaign.values()).flatMap((s) => Array.from(s)))).filter(Boolean).slice(0, 200)
+
+      if (allGeoIds.length) {
+        const inList = allGeoIds.map((id) => `'geoTargetConstants/${id}'`).join(',')
+        const geoQuery = `SELECT geo_target_constant.id, geo_target_constant.canonical_name, geo_target_constant.name FROM geo_target_constant WHERE geo_target_constant.resource_name IN (${inList})`
+        const geoRows = await searchGAds<any>(googleCtx, geoQuery)
+        for (const r of geoRows) {
+          const g = r.geoTargetConstant ?? r.geo_target_constant
+          const id = String(g?.id ?? '')
+          const name = g?.canonicalName ?? g?.canonical_name ?? g?.name
+          if (id && name) geoNameById.set(id, name)
+        }
+      }
+      if (allLangIds.length) {
+        const inList = allLangIds.map((id) => `'languageConstants/${id}'`).join(',')
+        const langQuery = `SELECT language_constant.id, language_constant.name, language_constant.code FROM language_constant WHERE language_constant.resource_name IN (${inList})`
+        const langRows = await searchGAds<any>(googleCtx, langQuery)
+        for (const r of langRows) {
+          const l = r.languageConstant ?? r.language_constant
+          const id = String(l?.id ?? '')
+          const name = l?.name
+          if (id && name) langNameById.set(id, name)
+        }
+      }
+    } catch (e) {
+      console.warn('[GoogleDeepFetcher] location/language fetch skipped:', e instanceof Error ? e.message : e)
+    }
+
+    // 4. Build campaign insights
+    for (const [, agg] of campaignMap) {
+      const { amountSpent, cpc, ctr, roas } = computeDerivedMetrics(agg)
+
+      const metrics: StandardMetrics = {
+        spend: amountSpent,
+        impressions: agg.impressions,
+        clicks: agg.clicks,
+        ctr,
+        cpc,
+        conversions: agg.conversions,
+        roas,
+      }
+
+      // Kampanya geneli lokasyon + dil (campaign_criterion'dan çözümlenmiş adlar)
+      const campaignLocations = Array.from(geoIdsByCampaign.get(agg.id) ?? []).map((id) => geoNameById.get(id) ?? `Konum #${id}`)
+      const campaignLanguages = Array.from(langIdsByCampaign.get(agg.id) ?? []).map((id) => langNameById.get(id) ?? `Dil #${id}`)
+
+      // Build adset insights (ad groups)
+      const agMap = adGroupsByCampaign.get(agg.id) ?? new Map()
+      const adsetInsights: AdsetInsight[] = Array.from(agMap.values()).map((ag) => {
+        const agDerived = computeDerivedMetrics(ag)
+        const agKeywords = keywordsByAdGroup.get(ag.id)
+        const targeting: AdsetTargetingSummary = {
+          fetched: true,
+          ...(agKeywords?.length ? { keywords: agKeywords } : {}),
+          ...(campaignLocations.length ? { locations: campaignLocations } : {}),
+          ...(campaignLanguages.length ? { languages: campaignLanguages } : {}),
+        }
+        return {
+          id: ag.id,
+          name: ag.name || 'Unnamed Ad Group',
+          status: ag.status,
+          platform: 'Google' as const,
+          dailyBudget: null,
+          lifetimeBudget: null,
+          metrics: {
+            spend: agDerived.amountSpent,
+            impressions: ag.impressions,
+            clicks: ag.clicks,
+            ctr: agDerived.ctr,
+            cpc: agDerived.cpc,
+            conversions: ag.conversions,
+            roas: agDerived.roas,
+          },
+          targeting,
+          ads: adsByAdGroup.get(ag.id) ?? [],
+        }
+      })
+
+      // Run Google rule engine
+      const ruleCtx: GoogleRuleContext = {
+        metrics,
+        adGroupCount: agMap.size,
+        adCount: adsetInsights.reduce((sum, as) => sum + as.ads.length, 0),
+        optimizationScore: agg.optScore,
+        biddingStrategy: agg.biddingStrategy,
+        channelType: agg.channelType,
+        impressionShareBudgetLost: agg.impressionShareBudgetLost ?? undefined,
+        impressionShareRankLost: agg.impressionShareRankLost ?? undefined,
+        dailyBudget: agg.budgetMicros != null ? agg.budgetMicros / 1_000_000 : null,
+        currency: 'TRY',
+      }
+
+      const googleProblems = runGoogleRuleEngine(ruleCtx)
+      const problemTags = googleProblems.map(googleProblemToMeta)
+      const score = scoreFromProblems(googleProblems, metrics)
+
+      campaigns.push({
+        id: agg.id,
+        platform: 'Google',
+        campaignName: agg.name || 'Unnamed Campaign',
+        status: agg.status,
+        objective: agg.channelType,
+        metrics,
+        problemTags,
+        score,
+        riskLevel: scoreToRisk(score),
+        adsets: adsetInsights,
+        dailyBudget: agg.budgetMicros != null ? agg.budgetMicros / 1_000_000 : null,
+        lifetimeBudget: null,
+        currency: 'TRY',
+        channelType: agg.channelType,
+        biddingStrategy: agg.biddingStrategy,
+        optimizationScore: agg.optScore,
+      })
+    }
+  } catch (e) {
+    console.error('[GoogleDeepFetcher] Error:', e)
+    errors.push('Google Ads veri çekme hatası')
+    fetchError = true
+  }
+
+  campaigns.sort((a, b) => b.metrics.spend - a.metrics.spend)
+
+  return { campaigns, errors, connected: true, fetchError }
+}

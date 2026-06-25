@@ -1,5 +1,5 @@
 -- ─────────────────────────────────────────────────────────────
--- YoAi — Çoklu İşletme (Per-Account Business Profiles) — Faz 0
+-- DijiMagic — Çoklu İşletme (Per-Account Business Profiles) — Faz 0
 --
 -- Sorun: Bir kullanıcı birden fazla reklam hesabı/işletme yönetebilir
 -- (örn. "Antso Denizcilik" + "Belgemod"). Ama user_business_profiles ve
@@ -12,7 +12,7 @@
 --   • Tüm yeni kolonlar NULLABLE, IF NOT EXISTS → mevcut tek-profil
 --     kullanıcıları AYNEN çalışır (NULL = legacy/global profil).
 --   • UNIQUE(user_id) kısıtı KASITLI olarak DEĞİŞTİRİLMEZ. Çoklu profil
---     yazımı YOAI_PER_ACCOUNT_SCOPE flag'i + backfill sonrası (Faz 3)
+--     yazımı DIJIMAGIC_PER_ACCOUNT_SCOPE flag'i + backfill sonrası (Faz 3)
 --     açılacak. Bu adımda sıfır regresyon.
 --   • Sadece okuma/yazma katmanı (flag arkasında) bu kolonları kullanır.
 --

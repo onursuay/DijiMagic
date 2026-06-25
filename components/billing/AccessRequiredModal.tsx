@@ -49,7 +49,7 @@ export interface AccessRequiredModalProps {
 }
 
 /**
- * YoAi'de ücretli erişim gerektiren TÜM alanlarda kullanılan global modal.
+ * DijiMagic'de ücretli erişim gerektiren TÜM alanlarda kullanılan global modal.
  *
  * Davranış (her iki tür için ortak):
  *   - Kapatma X yok, ESC kapatmaz, dış tıklama kapatmaz.

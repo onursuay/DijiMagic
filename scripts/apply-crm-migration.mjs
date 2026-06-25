@@ -1,6 +1,6 @@
 #!/usr/bin/env node
 /**
- * YoAi — CRM Faz 1 Migration Uygulayıcı
+ * DijiMagic — CRM Faz 1 Migration Uygulayıcı
  *
  * Uygular (sırayla):
  *   20260530000000_create_crm_tables.sql
@@ -62,7 +62,7 @@ const FILES = [
 ]
 
 async function main() {
-  console.log('\n🚀  YoAi — CRM Migration (Faz 1 + Faz 2)\n')
+  console.log('\n🚀  DijiMagic — CRM Migration (Faz 1 + Faz 2)\n')
   const client = new Client({ connectionString: DATABASE_URL })
   await client.connect()
   client.on('notice', msg => { if (msg.message) console.log(`   ℹ  ${msg.message}`) })

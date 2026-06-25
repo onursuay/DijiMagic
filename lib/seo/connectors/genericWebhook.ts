@@ -13,10 +13,10 @@ import type {
  * Generic Webhook connector — WordPress dışı / özel yazılım siteleri için.
  *
  * Her platforma özel API yazmak yerine, kullanıcının sitesi bir "alıcı uç"
- * (endpoint) sunar; YoAi makaleyi o adrese imzalı JSON olarak POST eder.
+ * (endpoint) sunar; DijiMagic makaleyi o adrese imzalı JSON olarak POST eder.
  * Sitenin geliştiricisi imzayı doğrulayıp kaydı kendi sisteminde oluşturur.
  *
- * İmza: HMAC-SHA256(rawBody, secret) → "X-YoAi-Signature: sha256=<hex>".
+ * İmza: HMAC-SHA256(rawBody, secret) → "X-DijiMagic-Signature: sha256=<hex>".
  * Görsel barındırma yoktur; öne çıkan görselin CDN URL'i payload içinde iletilir.
  *
  * NOT: Meta/Google reklam entegrasyonundan tamamen bağımsızdır.
@@ -53,10 +53,10 @@ export class GenericWebhookConnector implements SiteConnector {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
-        'User-Agent': 'YoAi-SEO-Webhook/1.0',
-        'X-YoAi-Event': event,
-        'X-YoAi-Timestamp': String(Date.now()),
-        ...(this.secret ? { 'X-YoAi-Signature': sign(this.secret, raw) } : {}),
+        'User-Agent': 'DijiMagic-SEO-Webhook/1.0',
+        'X-DijiMagic-Event': event,
+        'X-DijiMagic-Timestamp': String(Date.now()),
+        ...(this.secret ? { 'X-DijiMagic-Signature': sign(this.secret, raw) } : {}),
       },
       body: raw,
     })

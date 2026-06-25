@@ -82,7 +82,7 @@ Beklenen: "Success. No rows returned."
 - [ ] **Step 3: Commit**
 
 ```bash
-cd "/Users/onursuay/Desktop/Onur Suay/YO Dijital/YOAİ/YoAi_Project"
+cd "/Users/onursuay/Desktop/Onur Suay/DijiMagic/YOAİ/DijiMagic_Project"
 git add supabase/migrations/20260602002000_email_funnel_conditions.sql
 git commit -m "feat(email/funnel): condition kolonu + parent_queue_id + email_send_id migration"
 git push
@@ -170,7 +170,7 @@ export async function replaceSteps(automationId: string, steps: StepInput[]): Pr
 - [ ] **Step 2: TypeScript kontrolü**
 
 ```bash
-cd "/Users/onursuay/Desktop/Onur Suay/YO Dijital/YOAİ/YoAi_Project"
+cd "/Users/onursuay/Desktop/Onur Suay/DijiMagic/YOAİ/DijiMagic_Project"
 npx tsc --noEmit 2>&1 | grep "error TS" | head -10
 ```
 
@@ -467,7 +467,7 @@ import { isOptedOut } from '@/lib/email/automationRunner'
 export const dynamic = 'force-dynamic'
 export const maxDuration = 60
 
-const APP_URL = process.env.NEXT_PUBLIC_APP_URL || 'https://yoai.yodijital.com'
+const APP_URL = process.env.NEXT_PUBLIC_APP_URL || 'https://dijimagic.com'
 
 export async function GET(request: Request) {
   const auth = request.headers.get('authorization')

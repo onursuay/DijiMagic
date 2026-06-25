@@ -1,5 +1,5 @@
 import 'server-only'
-import { buildStructuredSeoArticlePrompt, type StructuredSeoInput } from '@/lib/yoai/prompts'
+import { buildStructuredSeoArticlePrompt, type StructuredSeoInput } from '@/lib/dijimagic/prompts'
 import { claudeText, isClaudeReady } from '@/lib/anthropic/text'
 
 /**
@@ -8,7 +8,7 @@ import { claudeText, isClaudeReady } from '@/lib/anthropic/text'
  * buildStructuredSeoArticlePrompt ile tek JSON objesi üretir:
  * title, metaDescription, slug, markdown, imageAltText, imagePrompt.
  * Otomatik akış (inngest/seoArticleRun) ve manuel "şimdi üret" akışında
- * kullanılır. Mevcut streaming /api/yoai/chat akışına dokunmaz.
+ * kullanılır. Mevcut streaming /api/dijimagic/chat akışına dokunmaz.
  */
 
 export interface GeneratedArticle {

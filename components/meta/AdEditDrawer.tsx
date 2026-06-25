@@ -5,7 +5,7 @@ import { useTranslations, useLocale } from 'next-intl'
 import { Loader2, Eye } from 'lucide-react'
 import MetaEditOverlay from './MetaEditOverlay'
 import type { TreeCampaign, TreeAdset, TreeAd } from './CampaignTreeSidebar'
-import { translateEnum } from '@/lib/yoai/translations'
+import { translateEnum } from '@/lib/dijimagic/translations'
 
 interface EditCapabilities {
   canEditName: boolean

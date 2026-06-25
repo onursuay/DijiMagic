@@ -48,7 +48,7 @@ export async function GET(
       lang: locale,
       fontHref: site.website.theme?.fontHref ?? null,
       mode: 'serve',
-      // MULTIPAGE nav: rewrite data-yoai-href="<slug>" → /s/<subdomain>[/<slug>].
+      // MULTIPAGE nav: rewrite data-dijimagic-href="<slug>" → /s/<subdomain>[/<slug>].
       linkBase: `/s/${params.subdomain}`,
       navMode: 'path',
       // SLUG-SET-AWARE: nav links to a page that does not exist resolve to the

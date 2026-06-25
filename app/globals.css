@@ -13,7 +13,7 @@
 }
 
 @layer components {
-  /* Uygulama içerik yüzeyi — hafif yeşilimsi, modern arka plan (YoAlgoritma ile
+  /* Uygulama içerik yüzeyi — hafif yeşilimsi, modern arka plan (DijiAlgoritma ile
      tutarlı). Tüm modül sayfalarının sağ içerik alanında bg-gray-50 yerine kullanılır. */
   .app-content-surface {
     @apply bg-gradient-to-b from-emerald-50/40 via-white to-emerald-50/20;
@@ -489,8 +489,8 @@ table tbody tr {
   font-weight: 700;
 }
 
-/* YoAlgoritma Merkezi icon — light sweep on icon shape */
-@keyframes yoai-icon-sweep {
+/* DijiAlgoritma Merkezi icon — light sweep on icon shape */
+@keyframes dijimagic-icon-sweep {
   0% { transform: translateX(-150%) skewX(-20deg); opacity: 0; }
   20% { opacity: 1; }
   80% { opacity: 1; }
@@ -518,7 +518,7 @@ table tbody tr {
   50% { opacity: 1; }
 }
 
-.yoai-icon-glow::after {
+.dijimagic-icon-glow::after {
   content: '';
   position: absolute;
   top: 0;
@@ -533,7 +533,7 @@ table tbody tr {
     rgba(43, 182, 115, 0.15) 70%,
     transparent 100%
   );
-  animation: yoai-icon-sweep 2.5s ease-in-out infinite;
+  animation: dijimagic-icon-sweep 2.5s ease-in-out infinite;
   pointer-events: none;
   z-index: 0;
 }

@@ -1,5 +1,5 @@
 -- ============================================================
--- YoAi Strateji — NULL user_id Backfill
+-- DijiMagic Strateji — NULL user_id Backfill
 -- ============================================================
 --
 -- AMAÇ:

@@ -5,7 +5,7 @@ import { scanReferences } from '../referenceScanner'
 import { labelsFor, formLabelsFor, type SiteLabels } from '../templates/deterministic'
 import { styleDirective } from '../render/theme'
 import type { WebsitePageInput, SectionBlock, SiteType, PageRole } from '../types'
-import type { BusinessProfileRow, BusinessIntelligenceRow } from '@/lib/yoai/businessProfileStore'
+import type { BusinessProfileRow, BusinessIntelligenceRow } from '@/lib/dijimagic/businessProfileStore'
 
 /**
  * AI üretim motoru. Claude SABİT bir içerik şemasını doldurur (yapıyı uydurmaz);

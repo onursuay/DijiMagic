@@ -6,7 +6,7 @@ import { useTranslations } from 'next-intl'
 import { ChevronDown, Plus, Trash2, Loader2, ArrowUpRight, ArrowLeft } from 'lucide-react'
 import type { useGoogleAdsConnection } from '@/hooks/google/useGoogleAdsConnection'
 import { useRegisteredAccounts } from '@/hooks/useRegisteredAccounts'
-import { clearYoAlgoritmaClientCache } from '@/lib/yoai/clientCache'
+import { clearDijiAlgoritmaClientCache } from '@/lib/dijimagic/clientCache'
 import AccessRequiredModal from '@/components/billing/AccessRequiredModal'
 
 /** Hesap id normalize (tire farkını yok say — aktif eşleşmesi güvenli olsun). */
@@ -90,7 +90,7 @@ export default function GoogleAccountDropdown({ connection, isAppReview = false 
           ...(acc.account_name && acc.account_name !== acc.account_id ? { customerName: acc.account_name } : {}),
         }),
       })
-      clearYoAlgoritmaClientCache()
+      clearDijiAlgoritmaClientCache()
       window.location.reload()
     } catch {
       setBusyId(null)
@@ -104,7 +104,7 @@ export default function GoogleAccountDropdown({ connection, isAppReview = false 
     setBusyId(acc.account_id)
     await reg.removeAccount('google', acc.account_id)
     // Aktif hesabı sildiyse bağlantı sunucuda kalan hesaba geçti (ya da kesildi) → yansıt.
-    if (wasActive) { clearYoAlgoritmaClientCache(); window.location.reload(); return }
+    if (wasActive) { clearDijiAlgoritmaClientCache(); window.location.reload(); return }
     setBusyId(null)
   }
 

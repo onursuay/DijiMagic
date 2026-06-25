@@ -7,7 +7,7 @@
 CREATE TABLE IF NOT EXISTS public.social_projects (
   id             UUID PRIMARY KEY DEFAULT gen_random_uuid(),
   user_id        TEXT NOT NULL,
-  business_scope TEXT,                       -- yoai_business_scope ile uyum; null = tüm hesaplar
+  business_scope TEXT,                       -- dijimagic_business_scope ile uyum; null = tüm hesaplar
   name           TEXT NOT NULL,
   color          TEXT NOT NULL DEFAULT '#10b981',
   status         TEXT NOT NULL DEFAULT 'active' CHECK (status IN ('active','archived')),

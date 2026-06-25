@@ -9,7 +9,7 @@
    - Opus 4.8 STREAMING: client.messages.stream({...}).finalMessage().
      max_tokens 16000, thinking:{type:'adaptive'}, output_config:{effort:'high'}.
    - NEVER send temperature / top_p / top_k / budget_tokens — Opus 4.8 → HTTP 400.
-   - Full COLOR FREEDOM: the YoAi dashboard's amber/yellow ban does NOT apply to
+   - Full COLOR FREEDOM: the DijiMagic dashboard's amber/yellow ban does NOT apply to
      generated customer sites. The palette comes from the DesignSystem; a honey
      brand may (and should) get amber/gold. (See DesignSystem JSDoc + types.ts.)
    - Output is BODY-ONLY inner HTML (no doctype/head/body, no fences, no prose).
@@ -127,7 +127,7 @@ const MAX_TOKENS = 16000
 
 // ---------------------------------------------------------------------------
 // Prompt caching (cost lever) — the htmlGenerate SYSTEM prefix (the long
-// anti-generic design ethos + var contract + mobile-menu + data-yoai-* rules)
+// anti-generic design ethos + var contract + mobile-menu + data-dijimagic-* rules)
 // is BYTE-IDENTICAL across every page of ONE multipage generation (same ctx /
 // same mobileMenuAnim), and identical between a page's first pass and its
 // self-repair. We send `system` as content blocks where the stable prefix
@@ -206,7 +206,7 @@ export async function generateHomePageHtml(
  * Same constraints + same scaffolding as generateHomePageHtml:
  *   - identical Opus 4.8 streaming call (NO temperature/top_p/top_k/budget_tokens;
  *     thinking:{type:'adaptive'}; output_config:{effort:'high'}; finalMessage()).
- *   - reuses the SAME system prompt (var contract / data-yoai-* / {{IMG:}} rules).
+ *   - reuses the SAME system prompt (var contract / data-dijimagic-* / {{IMG:}} rules).
  *   - reuses the SAME {{IMG:query}} resolution + cleanGeneratedHtml.
  * The user message is buildRepairUserMessage(): the first-pass message PLUS a
  * SHORT directive derived from the gate reason + the previous (rejected) body.
@@ -231,7 +231,7 @@ export async function repairHomePageHtml(
  * Same Opus 4.8 streaming call + same constraints as generateHomePageHtml, but
  * the prompt is page-aware: the content is SPECIFIC to `pageSpec.purpose`, the
  * single <h1> is the page title, and the shared header/footer nav links to
- * EVERY page in `allPages` via <a data-yoai-href="<slug>">. The home page is
+ * EVERY page in `allPages` via <a data-dijimagic-href="<slug>">. The home page is
  * generated through this SAME path (role 'home', its own pageSpec).
  *
  * @param ctx       Stage-0 context (shared across all pages)

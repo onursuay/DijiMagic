@@ -1,5 +1,5 @@
 // ============================================================
-// YoAi Strateji Modülü — TypeScript Tipleri
+// DijiMagic Strateji Modülü — TypeScript Tipleri
 // ============================================================
 
 export type InstanceStatus =

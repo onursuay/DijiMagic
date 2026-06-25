@@ -6,7 +6,7 @@
    (amber/sarı YOK: pass=emerald, warn=gri, fail=kırmızı). */
 
 import { useTranslations, useLocale } from 'next-intl'
-import { translateEnum } from '@/lib/yoai/translations'
+import { translateEnum } from '@/lib/dijimagic/translations'
 import { problemLabel } from '@/lib/google/optimization/labels'
 import type { Gate } from '@/lib/google/optimization/gates'
 import type { GoogleOptimizationCampaign } from '@/lib/google/optimization/types'

@@ -6,12 +6,12 @@
  */
 
 import assert from 'assert'
-import { SECTOR_CATALOG, getSectorMain, getSectorSubs, getSectorLabel, isValidSectorMain, isValidSectorSub } from '../../lib/yoai/sectorCatalog'
-import { validateProfileForOnboarding, isValidCompetitorReference, MIN_COMPETITORS_REQUIRED, type CompetitorShape } from '../../lib/yoai/businessProfileValidation'
-import { buildSectorLocationInsight } from '../../lib/yoai/sectorLocationIntelligence'
-import { buildBusinessIntelligenceRow } from '../../lib/yoai/businessIntelligenceBuilder'
-import { scanBusinessSource } from '../../lib/yoai/businessSourceScanner'
-import type { BusinessProfileRow, BusinessCompetitorRow, BusinessSourceScanRow } from '../../lib/yoai/businessProfileStore'
+import { SECTOR_CATALOG, getSectorMain, getSectorSubs, getSectorLabel, isValidSectorMain, isValidSectorSub } from '../../lib/dijimagic/sectorCatalog'
+import { validateProfileForOnboarding, isValidCompetitorReference, MIN_COMPETITORS_REQUIRED, type CompetitorShape } from '../../lib/dijimagic/businessProfileValidation'
+import { buildSectorLocationInsight } from '../../lib/dijimagic/sectorLocationIntelligence'
+import { buildBusinessIntelligenceRow } from '../../lib/dijimagic/businessIntelligenceBuilder'
+import { scanBusinessSource } from '../../lib/dijimagic/businessSourceScanner'
+import type { BusinessProfileRow, BusinessCompetitorRow, BusinessSourceScanRow } from '../../lib/dijimagic/businessProfileStore'
 
 let passed = 0
 let failed = 0
@@ -359,7 +359,7 @@ test('Sektör/lokasyon intelligence Ankara/restoran için doğru context üretir
     sector_sub_id: 'restoran',
     target_locations: ['Ankara', 'İstanbul'],
   })
-  // Bu intelligence YoAlgoritma + Strateji + Hedef Kitle motorlarına bağlanır.
+  // Bu intelligence DijiAlgoritma + Strateji + Hedef Kitle motorlarına bağlanır.
   assert.ok(insight.recommended_meta_objectives.length > 0)
   assert.ok(insight.recommended_google_campaign_types.length > 0)
   assert.ok(insight.location_expectations.toLowerCase().includes('ankara'))

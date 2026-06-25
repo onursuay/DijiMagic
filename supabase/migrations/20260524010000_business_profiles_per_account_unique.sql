@@ -1,5 +1,5 @@
 -- ─────────────────────────────────────────────────────────────
--- YoAi — Çoklu İşletme Profili: UNIQUE(user_id) → partial unique — Faz 2.4
+-- DijiMagic — Çoklu İşletme Profili: UNIQUE(user_id) → partial unique — Faz 2.4
 --
 -- Sorun: user_business_profiles UNIQUE(user_id) kullanıcı başına TEK profil
 -- zorluyordu. Ajans modelinde her reklam hesabının kendi profili olmalı

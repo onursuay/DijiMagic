@@ -17,7 +17,7 @@ export interface ContactFormLabels {
 /**
  * Üretilen sitenin GERÇEK iletişim formu (client island). Site sahibinin e-postasına gönderir
  * (`POST /api/website/<id>/contact`). Spam koruması: gizli honeypot alanı (`website`) + sunucu tarafı.
- * Etiketler site diline göre props ile gelir (YoAi UI i18n değil).
+ * Etiketler site diline göre props ile gelir (DijiMagic UI i18n değil).
  */
 export default function ContactForm({ websiteId, labels }: { websiteId: string; labels: ContactFormLabels }) {
   const [state, setState] = useState<'idle' | 'sending' | 'ok' | 'err'>('idle')

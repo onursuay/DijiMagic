@@ -12,9 +12,9 @@
    ────────────────────────────────────────────────────────── */
 
 import { getTikTokContext, tiktokApiRequest } from '@/lib/tiktokAdsAuth'
-import { runGoogleRuleEngine } from '@/lib/yoai/googleRuleEngine'
+import { runGoogleRuleEngine } from '@/lib/dijimagic/googleRuleEngine'
 import { computeGates, riskFromScore } from '@/lib/google/optimization/gates'
-import type { GoogleProblemTagId, StandardMetrics } from '@/lib/yoai/analysisTypes'
+import type { GoogleProblemTagId, StandardMetrics } from '@/lib/dijimagic/analysisTypes'
 import type { ProblemTag, ProblemTagId } from '@/lib/meta/optimization/types'
 import type { GoogleOptimizationCampaign } from '@/lib/google/optimization/types'
 

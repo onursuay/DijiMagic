@@ -204,7 +204,7 @@ None. All keys returned by buildCreatePayload are consumed by createFullCampaign
 | **biddingFocus** | For MAXIMIZE_CONVERSIONS: `maximize_conversions_value` vs `maximize_conversions`; value-based vs count-based. Different bidding field. | Medium |
 | ~~bidOnlyForNewCustomers~~ | **Audited: remains UI-only.** `CampaignLifecycleGoal.optimization_mode` is read-only. | N/A |
 | **locationTargetingMode** | `Campaign.geoTargetTypeSetting.positiveGeoTargetType` — `PRESENCE_OR_INTEREST` vs `PRESENCE_ONLY`. | Low |
-| **aiMax.*** | Product-specific; not a standard Google Ads API field. YoAi custom logic or future Google feature. | N/A (custom) |
+| **aiMax.*** | Product-specific; not a standard Google Ads API field. DijiMagic custom logic or future Google feature. | N/A (custom) |
 
 ---
 
@@ -311,7 +311,7 @@ Or map both values for clarity. CreateCampaignParams uses `DOES_NOT_CONTAIN_EU_P
 ---
 
 *End of audit.*
-# YoAi Google Search Campaign Wizard — Refactor Plan (Planning Only)
+# DijiMagic Google Search Campaign Wizard — Refactor Plan (Planning Only)
 
 > **CRITICAL:** Do not implement. Output only a strict refactor plan.
 

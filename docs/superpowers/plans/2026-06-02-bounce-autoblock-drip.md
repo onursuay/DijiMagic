@@ -117,7 +117,7 @@ export async function POST(req: Request) {
 - [ ] **Step 2: TypeScript kontrolü**
 
 ```bash
-cd "/Users/onursuay/Desktop/Onur Suay/YO Dijital/YOAİ/YoAi_Project"
+cd "/Users/onursuay/Desktop/Onur Suay/DijiMagic/YOAİ/DijiMagic_Project"
 npx tsc --noEmit 2>&1 | grep "webhooks/resend"
 ```
 
@@ -155,7 +155,7 @@ RESEND_WEBHOOK_SECRET=buraya-guclu-rastgele-bir-deger-yaz
 ```
 
 Resend dashboard → Webhooks → Add Webhook:
-- URL: `https://yoai.yodijital.com/api/email/webhooks/resend?secret=<RESEND_WEBHOOK_SECRET_DEGERI>`
+- URL: `https://dijimagic.com/api/email/webhooks/resend?secret=<RESEND_WEBHOOK_SECRET_DEGERI>`
 - Events: `email.bounced`, `email.complained`, `email.delivered`
 
 Vercel dashboard'a da `RESEND_WEBHOOK_SECRET` env var olarak ekle.
@@ -518,7 +518,7 @@ import { isOptedOut } from '@/lib/email/automationRunner'
 export const dynamic = 'force-dynamic'
 export const maxDuration = 60
 
-const APP_URL = process.env.NEXT_PUBLIC_APP_URL || 'https://yoai.yodijital.com'
+const APP_URL = process.env.NEXT_PUBLIC_APP_URL || 'https://dijimagic.com'
 
 export async function GET(request: Request) {
   const auth = request.headers.get('authorization')

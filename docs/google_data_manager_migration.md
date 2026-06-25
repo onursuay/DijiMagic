@@ -39,7 +39,7 @@ Yanlış pozitifler (ilgisiz):
 
 | Dosya | İçerik |
 |---|---|
-| [lib/yoai/ai/docs/google_ads_rules_curated.ts](../lib/yoai/ai/docs/google_ads_rules_curated.ts) (satır 50-52) | AI danışman bilgisi: "offline import + CRM geri besleme" en iyi pratik olarak öneriliyor (kullanıcıya tavsiye metni — API çağrısı değil) |
+| [lib/dijimagic/ai/docs/google_ads_rules_curated.ts](../lib/dijimagic/ai/docs/google_ads_rules_curated.ts) (satır 50-52) | AI danışman bilgisi: "offline import + CRM geri besleme" en iyi pratik olarak öneriliyor (kullanıcıya tavsiye metni — API çağrısı değil) |
 | [docs/google_ads_resmi_dokumanlari.md](google_ads_resmi_dokumanlari.md) (90, 261, 437, 556…) | Aynı bilgi tabanının kaynak dokümanı; GCLID/GBRAID/WBRAID saklama, hash formatı vb. |
 | [docs/hedef-kitle-ve-optimizasyon.md:93](hedef-kitle-ve-optimizasyon.md) | "Google Customer Match (CRM upload) arayüzü yok — istenirse ayrı, gerçek bir akış olarak eklenebilir" → **gelecek özellik adayı** |
 | [docs/google_search_wizard.md:265](google_search_wizard.md) | Lifecycle goals önkoşulu olarak Customer Match listelerine atıf (bilgi) |
@@ -80,7 +80,7 @@ POST https://datamanager.googleapis.com/v1/events:ingest
   "destinations": [{
     "operatingAccount": { "product": "GOOGLE_ADS", "accountId": "<customerId>" },
     "loginAccount":     { "product": "GOOGLE_ADS", "accountId": "<managerId>" },   // MCC üzerinden erişimde
-    "productDestinationId": "<conversionActionId>"   // YoAi'nin oluşturduğu conversion action
+    "productDestinationId": "<conversionActionId>"   // DijiMagic'in oluşturduğu conversion action
   }],
   "events": [{
     "transactionId": "<lead_id / order_id>",          // dedup anahtarı
@@ -158,7 +158,7 @@ conversion action, `sale` → "Satış" conversion action (+ değer). `spam/lost
       kök neden olmadan "başarılı" yazılmaz — gerçek API yanıtı loglanır).
 - [ ] **TODO-DM-7:** Gelecek Customer Match (Hedef Kitle) özelliği yazılırsa
       `audienceMembers:ingest` kullan — `OfflineUserDataJobService` YASAK (aynı deprecation hattı).
-- [ ] **TODO-DM-8 (opsiyonel, danışman metni):** `lib/yoai/ai/docs/google_ads_rules_curated.ts`
+- [ ] **TODO-DM-8 (opsiyonel, danışman metni):** `lib/dijimagic/ai/docs/google_ads_rules_curated.ts`
       + `docs/google_ads_resmi_dokumanlari.md` offline import anlatımına "API ile gönderim
       artık Data Manager API üzerinden" notu ekle (yalnız metin; AI engine koduna dokunma).
 

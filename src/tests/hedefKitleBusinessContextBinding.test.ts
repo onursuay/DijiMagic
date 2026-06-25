@@ -13,8 +13,8 @@ import assert from 'assert'
 import {
   buildAudienceContextFromBusiness,
   type AudienceBusinessContextRuntime,
-} from '../../lib/yoai/audienceBusinessContext'
-import type { BusinessContext } from '../../lib/yoai/businessContextStore'
+} from '../../lib/dijimagic/audienceBusinessContext'
+import type { BusinessContext } from '../../lib/dijimagic/businessContextStore'
 
 let passed = 0
 let failed = 0

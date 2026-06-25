@@ -40,7 +40,7 @@
 - `generate.ts` prompt: her bölüm dolu, gerçek web sitesi tonunda, daha güçlü başlık/açıklama; footer + iletişim içeriği; daha fazla servis/özellik maddesi.
 
 ## Üretilen site etiketleri (i18n)
-Form/iletişim/footer etiketleri ÜRETİLEN SİTE dilinde — `deterministic.ts` `SiteLabels` sözlüğüne eklenir (YoAi UI i18n değil). TR + EN doldurulur; eksik dilde TR fallback.
+Form/iletişim/footer etiketleri ÜRETİLEN SİTE dilinde — `deterministic.ts` `SiteLabels` sözlüğüne eklenir (DijiMagic UI i18n değil). TR + EN doldurulur; eksik dilde TR fallback.
 
 ## Risk / kapsam
 - Render'a 2 client island (form + mobil menü) eklenir; gerisi mevcut yapıyı korur. Migration yok.

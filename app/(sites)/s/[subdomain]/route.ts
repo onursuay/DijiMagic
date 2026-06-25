@@ -51,8 +51,8 @@ export async function GET(
       lang: locale,
       fontHref: site.website.theme?.fontHref ?? null,
       mode: 'serve',
-      // MULTIPAGE nav: rewrite data-yoai-href="<slug>" → /s/<subdomain>[/<slug>].
-      // Landing (single-page) html has no data-yoai-href → no-op. Custom-domain
+      // MULTIPAGE nav: rewrite data-dijimagic-href="<slug>" → /s/<subdomain>[/<slug>].
+      // Landing (single-page) html has no data-dijimagic-href → no-op. Custom-domain
       // base differs (root vs /s/<sub>) — see lib/website/codegen TODO; subdomain
       // serving is the reliable path implemented here.
       linkBase: `/s/${params.subdomain}`,
@@ -60,7 +60,7 @@ export async function GET(
       // SLUG-SET-AWARE: nav links to a page that does not exist resolve to the
       // home base (/s/<sub>) instead of 404ing on /s/<sub>/<missing-slug>.
       knownSlugs: collectKnownSlugs(site),
-      // CONTACT FORM: <form data-yoai-form> POSTs to this same-origin lead path
+      // CONTACT FORM: <form data-dijimagic-form> POSTs to this same-origin lead path
       // (connect-src 'self' + form-action 'self' allow it). The runtime reads it.
       formActionBase: `/s/${params.subdomain}/lead`,
     })

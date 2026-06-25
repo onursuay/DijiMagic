@@ -10,7 +10,7 @@
 
 `meta-ads-analyzer` reposu **uygulama kodu değil**, bir **uzmanlık bilgi paketidir**: Claude için bir skill (`skill/SKILL.md` + 9 referans doküman) + bir MCP server config örneği + token script'leri. Reponun gerçek değeri, Meta Ads performansını **doğru teşhis etmeyi** öğreten analiz çerçevesidir (Breakdown Effect, marjinal vs. ortalama CPA, learning phase, auction dinamikleri, pacing, ad relevance tanıları).
 
-YoAi'de Meta kampanyalarını analiz edip öneri üreten **dört AI motoru** var. Bu motorlar şu an bu çerçeveye sahip değil — örneğin "yüksek ortalama CPA'lı segmenti durdur" gibi Breakdown Effect hatasına düşebiliyorlar. Bu reponun bilgisini damıtıp **tek bir paylaşılan Türkçe bilgi dokümanı** olarak bu dört motorun AI prompt'larına enjekte ederek, öneri kalitesini Meta'nın sistem mekaniğiyle hizalamak hedefleniyor.
+DijiMagic'de Meta kampanyalarını analiz edip öneri üreten **dört AI motoru** var. Bu motorlar şu an bu çerçeveye sahip değil — örneğin "yüksek ortalama CPA'lı segmenti durdur" gibi Breakdown Effect hatasına düşebiliyorlar. Bu reponun bilgisini damıtıp **tek bir paylaşılan Türkçe bilgi dokümanı** olarak bu dört motorun AI prompt'larına enjekte ederek, öneri kalitesini Meta'nın sistem mekaniğiyle hizalamak hedefleniyor.
 
 **Hedef:** Reponun bilgisini **maksimum değerle** kullanmak — özü eksiksiz damıtmak, dört motora da Meta-only olarak bağlamak, Meta/Google API ve publish altyapısına **hiç dokunmamak**.
 
@@ -19,13 +19,13 @@ YoAi'de Meta kampanyalarını analiz edip öneri üreten **dört AI motoru** var
 ## 2. Kapsam
 
 ### Dahil (4 üretim motoru — hepsi Meta-only enjeksiyon)
-1. **YoAlgoritma** — hiyerarşik kampanya analizi + geliştirme kartları (aktif ana yol + per-ad + legacy). `perCampaignAgent.ts` / `perAdAgent.ts` bu prompt kuruculara delege ettiği için otomatik kapsanır.
+1. **DijiAlgoritma** — hiyerarşik kampanya analizi + geliştirme kartları (aktif ana yol + per-ad + legacy). `perCampaignAgent.ts` / `perAdAgent.ts` bu prompt kuruculara delege ettiği için otomatik kapsanır.
 2. **Optimizasyon (Meta)** — kampanya sorun taraması + AI öneri üretimi
 3. **Strateji** — pazarlama blueprint üretimi
-4. **YoAi sohbet — yalnız KREATİF kategoriler** — `buildGenerationPrompt`'ta yalnız `ad_copy`, `social_media`, `landing_page` kategorilerine **kreatif-alaka alt-kümesi** enjekte edilir (tam teşhis dokümanı DEĞİL). SEO makale / e-posta / slogan / ürün açıklaması kategorilerine **eklenmez** (performans teşhisi kopya yazımına değer katmaz, gürültü olur). Komuta merkezi/analiz sohbeti zaten 1. motor (YoAlgoritma) ile kapsanır.
+4. **DijiMagic sohbet — yalnız KREATİF kategoriler** — `buildGenerationPrompt`'ta yalnız `ad_copy`, `social_media`, `landing_page` kategorilerine **kreatif-alaka alt-kümesi** enjekte edilir (tam teşhis dokümanı DEĞİL). SEO makale / e-posta / slogan / ürün açıklaması kategorilerine **eklenmez** (performans teşhisi kopya yazımına değer katmaz, gürültü olur). Komuta merkezi/analiz sohbeti zaten 1. motor (DijiAlgoritma) ile kapsanır.
 
 ### Hariç (kapsam dışı — gerekçeli)
-- **MCP server** (`mcp/mcp.json.example`, `npx meta-ads-mcp`): Claude Code dev aracını Meta API'ye bağlar; YoAi'nin kendi Meta entegrasyonu (`lib/meta/*`) zaten var. Ürüne girmez.
+- **MCP server** (`mcp/mcp.json.example`, `npx meta-ads-mcp`): Claude Code dev aracını Meta API'ye bağlar; DijiMagic'in kendi Meta entegrasyonu (`lib/meta/*`) zaten var. Ürüne girmez.
 - **Token script'leri** (`scripts/setup.sh`, `scripts/refresh_token.sh`): MCP'ye bağlı, dev aracı.
 - **İngilizce metrik adlandırma tablosu** + ABD-yasal terimler ("Accounts Center accounts", "person") + "Meta'ya göre…" kaynak-belirtme dili: Proje kurallarıyla (sade Türkçe, ham enum yok, kaynak belirtme yasağı) çelişir → **alınmaz**.
 
@@ -76,26 +76,26 @@ Tek dosyada toplanacak Türkçe küratörlü bilgi. 9 referans dokümanın **tam
 ## 4. Mimari
 
 ### 4.1 Tek kaynak (DRY)
-Yeni dosya: **`lib/yoai/ai/docs/meta_analysis_knowledge.ts`** — iki export:
+Yeni dosya: **`lib/dijimagic/ai/docs/meta_analysis_knowledge.ts`** — iki export:
 - `export const META_ANALYSIS_KNOWLEDGE = \`...\`` — **tam** teşhis dokümanı (backtick template string), 3 analiz motoru için. `meta_ad_rules_curated.ts` ile birebir aynı kalıp.
 - `export const META_CREATIVE_PRINCIPLES = \`...\`` — **kreatif-alaka alt-kümesi**, yalnız sohbet kreatif kategorileri için (bkz. §3).
-- Bu dizin, projede AI küratörlü bilgi dokümanlarının yerleşik evi olduğu için seçildi (`*_rules_curated.ts` kardeşi). Modüller (lib/yoai, lib/meta, lib/strategy) buradan import eder — string sabit olduğu için katman ihlali sorun değil.
+- Bu dizin, projede AI küratörlü bilgi dokümanlarının yerleşik evi olduğu için seçildi (`*_rules_curated.ts` kardeşi). Modüller (lib/dijimagic, lib/meta, lib/strategy) buradan import eder — string sabit olduğu için katman ihlali sorun değil.
 - (İsteğe bağlı) ufak yardımcı: `export const metaAnalysisBlock = () => ({ type: 'text', text: META_ANALYSIS_KNOWLEDGE, cache_control: { type: 'ephemeral' as const } })` — cached block ekleyen motorlar için tek satırlık kullanım.
 
 ### 4.2 Enjeksiyon noktaları (hepsi Meta-only)
 
 | # | Modül | Dosya / fonksiyon | Yöntem |
 |---|---|---|---|
-| 1 | YoAlgoritma (aktif ana yol) | `lib/yoai/ai/perCampaignPrompt.ts` → `buildPerCampaignSystemBlocks(platform, …)` | `if (platform === 'Meta')` → blocks dizisine ek cached block |
-| 2 | YoAlgoritma (per-ad) | `lib/yoai/ai/perAdPrompt.ts` → `buildPerAdSystemBlocks(platform, …)` | aynı Meta-only cached block |
-| 3 | YoAlgoritma (legacy/account-wide) | `lib/yoai/ai/systemPrompt.ts` → `buildSystemBlocks(platform)` | aynı Meta-only cached block |
+| 1 | DijiAlgoritma (aktif ana yol) | `lib/dijimagic/ai/perCampaignPrompt.ts` → `buildPerCampaignSystemBlocks(platform, …)` | `if (platform === 'Meta')` → blocks dizisine ek cached block |
+| 2 | DijiAlgoritma (per-ad) | `lib/dijimagic/ai/perAdPrompt.ts` → `buildPerAdSystemBlocks(platform, …)` | aynı Meta-only cached block |
+| 3 | DijiAlgoritma (legacy/account-wide) | `lib/dijimagic/ai/systemPrompt.ts` → `buildSystemBlocks(platform)` | aynı Meta-only cached block |
 | 4 | Optimizasyon (Meta) | `lib/meta/optimization/aiRecommender.ts` → `generateWithAI()` | `systemPrompt` string'inin **sonuna** `META_ANALYSIS_KNOWLEDGE` eklenir |
 | 5 | Strateji | `lib/strategy/ai-generator.ts` → `SYSTEM_PROMPT` | string sonuna `META_ANALYSIS_KNOWLEDGE` eklenir |
-| 6 | YoAi sohbet (kreatif) | `lib/yoai/prompts.ts` → `buildGenerationPrompt(category, params)` | yalnız `ad_copy`, `social_media`, `landing_page` kategorilerinde prompt sonuna **`META_CREATIVE_PRINCIPLES`** (alt-küme) eklenir. `seo_article`, `email_marketing`, `product_description`, `slogan` → **eklenmez** |
+| 6 | DijiMagic sohbet (kreatif) | `lib/dijimagic/prompts.ts` → `buildGenerationPrompt(category, params)` | yalnız `ad_copy`, `social_media`, `landing_page` kategorilerinde prompt sonuna **`META_CREATIVE_PRINCIPLES`** (alt-küme) eklenir. `seo_article`, `email_marketing`, `product_description`, `slogan` → **eklenmez** |
 
 **Notlar:**
-- `lib/strategy/claude.ts` (`strategyClaudeText`) ve `app/api/yoai/chat/route.ts` (POST) yalnız **transport** katmanı — bunlara dokunulmaz; enjeksiyon yukarı akıştaki prompt kurucularında yapılır.
-- `app/api/yoai/command-center/route.ts` salt-okunur veri döndürür — AI prompt yok; üretim yukarı akışta (YoAlgoritma) zaten kapsanır.
+- `lib/strategy/claude.ts` (`strategyClaudeText`) ve `app/api/dijimagic/chat/route.ts` (POST) yalnız **transport** katmanı — bunlara dokunulmaz; enjeksiyon yukarı akıştaki prompt kurucularında yapılır.
+- `app/api/dijimagic/command-center/route.ts` salt-okunur veri döndürür — AI prompt yok; üretim yukarı akışta (DijiAlgoritma) zaten kapsanır.
 - Strateji ve sohbet "shared" yollar; ama bilgi Meta'ya özgü olduğu için: Strateji'de SYSTEM_PROMPT zaten Meta/Google ortak bir stratejisti tanımlıyor — Meta bilgisi eklemek Google üretimini bozmaz (yalnız Meta muhakemesini zenginleştirir); yine de mümkünse platform bağlamına göre koşullu eklenir. Sohbette yalnız Meta kategorileri hedeflenir.
 
 ---
@@ -106,7 +106,7 @@ CLAUDE.md "Meta & Google Ads API / Altyapı Koruması" ve `feedback_no_touch_met
 - `lib/meta/*` ve `lib/google/*` **veri çekiciler, insight normalizasyon, change-set, publish** akışları — hiçbiri değişmez.
 - Bu işte yalnız **prompt string'leri / system block dizileri** zenginleşir. Veri akışı, fetch, şema, enum, publish **aynen kalır.**
 - `aiRecommender.ts`'de yalnız `systemPrompt` metni uzatılır; `generateWithAI`'nin veri girişi, çıkış parsing'i, `Recommendation[]` şeması **değişmez.**
-- Çıktı JSON şemaları (YoAlgoritma 4 seviyeli çıktı, optimizasyon recommendation) **değişmez.**
+- Çıktı JSON şemaları (DijiAlgoritma 4 seviyeli çıktı, optimizasyon recommendation) **değişmez.**
 
 ---
 
@@ -124,7 +124,7 @@ CLAUDE.md "Meta & Google Ads API / Altyapı Koruması" ve `feedback_no_touch_met
 1. **Tip/derleme:** `npx tsc --noEmit` (veya proje type-check script'i) — yeni import'lar ve dokunulan dosyalar temiz derlenmeli.
 2. **Lint:** Dokunulan dosyalarda lint hatası olmamalı.
 3. **Statik doğrulama:** Her enjeksiyon noktasında bilgi bloğunun yalnız Meta yolunda eklendiğini (Google yolunda eklenmediğini) kodla doğrula.
-4. **Davranışsal (mümkünse):** YoAlgoritma per-campaign için bir Meta kampanyasıyla üretim çalıştırıp önerilerin Breakdown Effect'e aykırı ("yüksek ortalama CPA segmentini kapat") tavsiye **vermediğini** kontrol et. (Canlı veri/gerçek hesap gerektirir; yoksa prompt birleştirme çıktısını manuel incele.)
+4. **Davranışsal (mümkünse):** DijiAlgoritma per-campaign için bir Meta kampanyasıyla üretim çalıştırıp önerilerin Breakdown Effect'e aykırı ("yüksek ortalama CPA segmentini kapat") tavsiye **vermediğini** kontrol et. (Canlı veri/gerçek hesap gerektirir; yoksa prompt birleştirme çıktısını manuel incele.)
 5. **Koruma kontrolü:** `lib/meta/*` ve `lib/google/*` içinde veri/fetch/publish satırlarının diff'te yer almadığını doğrula (yalnız prompt string'i değişmeli).
 
 ---
@@ -132,15 +132,15 @@ CLAUDE.md "Meta & Google Ads API / Altyapı Koruması" ve `feedback_no_touch_met
 ## 8. Etkilenen Dosyalar
 
 **Yeni:**
-- `lib/yoai/ai/docs/meta_analysis_knowledge.ts`
+- `lib/dijimagic/ai/docs/meta_analysis_knowledge.ts`
 
 **Değişen (yalnız prompt/sistem-blok katmanı):**
-- `lib/yoai/ai/perCampaignPrompt.ts`
-- `lib/yoai/ai/perAdPrompt.ts`
-- `lib/yoai/ai/systemPrompt.ts`
+- `lib/dijimagic/ai/perCampaignPrompt.ts`
+- `lib/dijimagic/ai/perAdPrompt.ts`
+- `lib/dijimagic/ai/systemPrompt.ts`
 - `lib/meta/optimization/aiRecommender.ts`
 - `lib/strategy/ai-generator.ts`
-- `lib/yoai/prompts.ts`
+- `lib/dijimagic/prompts.ts`
 
 **Dokümantasyon:**
 - `docs/CHANGELOG.md` (giriş eklenir)
@@ -153,7 +153,7 @@ CLAUDE.md "Meta & Google Ads API / Altyapı Koruması" ve `feedback_no_touch_met
 
 - **Sohbet kategori eşlemesi (ÇÖZÜLDÜ):** `buildGenerationPrompt` bir içerik üretim aracı. Kreatif alt-küme (`META_CREATIVE_PRINCIPLES`) yalnız `ad_copy` + `social_media` + `landing_page`'e eklenir; `seo_article` / `email_marketing` / `product_description` / `slogan` hariç.
 - **Ek analiz yüzeyleri (DOĞRULANDI):** `synthesisEngine.ts`, `campaignTypeIntelligence.ts`, `platformDoctrineStore.ts` deterministiktir (Claude prompt'u yok) → enjeksiyon noktası değil. `perCampaignAgent.ts` / `perAdAgent.ts` zaten `buildPer*SystemBlocks`'a delege eder → 1./2. satırlarla otomatik kapsanır, ayrı iş yok.
-- **Transport katmanları (DOĞRULANDI):** `lib/strategy/claude.ts`, `app/api/yoai/chat/route.ts` POST, `command-center/route.ts` → dokunulmaz; enjeksiyon yukarı akış prompt kuruculardadır.
+- **Transport katmanları (DOĞRULANDI):** `lib/strategy/claude.ts`, `app/api/dijimagic/chat/route.ts` POST, `command-center/route.ts` → dokunulmaz; enjeksiyon yukarı akış prompt kuruculardadır.
 
 ## 10. İmplementasyonda Netleşecek (küçük tercihler)
 

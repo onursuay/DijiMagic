@@ -46,7 +46,7 @@ Tümü additive migration, RLS açık (mevcut tabloların RLS desenine uyumlu), 
 
 ### `social_projects`
 - `id uuid pk`, `user_id text/uuid` (mevcut tablolarla aynı tip), `business_scope text null`
-  (yoai_business_scope ile uyum; null = tüm hesaplar), `name text`, `color text` (hex etiket),
+  (dijimagic_business_scope ile uyum; null = tüm hesaplar), `name text`, `color text` (hex etiket),
   `status text` ('active'|'archived'), `created_at timestamptz`, `updated_at timestamptz`.
 
 ### `social_scheduled_posts` (çekirdek)

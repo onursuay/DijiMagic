@@ -1,7 +1,7 @@
 /**
- * YoAi Feature Access Map
+ * DijiMagic Feature Access Map
  *
- * Ücretli erişim gerektiren tüm YoAi alanları bu dosyada tek noktadan
+ * Ücretli erişim gerektiren tüm DijiMagic alanları bu dosyada tek noktadan
  * tanımlanır. Yeni bir özellik kredi veya abonelik gerektiriyorsa burada
  * kayıt edilir; UI tarafında `AccessRequiredModal` doğrudan bu kayıttan
  * besleneceği için yeni bir modal türü yazılmaz.
@@ -52,12 +52,12 @@ export const FEATURE_ACCESS: Record<string, FeatureAccessRule> = {
     description:
       'AI destekli strateji motorunu kullanmak için aktif bir abonelik planına sahip olmanız gerekir.',
   },
-  yoalgoritma: {
-    key: 'yoalgoritma',
-    label: 'YoAlgoritma',
+  dijialgoritma: {
+    key: 'dijialgoritma',
+    label: 'DijiAlgoritma',
     tier: 'subscription_required',
     description:
-      'YoAlgoritma komut merkezi ve AI önerileri için aktif bir abonelik planına sahip olmanız gerekir.',
+      'DijiAlgoritma komut merkezi ve AI önerileri için aktif bir abonelik planına sahip olmanız gerekir.',
   },
   seo: {
     key: 'seo',
@@ -131,12 +131,12 @@ export const FEATURE_ACCESS: Record<string, FeatureAccessRule> = {
     description:
       'Aylık strateji limitiniz doldu. Ek strateji oluşturmak için yeterli kredi bakiyesine sahip olmanız gerekir.',
   },
-  yoalgoritma_chat: {
-    key: 'yoalgoritma_chat',
-    label: 'YoAlgoritma Sohbet',
+  dijialgoritma_chat: {
+    key: 'dijialgoritma_chat',
+    label: 'DijiAlgoritma Sohbet',
     tier: 'credit_required',
     description:
-      'YoAlgoritma içerik üretimi için yeterli kredi bakiyesine sahip olmanız gerekir.',
+      'DijiAlgoritma içerik üretimi için yeterli kredi bakiyesine sahip olmanız gerekir.',
   },
   website_generation: {
     key: 'website_generation',

@@ -4,7 +4,7 @@
  * global.fetch monkey-patch: api.firecrawl.dev → Firecrawl; diğer URL → kaynak içerik.
  */
 import assert from 'assert'
-import { fetchOfficialAdsSource, type OfficialAdsSource } from '../../lib/yoai/officialAdsDocsRefresh'
+import { fetchOfficialAdsSource, type OfficialAdsSource } from '../../lib/dijimagic/officialAdsDocsRefresh'
 
 let passed = 0
 let failed = 0

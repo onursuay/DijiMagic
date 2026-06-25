@@ -11,7 +11,7 @@ import 'server-only'
  * of cross-business leaks: the legacy generate.ts always calls
  * getProfileByUserId / getIntelligenceByUserId (global, userId-scoped),
  * which can leak a DIFFERENT business's brand text when a multi-business user
- * (YOAI_PER_ACCOUNT_SCOPE) has an unrelated business as their global profile.
+ * (DIJIMAGIC_PER_ACCOUNT_SCOPE) has an unrelated business as their global profile.
  *
  * This module applies the correct scoping rule (see buildCodegenContext below):
  *   PRIMARY  → site-scoped referenceUrls scrape content (this site's own URLs)
@@ -27,7 +27,7 @@ import 'server-only'
  * a trusted-ish channel (the user's own intent), not wrapped as untrusted.
  */
 
-import { getProfileByUserId, getIntelligenceByUserId } from '@/lib/yoai/businessProfileStore'
+import { getProfileByUserId, getIntelligenceByUserId } from '@/lib/dijimagic/businessProfileStore'
 import { scanReferences } from '@/lib/website/referenceScanner'
 import { styleDirective } from '@/lib/website/render/theme'
 import type { Website } from '@/lib/website/types'
@@ -137,7 +137,7 @@ function summariseIntelligence(
  *
  * ── Source priority (cross-business-leak prevention) ─────────────────────
  * CLAUDE.md "SEO Makale Üretimi — Bağlam Kapsamı" documents a KRİTİK class
- * of cross-business leak bugs: when a multi-business user (YOAI_PER_ACCOUNT_SCOPE)
+ * of cross-business leak bugs: when a multi-business user (DIJIMAGIC_PER_ACCOUNT_SCOPE)
  * has a DIFFERENT business registered as their global profile, global
  * getProfileByUserId / getIntelligenceByUserId would leak that other business's
  * brand text into THIS site's generation context.

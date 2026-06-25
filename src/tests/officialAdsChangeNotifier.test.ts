@@ -6,8 +6,8 @@ import assert from 'assert'
 import {
   buildOfficialAdsChangeEmail,
   notifyOwnerOfficialAdsChanges,
-} from '../../lib/yoai/officialAdsChangeNotifier'
-import type { RefreshResult } from '../../lib/yoai/officialAdsDocsRefresh'
+} from '../../lib/dijimagic/officialAdsChangeNotifier'
+import type { RefreshResult } from '../../lib/dijimagic/officialAdsDocsRefresh'
 
 let passed = 0
 let failed = 0

@@ -1,6 +1,6 @@
 #!/usr/bin/env node
 /**
- * YoAlgoritma — Per-Ad Improvement Cards Migration Uygulayıcı
+ * DijiAlgoritma — Per-Ad Improvement Cards Migration Uygulayıcı
  *
  * Uygular:
  *   1. 20260520000000_create_ai_ad_improvements.sql

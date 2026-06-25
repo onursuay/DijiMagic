@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 # ──────────────────────────────────────────────────────────
-# YoAi Beyin — Yerel toplama + güvenli push sarmalayıcı (launchd buradan çağrılır)
+# DijiMagic Beyin — Yerel toplama + güvenli push sarmalayıcı (launchd buradan çağrılır)
 #
 # 1) collect-outcomes.mjs → _learnings/_data/latest.json (anonim agrega)
 # 2) secret-scan.sh → sır deseni varsa DUR

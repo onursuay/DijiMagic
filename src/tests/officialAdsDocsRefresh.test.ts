@@ -17,7 +17,7 @@ import {
   runOfficialAdsDocsRefresh,
   type OfficialAdsSource,
   type FetchResult,
-} from '../../lib/yoai/officialAdsDocsRefresh'
+} from '../../lib/dijimagic/officialAdsDocsRefresh'
 
 // ── Test runner ───────────────────────────────────────────────────────────────
 

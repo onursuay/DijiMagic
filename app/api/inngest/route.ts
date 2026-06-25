@@ -6,9 +6,9 @@
 
 import { serve } from 'inngest/next'
 import { inngest } from '@/inngest/client'
-import { yoalgoritmaScanUser } from '@/inngest/functions/yoalgoritmaScan'
-import { yoalgoritmaPerAdImprovements } from '@/inngest/functions/perAdImprovements'
-import { yoalgoritmaPerCampaignImprovements } from '@/inngest/functions/perCampaignImprovements'
+import { dijialgoritmaScanUser } from '@/inngest/functions/dijialgoritmaScan'
+import { dijialgoritmaPerAdImprovements } from '@/inngest/functions/perAdImprovements'
+import { dijialgoritmaPerCampaignImprovements } from '@/inngest/functions/perCampaignImprovements'
 import { brandIngestionUser } from '@/inngest/functions/brandIngestion'
 import { seoArticleGeneratePublish } from '@/inngest/functions/seoArticleRun'
 import { strategyRunJobs } from '@/inngest/functions/strategyRunJobs'
@@ -21,9 +21,9 @@ export const maxDuration = 120
 export const { GET, POST, PUT } = serve({
   client: inngest,
   functions: [
-    yoalgoritmaScanUser,
-    yoalgoritmaPerAdImprovements,        // Faz 2 — paralel korunur (deprecate sonra)
-    yoalgoritmaPerCampaignImprovements,  // Faz 3 — hiyerarşik kartlar (aktif)
+    dijialgoritmaScanUser,
+    dijialgoritmaPerAdImprovements,        // Faz 2 — paralel korunur (deprecate sonra)
+    dijialgoritmaPerCampaignImprovements,  // Faz 3 — hiyerarşik kartlar (aktif)
     brandIngestionUser,
     seoArticleGeneratePublish,           // SEO — otomatik günlük makale üret+yayınla
     strategyRunJobs,                     // Strateji — kuyruktaki işleri arka planda çalıştır

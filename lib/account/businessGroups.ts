@@ -1,5 +1,5 @@
 /* ──────────────────────────────────────────────────────────
-   İşletme Gruplama (YoAlgoritma per-account — Faz 3.4)
+   İşletme Gruplama (DijiAlgoritma per-account — Faz 3.4)
 
    Kullanıcının kayıtlı Meta + Google reklam hesaplarını "işletme"
    birimlerine gruplar. Bir işletme = isim olarak eşleşen bir Meta
@@ -11,8 +11,8 @@
    server (scope çözümleme) tarafından import edilebilir.
    ────────────────────────────────────────────────────────── */
 
-/** Server-side scope cookie adı — POST /api/yoai/business-scope yazar. */
-export const BUSINESS_SCOPE_COOKIE = 'yoai_business_scope'
+/** Server-side scope cookie adı — POST /api/dijimagic/business-scope yazar. */
+export const BUSINESS_SCOPE_COOKIE = 'dijimagic_business_scope'
 
 export interface MetaAccountRef {
   accountId: string

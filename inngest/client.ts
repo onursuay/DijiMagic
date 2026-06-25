@@ -1,7 +1,7 @@
 /* ──────────────────────────────────────────────────────────
    Inngest Client (singleton)
 
-   Faz 2: YoAlgoritma AI Engine için durable agentic loop.
+   Faz 2: DijiAlgoritma AI Engine için durable agentic loop.
    Vercel cron 300s sınırına takılmamak için fan-out + per-account
    Inngest event'leri kullanılır.
 
@@ -12,8 +12,8 @@
 import { Inngest } from 'inngest'
 
 export const inngest = new Inngest({
-  id: 'yoai-ai-engine',
-  name: 'YoAi AI Engine',
+  id: 'dijimagic-ai-engine',
+  name: 'DijiMagic AI Engine',
 })
 
 export function isInngestReady(): boolean {

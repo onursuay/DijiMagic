@@ -1,6 +1,6 @@
 #!/usr/bin/env node
 /**
- * YoAlgoritma — Hiyerarşik Geliştirme Tabloları Migration Uygulayıcı (Faz 3)
+ * DijiAlgoritma — Hiyerarşik Geliştirme Tabloları Migration Uygulayıcı (Faz 3)
  *
  * Uygular:
  *   1. 20260520010000_create_hierarchical_improvements.sql

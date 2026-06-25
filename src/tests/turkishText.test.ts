@@ -3,7 +3,7 @@
  * Çalıştırma: npx tsx src/tests/turkishText.test.ts
  */
 import assert from 'assert'
-import { normalizeTrLower, cityIncludes } from '../../lib/yoai/turkishText'
+import { normalizeTrLower, cityIncludes } from '../../lib/dijimagic/turkishText'
 
 let passed = 0
 let failed = 0

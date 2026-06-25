@@ -1,6 +1,6 @@
 import type { MetadataRoute } from 'next'
 
-const BASE_URL = 'https://yoai.yodijital.com'
+const BASE_URL = 'https://dijimagic.com'
 
 /** Public, crawlable pages (marketing + legal). App/dashboard routes excluded. */
 const PUBLIC_PATHS = [

@@ -12,7 +12,7 @@ import {
  * gösterilen kök .htaccess düzeltmesi. Literal sunucu yapılandırması — i18n'e
  * taşınmaz (çevrilmez), yalnız etrafındaki etiketler çevrilir.
  */
-const HTACCESS_SNIPPET = `# YoAi — Authorization başlığını PHP'ye ilet
+const HTACCESS_SNIPPET = `# DijiMagic — Authorization başlığını PHP'ye ilet
 CGIPassAuth On
 
 # Alternatif (Apache mod_rewrite):

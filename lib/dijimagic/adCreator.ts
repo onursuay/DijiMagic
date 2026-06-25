@@ -1,0 +1,782 @@
+/* ──────────────────────────────────────────────────────────
+   AI Ad Creator — v4 (Objective-Aware Decision Engine)
+
+   Karar motoru mantığı:
+   1. Kullanıcının aktif reklamlarını oku
+   2. Her reklamın kampanya amacını tespit et
+   3. Alt parametreleri analiz et (dönüşüm hedefi, teklif, hedefleme, lokasyon, bütçe, kreatif)
+   4. Platform çalışma mantığıyla kıyasla: "Bu amaç için doğru kurulmuş mu?"
+   5. Mevcut reklam uygunluk analizi çıkar (güçlü/zayıf alanlar)
+   6. Aynı kampanya amacına karşılık gelen daha güçlü AI kampanya yapısı öner
+   ────────────────────────────────────────────────────────── */
+
+import { claudeText, isClaudeReady } from '@/lib/anthropic/text'
+import type { DeepCampaignInsight, Platform, StructuralIssue } from './analysisTypes'
+import type { UserAdProfile, CompetitorComparison, CompetitorAd } from './competitorAnalyzer'
+import { getDoctrineMap } from './platformDoctrineStore'
+import {
+  normalizeCampaignType,
+  buildCampaignTypeContext,
+} from './campaignTypeIntelligence'
+import type { CampaignSynthesisPackage } from './synthesisTypes'
+import { buildSynthesisContextForPrompt } from './synthesisEngine'
+import type { MultiAiDecisionDeskResult } from './multiAiTypes'
+import { getEmptyCompetitorMessage } from './competitorDisplay'
+import { getApprovedKnowledgeByPlatform } from './officialAdsKnowledgeStore'
+import type { OfficialAdsKnowledgeItem } from './officialAdsKnowledgeStore'
+import { applyPolicyGuardToProposals } from './proposalPolicyGuard'
+import type { PolicyViolationDetail } from './proposalPolicyGuard'
+import type { CampaignIntentProfile } from './campaignIntentEngine'
+import { formatIntentForPrompt } from './campaignIntentEngine'
+import type { CompetitorQueryPlan } from './competitorQueryExpander'
+
+/* ── Types ── */
+
+// Analysis of a single active campaign against its objective
+export interface CampaignFitAnalysis {
+  campaignId: string
+  campaignName: string
+  platform: Platform
+  objective: string
+  objectiveLabel: string
+  // Fit assessment
+  fitScore: number // 0-100: how well the campaign is set up for its objective
+  strengths: string[]
+  weaknesses: string[]
+  // Current parameters
+  currentParams: {
+    destination?: string
+    optimizationGoal?: string
+    biddingStrategy?: string
+    dailyBudget: number | null
+    adsetCount: number
+    adCount: number
+    ctr: number
+    cpc: number
+    conversions: number
+    roas: number | null
+    spend: number
+  }
+  // Optimization suggestions for THIS campaign
+  optimizationSuggestions: string[]
+}
+
+// Full AI campaign proposal (same objective, better structure)
+export interface FullAdProposal {
+  id: string
+  platform: Platform
+  // Which existing campaign this improves upon
+  sourceCampaignId?: string
+  sourceCampaignName?: string
+  proposalType: 'optimization' | 'new_campaign' // optimization = same objective improvement, new = new objective suggestion
+  // Campaign level
+  campaignName: string
+  campaignObjective: string
+  objectiveLabel: string
+  dailyBudget: number
+  // Ad Set / Ad Group level
+  adsetName: string
+  targetingDescription: string
+  /** Yapısal hedefleme — yayına GERÇEKTEN taşınır (önizleme = yayın pariteleri). */
+  targeting?: {
+    locations?: string[]   // insan-okur lokasyon adları (ülke/şehir)
+    ageMin?: number
+    ageMax?: number
+    genders?: string[]     // 'all' | 'male' | 'female'
+    interests?: string[]   // ilgi alanı adları (Meta — şu an fuzzy çözüm artık)
+  }
+  optimizationGoal?: string
+  destinationType?: string
+  biddingStrategy?: string
+  /** Google kanal türü (SEARCH/DISPLAY/PERFORMANCE_MAX/SHOPPING/VIDEO/DEMAND_GEN). */
+  advertisingChannelType?: string
+  // Ad level
+  adName: string
+  primaryText: string
+  headline: string
+  description: string
+  callToAction: string
+  // Google RSA
+  headlines?: string[]
+  descriptions?: string[]
+  finalUrl?: string
+  keywords?: string[]
+  // Decision context
+  reasoning: string           // why this structure was chosen
+  competitorInsight: string   // what competitors do differently
+  expectedPerformance: string // expected CTR, CPC
+  confidence: number          // 0-100
+  impactLevel: 'critical' | 'high' | 'medium' | 'low' // real impact based on source campaign health
+  isNewObjective: boolean
+  // What was analyzed to produce this
+  analyzedParameters: string[] // list of parameters that were considered
+  suggestedChanges: string[]   // specific changes vs current setup
+  // Policy Guard (Faz B) — geriye uyumlu, opsiyonel
+  policyStatus?: 'publishable' | 'review_required' | 'rejected'
+  policyViolations?: PolicyViolationDetail[]
+  policySummary?: string
+  // Proposal Engine versiyonu — eski snapshot'ları legacy olarak işaretlemek için
+  engineVersion?: string
+}
+
+export interface AdCreationResult {
+  fitAnalyses: CampaignFitAnalysis[]
+  proposals: FullAdProposal[]
+  summary: {
+    totalCampaignsAnalyzed: number
+    criticalIssues: number
+    opportunities: number
+    proposalsGenerated: number
+    metaCount: number
+    googleCount: number
+  }
+  aiGenerated: boolean
+  error?: string
+  _debug?: any
+}
+
+/* ── Platform Knowledge (inline — references docs/*.md) ── */
+
+const META_OBJECTIVE_KNOWLEDGE: Record<string, {
+  label: string
+  purpose: string
+  bestDestinations: string[]
+  bestOptGoals: string[]
+  idealCTAs: string[]
+  minBudget: number
+  ctrBenchmark: number
+  keyMetrics: string[]
+}> = {
+  OUTCOME_TRAFFIC: {
+    label: 'Trafik',
+    purpose: 'Web sitesine veya uygulamaya trafik çekmek',
+    bestDestinations: ['WEBSITE', 'APP'],
+    bestOptGoals: ['LANDING_PAGE_VIEWS', 'LINK_CLICKS'],
+    idealCTAs: ['LEARN_MORE', 'SHOP_NOW'],
+    minBudget: 35, ctrBenchmark: 1.5,
+    keyMetrics: ['CTR', 'CPC', 'Landing Page Views'],
+  },
+  OUTCOME_AWARENESS: {
+    label: 'Bilinirlik',
+    purpose: 'Markanızın bilinirliğini artırmak',
+    bestDestinations: ['WEBSITE'],
+    bestOptGoals: ['REACH', 'IMPRESSIONS', 'AD_RECALL_LIFT'],
+    idealCTAs: ['LEARN_MORE'],
+    minBudget: 100, ctrBenchmark: 0.5,
+    keyMetrics: ['Reach', 'Frequency', 'CPM', 'Ad Recall Lift'],
+  },
+  OUTCOME_ENGAGEMENT: {
+    label: 'Etkileşim',
+    purpose: 'Beğeni, yorum, paylaşım veya mesaj etkileşimi',
+    bestDestinations: ['ON_PAGE', 'WEBSITE'],
+    bestOptGoals: ['POST_ENGAGEMENT', 'CONVERSATIONS', 'REPLIES', 'THRUPLAY'],
+    idealCTAs: ['SEND_MESSAGE', 'LEARN_MORE'],
+    minBudget: 35, ctrBenchmark: 1.0,
+    keyMetrics: ['Engagement', 'Conversations', 'Replies', 'CTR'],
+  },
+  OUTCOME_LEADS: {
+    label: 'Potansiyel Müşteri',
+    purpose: 'Lead form veya mesaj ile potansiyel müşteri toplamak',
+    bestDestinations: ['ON_AD', 'WHATSAPP', 'WEBSITE'],
+    bestOptGoals: ['LEAD_GENERATION', 'OFFSITE_CONVERSIONS', 'REPLIES'],
+    idealCTAs: ['SIGN_UP', 'GET_OFFER', 'CONTACT_US', 'SEND_MESSAGE'],
+    minBudget: 50, ctrBenchmark: 1.0,
+    keyMetrics: ['Leads', 'CPL', 'Conversion Rate'],
+  },
+  OUTCOME_SALES: {
+    label: 'Satış',
+    purpose: 'Online satış ve dönüşüm optimize etmek',
+    bestDestinations: ['WEBSITE', 'CATALOG'],
+    bestOptGoals: ['OFFSITE_CONVERSIONS', 'VALUE'],
+    idealCTAs: ['SHOP_NOW', 'GET_OFFER', 'BOOK_NOW'],
+    minBudget: 75, ctrBenchmark: 1.0,
+    keyMetrics: ['ROAS', 'Purchases', 'CPA', 'Conversion Value'],
+  },
+  OUTCOME_APP_PROMOTION: {
+    label: 'Uygulama Tanıtımı',
+    purpose: 'Uygulama yükleme ve etkileşim',
+    bestDestinations: ['APP'],
+    bestOptGoals: ['APP_INSTALLS', 'OFFSITE_CONVERSIONS'],
+    idealCTAs: ['INSTALL_MOBILE_APP', 'USE_APP'],
+    minBudget: 50, ctrBenchmark: 1.0,
+    keyMetrics: ['Installs', 'CPI', 'App Events'],
+  },
+}
+
+const GOOGLE_TYPE_KNOWLEDGE: Record<string, {
+  label: string
+  purpose: string
+  bestBidding: string[]
+  biddingUpgradePath: string
+  minBudget: number
+  ctrBenchmark: number
+  keyMetrics: string[]
+}> = {
+  SEARCH: {
+    label: 'Arama',
+    purpose: 'Google aramalarında metin reklamları ile aktif niyetli kullanıcılara ulaşmak',
+    bestBidding: ['MAXIMIZE_CLICKS', 'MAXIMIZE_CONVERSIONS', 'TARGET_CPA'],
+    biddingUpgradePath: 'MAXIMIZE_CLICKS → MAXIMIZE_CONVERSIONS (15+ dönüşüm) → TARGET_CPA (30+ dönüşüm)',
+    minBudget: 50, ctrBenchmark: 3.0,
+    keyMetrics: ['CTR', 'CPC', 'Quality Score', 'Impression Share', 'Conversions'],
+  },
+  DISPLAY: {
+    label: 'Görüntülü Reklam',
+    purpose: 'Web sitelerinde görsel reklamlar ile geniş kitleye ulaşmak veya retargeting',
+    bestBidding: ['MAXIMIZE_CLICKS', 'MAXIMIZE_CONVERSIONS', 'TARGET_CPA'],
+    biddingUpgradePath: 'MAXIMIZE_CLICKS → MAXIMIZE_CONVERSIONS → TARGET_CPA',
+    minBudget: 30, ctrBenchmark: 0.5,
+    keyMetrics: ['Impressions', 'CTR', 'Conversions', 'View-through Conversions'],
+  },
+  VIDEO: {
+    label: 'Video',
+    purpose: 'YouTube video reklamları ile marka bilinirliği ve etkileşim',
+    bestBidding: ['MAXIMIZE_CLICKS', 'TARGET_CPM'],
+    biddingUpgradePath: 'TARGET_CPM (bilinirlik) → MAXIMIZE_CONVERSIONS (performans)',
+    minBudget: 30, ctrBenchmark: 0.5,
+    keyMetrics: ['Views', 'View Rate', 'CPV', 'Watch Time'],
+  },
+  PERFORMANCE_MAX: {
+    label: 'Maksimum Performans',
+    purpose: 'Tüm Google kanallarında (Arama, Display, YouTube, Gmail, Maps) otomatik optimizasyon',
+    bestBidding: ['MAXIMIZE_CONVERSIONS', 'MAXIMIZE_CONVERSION_VALUE', 'TARGET_ROAS'],
+    biddingUpgradePath: 'MAXIMIZE_CONVERSIONS → TARGET_ROAS (50+ dönüşüm)',
+    minBudget: 75, ctrBenchmark: 1.0,
+    keyMetrics: ['Conversions', 'ROAS', 'Conversion Value', 'CPA'],
+  },
+  SHOPPING: {
+    label: 'Alışveriş',
+    purpose: 'Ürün listeleme reklamları ile e-ticaret satışları',
+    bestBidding: ['MAXIMIZE_CLICKS', 'TARGET_ROAS'],
+    biddingUpgradePath: 'MAXIMIZE_CLICKS → TARGET_ROAS',
+    minBudget: 50, ctrBenchmark: 1.0,
+    keyMetrics: ['ROAS', 'Clicks', 'Conversions', 'Impression Share'],
+  },
+  DEMAND_GEN: {
+    label: 'Talep Oluşturma',
+    purpose: 'YouTube, Gmail ve Discover üzerinden talep oluşturma',
+    bestBidding: ['MAXIMIZE_CLICKS', 'MAXIMIZE_CONVERSIONS'],
+    biddingUpgradePath: 'MAXIMIZE_CLICKS → MAXIMIZE_CONVERSIONS',
+    minBudget: 50, ctrBenchmark: 0.5,
+    keyMetrics: ['Clicks', 'Conversions', 'CTR', 'Engagement'],
+  },
+}
+
+/* ── Fit Analysis (deterministic) ── */
+function analyzeCampaignFit(campaign: DeepCampaignInsight): CampaignFitAnalysis {
+  const isGoogle = campaign.platform === 'Google'
+  const objKey = campaign.objective
+  const metaKnowledge = META_OBJECTIVE_KNOWLEDGE[objKey]
+  const googleKnowledge = GOOGLE_TYPE_KNOWLEDGE[objKey]
+  const knowledge = isGoogle ? googleKnowledge : metaKnowledge
+
+  const label = knowledge?.label || objKey
+  const strengths: string[] = []
+  const weaknesses: string[] = []
+  const suggestions: string[] = []
+  let fitScore = 70 // start neutral
+
+  const ctr = campaign.metrics.ctr * 100
+  const cpc = campaign.metrics.cpc
+  const spend = campaign.metrics.spend
+  const conversions = campaign.metrics.conversions
+  const adsetCount = campaign.adsets.length
+  const adCount = campaign.adsets.reduce((s, as) => s + as.ads.length, 0)
+
+  // CTR analysis
+  const ctrBench = knowledge?.ctrBenchmark || 1.0
+  if (ctr > ctrBench * 1.5) { strengths.push(`CTR (%${ctr.toFixed(1)}) ortalamanın üzerinde`); fitScore += 10 }
+  else if (ctr < ctrBench * 0.5) { weaknesses.push(`CTR (%${ctr.toFixed(1)}) çok düşük`); fitScore -= 15; suggestions.push('Reklam metinlerini ve kreatifleri yenileyin') }
+
+  // Budget analysis
+  const minBudget = knowledge?.minBudget || 35
+  if (campaign.dailyBudget != null && campaign.dailyBudget < minBudget) {
+    weaknesses.push(`Bütçe (₺${campaign.dailyBudget.toFixed(0)}) minimum ₺${minBudget} altında`)
+    fitScore -= 10
+    suggestions.push(`Günlük bütçeyi en az ₺${minBudget} yapın`)
+  }
+
+  // Adset/ad diversity
+  if (adsetCount === 1 && spend > 100) { weaknesses.push('Tek reklam seti — A/B test yok'); fitScore -= 5; suggestions.push('2-3 farklı reklam seti oluşturun') }
+  if (adsetCount >= 2) { strengths.push(`${adsetCount} reklam seti ile test yapılıyor`); fitScore += 5 }
+
+  // Meta-specific checks
+  if (!isGoogle && metaKnowledge) {
+    const triple = campaign.triple
+    if (triple) {
+      // Destination check
+      if (metaKnowledge.bestDestinations.length > 0 && !metaKnowledge.bestDestinations.includes(triple.destination)) {
+        weaknesses.push(`Dönüşüm hedefi (${triple.destination}) bu amaç için ideal değil`)
+        fitScore -= 10
+        suggestions.push(`Dönüşüm hedefini ${metaKnowledge.bestDestinations.join(' veya ')} olarak değiştirin`)
+      } else if (triple.destination) {
+        strengths.push(`Dönüşüm hedefi (${triple.destination}) uygun`)
+      }
+
+      // Optimization goal check
+      if (metaKnowledge.bestOptGoals.length > 0 && !metaKnowledge.bestOptGoals.includes(triple.optimizationGoal)) {
+        weaknesses.push(`Optimizasyon hedefi (${triple.optimizationGoal}) bu amaç için optimal değil`)
+        fitScore -= 10
+        suggestions.push(`Optimizasyon hedefini ${metaKnowledge.bestOptGoals[0]} olarak değerlendirin`)
+      }
+    }
+
+    // Frequency check
+    const freq = campaign.metrics.frequency || 0
+    if (freq > 4) { weaknesses.push(`Frequency (${freq.toFixed(1)}) yüksek — reklam yorgunluğu riski`); fitScore -= 10; suggestions.push('Hedef kitleyi genişletin veya yeni kreatif ekleyin') }
+  }
+
+  // Google-specific checks
+  if (isGoogle && googleKnowledge) {
+    const bidding = campaign.biddingStrategy || ''
+    if (bidding.includes('TARGET_SPEND') || bidding.includes('MAXIMIZE_CLICKS')) {
+      if (conversions >= 15) {
+        weaknesses.push('Yeterli dönüşüm var ama hala tıklama odaklı teklif stratejisi')
+        fitScore -= 10
+        suggestions.push('MAXIMIZE_CONVERSIONS teklif stratejisine geçin')
+      }
+    }
+    if (bidding.includes('TARGET_CPA') && conversions < 15) {
+      weaknesses.push('TARGET_CPA için yeterli dönüşüm verisi yok')
+      fitScore -= 10
+      suggestions.push('MAXIMIZE_CONVERSIONS stratejisine düşün')
+    }
+
+    // Opt score
+    if (campaign.optimizationScore != null && campaign.optimizationScore < 50) {
+      weaknesses.push(`Google optimizasyon puanı düşük (%${campaign.optimizationScore.toFixed(0)})`)
+      suggestions.push('Google önerilerini inceleyin')
+    }
+  }
+
+  // ROAS check for sales/conversion objectives
+  if (['OUTCOME_SALES', 'SHOPPING', 'PERFORMANCE_MAX'].includes(objKey)) {
+    if (campaign.metrics.roas != null) {
+      if (campaign.metrics.roas < 1) { weaknesses.push(`ROAS (${campaign.metrics.roas.toFixed(1)}x) 1x altında — zarar`); fitScore -= 15 }
+      else if (campaign.metrics.roas >= 3) { strengths.push(`ROAS (${campaign.metrics.roas.toFixed(1)}x) güçlü`); fitScore += 10 }
+    }
+  }
+
+  // Conversions check
+  if (spend > 200 && conversions < 1) { weaknesses.push('Yüksek harcama, sıfır dönüşüm'); fitScore -= 20; suggestions.push('Dönüşüm takibini kontrol edin') }
+
+  fitScore = Math.max(0, Math.min(100, fitScore))
+
+  return {
+    campaignId: campaign.id,
+    campaignName: campaign.campaignName,
+    platform: campaign.platform,
+    objective: objKey,
+    objectiveLabel: label,
+    fitScore,
+    strengths,
+    weaknesses,
+    currentParams: {
+      destination: campaign.triple?.destination,
+      optimizationGoal: campaign.triple?.optimizationGoal,
+      biddingStrategy: campaign.biddingStrategy,
+      dailyBudget: campaign.dailyBudget,
+      adsetCount,
+      adCount,
+      ctr, cpc, conversions,
+      roas: campaign.metrics.roas,
+      spend,
+    },
+    optimizationSuggestions: suggestions,
+  }
+}
+
+/* ── Build AI Prompt ── */
+function buildPrompt(
+  platform: Platform,
+  fitAnalyses: CampaignFitAnalysis[],
+  userProfile: UserAdProfile,
+  comparison: CompetitorComparison,
+  competitorAds: CompetitorAd[],
+  structuralIssues?: StructuralIssue[],
+  /** Faz 1: kampanya türü başına DB-driven doctrine summary'leri. */
+  doctrineSummariesByCampaignId?: Record<string, string>,
+  /** Faz 2: dijimagic_competitor_insights'tan okunmuş kalıcı rakip içgörü özeti. */
+  persistedCompetitorContext?: string | null,
+  /** Faz 3: Synthesis Engine paketleri (campaign_id → package). */
+  synthesisPackagesByCampaignId?: Record<string, CampaignSynthesisPackage>,
+  /** Faz 4: Multi-AI Decision Desk sonuçları (campaign_id → desk result). */
+  decisionDeskResultsByCampaignId?: Record<string, MultiAiDecisionDeskResult>,
+  /** Faz A: Official Ads Knowledge Base'den yüklenen onaylı bilgi özeti (opsiyonel). */
+  officialKnowledgeContext?: string | null,
+  /** Intent Engine: campaign_id → CampaignIntentProfile. */
+  intentProfilesByCampaignId?: Record<string, CampaignIntentProfile>,
+  /** Competitor Query Expander: campaign_id → platform-specific query plan. */
+  competitorQueryPlansByCampaignId?: Record<string, CompetitorQueryPlan>,
+  /** Business Intelligence Profile — kullanıcı işletmesi için zorunlu bağlam. */
+  businessContextPromptBlock?: string | null,
+): { system: string; user: string } {
+  const isGoogle = platform === 'Google'
+  const knowledge = isGoogle ? GOOGLE_TYPE_KNOWLEDGE : META_OBJECTIVE_KNOWLEDGE
+
+  const intentInstruction = intentProfilesByCampaignId && Object.keys(intentProfilesByCampaignId).length > 0
+    ? `\nKAMPANYA INTENT KURALLARI:
+- Her kampanya için KAMPANYA INTENT bloğu verilmişse onu BİRİNCİL içerik kaynağı say.
+- "service_or_product" alanını başlık ve açıklama metninde spesifik olarak kullan.
+- "target_audience" alanını hedefleme ve reklam tonunda yansıt.
+- "conversion_goal" alanına uygun CTA seç.
+- Jenerik başlıklar kesinlikle üretme: "Sitemizi Ziyaret Edin", "Hemen Tıklayın",
+  "Reklamımızı Ziyaret Edin" gibi ifadeler yasak.
+- Intent confidence < 40 ise landing page + mevcut reklam metnine dayalı öneri üret.\n`
+    : ''
+
+  const system = `Sen DijiMagic karar motorusun. Kullanıcının aktif reklamlarını analiz ettin.
+Her kampanyanın AYNI AMACINA karşılık gelen daha güçlü AI kampanya yapısı önereceksin.
+
+KRİTİK KURALLAR:
+- Kampanya amacını DEĞİŞTİRME. Etkileşim ise Etkileşim öner, Trafik ise Trafik öner.
+- Mevcut kampanyanın zayıf yönlerini düzeltilmiş haliyle öner.
+- Platform çalışma mantığını kullan.
+- Kampanya türünün DOCTRINE'ına sadık kal: required_assets, success_metrics, failure_signals,
+  bidding_principles ve creative_principles ile uyumlu öneri üret.
+- Her öneri tam yapı: kampanya + reklam seti + reklam + dönüşüm hedefi + teklif stratejisi.
+- Türkçe reklam metinleri.
+- "SYNTHESIS" bloğu varsa onu BİRİNCİL bağlam kabul et: mainProblem ve forbidden hareketleri
+  ihlal etme. Rakip içgörüsü "yok" ise rakip uydurma.
+- Meta Traffic kampanyasından Sales/Engagement, Meta Engagement'tan Lead/Sales,
+  Meta Message'tan web traffic önerisi üretme. Google Search'ten Display kreatif,
+  Google Display'de Search keyword expansion ana öneri yapma.${intentInstruction}
+
+PLATFORM BİLGİSİ:
+${Object.entries(knowledge).map(([key, k]) => {
+  if (isGoogle) {
+    const gk = k as typeof GOOGLE_TYPE_KNOWLEDGE[string]
+    return `${key} (${gk.label}): ${gk.purpose}. Teklif: ${gk.bestBidding.join(', ')}. Geçiş: ${gk.biddingUpgradePath}. Min bütçe: ₺${gk.minBudget}.`
+  } else {
+    const mk = k as typeof META_OBJECTIVE_KNOWLEDGE[string]
+    return `${key} (${mk.label}): ${mk.purpose}. Destinasyonlar: ${mk.bestDestinations.join(', ')}. Opt hedefler: ${mk.bestOptGoals.join(', ')}. CTA: ${mk.idealCTAs.join(', ')}. Min bütçe: ₺${mk.minBudget}.`
+  }
+}).join('\n')}
+${officialKnowledgeContext ? `\nRESMİ BİLGİ TABANI (DB):\n${officialKnowledgeContext}\n` : ''}
+JSON formatında yanıt ver:
+{
+  "proposals": [
+    {
+      "id": "proposal_1",
+      "platform": "${platform}",
+      "sourceCampaignId": "mevcut kampanya id",
+      "sourceCampaignName": "mevcut kampanya adı",
+      "proposalType": "optimization",
+      "campaignName": "Önerilen kampanya adı",
+      "campaignObjective": "AYNI_OBJECTIVE",
+      "objectiveLabel": "Türkçe etiket",
+      "dailyBudget": 50,
+      "adsetName": "Reklam seti adı",
+      "targetingDescription": "Hedefleme detayı",
+      ${isGoogle ? `"biddingStrategy": "UYGUN_STRATEJİ",
+      "headlines": ["B1", "B2", "B3", "B4", "B5"],
+      "descriptions": ["A1", "A2"],
+      "finalUrl": "https://...",
+      "keywords": ["k1", "k2"],` : `"optimizationGoal": "UYGUN_HEDEF",
+      "destinationType": "UYGUN_DESTINATION",
+      "callToAction": "UYGUN_CTA",`}
+      "adName": "Reklam adı",
+      "primaryText": "Reklam metni",
+      "headline": "Başlık",
+      "description": "Açıklama",
+      "reasoning": "Bu yapı neden daha güçlü — mevcut zayıflıklara göre açıkla",
+      "competitorInsight": "Rakip karşılaştırma",
+      "expectedPerformance": "Beklenen CTR, CPC",
+      "confidence": 80,
+      "isNewObjective": false,
+      "analyzedParameters": ["dönüşüm hedefi", "teklif stratejisi", "bütçe", "hedefleme", "kreatif"],
+      "suggestedChanges": ["Dönüşüm hedefi X→Y", "Teklif stratejisi A→B"]
+    }
+  ]
+}`
+
+  const analysisDetails = fitAnalyses.map(fa => {
+    const doctrineLine = doctrineSummariesByCampaignId?.[fa.campaignId]
+    const synthesisPkg = synthesisPackagesByCampaignId?.[fa.campaignId]
+    const synthesisBlock = synthesisPkg
+      ? `\n  ${buildSynthesisContextForPrompt(synthesisPkg).replace(/\n/g, '\n  ')}`
+      : ''
+    const deskResult = decisionDeskResultsByCampaignId?.[fa.campaignId]
+    const deskBlock = deskResult?.decisionContextForPrompt
+      ? `\n  DECISION DESK:\n  ${deskResult.decisionContextForPrompt.replace(/\n/g, '\n  ')}`
+      : ''
+    const intentProfile = intentProfilesByCampaignId?.[fa.campaignId]
+    const intentBlock = intentProfile
+      ? `\n${formatIntentForPrompt(intentProfile)}`
+      : ''
+    const queryPlan = competitorQueryPlansByCampaignId?.[fa.campaignId]
+    const queryPlanBlock = queryPlan && queryPlan.primary_queries.length > 0
+      ? `\n  RAKİP SORGU PLANI (${queryPlan.platform.toUpperCase()}, güven:${queryPlan.confidence}%): ` +
+        [...queryPlan.primary_queries.slice(0, 3), ...queryPlan.secondary_queries.slice(0, 2)].join(' | ')
+      : ''
+    return `[${fa.objectiveLabel}] ${fa.campaignName} (ID: ${fa.campaignId})
+  Uygunluk: ${fa.fitScore}/100
+  Güçlü: ${fa.strengths.join(', ') || 'yok'}
+  Zayıf: ${fa.weaknesses.join(', ') || 'yok'}
+  Mevcut: Bütçe ₺${fa.currentParams.dailyBudget?.toFixed(0) || '?'} | ${fa.currentParams.adsetCount} set ${fa.currentParams.adCount} reklam | CTR %${fa.currentParams.ctr.toFixed(1)} | CPC ₺${fa.currentParams.cpc.toFixed(2)} | Dönüşüm ${fa.currentParams.conversions}
+  ${fa.currentParams.destination ? `Dönüşüm hedefi: ${fa.currentParams.destination}` : ''}
+  ${fa.currentParams.optimizationGoal ? `Opt hedef: ${fa.currentParams.optimizationGoal}` : ''}
+  ${fa.currentParams.biddingStrategy ? `Teklif: ${fa.currentParams.biddingStrategy}` : ''}
+  Öneriler: ${fa.optimizationSuggestions.join('; ') || 'yok'}${doctrineLine ? `\n  DOCTRINE:\n  ${doctrineLine.replace(/\n/g, '\n  ')}` : ''}${synthesisBlock}${deskBlock}${intentBlock}${queryPlanBlock}`
+  }).join('\n\n')
+
+  const compTexts = competitorAds.slice(0, 5).map((a, i) => `${i + 1}. [${a.pageName}] "${a.body?.slice(0, 80) || a.title || ''}"`).join('\n')
+
+  // Faz 2 (additive): kalıcı rakip içgörü context'i — sadece varsa append et,
+  // mevcut rakip akışını override etmez.
+  const persistedBlock = persistedCompetitorContext
+    ? `\n\nKALICI RAKİP İÇGÖRÜSÜ (DB):\n${persistedCompetitorContext}`
+    : ''
+
+  const user = `KAMPANYA ANALİZLERİ:
+${analysisDetails}
+
+RAKİP KARŞILAŞTIRMA:
+${comparison.competitorSummary || 'Rakip verisi yok'}
+
+RAKİP REKLAMLARI:
+${compTexts || 'Yok'}${persistedBlock}
+
+${businessContextPromptBlock ? `\n${businessContextPromptBlock}\n` : ''}
+GÖREV: Her kampanya için AYNI amaca karşılık gelen daha güçlü AI kampanya yapısı öner.
+${fitAnalyses.length} öneri bekleniyor.`
+
+  return { system, user }
+}
+
+/* ── Call AI (Claude — tek sağlayıcı) ── */
+async function callAI(system: string, user: string): Promise<{ content: string | null; error?: string }> {
+  if (!isClaudeReady()) {
+    return { content: null, error: 'ANTHROPIC_API_KEY not set' }
+  }
+
+  const content = await claudeText({
+    system,
+    user: `${user}\n\nSADECE geçerli bir JSON objesi döndür (kod bloğu/açıklama ekleme).`,
+    maxTokens: 16000,
+    temperature: 0.6,
+    timeoutMs: 90000,
+  })
+
+  if (!content) {
+    return { content: null, error: 'Claude content=null veya hata (log: [claude])' }
+  }
+  return { content }
+}
+
+/* ── Main Entry ── */
+export async function generateFullAutoProposals(
+  platform: Platform,
+  userProfile: UserAdProfile,
+  comparison: CompetitorComparison,
+  competitorAds: CompetitorAd[],
+  campaigns: DeepCampaignInsight[],
+  structuralIssues?: StructuralIssue[],
+  /** Faz 2: dijimagic_competitor_insights'tan okunan kalıcı rakip içgörü özeti (opsiyonel). */
+  persistedCompetitorContext?: string | null,
+  /** Faz 3: Synthesis Engine paketleri — varsa prompt'a additive olarak eklenir. */
+  synthesisPackagesByCampaignId?: Record<string, CampaignSynthesisPackage>,
+  /** Faz 4: Multi-AI Decision Desk sonuçları — varsa prompt'a additive olarak eklenir. */
+  decisionDeskResultsByCampaignId?: Record<string, MultiAiDecisionDeskResult>,
+  /** Intent Engine: campaign_id → CampaignIntentProfile. */
+  intentProfilesByCampaignId?: Record<string, CampaignIntentProfile>,
+  /** Competitor Query Expander: campaign_id → platform-specific query plan (platform izolasyonu garantili). */
+  competitorQueryPlansByCampaignId?: Record<string, CompetitorQueryPlan>,
+  /** Business Intelligence Profile prompt block — kullanıcı işletmesi için ortak bağlam. */
+  businessContextPromptBlock?: string | null,
+): Promise<AdCreationResult> {
+  // 1. Filter active campaigns for this platform
+  const activeCampaigns = campaigns.filter(c =>
+    c.platform === platform && (c.status === 'ACTIVE' || c.status === 'ENABLED')
+  )
+
+  if (activeCampaigns.length === 0) {
+    return {
+      fitAnalyses: [], proposals: [],
+      summary: { totalCampaignsAnalyzed: 0, criticalIssues: 0, opportunities: 0, proposalsGenerated: 0, metaCount: 0, googleCount: 0 },
+      aiGenerated: false, error: `${platform} platformunda aktif kampanya bulunamadı`,
+    }
+  }
+
+  // 2. Run deterministic fit analysis for each campaign
+  const fitAnalyses = activeCampaigns.map(analyzeCampaignFit)
+
+  // 2b. Faz 1: Doctrine summaries (DB-driven, fallback'lı). Hata durumunda boş objeyle devam.
+  const doctrineSummariesByCampaignId: Record<string, string> = {}
+  try {
+    const doctrineMap = await getDoctrineMap()
+    for (const c of activeCampaigns) {
+      const normalized = normalizeCampaignType(c)
+      const doctrine = doctrineMap[normalized.campaignType] || null
+      const ctx = buildCampaignTypeContext(c, doctrine)
+      if (ctx.promptSummary) {
+        doctrineSummariesByCampaignId[c.id] = ctx.promptSummary
+      }
+    }
+  } catch (e) {
+    console.warn('[AdCreator] doctrine summaries fetch failed (non-fatal):', e)
+  }
+
+  // 2c. Faz A: Official Ads Knowledge Base — DB'den onaylı bilgi yükle; hata durumunda null ile devam.
+  let officialKnowledgeContext: string | null = null
+  let knowledgeItemsForGuard: OfficialAdsKnowledgeItem[] = []
+  try {
+    const dbKnowledge = await getApprovedKnowledgeByPlatform(
+      platform === 'Google' ? 'google' : 'meta',
+    )
+    knowledgeItemsForGuard = dbKnowledge
+    if (dbKnowledge.length > 0) {
+      const lines = dbKnowledge
+        .filter(item => item.summary)
+        .map(item => `[${item.normalized_key}] ${item.summary}`)
+      if (lines.length > 0) {
+        officialKnowledgeContext = lines.join('\n')
+      }
+    }
+  } catch (e) {
+    console.warn('[AdCreator] officialAdsKnowledge load failed (non-fatal):', e)
+  }
+
+  // 3. Call AI in batches of 3 to avoid timeout (7 campaigns = 3+3+1 batches)
+  const BATCH_SIZE = 3
+  let proposals: FullAdProposal[] = []
+  let aiGenerated = false
+  let aiError: string | undefined
+
+  for (let batchStart = 0; batchStart < fitAnalyses.length; batchStart += BATCH_SIZE) {
+    const batch = fitAnalyses.slice(batchStart, batchStart + BATCH_SIZE)
+    const batchNum = Math.floor(batchStart / BATCH_SIZE) + 1
+    const totalBatches = Math.ceil(fitAnalyses.length / BATCH_SIZE)
+
+    console.log(`[AdCreator] ${platform}: batch ${batchNum}/${totalBatches} — ${batch.length} campaigns`)
+    const { system, user: userPrompt } = buildPrompt(
+      platform,
+      batch,
+      userProfile,
+      comparison,
+      competitorAds,
+      structuralIssues,
+      doctrineSummariesByCampaignId,
+      persistedCompetitorContext,
+      synthesisPackagesByCampaignId,
+      decisionDeskResultsByCampaignId,
+      officialKnowledgeContext,
+      intentProfilesByCampaignId,
+      competitorQueryPlansByCampaignId,
+      businessContextPromptBlock,
+    )
+    const aiResult = await callAI(system, userPrompt)
+
+    if (aiResult.error) {
+      console.error(`[AdCreator] ${platform} batch ${batchNum} error: ${aiResult.error}`)
+      aiError = aiResult.error
+      continue // Skip failed batch, try next
+    }
+
+    if (aiResult.content) {
+      try {
+        // Claude bazen JSON'u kod bloğu/önek metinle döndürebilir — toleranslı ayıkla.
+        const raw = aiResult.content
+        const fence = raw.match(/```(?:json)?\s*([\s\S]*?)```/i)
+        const candidate = fence ? fence[1] : raw
+        const jStart = candidate.indexOf('{')
+        const jEnd = candidate.lastIndexOf('}')
+        const jsonText = jStart !== -1 && jEnd !== -1 && jEnd > jStart
+          ? candidate.slice(jStart, jEnd + 1)
+          : candidate
+        const parsed = JSON.parse(jsonText)
+        const rawProposals = Array.isArray(parsed.proposals) ? parsed.proposals : []
+        const batchProposals = rawProposals
+          .filter((p: any) => p != null && typeof p === 'object')
+          .map((p: FullAdProposal, i: number) => {
+            const sourceFit = batch.find(fa => fa.campaignId === p.sourceCampaignId)
+            let impactLevel: 'critical' | 'high' | 'medium' | 'low' = 'medium'
+            if (sourceFit) {
+              const fs = sourceFit.fitScore
+              const wc = sourceFit.weaknesses?.length ?? 0
+              if (fs < 30 || wc >= 4) impactLevel = 'critical'
+              else if (fs < 50 || wc >= 3) impactLevel = 'high'
+              else if (fs < 70 || wc >= 1) impactLevel = 'medium'
+              else impactLevel = 'low'
+            }
+            // HARD GUARD: rakip verisi yoksa competitorInsight'ı AI'nın yazdığı metinden al,
+            // sessizce hallucination yapmasın. Gerçek veri yoksa platform doğru kaynak adıyla söyle.
+            // persistedCompetitorContext varsa AI prompt'ta zaten beslendi — boş mesaj verme.
+            const hasCompetitorData = competitorAds.length > 0 || !!persistedCompetitorContext
+            const emptyCompetitorMsg = getEmptyCompetitorMessage(platform)
+            const competitorInsight = hasCompetitorData
+              ? (p.competitorInsight || 'Rakip verisi değerlendirildi.')
+              : emptyCompetitorMsg
+
+            return {
+              ...p,
+              id: p.id || `proposal_${platform.toLowerCase()}_${batchStart + i + 1}`,
+              platform,
+              proposalType: p.proposalType || 'optimization',
+              impactLevel,
+              isNewObjective: p.isNewObjective || false,
+              analyzedParameters: p.analyzedParameters || [],
+              suggestedChanges: p.suggestedChanges || [],
+              competitorInsight,
+              engineVersion: 'dijialgoritma-intelligence-v4',
+            }
+          })
+        proposals.push(...batchProposals)
+        aiGenerated = true
+        console.log(`[AdCreator] ${platform} batch ${batchNum}: ${batchProposals.length} proposals`)
+      } catch (e) {
+        console.error(`[AdCreator] ${platform} batch ${batchNum} parse error:`, e)
+        aiError = `Parse error in batch ${batchNum}`
+      }
+    }
+  }
+
+  console.log(`[AdCreator] ${platform}: total ${proposals.length} proposals from ${Math.ceil(fitAnalyses.length / BATCH_SIZE)} batches`)
+
+  // 3b. Faz B: Policy Guard — her proposal'ı platform kurallarına göre kontrol et
+  let policyRejectedCount = 0
+  let policyReviewRequiredCount = 0
+  try {
+    proposals = applyPolicyGuardToProposals(proposals, platform, knowledgeItemsForGuard)
+    policyRejectedCount = proposals.filter(p => p.policyStatus === 'rejected').length
+    policyReviewRequiredCount = proposals.filter(p => p.policyStatus === 'review_required').length
+    if (policyRejectedCount > 0 || policyReviewRequiredCount > 0) {
+      console.log(`[AdCreator] PolicyGuard: ${policyRejectedCount} rejected, ${policyReviewRequiredCount} review_required`)
+    }
+    // rejected önerileri proposals'tan çıkar — UI'ya düşmeyecek
+    proposals = proposals.filter(p => p.policyStatus !== 'rejected')
+  } catch (e) {
+    console.warn('[AdCreator] policyGuard failed (non-fatal):', e)
+  }
+
+  // 4. Build summary
+  const criticalIssues = fitAnalyses.filter(fa => fa.fitScore < 40).length
+  const opportunities = fitAnalyses.filter(fa => fa.weaknesses.length > 0).length
+
+  return {
+    fitAnalyses,
+    proposals,
+    summary: {
+      totalCampaignsAnalyzed: activeCampaigns.length,
+      criticalIssues,
+      opportunities,
+      proposalsGenerated: proposals.length,
+      metaCount: platform === 'Meta' ? proposals.length : 0,
+      googleCount: platform === 'Google' ? proposals.length : 0,
+    },
+    aiGenerated,
+    _debug: {
+      platform,
+      activeCampaignsFound: activeCampaigns.length,
+      fitAnalysesCount: fitAnalyses.length,
+      batches: Math.ceil(fitAnalyses.length / BATCH_SIZE),
+      aiError: aiError || null,
+      proposalsCount: proposals.length,
+      policyRejectedCount,
+      policyReviewRequiredCount,
+      competitorQueryPlansUsed: competitorQueryPlansByCampaignId
+        ? Object.keys(competitorQueryPlansByCampaignId).length
+        : 0,
+    },
+  }
+}

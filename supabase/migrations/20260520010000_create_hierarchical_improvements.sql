@@ -1,5 +1,5 @@
 -- ─────────────────────────────────────────────────────────────
--- YoAlgoritma — Hiyerarşik Geliştirme Tabloları (Faz 3)
+-- DijiAlgoritma — Hiyerarşik Geliştirme Tabloları (Faz 3)
 --
 -- Eski düz ai_ad_improvements (Faz 2) tablosu, hesap → kampanya →
 -- ad set → reklam hiyerarşisine bölünür:

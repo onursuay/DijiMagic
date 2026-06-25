@@ -3,7 +3,7 @@
 import { useTranslations, useLocale } from 'next-intl'
 import CircularProgress from '@/components/CircularProgress'
 import type { CampaignDetail } from '@/hooks/google/useGoogleCampaignDetail'
-import { translateEnum } from '@/lib/yoai/translations'
+import { translateEnum } from '@/lib/dijimagic/translations'
 
 const localeString = 'tr-TR'
 const fmtCurrency = (n: number) => n.toLocaleString(localeString, { minimumFractionDigits: 2, maximumFractionDigits: 2 })

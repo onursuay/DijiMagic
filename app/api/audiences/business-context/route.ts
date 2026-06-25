@@ -1,5 +1,5 @@
 /* ──────────────────────────────────────────────────────────
-   YoAi — Audience Business Context API
+   DijiMagic — Audience Business Context API
 
    Hedef Kitle UI'sı ve ileride bağlanacak AI persona generator
    için Business Intelligence Memory tabanlı runtime context'i
@@ -14,7 +14,7 @@
 import { NextResponse } from 'next/server'
 import { readUserId } from '@/lib/auth/userCookie'
 import { cookies } from 'next/headers'
-import { getAudienceBusinessContext } from '@/lib/yoai/audienceBusinessContext'
+import { getAudienceBusinessContext } from '@/lib/dijimagic/audienceBusinessContext'
 
 export const dynamic = 'force-dynamic'
 

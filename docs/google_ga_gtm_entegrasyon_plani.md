@@ -2,7 +2,7 @@
 
 > **Durum:** Planlama fazı (kod yazılmadı). Bu doküman Aşama 2'de implementasyon referansı olarak okunacaktır.
 > **Tarih:** 2026-05-20
-> **Kapsam:** GA4 ve GTM'in YoAi'ye OAuth tabanlı API entegrasyonu (Google OAuth uygulama doğrulaması / verification dahil).
+> **Kapsam:** GA4 ve GTM'in DijiMagic'e OAuth tabanlı API entegrasyonu (Google OAuth uygulama doğrulaması / verification dahil).
 > **Temel prensip:** Mevcut Meta (DB-first) ve Google Ads/GA/GSC pattern'leri **birebir** mirror edilir; yeni paradigma icat edilmez.
 
 ---
@@ -13,7 +13,7 @@ Keşif sonucu üç kritik gerçek belirledi; tüm plan bunların üzerine kurulu
 
 1. **GA4 sunucu-taraflı OAuth + raporlama ZATEN VAR ve çalışıyor.** `google_analytics_connections` tablosu, tam route ağacı (`start/callback/status/properties/select-property/reports/disconnect`), `lib/google-analytics/connectionStore.ts` + `service.ts` mevcut. Scope **salt-okunur** (`analytics.readonly`). GA4 için "sıfırdan kurulum" gerekmez — mevcut taban üzerine inşa edilir.
 2. **GTM kodu HİÇ YOK (greenfield).** `lib/google-tag-manager/**` yok, `app/api/integrations/google-tag-manager/**` yok, `ProviderKey`'de `google_tag_manager` yok, `tagmanager` scope/const yok. Tek eşleşmeler privacy policy metni ve bir scraper blocklist'i (fonksiyonel kod değil). GTM, GA/GSC üçlüsü kopyalanarak kurulur.
-3. **Hiçbir client-side ölçüm tag'i yok.** `gtag.js`, `dataLayer`, `GTM-XXXX` snippet'i repoda yok. Bu plan **OAuth API entegrasyonu** içindir (kullanıcının GA4 property'lerini / GTM container'larını YoAi adına okuma/yönetme), client-side measurement tagging için değil. Bu, "OAuth verification", "scope demo videosu", "data deletion" gereksinimleriyle ve son commit'lerle (`4342f6e` — privacy policy GA4/GTM bölümleri) tutarlıdır.
+3. **Hiçbir client-side ölçüm tag'i yok.** `gtag.js`, `dataLayer`, `GTM-XXXX` snippet'i repoda yok. Bu plan **OAuth API entegrasyonu** içindir (kullanıcının GA4 property'lerini / GTM container'larını DijiMagic adına okuma/yönetme), client-side measurement tagging için değil. Bu, "OAuth verification", "scope demo videosu", "data deletion" gereksinimleriyle ve son commit'lerle (`4342f6e` — privacy policy GA4/GTM bölümleri) tutarlıdır.
 
 **En kritik açık karar:** GA4 ve GTM **salt-okunur** mu kalacak yoksa **yazma/admin** yetkileri (property/container *oluşturma*, conversion/event *konfigürasyonu*) de istenecek mi? Görev tanımı "oluşturma" ve "ölçüm planı konfigürasyonu" dediği için yazma scope'ları ima ediliyor — bu, OAuth doğrulamasını ciddi ölçüde ağırlaştırır (restricted scope + güvenlik değerlendirmesi). Bkz. [§4](#4-oauth-scope-yönetimi) ve [Açık Sorular](#açık-sorular-implementasyon-öncesi).
 
@@ -473,5 +473,5 @@ Google verification için kaydedilecek akışlar:
 2. **GA4'ün zaten var olduğu netleşti mi?** GA4 salt-okunur OAuth + raporlama çalışıyor. "GA4 entegrasyonu" ile kastedilen (a) mevcudu doğrulama/cilalama mı, (b) yazma yetenekleri eklemek mi? (1. soruyla bağlantılı.)
 3. **Tek tablo vs ayrı tablo:** §3'te **ayrı tablo (Seçenek B)** öneriliyor. Onaylıyor musun, yoksa birleşik tablo (refactor riskiyle) mi istiyorsun?
 4. **Verification zaman çizelgesi:** OAuth verification (ve restricted scope seçilirse güvenlik değerlendirmesi) haftalar sürebilir. Faz 1 (salt-okunur, hafif verification) önce yayınlanıp Faz 2 paralel doğrulamaya mı girsin?
-5. **Client-side measurement tag'i kapsamda mı?** Bu plan OAuth API entegrasyonu içindir. YoAi'nin **kendi** sitesine GA4/GTM ölçüm snippet'i koymak ayrı, çok daha küçük bir iştir — kapsamda mı, yoksa tamamen müşteri hesaplarını yönetme mi hedefleniyor?
+5. **Client-side measurement tag'i kapsamda mı?** Bu plan OAuth API entegrasyonu içindir. DijiMagic'in **kendi** sitesine GA4/GTM ölçüm snippet'i koymak ayrı, çok daha küçük bir iştir — kapsamda mı, yoksa tamamen müşteri hesaplarını yönetme mi hedefleniyor?
 6. **Migration hedefi:** Yeni GTM tablosu canonical **omddq**'ya uygulanacak (doğru mu?), ve migration'ı sen mi çalıştıracaksın (prod-risk-min tercihin gereği)?

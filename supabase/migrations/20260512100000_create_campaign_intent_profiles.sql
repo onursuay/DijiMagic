@@ -1,5 +1,5 @@
 -- ─────────────────────────────────────────────────────────────────────────────
--- YoAlgoritma — Campaign Intent Profiles (Campaign Intent Engine)
+-- DijiAlgoritma — Campaign Intent Profiles (Campaign Intent Engine)
 --
 -- Kampanya verilerinden çıkarılan iş bağlamı (intent) profillerini saklar.
 -- Her (user_id, platform, campaign_id) için tekil kayıt; 7 gün TTL.

@@ -8,8 +8,8 @@
  */
 
 import assert from 'assert'
-import { validateProposalPolicy } from '../../lib/yoai/proposalPolicyGuard'
-import type { FullAdProposal } from '../../lib/yoai/adCreator'
+import { validateProposalPolicy } from '../../lib/dijimagic/proposalPolicyGuard'
+import type { FullAdProposal } from '../../lib/dijimagic/adCreator'
 
 // ── Test helpers ──────────────────────────────────────────────────────────────
 

@@ -14,8 +14,8 @@
 
 import { NextResponse } from 'next/server'
 import { readUserId } from '@/lib/auth/userCookie'
-import { isWatchdogEnabled } from '@/lib/yoai/featureFlag'
-import { runWatchdogForUser } from '@/lib/yoai/watchdog/runWatchdog'
+import { isWatchdogEnabled } from '@/lib/dijimagic/featureFlag'
+import { runWatchdogForUser } from '@/lib/dijimagic/watchdog/runWatchdog'
 
 export const dynamic = 'force-dynamic'
 export const maxDuration = 300 // hesap başına salt-okuma API çağrıları — sıralı işlenir

@@ -8,7 +8,7 @@ import {
   Clock, RefreshCcw,
 } from 'lucide-react'
 import { useTranslations } from 'next-intl'
-import BusinessProfileOnboarding from '@/components/yoai/BusinessProfileOnboarding'
+import BusinessProfileOnboarding from '@/components/dijimagic/BusinessProfileOnboarding'
 
 // DB'de alt çizgili ve küçük harfli gelen sektör etiketlerini okunabilir yapar
 // "mesleki_belgelendirme" → "Mesleki Belgelendirme"
@@ -217,7 +217,7 @@ export default function IsletmeProfilPage() {
     setBrandRefreshing(true)
     setBrandRefreshMsg(null)
     try {
-      const res = await fetch('/api/yoai/business-profile/brand-refresh', { method: 'POST', credentials: 'include' })
+      const res = await fetch('/api/dijimagic/business-profile/brand-refresh', { method: 'POST', credentials: 'include' })
       const json = await res.json()
       setBrandRefreshMsg(json?.message || t('brandRefreshDefaultMsg'))
     } catch {
@@ -230,7 +230,7 @@ export default function IsletmeProfilPage() {
   const load = useCallback(async () => {
     setLoading(true)
     try {
-      const res = await fetch('/api/yoai/business-profile')
+      const res = await fetch('/api/dijimagic/business-profile')
       const json = await res.json()
       if (json.ok && json.data?.profile) {
         setProfile(json.data.profile)

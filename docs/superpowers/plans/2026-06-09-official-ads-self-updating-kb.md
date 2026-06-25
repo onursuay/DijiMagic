@@ -11,7 +11,7 @@
 ## FAZ B1 — Backend
 
 ### Task 1: AI Parser + versiyonlu/idempotent persist
-**Files:** Create `lib/yoai/officialAdsKnowledgeParser.ts`; Test `src/tests/officialAdsKnowledgeParser.test.ts`
+**Files:** Create `lib/dijimagic/officialAdsKnowledgeParser.ts`; Test `src/tests/officialAdsKnowledgeParser.test.ts`
 
 - `buildParserPrompt(snapshotText, source, existingApproved)` → ClaudeTextArgs (system+user). Katı direktifler: yalnız verilen metinden, Türkçe, ham enum yalnız rules_json, hepsi review_required.
 - `parseSnapshotToKnowledge({ normalizedText, source, existingApproved })` → `ParsedKnowledgeItem[]` (claudeJson çağrısı; isClaudeReady false → []).
@@ -19,12 +19,12 @@
 - Tests (claudeJson + supabase mock): çıkarım, boş items, versiyon artışı, idempotent skip, isClaudeReady false → [].
 
 ### Task 2: Firecrawl'ı fetch'e bağla
-**Files:** Modify `lib/yoai/officialAdsDocsRefresh.ts`; Test `src/tests/officialAdsFirecrawlFetch.test.ts`
+**Files:** Modify `lib/dijimagic/officialAdsDocsRefresh.ts`; Test `src/tests/officialAdsFirecrawlFetch.test.ts`
 - `fetchOfficialAdsSource`: `fetch_strategy ∈ {html, markdown}` ve `isFirecrawlReady()` → `scrapeSite(url)` markdown; null/throw → mevcut düz fetch. `rss/manual_review` değişmez.
 - Tests: Firecrawl yolu (markdown normalize+hash), Firecrawl null → fallback, rss düz fetch (regresyon).
 
 ### Task 3: Parser+email'i refresh akışına entegre (flag-gated)
-**Files:** Modify `lib/yoai/officialAdsDocsRefresh.ts`; Create `lib/yoai/officialAdsChangeNotifier.ts`; Test `src/tests/officialAdsRefreshParserIntegration.test.ts`
+**Files:** Modify `lib/dijimagic/officialAdsDocsRefresh.ts`; Create `lib/dijimagic/officialAdsChangeNotifier.ts`; Test `src/tests/officialAdsRefreshParserIntegration.test.ts`
 - Snapshot insert `parser_status:'pending'` + dönen id al; `OFFICIAL_ADS_AI_PARSER` açıksa parseSnapshotToKnowledge→persistKnowledgeDrafts; snapshot `parser_status:'success'/'failed'` + `created_items_count`. Hata job'ı patlatmaz.
 - Run sonunda `changedSources>0` ise `notifyOwnerOfficialAdsChanges(result)` (best-effort; SMTP env yoksa log).
 - Tests: flag-off → parser çağrılmaz (regresyon, snapshot eskisi gibi); flag-on → draft üretir + parser_status success; parser hata → failed, job devam.
@@ -34,13 +34,13 @@
 ## FAZ B2 — UI + Enjeksiyon
 
 ### Task 4: Onaylı bilgiyi analiz prompt'larına enjekte
-**Files:** Create `lib/yoai/ai/docs/officialKnowledgeBlock.ts`; Modify `lib/yoai/ai/systemPrompt.ts` + `lib/yoai/ai/perCampaignPrompt.ts`; Test `src/tests/officialKnowledgeBlock.test.ts`
+**Files:** Create `lib/dijimagic/ai/docs/officialKnowledgeBlock.ts`; Modify `lib/dijimagic/ai/systemPrompt.ts` + `lib/dijimagic/ai/perCampaignPrompt.ts`; Test `src/tests/officialKnowledgeBlock.test.ts`
 - `officialKnowledgeBlock(platform)` → onaylı item'leri kompakt metne render; ephemeral-cache system block; item yoksa boş. "GÜNCEL ONAYLI RESMİ BİLGİ" etiketli.
 - systemPrompt/perCampaignPrompt'a mevcut blokların yanına ekle (async pre-fetch).
 - Tests: item render, boş liste → boş blok, platform filtresi.
 
 ### Task 5: Karar store + onay endpoint'leri
-**Files:** Modify `lib/yoai/officialAdsKnowledgeStore.ts` (decision fns) ; Create `app/api/admin/gozetim-merkezi/official-ads/pending/route.ts` + `.../decision/route.ts`; Test `src/tests/officialAdsKnowledgeDecision.test.ts`
+**Files:** Modify `lib/dijimagic/officialAdsKnowledgeStore.ts` (decision fns) ; Create `app/api/admin/gozetim-merkezi/official-ads/pending/route.ts` + `.../decision/route.ts`; Test `src/tests/officialAdsKnowledgeDecision.test.ts`
 - `listPendingKnowledge()` (review_required + önceki onaylı versiyon diff için), `approveKnowledgeItem(id, byEmail)` (approved + önceki versiyon effective_to + clearCache), `rejectKnowledgeItem(id)` (deprecated).
 - Endpoint'ler super-admin guard (`getIsCurrentUserSuperAdmin`).
 - Tests (supabase mock): approve önceki versiyonu emekliye ayırır + cache temizler; reject deprecated; pending listesi.

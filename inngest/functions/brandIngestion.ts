@@ -15,12 +15,12 @@
    ────────────────────────────────────────────────────────── */
 
 import { inngest } from '../client'
-import { runBrandProfilePipeline } from '@/lib/yoai/brandProfilePipeline'
+import { runBrandProfilePipeline } from '@/lib/dijimagic/brandProfilePipeline'
 
 export const brandIngestionUser = inngest.createFunction(
   {
     id: 'brand-ingestion-user',
-    name: 'YoAlgoritma — Brand Intelligence Ingestion',
+    name: 'DijiAlgoritma — Brand Intelligence Ingestion',
     concurrency: { limit: 3 },
     retries: 2,
     triggers: [{ event: 'brand/ingest.user' }],

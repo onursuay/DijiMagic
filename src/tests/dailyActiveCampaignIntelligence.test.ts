@@ -10,9 +10,9 @@
 import assert from 'assert'
 import {
   runDailyActiveCampaignIntelligence,
-} from '../../lib/yoai/dailyActiveCampaignIntelligence'
-import type { DeepCampaignInsight } from '../../lib/yoai/analysisTypes'
-import type { PendingApprovalRecord } from '../../lib/yoai/approvalStore'
+} from '../../lib/dijimagic/dailyActiveCampaignIntelligence'
+import type { DeepCampaignInsight } from '../../lib/dijimagic/analysisTypes'
+import type { PendingApprovalRecord } from '../../lib/dijimagic/approvalStore'
 
 // ── Test helpers ──────────────────────────────────────────────────────────────
 

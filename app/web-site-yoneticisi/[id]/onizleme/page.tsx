@@ -12,7 +12,7 @@ import DictateButton from '@/components/website/DictateButton'
 import type { Website, WebsitePage } from '@/lib/website/types'
 
 type Device = 'desktop' | 'tablet' | 'mobile'
-/** Click-select payload posted by the in-iframe overlay (public/yoai-select.js). */
+/** Click-select payload posted by the in-iframe overlay (public/dijimagic-select.js). */
 type Selection = {
   blockId: string
   role: string
@@ -102,7 +102,7 @@ export default function WebsiteReviewPage() {
     return () => ro.disconnect()
   }, [pages.length, device])
 
-  // ── Edit overlay: listen for 'yoai:select' from the sandboxed preview iframe.
+  // ── Edit overlay: listen for 'dijimagic:select' from the sandboxed preview iframe.
   // SECURITY: only accept a message whose source is OUR iframe's contentWindow and
   // whose payload has the exact expected shape. The iframe stays sandboxed (no
   // allow-same-origin); selection is postMessage-only. Listener active in edit mode.
@@ -112,7 +112,7 @@ export default function WebsiteReviewPage() {
       const frame = iframeRef.current
       if (!frame || e.source !== frame.contentWindow) return
       const d = e.data
-      if (!d || typeof d !== 'object' || d.type !== 'yoai:select') return
+      if (!d || typeof d !== 'object' || d.type !== 'dijimagic:select') return
       if (typeof d.blockId !== 'string' || !/^b\d+$/.test(d.blockId)) return
       const rect = d.rect && typeof d.rect === 'object' ? d.rect : { top: 0, left: 0, width: 0, height: 0, bottom: 0, right: 0 }
       // Validate the optional image fields' SHAPE (same rigor as blockId): index a

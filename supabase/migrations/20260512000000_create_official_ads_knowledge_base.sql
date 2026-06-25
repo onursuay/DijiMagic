@@ -1,5 +1,5 @@
 -- ─────────────────────────────────────────────────────────────────────────────
--- YoAlgoritma — Official Ads Knowledge Base Foundation (Faz A)
+-- DijiAlgoritma — Official Ads Knowledge Base Foundation (Faz A)
 --
 -- Tablolar:
 --   official_ads_sources          — Resmi belge kaynak registry

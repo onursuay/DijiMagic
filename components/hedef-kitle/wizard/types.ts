@@ -31,7 +31,7 @@ export interface AudienceRow {
   source: AudienceSource | null
   name: string
   description: string | null
-  yoai_spec_json: Record<string, unknown>
+  dijimagic_spec_json: Record<string, unknown>
   meta_payload_json: Record<string, unknown> | null
   meta_audience_id: string | null
   status: AudienceStatus
@@ -234,7 +234,7 @@ export interface UnifiedAudience {
   metaAudienceId?: string | null
   adAccountId?: string
   errorMessage?: string | null
-  yoaiSpecJson?: Record<string, unknown>
+  dijimagicSpecJson?: Record<string, unknown>
   // Meta-only (from Graph API)
   subtype?: string
   approximateCount?: { lower: number; upper: number }

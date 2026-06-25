@@ -1,7 +1,7 @@
 'use client'
 
 /* ──────────────────────────────────────────────────────────────
-   YoAi — Google Hedef Kitle (salt-okunur gerçek veri görünümü)
+   DijiMagic — Google Hedef Kitle (salt-okunur gerçek veri görünümü)
 
    Google'da Meta'daki gibi kayıtlı "Detaylı/Benzer/Retargeting kitle
    nesnesi" sistemi yoktur. Bu görünüm bu yüzden iki gerçek veri

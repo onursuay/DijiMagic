@@ -1,8 +1,8 @@
 -- ─────────────────────────────────────────────────────────────────────────────
--- YoAi — Business Intelligence Profile
+-- DijiMagic — Business Intelligence Profile
 --
--- YoAi'nin gizli firma/marka hafızası. Onboarding popup'ında toplanır,
--- multi-source scanner ile zenginleştirilir, YoAlgoritma / Strateji /
+-- DijiMagic'in gizli firma/marka hafızası. Onboarding popup'ında toplanır,
+-- multi-source scanner ile zenginleştirilir, DijiAlgoritma / Strateji /
 -- Hedef Kitle / Competitor Query Expander / Campaign Intent Engine
 -- üretim motorlarına ortak referans olarak girer.
 --
@@ -161,7 +161,7 @@ CREATE TABLE IF NOT EXISTS user_business_intelligence (
   profile_id                         UUID          NOT NULL
                                                   REFERENCES user_business_profiles(id) ON DELETE CASCADE,
 
-  -- Sentezlenmiş alanlar (YoAi gizli iş hafızası — kullanıcıya direkt gösterilmez)
+  -- Sentezlenmiş alanlar (DijiMagic gizli iş hafızası — kullanıcıya direkt gösterilmez)
   company_summary                    TEXT,
   business_model                     TEXT,
   sector_summary                     TEXT,

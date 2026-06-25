@@ -72,7 +72,7 @@ export async function PATCH(request: Request, { params }: { params: Promise<{ id
     return NextResponse.json({ ok: false, error: 'invalid_body' }, { status: 400 })
   }
 
-  const allowedFields = ['name', 'description', 'source', 'yoai_spec_json']
+  const allowedFields = ['name', 'description', 'source', 'dijimagic_spec_json']
   const updates: Record<string, unknown> = { updated_at: new Date().toISOString() }
   for (const key of allowedFields) {
     if (key in body) updates[key] = body[key]

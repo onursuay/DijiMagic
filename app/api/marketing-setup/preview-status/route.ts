@@ -19,10 +19,10 @@ export const dynamic = 'force-dynamic'
 //   Meta custom conversion : `${siteName} — ${metaEvent}`
 //   Meta website audience  : `${siteName} — Website Ziyaretçileri`
 //   Meta lookalike         : `${siteName} — Benzer Kitle ...`
-//   Google Ads conv. action: `YoAi - ${siteName} - ${ga4Event}`
-//   Google Ads remarketing : `YoAi - ${siteName} - ...`
+//   Google Ads conv. action: `DijiMagic - ${siteName} - ${ga4Event}`
+//   Google Ads remarketing : `DijiMagic - ${siteName} - ...`
 
-const GADS_PREFIX = 'YoAi'
+const GADS_PREFIX = 'DijiMagic'
 
 function siteNameFrom(siteUrl: string | null): string {
   if (!siteUrl) return 'Site'

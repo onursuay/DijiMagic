@@ -7,8 +7,8 @@ import assert from 'assert'
 import {
   renderOfficialKnowledge,
   officialKnowledgeBlock,
-} from '../../lib/yoai/ai/docs/officialKnowledgeBlock'
-import type { OfficialAdsKnowledgeItem } from '../../lib/yoai/officialAdsKnowledgeStore'
+} from '../../lib/dijimagic/ai/docs/officialKnowledgeBlock'
+import type { OfficialAdsKnowledgeItem } from '../../lib/dijimagic/officialAdsKnowledgeStore'
 
 let passed = 0
 let failed = 0

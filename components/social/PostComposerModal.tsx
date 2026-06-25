@@ -89,7 +89,7 @@ export default function PostComposerModal({
   useEffect(() => {
     if (!open) return
     try {
-      const raw = localStorage.getItem('yoai-tasarim-library')
+      const raw = localStorage.getItem('dijimagic-tasarim-library')
       const arr = raw ? JSON.parse(raw) : []
       setLibrary(
         Array.isArray(arr)

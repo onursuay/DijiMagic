@@ -208,8 +208,8 @@ export default function BasvuruDurumuPage() {
         >
           <Link href="/">
             <Image
-              src="/logos/yoai-logo.png"
-              alt="YoAi"
+              src="/logos/dijimagic-logo.png"
+              alt="DijiMagic"
               width={96}
               height={32}
               className="brightness-0 invert"
@@ -310,7 +310,7 @@ export default function BasvuruDurumuPage() {
             cardVisible ? 'opacity-100' : 'opacity-0',
           ].join(' ')}
         >
-          {t('supportPrefix')} <a className="text-emerald-400 hover:underline" href="mailto:info@yodijital.com">info@yodijital.com</a>
+          {t('supportPrefix')} <a className="text-emerald-400 hover:underline" href="mailto:info@dijimagic.com">info@dijimagic.com</a>
         </p>
       </div>
 

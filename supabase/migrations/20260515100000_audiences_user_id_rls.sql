@@ -1,7 +1,7 @@
 -- Faz 2: Add user_id column + RLS to audiences table
 -- Application-level isolation: all routes filter by user_id (primary guard)
 -- RLS enabled for defence-in-depth (service role key bypasses by design)
--- user_id TEXT — consistent with rest of project (yoai_action_outcomes, user_business_profiles, etc.)
+-- user_id TEXT — consistent with rest of project (dijimagic_action_outcomes, user_business_profiles, etc.)
 
 ALTER TABLE audiences ADD COLUMN IF NOT EXISTS user_id TEXT;
 

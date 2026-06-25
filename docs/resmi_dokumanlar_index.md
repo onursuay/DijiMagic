@@ -1,8 +1,8 @@
 # Resmi Reklam Dokümanları — Index ve AI Engine Kullanım Rehberi
 
-> Bu dosya, projeye konsolide edilen resmi Meta + Google reklam dokümanlarının **nerede** olduğunu ve YoAlgoritma AI engine'inin bunları **nasıl** kullanması gerektiğini tanımlar.
+> Bu dosya, projeye konsolide edilen resmi Meta + Google reklam dokümanlarının **nerede** olduğunu ve DijiAlgoritma AI engine'inin bunları **nasıl** kullanması gerektiğini tanımlar.
 > Son güncelleme: 2026-05-20
-> İlgili: [yoalgoritma_proje_amaci.md](yoalgoritma_proje_amaci.md) (Ayak 2 — platform kuralları) · [yoalgoritma_context_audit.md](yoalgoritma_context_audit.md)
+> İlgili: [dijialgoritma_proje_amaci.md](dijialgoritma_proje_amaci.md) (Ayak 2 — platform kuralları) · [dijialgoritma_context_audit.md](dijialgoritma_context_audit.md)
 
 ---
 
@@ -35,7 +35,7 @@ Kaynak (orijinal PDF/DOCX): `/Users/onursuay/Desktop/Onur Suay/Onur Şuay/Sponso
 
 ## 3. AI Engine'e Bağlama Stratejisi (Öneri)
 
-> **Mevcut durum:** AI engine system prompt'unda ([lib/yoai/ai/systemPrompt.ts](../lib/yoai/ai/systemPrompt.ts)) bu dokümanlar **şu an yer almıyor**. Detaylı uyum analizi için bkz. [yoalgoritma_context_audit.md](yoalgoritma_context_audit.md) Bölüm 2.
+> **Mevcut durum:** AI engine system prompt'unda ([lib/dijimagic/ai/systemPrompt.ts](../lib/dijimagic/ai/systemPrompt.ts)) bu dokümanlar **şu an yer almıyor**. Detaylı uyum analizi için bkz. [dijialgoritma_context_audit.md](dijialgoritma_context_audit.md) Bölüm 2.
 
 İki dosyanın toplam boyutu ~140 KB (~35-40K token). Bağlama için iki seçenek:
 

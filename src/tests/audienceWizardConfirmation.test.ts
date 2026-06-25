@@ -247,7 +247,7 @@ test('payloadBuilder default case "desteklenmiyor" ile throw içeriyor', () => {
 console.log('\n▶ Existing list/sync/soft-delete routes — dokunulmadı')
 
 test('app/api/audiences/route.ts (list+create) son committe değişmedi', () => {
-  // git show ile kontrol edemiyoruz ama dosyanın varlığını ve yoai create endpoint import'unu doğrularız
+  // git show ile kontrol edemiyoruz ama dosyanın varlığını ve dijimagic create endpoint import'unu doğrularız
   const content = read('app/api/audiences/route.ts')
   assert.ok(content.includes('supabase'), 'route.ts supabase içermiyor — beklenmez')
   assert.ok(

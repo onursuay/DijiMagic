@@ -9,7 +9,7 @@ import {
   parseSnapshotToKnowledge,
   persistKnowledgeDrafts,
   type ParsedKnowledgeItem,
-} from '../../lib/yoai/officialAdsKnowledgeParser'
+} from '../../lib/dijimagic/officialAdsKnowledgeParser'
 
 let passed = 0
 let failed = 0

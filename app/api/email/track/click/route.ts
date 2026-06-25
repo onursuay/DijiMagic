@@ -3,7 +3,7 @@ import { supabase } from '@/lib/supabase/client'
 
 export const dynamic = 'force-dynamic'
 
-const FALLBACK = process.env.NEXT_PUBLIC_APP_URL || 'https://yoai.yodijital.com'
+const FALLBACK = process.env.NEXT_PUBLIC_APP_URL || 'https://dijimagic.com'
 const CLICK_SECRET = process.env.UNSUBSCRIBE_SECRET || process.env.RESEND_API_KEY || ''
 
 function verifyClickSig(targetUrl: string, sig: string): boolean {

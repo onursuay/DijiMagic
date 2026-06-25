@@ -1,6 +1,6 @@
 #!/usr/bin/env node
 /**
- * YoAi Strateji — Migration Uygulayıcı
+ * DijiMagic Strateji — Migration Uygulayıcı
  *
  * Sırasıyla uygular:
  *   1. 20260516000000_strategy_user_id_rls.sql
@@ -60,7 +60,7 @@ const MIGRATIONS = [
 ]
 
 async function main() {
-  console.log('\n🚀  YoAi Strateji Migration Başlıyor...\n')
+  console.log('\n🚀  DijiMagic Strateji Migration Başlıyor...\n')
 
   const client = new Client({ connectionString: DATABASE_URL })
   await client.connect()

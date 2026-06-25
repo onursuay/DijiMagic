@@ -87,7 +87,7 @@ async function safeFetch(rawUrl: string): Promise<Response | null> {
     await assertSafeHost(current.hostname) // güvenli değilse fırlatır → scanOne yakalar
     const res = await fetch(current.toString(), {
       signal: AbortSignal.timeout(9000),
-      headers: { 'User-Agent': 'Mozilla/5.0 (compatible; YoAiBot/1.0)' },
+      headers: { 'User-Agent': 'Mozilla/5.0 (compatible; DijiMagicBot/1.0)' },
       redirect: 'manual',
     })
     if (res.status >= 300 && res.status < 400) {

@@ -1,7 +1,7 @@
 # Strateji & Optimizasyon — İşlev Analizi + Strateji İyileştirmeleri
 
 > Son güncelleme: 2026-05-22
-> Kapsam: (1) Strateji modülünün ne işe yaradığı + uygulanan 6 iyileştirmenin final hâli, (2) Optimizasyon modülünün ne işe yaradığı, (3) Strateji / Optimizasyon / YoAlgoritma üçlüsünün büyük resmi.
+> Kapsam: (1) Strateji modülünün ne işe yaradığı + uygulanan 6 iyileştirmenin final hâli, (2) Optimizasyon modülünün ne işe yaradığı, (3) Strateji / Optimizasyon / DijiAlgoritma üçlüsünün büyük resmi.
 
 ---
 
@@ -38,9 +38,9 @@ Marka sahibi reklam vermek istiyor ama bütçeyi funnel'a (TOFU/MOFU/BOFU) nası
 | **1** | Motor OpenAI `gpt-4o-mini` kullanıyordu (proje standardı Claude'a aykırı) | Yeni `lib/strategy/claude.ts` (Anthropic SDK + `getAiEngineModel` + prompt-cache'li system bloğu). Blueprint üretimi ve optimize önerileri Claude'a taşındı. Template fallback korundu; gate `isAnthropicReady()` | `lib/strategy/claude.ts` (yeni), `ai-generator.ts`, `job-runner.ts` |
 | **2** | "Plan aktifken haftalık otomatik analiz" vaadi vardı ama **cron yoktu** (metrik yalnız sayfa ziyaretinde lazy çekiliyordu) | Vercel cron `0 4 * * 1` (Pzt 04:00) → `/api/cron/strategy-metrics`: RUNNING instance'lar için bayat metrik varsa `pull_metrics` kuyruğa alıp işler (→ `optimize` zinciri). Auth `CRON_SECRET` | `app/api/cron/strategy-metrics/route.ts` (yeni), `vercel.json` |
 | **3** | Apply yalnız Meta'yı ele alıyordu + ölü `campaignPlan` objesi | `createCampaignStructure` çok-kanallı (Meta + Google, `channel_mix` ağırlıklı funnel kurulum görevleri). Ölü obje temizlendi. **Canlı auto-push bilinçli olarak EKLENMEDİ** — gerçek para harcayan + entegrasyona dokunan aksiyon; kullanıcı görevleri AdCreationWizard ile yayına alır | `job-runner.ts` |
-| **4** | `_yoai_business_context_prompt` hiç doldurulmuyordu → planlar **jenerik** | `runGeneratePlanJob` artık instance sahibinin brand intelligence'ını `getBusinessContextForUser` + `buildBusinessContextPromptBlock` ile motora besliyor → markaya özgü plan | `job-runner.ts` |
+| **4** | `_dijimagic_business_context_prompt` hiç doldurulmuyordu → planlar **jenerik** | `runGeneratePlanJob` artık instance sahibinin brand intelligence'ını `getBusinessContextForUser` + `buildBusinessContextPromptBlock` ile motora besliyor → markaya özgü plan | `job-runner.ts` |
 | **5** | "Kalan Bütçe = aylık bütçe − 7 günlük harcama" yanıltıcıydı; 14/30 gün aralığının **hiç verisi yoktu** (yalnız 7g snapshot) | `pull_metrics` 7/14/30 gün snapshot'larını çekiyor. Metrics route: `total_budget` aylık sabit + `remaining = aylık − 30g harcama` + performans seçili aralık. KPIBar etiketleri: "Aylık Bütçe" / "Kalan (Bu Ay)" / "Harcanan (7g)" | `job-runner.ts`, `app/api/strategy/metrics/route.ts`, `components/strateji/KPIBar.tsx` |
-| **6** | Strateji ve YoAlgoritma kopuktu | `runOptimizeJob` aynı kullanıcının açık YoAlgoritma hesap uyarılarını (`listAccountAlertsForUser`) optimizasyon promptuna besliyor → öneriler Pixel/CAPI/dönüşüm açıklarını önceliklendiriyor | `job-runner.ts` |
+| **6** | Strateji ve DijiAlgoritma kopuktu | `runOptimizeJob` aynı kullanıcının açık DijiAlgoritma hesap uyarılarını (`listAccountAlertsForUser`) optimizasyon promptuna besliyor → öneriler Pixel/CAPI/dönüşüm açıklarını önceliklendiriyor | `job-runner.ts` |
 
 > **Env notu:** Strateji AI artık `ANTHROPIC_API_KEY` (mevcut) kullanır; `OPENAI_*` env'leri Strateji için gereksiz. Cron `CRON_SECRET` (mevcut) gerektirir. Meta/Google entegrasyon koduna ve AdCreationWizard'a dokunulmadı. `tsc` ✓.
 
@@ -67,9 +67,9 @@ Reklam veren, hesabında neyin iyi/kötü gittiğini ve **hemen ne yapması gere
 - `featureAccessMap.ts`: `optimization → subscription_required` (modül erişimi); `optimization_ai_scan_pro → credit_required` ("AI ile Tara Pro").
 - Günlük AI scan limiti (plana göre); aşımda `AccessRequiredModal type="credit"`. Owner bypass.
 
-### 2.5 Üç AI danışman katmanı — Strateji vs Optimizasyon vs YoAlgoritma
+### 2.5 Üç AI danışman katmanı — Strateji vs Optimizasyon vs DijiAlgoritma
 
-| | **Strateji** | **Optimizasyon** | **YoAlgoritma** |
+| | **Strateji** | **Optimizasyon** | **DijiAlgoritma** |
 |--|-------------|------------------|-----------------|
 | **Soru** | Nasıl bir plan kurmalıyım? | Çalışanı nasıl düzeltirim? | Hesabım sistematik olarak ne durumda? |
 | **Zamanlama** | Kullanıcı tetikler (yeni strateji) | Kullanıcı tetikler ("Tara"/"AI ile Tara") | **Otomatik** (Pazar gece cron), manuel buton yok |
@@ -79,7 +79,7 @@ Reklam veren, hesabında neyin iyi/kötü gittiğini ve **hemen ne yapması gere
 | **Apply** | Görev üretir (canlı basmaz) | **Canlıya basar** (pause/bütçe) + rollback | Reklam onayı → AdCreationWizard |
 | **Kanal** | Meta + Google (plan) | **Meta + Google + TikTok** | Meta + Google |
 
-**İlişki:** Çakışmazlar, tamamlayıcıdırlar. Strateji = stratejik plan, Optimizasyon = anlık taktik düzeltme, YoAlgoritma = haftalık sistematik denetim. (#6 iyileştirmesiyle Strateji optimize'ı artık YoAlgoritma uyarılarını da dikkate alır.)
+**İlişki:** Çakışmazlar, tamamlayıcıdırlar. Strateji = stratejik plan, Optimizasyon = anlık taktik düzeltme, DijiAlgoritma = haftalık sistematik denetim. (#6 iyileştirmesiyle Strateji optimize'ı artık DijiAlgoritma uyarılarını da dikkate alır.)
 
 ### 2.6 Optimizasyon — iyileştirmeler
 1. ✅ **AI motoru Claude'a taşındı** (2026-05-22) — `aiRecommender.ts` artık OpenAI gpt-4o-mini yerine `getAnthropicClient` + `getAiEngineModel` kullanır (prompt-cache'li system bloğu). Deterministik rule-engine fallback korundu; gate `isAnthropicReady()`.

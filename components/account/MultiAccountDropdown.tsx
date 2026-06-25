@@ -5,7 +5,7 @@ import { useRouter, usePathname } from 'next/navigation'
 import { useTranslations } from 'next-intl'
 import { ChevronDown, Plus, Trash2, Loader2, ArrowUpRight } from 'lucide-react'
 import type { RegisteredAccount, AddAccountInput, AddAccountResult } from '@/hooks/useRegisteredAccounts'
-import { clearYoAlgoritmaClientCache } from '@/lib/yoai/clientCache'
+import { clearDijiAlgoritmaClientCache } from '@/lib/dijimagic/clientCache'
 
 /** Hesap id normalize (act_ öneki + tire farkını yok say — aktif eşleşmesi güvenli). */
 const normId = (s: string | null | undefined): string => (s ?? '').replace(/^act_/i, '').replace(/-/g, '').trim().toLowerCase()
@@ -37,7 +37,7 @@ interface Props {
  * aktif hesabı olur ve BAĞLAM-DUYARLI yönlendirir:
  *   - Çok-platformlu modül (/optimizasyon, /hedef-kitle): aynı sayfa + ?platform=X
  *     (o platformun sekmesi açılır, modülden çıkmaz)
- *   - /yoai: reload (birleşik analiz)
+ *   - /dijimagic: reload (birleşik analiz)
  *   - Sadece-Meta modül (/strateji, /meta-ads): Meta → reload; Google → /google-ads
  */
 export default function MultiAccountDropdown({
@@ -85,7 +85,7 @@ export default function MultiAccountDropdown({
 
   const atLimit = limit !== null && remaining !== null && remaining <= 0
   // Strateji ve Meta sayfası yalnız Meta hesabı kullanır → orada Google gizlenir.
-  // Çok-platformlu modüller (Optimizasyon/Hedef Kitle/YoAlgoritma) ikisini de gösterir.
+  // Çok-platformlu modüller (Optimizasyon/Hedef Kitle/DijiAlgoritma) ikisini de gösterir.
   const showGoogle = !['/strateji', '/meta-ads'].some(p => pathname?.startsWith(p))
   const shownCount = showGoogle ? count : registered.filter(r => r.platform === 'meta').length
   const usedLabel = t('accountsUsedUnlimited', { count: shownCount })
@@ -102,7 +102,7 @@ export default function MultiAccountDropdown({
       window.location.href = `/optimizasyon/${platform}`
       return
     }
-    if (pathname?.startsWith('/yoalgoritma')) {
+    if (pathname?.startsWith('/dijialgoritma')) {
       window.location.reload()
     } else if (platform === 'google') {
       window.location.href = '/google-ads'
@@ -134,7 +134,7 @@ export default function MultiAccountDropdown({
         credentials: 'include',
         body: JSON.stringify({ platform: 'meta', account_id: a.id, account_name: a.name }),
       }).catch(() => {})
-      clearYoAlgoritmaClientCache()
+      clearDijiAlgoritmaClientCache()
       navigateAfterSwitch('meta')
     } catch {
       setBusyId(null)
@@ -156,7 +156,7 @@ export default function MultiAccountDropdown({
           customerName: acc.account_name || acc.account_id,
         }),
       })
-      clearYoAlgoritmaClientCache()
+      clearDijiAlgoritmaClientCache()
       navigateAfterSwitch('google')
     } catch {
       setBusyId(null)
@@ -178,7 +178,7 @@ export default function MultiAccountDropdown({
     setBusyId(a.id)
     await removeAccount('meta', a.id)
     // Aktif hesabı sildiyse bağlantı sunucuda kalan hesaba geçti (ya da kesildi) → yansıt.
-    if (wasActive) { clearYoAlgoritmaClientCache(); window.location.reload(); return }
+    if (wasActive) { clearDijiAlgoritmaClientCache(); window.location.reload(); return }
     setBusyId(null)
   }
 
@@ -188,7 +188,7 @@ export default function MultiAccountDropdown({
     const wasActive = normId(activeGoogle?.customerId) === normId(acc.account_id)
     setBusyId(acc.account_id)
     await removeAccount('google', acc.account_id)
-    if (wasActive) { clearYoAlgoritmaClientCache(); window.location.reload(); return }
+    if (wasActive) { clearDijiAlgoritmaClientCache(); window.location.reload(); return }
     setBusyId(null)
   }
 

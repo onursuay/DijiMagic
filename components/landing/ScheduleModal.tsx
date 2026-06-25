@@ -3,7 +3,7 @@
 import { useState, useMemo, useCallback, useEffect } from 'react'
 import { createPortal } from 'react-dom'
 
-const CONTACT_EMAIL = 'info@yodijital.com'
+const CONTACT_EMAIL = 'info@dijimagic.com'
 
 interface Props {
   label: string
@@ -30,8 +30,8 @@ export default function ScheduleModal({ label, locale, variant = 'nav' }: Props)
 
   /* ───── Translations ───── */
   const t = isEn ? {
-    brand: 'YoAi',
-    meetingTitle: 'YoAi Strategy Call',
+    brand: 'DijiMagic',
+    meetingTitle: 'DijiMagic Strategy Call',
     meetingSub: '30-minute personalized product overview',
     duration: '30 min',
     orgDefault: 'Online meeting',
@@ -55,8 +55,8 @@ export default function ScheduleModal({ label, locale, variant = 'nav' }: Props)
     h12: '12h',
     h24: '24h',
   } : {
-    brand: 'YoAi',
-    meetingTitle: 'YoAi Strateji Görüşmesi',
+    brand: 'DijiMagic',
+    meetingTitle: 'DijiMagic Strateji Görüşmesi',
     meetingSub: '30 dakikalık birebir ürün tanıtımı',
     duration: '30 dakika',
     orgDefault: 'Online görüşme',
@@ -188,7 +188,7 @@ export default function ScheduleModal({ label, locale, variant = 'nav' }: Props)
       if (!res.ok) throw new Error('Booking failed')
     } catch {
       // Booking API failed — still show success to user, fallback to mailto
-      const subject = encodeURIComponent(isEn ? `YoAi Meeting — ${name}` : `YoAi Görüşme Talebi — ${name}`)
+      const subject = encodeURIComponent(isEn ? `DijiMagic Meeting — ${name}` : `DijiMagic Görüşme Talebi — ${name}`)
       const body = encodeURIComponent(`${isEn ? 'Name' : 'Ad Soyad'}: ${name}\n${isEn ? 'Email' : 'E-posta'}: ${email}\n${isEn ? 'Date' : 'Tarih'}: ${selectedDate}\n${isEn ? 'Time' : 'Saat'}: ${selectedTime}\n` + (note ? `${isEn ? 'Notes' : 'Not'}: ${note}\n` : ''))
       window.open(`mailto:${CONTACT_EMAIL}?subject=${subject}&body=${body}`, '_self')
     }

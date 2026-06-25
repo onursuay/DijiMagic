@@ -47,6 +47,6 @@ CREATE TABLE IF NOT EXISTS payment_transactions (
 CREATE INDEX IF NOT EXISTS idx_payment_transactions_user ON payment_transactions (user_id, created_at DESC);
 CREATE INDEX IF NOT EXISTS idx_payment_transactions_status ON payment_transactions (status);
 
-COMMENT ON TABLE subscriptions IS 'Server-side source of truth for user plan. localStorage "yoai-subscription" is removed.';
-COMMENT ON TABLE credit_balances IS 'Server-side source of truth for user credits. localStorage "yoai-credits" is removed.';
+COMMENT ON TABLE subscriptions IS 'Server-side source of truth for user plan. localStorage "dijimagic-subscription" is removed.';
+COMMENT ON TABLE credit_balances IS 'Server-side source of truth for user credits. localStorage "dijimagic-credits" is removed.';
 COMMENT ON TABLE payment_transactions IS 'Iyzico payment records. conversation_id is generated server-side and echoed back by Iyzico to prevent tampering.';

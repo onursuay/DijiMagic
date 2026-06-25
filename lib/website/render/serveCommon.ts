@@ -49,7 +49,7 @@ const SAFE_SLUG_RE = /^[a-z0-9]+(?:-[a-z0-9]+)*$/
 /**
  * Bir sitede GERÇEKTEN var olan sayfaların slug kümesi (anasayfa 'home' DAHİL) —
  * assembleDocument nav rewrite'ı slug-set-aware yapmak için. Yalnız url-safe slug'lar
- * alınır (data-yoai-href yalnız bunlara çözülür); 'home' her zaman dahildir. Tüm locale'ler
+ * alınır (data-dijimagic-href yalnız bunlara çözülür); 'home' her zaman dahildir. Tüm locale'ler
  * birleştirilir — nav her dilde aynı sayfa listesine bakar; liste-dışı slug → anasayfa.
  */
 export function collectKnownSlugs(site: PublishedSite): string[] {

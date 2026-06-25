@@ -17,7 +17,7 @@ IYZICO_SECRET_KEY=sandbox-xxx
 IYZICO_BASE_URL=https://sandbox-api.iyzipay.com
 
 # Callback URL'nin public olabilmesi için (zorunlu)
-NEXT_PUBLIC_APP_URL=https://yoai.example.com
+NEXT_PUBLIC_APP_URL=https://dijimagic.example.com
 ```
 
 Bu değişkenler yokken `/api/billing/iyzico/start` 503 `iyzico_not_configured` döner ve UI kullanıcıya nazik bir hata gösterir.
@@ -55,7 +55,7 @@ Bu değişkenler yokken `/api/billing/iyzico/start` 503 `iyzico_not_configured` 
 
 ## 6. Kaldırılanlar
 
-- `localStorage: yoai-credits` — artık `/api/billing/current` ve `/api/credits/spend` kullanılıyor
-- `localStorage: yoai-subscription` — artık `/api/billing/current` kullanılıyor
+- `localStorage: dijimagic-credits` — artık `/api/billing/current` ve `/api/credits/spend` kullanılıyor
+- `localStorage: dijimagic-subscription` — artık `/api/billing/current` kullanılıyor
 - `SubscriptionProvider.updateSubscription()` — API'den kaldırıldı, yerine `refresh()` var
 - `CreditProvider.addCredits()` / `resetCredits()` — API'den kaldırıldı (kredi sadece ödeme callback'inde ve plan satın almada artar)

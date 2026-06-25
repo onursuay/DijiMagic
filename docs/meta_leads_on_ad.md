@@ -39,7 +39,7 @@ Meta, Leads ON_AD creative'inde `link_data.link` alanının dolu olmasını zoru
 3. `tenantDefaultLeadUrl`
 4. `tenantPrivacyPolicyUrl`
 5. `formPrivacyPolicyUrl` (lead formun privacy policy URL'si)
-6. **`https://yoai.yodijital.com/en/privacy-policy`** ← son halka, her zaman dolu
+6. **`https://dijimagic.com/en/privacy-policy`** ← son halka, her zaman dolu
 
 **Dosya:** `lib/meta/resolveLeadCreativeLink.ts`
 

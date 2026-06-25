@@ -1,5 +1,5 @@
 /* ──────────────────────────────────────────────────────────
-   YoAi — Uzman Kampanya Planı motoru (Alt-Proje A, Faz A1)
+   DijiMagic — Uzman Kampanya Planı motoru (Alt-Proje A, Faz A1)
 
    Strateji girdisinden (InputPayload) eksiksiz, GEREKÇELİ uzman
    kampanya planı üretir: hedef kitle, lokasyon, demografi, amaç,
@@ -13,7 +13,7 @@
 
 import { claudeJson, isClaudeReady, type ClaudeTextArgs } from '../anthropic/text'
 import type { InputPayload, GoalType } from './types'
-import { COPY_QUALITY_GUIDE } from '../yoai/ai/docs/copyQualityGuide'
+import { COPY_QUALITY_GUIDE } from '../dijimagic/ai/docs/copyQualityGuide'
 
 export type PlatformKey = 'meta' | 'google'
 

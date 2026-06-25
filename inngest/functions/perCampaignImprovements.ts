@@ -1,5 +1,5 @@
 /* ──────────────────────────────────────────────────────────
-   Inngest Function: yoalgoritma/campaign-improvements.user (Faz 3)
+   Inngest Function: dijialgoritma/campaign-improvements.user (Faz 3)
 
    Hiyerarşik geliştirme kartları. Tek kullanıcı için:
      1. fetch      — aktif Meta + Google kampanya ağacı (campaign→adset→ad)
@@ -19,10 +19,10 @@
 
 import { inngest } from '../client'
 import { getAnthropicClient, isAnthropicReady } from '@/lib/anthropic/client'
-import { gatherUserScanInputs, writeHierRunStatus, type UserScanInputs } from '@/lib/yoai/ai/scanUser'
-import { buildPerCampaignBatchRequestParams, parsePerCampaignBatchResult } from '@/lib/yoai/ai/perCampaignAgent'
-import { officialKnowledgeBlock, type SystemBlock } from '@/lib/yoai/ai/docs/officialKnowledgeBlock'
-import type { PerCampaignContext, AccountCampaignSummary } from '@/lib/yoai/ai/perCampaignPrompt'
+import { gatherUserScanInputs, writeHierRunStatus, type UserScanInputs } from '@/lib/dijimagic/ai/scanUser'
+import { buildPerCampaignBatchRequestParams, parsePerCampaignBatchResult } from '@/lib/dijimagic/ai/perCampaignAgent'
+import { officialKnowledgeBlock, type SystemBlock } from '@/lib/dijimagic/ai/docs/officialKnowledgeBlock'
+import type { PerCampaignContext, AccountCampaignSummary } from '@/lib/dijimagic/ai/perCampaignPrompt'
 import {
   listRecentCampaignImprovements,
   listRecentAdsetImprovements,
@@ -34,12 +34,12 @@ import {
   insertCampaignImprovement,
   insertAdsetImprovement,
   insertAdImprovement,
-} from '@/lib/yoai/ai/hierarchicalStore'
-import { translateEnum } from '@/lib/yoai/translations'
-import type { AiPlatform } from '@/lib/yoai/ai/types'
-import type { DeepCampaignInsight } from '@/lib/yoai/analysisTypes'
-import type { YoaiScope } from '@/lib/yoai/businessScope'
-import { buildBusinessKey, normalizeMetaAccountId, normalizeGoogleCustomerId } from '@/lib/yoai/businessKey'
+} from '@/lib/dijimagic/ai/hierarchicalStore'
+import { translateEnum } from '@/lib/dijimagic/translations'
+import type { AiPlatform } from '@/lib/dijimagic/ai/types'
+import type { DeepCampaignInsight } from '@/lib/dijimagic/analysisTypes'
+import type { DijiMagicScope } from '@/lib/dijimagic/businessScope'
+import { buildBusinessKey, normalizeMetaAccountId, normalizeGoogleCustomerId } from '@/lib/dijimagic/businessKey'
 
 const POLL_INTERVAL = '60s'
 const MAX_POLLS = 1440 // ~24h (Anthropic batch SLA)
@@ -75,10 +75,10 @@ function sanitizeCustomId(platform: string, campaignId: string): string {
   return `c_${platform}_${campaignId}`.replace(/[^a-zA-Z0-9_-]/g, '_').slice(0, 64)
 }
 
-export const yoalgoritmaPerCampaignImprovements = inngest.createFunction(
+export const dijialgoritmaPerCampaignImprovements = inngest.createFunction(
   {
-    id: 'yoalgoritma-per-campaign-improvements',
-    name: 'YoAlgoritma — Hiyerarşik Geliştirme Kartları',
+    id: 'dijialgoritma-per-campaign-improvements',
+    name: 'DijiAlgoritma — Hiyerarşik Geliştirme Kartları',
     // R7: global throughput limiti (5) + KULLANICI BAŞINA 1. Aynı kullanıcının eşzamanlı iki
     // koşusu supersede/insert yarışına ve ÇİFT Anthropic batch maliyetine yol açardı (örn. cron
     // ile on-demand çakışması). Per-user key=1 bunu serileştirir.
@@ -87,14 +87,14 @@ export const yoalgoritmaPerCampaignImprovements = inngest.createFunction(
       { key: 'event.data.userId', limit: 1 },
     ],
     retries: 2,
-    triggers: [{ event: 'yoalgoritma/campaign-improvements.user' }],
+    triggers: [{ event: 'dijialgoritma/campaign-improvements.user' }],
   },
   async ({ event, step, logger }) => {
     const userId = String(event.data?.userId ?? '')
     if (!userId) throw new Error('userId zorunlu')
     // Çoklu işletme (Faz 1): cron fan-out scope'u event.data'ya gömer (headless,
     // cookie yok). scope yoksa/scoped=false → mevcut birleşik davranış (sıfır regresyon).
-    const scope = (event.data?.scope ?? undefined) as YoaiScope | undefined
+    const scope = (event.data?.scope ?? undefined) as DijiMagicScope | undefined
     const scoped = scope?.scoped === true
     const accountSig = scoped ? `${scope!.metaId ?? '-'}|${scope!.googleCustomerId ?? '-'}` : 'all'
 
@@ -109,11 +109,11 @@ export const yoalgoritmaPerCampaignImprovements = inngest.createFunction(
     await step.run('run-status-running', async () => { await writeHierRunStatus({ userId, accountSig, status: 'running' }); return { ok: true } })
 
     // 0) Rakip cache'ini bu çalıştırma için tazele — gatherUserScanInputs okumadan ÖNCE.
-    //    Flag (YOALGORITMA_SCRAPE_COMPETITORS) kapalıysa anında no-op; açıksa beyan edilen
+    //    Flag (DIJIALGORITMA_SCRAPE_COMPETITORS) kapalıysa anında no-op; açıksa beyan edilen
     //    rakipler scrape edilir. Böylece scan.user ile yarış olmadan rakip bloğu prompt'a girer.
     await step.run('scrape-competitors', async () => {
       try {
-        const { scrapeDeclaredCompetitors } = await import('@/lib/yoai/ai/competitorScanStep')
+        const { scrapeDeclaredCompetitors } = await import('@/lib/dijimagic/ai/competitorScanStep')
         return await scrapeDeclaredCompetitors(userId)
       } catch (e) {
         logger.warn(`[campaign-improvements] ${userId}: competitor scrape soft-fail: ${e instanceof Error ? e.message : e}`)
@@ -225,9 +225,9 @@ export const yoalgoritmaPerCampaignImprovements = inngest.createFunction(
     const structuralByCampaign = await step.run('structural-signals', async () => {
       const map: Record<string, string> = {}
       try {
-        const { getDoctrineMap } = await import('@/lib/yoai/platformDoctrineStore')
-        const { normalizeCampaignType, buildCampaignTypeContext } = await import('@/lib/yoai/campaignTypeIntelligence')
-        const { runStructuralAnalysis } = await import('@/lib/yoai/platformKnowledge')
+        const { getDoctrineMap } = await import('@/lib/dijimagic/platformDoctrineStore')
+        const { normalizeCampaignType, buildCampaignTypeContext } = await import('@/lib/dijimagic/campaignTypeIntelligence')
+        const { runStructuralAnalysis } = await import('@/lib/dijimagic/platformKnowledge')
         const doctrineMap = await getDoctrineMap()
         const insights = allCampaigns.map((c) => c.campaign)
         const structural = runStructuralAnalysis(insights)

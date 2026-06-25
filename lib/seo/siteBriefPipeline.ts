@@ -1,6 +1,6 @@
 import 'server-only'
 import { supabase } from '@/lib/supabase/client'
-import { scanBusinessSource } from '@/lib/yoai/businessSourceScanner'
+import { scanBusinessSource } from '@/lib/dijimagic/businessSourceScanner'
 import { claudeText, isClaudeReady } from '@/lib/anthropic/text'
 import { upsertBrief } from '@/lib/seo/siteContentBriefStore'
 

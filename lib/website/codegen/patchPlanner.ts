@@ -163,7 +163,7 @@ export async function planPatchOps(
 
 /**
  * Regenerate ONE block's HTML for an `edit` or `insert` op. Reuses the block-level
- * contract prompt (var tokens, data-yoai-* hooks, no script/forms) and resolves
+ * contract prompt (var tokens, data-dijimagic-* hooks, no script/forms) and resolves
  * {{IMG:}} placeholders just like the full-page path.
  *
  * @param ctx          Stage-0 context (brand/locale/untrusted context)

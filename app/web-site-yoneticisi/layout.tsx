@@ -1,7 +1,7 @@
 'use client'
 
 import SidebarNav from '@/components/SidebarNav'
-import BusinessProfileGuard from '@/components/yoai/BusinessProfileGuard'
+import BusinessProfileGuard from '@/components/dijimagic/BusinessProfileGuard'
 import AccountApprovalGuard from '@/components/auth/AccountApprovalGuard'
 
 export default function WebSiteYoneticisiLayout({

@@ -49,12 +49,12 @@ export async function POST(request: Request) {
     return NextResponse.json({ ok: false, error: 'invalid_body', message: 'Geçersiz JSON' }, { status: 400 })
   }
 
-  const { type, source, name, description, yoai_spec_json } = body as {
+  const { type, source, name, description, dijimagic_spec_json } = body as {
     type?: string
     source?: string
     name?: string
     description?: string
-    yoai_spec_json?: Record<string, unknown>
+    dijimagic_spec_json?: Record<string, unknown>
   }
 
   if (!type || !['CUSTOM', 'LOOKALIKE', 'SAVED'].includes(type)) {
@@ -72,7 +72,7 @@ export async function POST(request: Request) {
     source: source ?? null,
     name: name.trim(),
     description: description ?? null,
-    yoai_spec_json: yoai_spec_json ?? {},
+    dijimagic_spec_json: dijimagic_spec_json ?? {},
     status: 'DRAFT',
   }
 

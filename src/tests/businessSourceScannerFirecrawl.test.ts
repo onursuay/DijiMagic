@@ -4,7 +4,7 @@
  * global.fetch monkey-patch: hem HTTP site fetch'i hem Firecrawl API'si mock'lanır.
  */
 import assert from 'assert'
-import { scanBusinessSource } from '../../lib/yoai/businessSourceScanner'
+import { scanBusinessSource } from '../../lib/dijimagic/businessSourceScanner'
 
 let passed = 0
 let failed = 0

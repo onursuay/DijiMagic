@@ -14,7 +14,7 @@ function getLocale(): string {
 const content = {
   tr: {
     title: 'Ücretsiz Denemenizi Başlatın',
-    subtitle: 'YoAi ile reklam yönetiminizi yapay zekâ ile güçlendirin.',
+    subtitle: 'DijiMagic ile reklam yönetiminizi yapay zekâ ile güçlendirin.',
     nameLabel: 'Ad Soyad',
     namePlaceholder: 'Adınızı ve soyadınızı girin',
     emailLabel: 'E-posta Adresi',
@@ -51,7 +51,7 @@ const content = {
   },
   en: {
     title: 'Start Your Free Trial',
-    subtitle: 'Supercharge your ad management with AI-powered YoAi.',
+    subtitle: 'Supercharge your ad management with AI-powered DijiMagic.',
     nameLabel: 'Full Name',
     namePlaceholder: 'Enter your full name',
     emailLabel: 'Email Address',
@@ -330,8 +330,8 @@ export default function SignupPage() {
         <div className="flex justify-center mb-5">
           <Link href="/">
             <Image
-              src="/logos/yoai-logo.png"
-              alt="YoAi"
+              src="/logos/dijimagic-logo.png"
+              alt="DijiMagic"
               width={80}
               height={28}
               className="brightness-0 invert"

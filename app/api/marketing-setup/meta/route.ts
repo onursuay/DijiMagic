@@ -194,11 +194,11 @@ export async function POST() {
 
 /** Derive a human site name from the configured site url (hostname, no www). */
 function deriveSiteName(siteUrl: string | null): string {
-  if (!siteUrl) return 'YoAi'
+  if (!siteUrl) return 'DijiMagic'
   try {
     const host = new URL(siteUrl.startsWith('http') ? siteUrl : `https://${siteUrl}`).hostname
-    return host.replace(/^www\./, '') || 'YoAi'
+    return host.replace(/^www\./, '') || 'DijiMagic'
   } catch {
-    return 'YoAi'
+    return 'DijiMagic'
   }
 }

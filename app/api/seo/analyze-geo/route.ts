@@ -20,7 +20,7 @@ async function safeFetch(startUrl: string): Promise<Response> {
     await assertSafeUrl(currentUrl)
 
     const res = await fetch(currentUrl, {
-      headers: { 'User-Agent': 'Mozilla/5.0 (compatible; YoAiBot/1.0)' },
+      headers: { 'User-Agent': 'Mozilla/5.0 (compatible; DijiMagicBot/1.0)' },
       signal: AbortSignal.timeout(15000),
       redirect: 'manual',
     })

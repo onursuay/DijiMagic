@@ -8,7 +8,7 @@ CREATE TABLE IF NOT EXISTS audiences (
   source text CHECK (source IN ('PIXEL', 'IG', 'PAGE', 'VIDEO', 'LEADFORM', 'CATALOG', 'APP', 'OFFLINE', 'CUSTOMER_LIST')),
   name text NOT NULL,
   description text,
-  yoai_spec_json jsonb NOT NULL DEFAULT '{}',
+  dijimagic_spec_json jsonb NOT NULL DEFAULT '{}',
   meta_payload_json jsonb,
   meta_audience_id text,
   status text NOT NULL DEFAULT 'DRAFT' CHECK (status IN ('DRAFT', 'CREATING', 'POPULATING', 'READY', 'ERROR', 'DELETED')),
@@ -24,4 +24,4 @@ CREATE INDEX IF NOT EXISTS idx_audiences_status ON audiences (status);
 CREATE INDEX IF NOT EXISTS idx_audiences_type ON audiences (type);
 CREATE INDEX IF NOT EXISTS idx_audiences_meta_id ON audiences (meta_audience_id) WHERE meta_audience_id IS NOT NULL;
 
-COMMENT ON TABLE audiences IS 'YoAi audience records linked to Meta Custom/Lookalike/Saved audiences';
+COMMENT ON TABLE audiences IS 'DijiMagic audience records linked to Meta Custom/Lookalike/Saved audiences';

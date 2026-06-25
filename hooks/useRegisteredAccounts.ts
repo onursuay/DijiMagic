@@ -32,7 +32,7 @@ export interface AddAccountResult {
 
 interface State {
   enabled: boolean
-  /** YoAlgoritma işletme-scope modu açık mı (YOAI_PER_ACCOUNT_SCOPE). */
+  /** DijiAlgoritma işletme-scope modu açık mı (DIJIMAGIC_PER_ACCOUNT_SCOPE). */
   perAccountScope: boolean
   accounts: RegisteredAccount[]
   count: number

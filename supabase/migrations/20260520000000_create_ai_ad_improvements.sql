@@ -1,5 +1,5 @@
 -- ─────────────────────────────────────────────────────────────
--- YoAlgoritma — Per-Ad Improvement Cards (Faz 2)
+-- DijiAlgoritma — Per-Ad Improvement Cards (Faz 2)
 --
 -- Her AKTİF reklam için 1:1 "geliştirme kartı" (improvement card).
 -- Eski ai_suggestions akışı PARALEL yaşamaya devam eder (deprecate
@@ -34,7 +34,7 @@ CREATE TABLE IF NOT EXISTS public.ai_ad_improvements (
                                                -- meta → auto, google → manual_publish (Faz 2 karar 5)
   model                       TEXT,
   run_id                      UUID,            -- ai_engine_runs.id (FK yok — decoupled)
-  publish_audit_id            UUID,            -- yoai_publish_audit_log.id (applied olunca)
+  publish_audit_id            UUID,            -- dijimagic_publish_audit_log.id (applied olunca)
   publish_error               TEXT,            -- publish başarısızsa hata (karar 1: approved'da kalır)
   publish_attempts            INTEGER NOT NULL DEFAULT 0,
   decided_by                  TEXT,            -- user_id veya 'system' (auto-cancel/supersede)

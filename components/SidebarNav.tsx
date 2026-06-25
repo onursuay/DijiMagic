@@ -155,8 +155,8 @@ export default function SidebarNav() {
               className={`absolute inset-0 flex items-center justify-center transition-opacity duration-300 group-hover:opacity-0 ${showHintButton ? 'opacity-0' : 'opacity-100'}`}
             >
               <Image
-                src="/logos/yoai-logo.png"
-                alt="YoAI"
+                src="/logos/dijimagic-logo.png"
+                alt="DijiMagic"
                 width={32}
                 height={32}
                 className="object-contain"
@@ -175,8 +175,8 @@ export default function SidebarNav() {
           <>
             <Link href="/dashboard" prefetch={false} className="flex-shrink-0">
               <Image
-                src="/logos/yoai-logo.png"
-                alt="YoAI"
+                src="/logos/dijimagic-logo.png"
+                alt="DijiMagic"
                 width={50}
                 height={20}
                 className="object-contain cursor-pointer"

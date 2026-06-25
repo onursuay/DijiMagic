@@ -1,6 +1,6 @@
 # Meta Ads Strateji Karar Çerçevesi
 
-Bu döküman YoAi algoritmasının Meta Ads reklamlarını analiz ederken ve yeni reklam önerisi oluştururken kullandığı karar mantığını tanımlar.
+Bu döküman DijiMagic algoritmasının Meta Ads reklamlarını analiz ederken ve yeni reklam önerisi oluştururken kullandığı karar mantığını tanımlar.
 
 ## 1. Kampanya Amacı Seçimi
 

@@ -1,4 +1,4 @@
-/* YoAi — Firecrawl kilit sayfa seçici (deterministik).
+/* DijiMagic — Firecrawl kilit sayfa seçici (deterministik).
    map çıktısından markaya dair en bilgilendirici sayfaları seçer. */
 import type { MapLink } from './types'
 

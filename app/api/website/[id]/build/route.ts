@@ -3,7 +3,7 @@ import { getCurrentUser } from '@/lib/billing/user'
 import { getWebsite, replacePages, createVersion, updateWebsite } from '@/lib/website/store'
 import { buildDeterministicSite } from '@/lib/website/templates/deterministic'
 import { resolveSiteColors } from '@/lib/website/render/theme'
-import { getProfileByUserId, getIntelligenceByUserId } from '@/lib/yoai/businessProfileStore'
+import { getProfileByUserId, getIntelligenceByUserId } from '@/lib/dijimagic/businessProfileStore'
 import type { WebsiteSnapshot } from '@/lib/website/types'
 
 export const dynamic = 'force-dynamic'

@@ -38,10 +38,10 @@ function test(name: string, fn: () => void | Promise<void>): void {
 }
 
 const onboardingFile = path.join(
-  __dirname, '..', '..', 'components', 'yoai', 'BusinessProfileOnboarding.tsx'
+  __dirname, '..', '..', 'components', 'dijimagic', 'BusinessProfileOnboarding.tsx'
 )
 const guardFile = path.join(
-  __dirname, '..', '..', 'components', 'yoai', 'BusinessProfileGuard.tsx'
+  __dirname, '..', '..', 'components', 'dijimagic', 'BusinessProfileGuard.tsx'
 )
 const onboardingSrc = fs.readFileSync(onboardingFile, 'utf-8')
 const guardSrc = fs.readFileSync(guardFile, 'utf-8')

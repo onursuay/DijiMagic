@@ -76,7 +76,7 @@ Mevcut `frequency` / `weekday` kolonları geriye uyum için bırakılır; yeni `
 ### 2. Brief üretim hattı — `lib/seo/siteBriefPipeline.ts` → `runSiteBriefPipeline(siteConnectionId, userId)`
 
 1. `site_connections.base_url` çözülür.
-2. Mevcut **`lib/yoai/businessSourceScanner.ts`** ile site sayfaları taranır (HTTP scrape, LLM yok).
+2. Mevcut **`lib/dijimagic/businessSourceScanner.ts`** ile site sayfaları taranır (HTTP scrape, LLM yok).
 3. **Claude sentezi:** mevcut `runBrandProfilePipeline` / marka sentez deseni yeniden kullanılır; scrape edilen içerikten yapılandırılmış brief üretilir. Sentez, sitenin menü/navigasyon ve sayfa başlıklarından **hizmet/kategori listesini** (`categories[]`) de çıkarır (örn. Kombi Servisi, Petek Temizleme, Koltuk Yıkama, Halı Yıkama, Klima Servisi).
 4. `site_content_briefs`'e upsert + `scan_status` güncellenir. Hata olursa `failed` + `last_error`, asla throw ile akışı kırmaz.
 
@@ -167,7 +167,7 @@ Cron (saatlik) ──▶ isScheduleDue(schedule_mode: daily|weekly_days|monthly_
 ## Kapsam Dışı (YAGNI)
 
 - `site_connections`'ı reklam hesabı (Meta/Google) işletme grubuna bağlama — bu tasarım siteyi kendi başına ele alır, ad-account scope'a bağlamaz.
-- `YOAI_PER_ACCOUNT_SCOPE` flag mekaniğine müdahale — bu çözüm o flag'den bağımsız çalışır.
+- `DIJIMAGIC_PER_ACCOUNT_SCOPE` flag mekaniğine müdahale — bu çözüm o flag'den bağımsız çalışır.
 - Manuel per-site işletme profili oluşturma UI'ı — brief otomatik türetildiği için gerekmez.
 
 ## Etkilenecek Dosyalar (tahmini)

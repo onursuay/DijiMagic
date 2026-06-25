@@ -9,7 +9,7 @@
 ---
 
 ## Task 1: Türkçe metin util + İstanbul/İ lokasyon bug fix
-**Files:** Create `lib/yoai/turkishText.ts`; Modify `lib/yoai/businessSourceScanner.ts`; Test `src/tests/turkishText.test.ts`
+**Files:** Create `lib/dijimagic/turkishText.ts`; Modify `lib/dijimagic/businessSourceScanner.ts`; Test `src/tests/turkishText.test.ts`
 - `normalizeTrLower(s)` — Türkçe-bilinçli küçük harf (İ→i, I→ı combining-dot strip), `cityIncludes(text, city)`.
 - `extractLocations` → `cityIncludes` kullan (büyük "İstanbul" yakalanır).
 - Tests: normalize İ/I; cityIncludes İstanbul/istanbul/ISTANBUL; extractLocations regresyon (İstanbul + Ankara).

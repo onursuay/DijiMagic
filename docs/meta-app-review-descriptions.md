@@ -9,7 +9,7 @@
 
 **Tell us how you'll use this permission:**
 
-YoAi is a SaaS advertising management platform. We use `pages_manage_ads` only where a Facebook Page is required as part of ad setup and lead ad workflows.
+DijiMagic is a SaaS advertising management platform. We use `pages_manage_ads` only where a Facebook Page is required as part of ad setup and lead ad workflows.
 
 Specifically, we use this permission to:
 
@@ -18,12 +18,12 @@ Specifically, we use this permission to:
 3. Support lead ad workflows together with `leads_retrieval`, where Page-linked lead forms are used in campaign creation.
 
 **User flow:**
-- User logs into YoAi and connects their Meta account
+- User logs into DijiMagic and connects their Meta account
 - User opens the campaign creation flow
 - User selects one of their own Facebook Pages
 - User configures the campaign and lead form
-- YoAi creates the ad using the selected Page as the Page identity
-- The user can later manage the campaign from the YoAi dashboard
+- DijiMagic creates the ad using the selected Page as the Page identity
+- The user can later manage the campaign from the DijiMagic dashboard
 
 We use this permission only for the authenticated user's own Pages and advertising workflows. We do not access or manage Pages that do not belong to the authenticated user.
 
@@ -33,7 +33,7 @@ We use this permission only for the authenticated user's own Pages and advertisi
 
 **Tell us how you'll use this permission:**
 
-YoAi is a SaaS advertising management platform with AI-powered creative generation. We use `pages_manage_posts` to allow users to publish content directly to their own Facebook Page from within YoAi.
+DijiMagic is a SaaS advertising management platform with AI-powered creative generation. We use `pages_manage_posts` to allow users to publish content directly to their own Facebook Page from within DijiMagic.
 
 Specifically, we use this permission to:
 
@@ -42,12 +42,12 @@ Specifically, we use this permission to:
 3. Publish short-form vertical videos as Facebook Reels on the user's Page.
 
 **User flow:**
-- User logs into YoAi and connects their Meta account
+- User logs into DijiMagic and connects their Meta account
 - User navigates to the Design section and creates or generates visual content
 - User clicks "Publish" and selects their Facebook Page
 - User chooses the publish type: Feed or Reels (Reels is available for video content only)
 - User writes a caption and confirms publication
-- YoAi publishes the content to the user's own Facebook Page
+- DijiMagic publishes the content to the user's own Facebook Page
 - The content appears on the Page's timeline (for Feed) or Reels tab (for Reels)
 
 Content is published only after explicit user action. We do not publish content automatically. This permission is used only for the authenticated user's own Pages.
@@ -59,20 +59,20 @@ Content is published only after explicit user action. We do not publish content 
 
 **Tell us how you'll use this permission:**
 
-YoAi is a SaaS advertising management platform that supports lead generation campaigns. We use `leads_retrieval` to:
+DijiMagic is a SaaS advertising management platform that supports lead generation campaigns. We use `leads_retrieval` to:
 
 1. Retrieve the user's available lead generation forms from their own Facebook Pages.
 2. Check whether the authenticated user has access to a selected lead form.
-3. Display submitted lead entries inside the YoAi dashboard so the Page owner can review and manage their own leads.
+3. Display submitted lead entries inside the DijiMagic dashboard so the Page owner can review and manage their own leads.
 
 **User flow:**
-- User logs into YoAi and connects their Meta account
+- User logs into DijiMagic and connects their Meta account
 - User selects the "Lead Generation" objective when creating a campaign
-- YoAi loads the user's available lead forms
+- DijiMagic loads the user's available lead forms
 - User selects a lead form for the campaign
-- After leads are submitted, YoAi displays those leads in the dashboard for that same authenticated Page owner
+- After leads are submitted, DijiMagic displays those leads in the dashboard for that same authenticated Page owner
 
-Lead data is shown only to the authenticated user for their own Page assets. YoAi does not sell, share, or use lead data for unrelated purposes.
+Lead data is shown only to the authenticated user for their own Page assets. DijiMagic does not sell, share, or use lead data for unrelated purposes.
 
 ---
 
@@ -80,7 +80,7 @@ Lead data is shown only to the authenticated user for their own Page assets. YoA
 
 **Tell us how you'll use this permission:**
 
-YoAi is a SaaS advertising management platform. We use `business_management` only for business asset discovery required for WhatsApp ad setup.
+DijiMagic is a SaaS advertising management platform. We use `business_management` only for business asset discovery required for WhatsApp ad setup.
 
 Specifically, we use this permission to:
 
@@ -89,10 +89,10 @@ Specifically, we use this permission to:
 3. Resolve which business-owned WhatsApp assets should be shown to the user during campaign setup.
 
 **User flow:**
-- User logs into YoAi and connects their Meta account
+- User logs into DijiMagic and connects their Meta account
 - User starts creating a campaign with WhatsApp as the destination
-- YoAi looks up the user's business assets
-- YoAi identifies available WhatsApp Business Accounts owned by the user's business
+- DijiMagic looks up the user's business assets
+- DijiMagic identifies available WhatsApp Business Accounts owned by the user's business
 - The user selects the appropriate WhatsApp asset for the campaign
 
 This permission is used only to discover the authenticated user's own business assets needed for campaign configuration. We do not use it for unrelated business data processing.
@@ -103,15 +103,15 @@ This permission is used only to discover the authenticated user's own business a
 
 **Tell us how you'll use this permission:**
 
-YoAi is a SaaS advertising management platform. We use `instagram_basic` to:
+DijiMagic is a SaaS advertising management platform. We use `instagram_basic` to:
 
 1. Retrieve the Instagram Business Account linked to the user's Facebook Page.
 2. Display the Instagram account information during onboarding and campaign setup.
 3. Allow the user to confirm which Instagram Business Account will be used for publishing and advertising workflows.
 
 **User flow:**
-- User logs into YoAi and connects their Meta account
-- YoAi retrieves the Instagram Business Account connected to the user's Page
+- User logs into DijiMagic and connects their Meta account
+- DijiMagic retrieves the Instagram Business Account connected to the user's Page
 - The Instagram account information is shown in the interface
 - User confirms the Instagram account to use in publishing or ad workflows
 
@@ -123,23 +123,23 @@ This permission is used only for the authenticated user's own Instagram Business
 
 **Tell us how you'll use this permission:**
 
-YoAi is a SaaS advertising management platform with AI-powered creative generation. We use `instagram_content_publish` to allow users to publish content directly to their own Instagram Business Account from within YoAi.
+DijiMagic is a SaaS advertising management platform with AI-powered creative generation. We use `instagram_content_publish` to allow users to publish content directly to their own Instagram Business Account from within DijiMagic.
 
 Specifically, we use this permission to:
 
 1. Publish AI-generated or user-uploaded images, videos, reels, or carousel content to the user's Instagram Business Account.
-2. Let the user generate content in YoAi, preview it, and explicitly confirm publication.
+2. Let the user generate content in DijiMagic, preview it, and explicitly confirm publication.
 3. Support a workflow where published Instagram content can later be reused in advertising workflows.
 
 **User flow:**
-- User logs into YoAi and connects their Meta account
-- User creates or uploads content in YoAi
+- User logs into DijiMagic and connects their Meta account
+- User creates or uploads content in DijiMagic
 - User previews the content
 - User clicks a publish action to publish it to Instagram
-- YoAi publishes the content to the user's own Instagram Business Account
+- DijiMagic publishes the content to the user's own Instagram Business Account
 - The published content appears on the user's Instagram profile
 
-Content is published only after explicit user action. YoAi does not publish content automatically without the user confirming the action.
+Content is published only after explicit user action. DijiMagic does not publish content automatically without the user confirming the action.
 
 ---
 
@@ -147,7 +147,7 @@ Content is published only after explicit user action. YoAi does not publish cont
 
 **Tell us how you'll use this permission:**
 
-YoAi is a SaaS advertising management platform. We use `whatsapp_business_management` to discover and display the authenticated user's WhatsApp Business assets during campaign setup.
+DijiMagic is a SaaS advertising management platform. We use `whatsapp_business_management` to discover and display the authenticated user's WhatsApp Business assets during campaign setup.
 
 Specifically, we use this permission to:
 
@@ -156,13 +156,13 @@ Specifically, we use this permission to:
 3. Present the available business phone numbers so the user can choose which number to use as the destination for a Click-to-WhatsApp campaign.
 
 **User flow:**
-- User logs into YoAi and connects their Meta account
+- User logs into DijiMagic and connects their Meta account
 - User starts creating a campaign with WhatsApp as the destination
-- YoAi discovers the user's WhatsApp Business Accounts and available phone numbers
+- DijiMagic discovers the user's WhatsApp Business Accounts and available phone numbers
 - The user selects the number they want to use
-- YoAi uses the selected number in campaign configuration
+- DijiMagic uses the selected number in campaign configuration
 
-This permission is used only for the authenticated user's own WhatsApp Business assets. YoAi does not read or store message content through this permission.
+This permission is used only for the authenticated user's own WhatsApp Business assets. DijiMagic does not read or store message content through this permission.
 
 ---
 
@@ -170,7 +170,7 @@ This permission is used only for the authenticated user's own WhatsApp Business 
 
 **Tell us how you'll use this permission:**
 
-YoAi is a SaaS advertising management platform. We use `whatsapp_business_messaging` only for Click-to-WhatsApp campaign setup and messaging destination configuration.
+DijiMagic is a SaaS advertising management platform. We use `whatsapp_business_messaging` only for Click-to-WhatsApp campaign setup and messaging destination configuration.
 
 Specifically, we use this permission to:
 
@@ -178,13 +178,13 @@ Specifically, we use this permission to:
 2. Support ad flows where a person who clicks the ad is directed to a WhatsApp conversation with the advertiser's business number.
 
 **User flow:**
-- User logs into YoAi and connects their Meta account
+- User logs into DijiMagic and connects their Meta account
 - User creates a campaign and selects WhatsApp as the destination
 - User selects one of their available WhatsApp business numbers
-- YoAi creates the campaign using that number as the messaging destination
+- DijiMagic creates the campaign using that number as the messaging destination
 - When a person clicks the ad, they are directed to WhatsApp to contact the advertiser
 
-YoAi does not read, store, or process WhatsApp conversation content between the advertiser and their customers as part of this permission use.
+DijiMagic does not read, store, or process WhatsApp conversation content between the advertiser and their customers as part of this permission use.
 
 ---
 
@@ -194,7 +194,7 @@ Record **one separate video per permission**. Each video should show only the fe
 
 Each video must demonstrate:
 
-1. **Login** — User logs into YoAi
+1. **Login** — User logs into DijiMagic
 2. **Connect** — User connects Meta account via Facebook Login (OAuth flow)
 3. **Feature** — User uses the specific feature that requires the permission
 4. **Result** — The successful outcome

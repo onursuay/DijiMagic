@@ -79,15 +79,15 @@ test('onursuay@hotmail.com yetkili kullanıcı kabul edilir', () => {
 test('farklı email yetkili kabul edilmez', () => {
   const isSuper = makeIsSuperAdminEmail(['onursuay@hotmail.com'])
   assert.strictEqual(isSuper('someone@example.com'), false)
-  assert.strictEqual(isSuper('admin@yoai.com'), false)
+  assert.strictEqual(isSuper('admin@dijimagic.com'), false)
   assert.strictEqual(isSuper(''), false)
   assert.strictEqual(isSuper(null), false)
   assert.strictEqual(isSuper(undefined), false)
 })
 
 test('env override allowlist davranışı', () => {
-  const isSuper = makeIsSuperAdminEmail(['ops@yoai.io', 'onursuay@hotmail.com'])
-  assert.strictEqual(isSuper('ops@yoai.io'), true)
+  const isSuper = makeIsSuperAdminEmail(['ops@dijimagic.io', 'onursuay@hotmail.com'])
+  assert.strictEqual(isSuper('ops@dijimagic.io'), true)
   assert.strictEqual(isSuper('onursuay@hotmail.com'), true)
   assert.strictEqual(isSuper('intruder@x.com'), false)
 })

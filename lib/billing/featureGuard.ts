@@ -1,7 +1,7 @@
 /**
  * Sunucu-taraflı özellik erişim + kredi guard'ı.
  *
- * AI üretim endpoint'leri (tasarım görsel/video, YoAlgoritma sohbet, SEO)
+ * AI üretim endpoint'leri (tasarım görsel/video, DijiAlgoritma sohbet, SEO)
  * istemci JS'ine güvenmeden BU guard'dan geçer: kimlik doğrulama + (gerekirse)
  * aktif abonelik + atomik kredi düşümü tek noktada yapılır. UI'daki
  * `useCredits`/`AccessRequiredModal` yalnız kullanıcı deneyimi içindir; gerçek

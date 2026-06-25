@@ -1,6 +1,6 @@
 # Google Ads Strateji Karar Çerçevesi
 
-Bu döküman YoAi algoritmasının Google Ads reklamlarını analiz ederken ve yeni reklam önerisi oluştururken kullandığı karar mantığını tanımlar.
+Bu döküman DijiMagic algoritmasının Google Ads reklamlarını analiz ederken ve yeni reklam önerisi oluştururken kullandığı karar mantığını tanımlar.
 
 ## 1. Kampanya Tipi Seçimi
 

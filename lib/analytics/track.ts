@@ -1,7 +1,7 @@
 /**
  * İzleme (event/analitik) yardımcıları — no-op-safe.
  *
- * YoAi panelinde şu an GTM/GA4 script'i yüklü DEĞİL. Bu katman, route/sekme
+ * DijiMagic panelinde şu an GTM/GA4 script'i yüklü DEĞİL. Bu katman, route/sekme
  * değişimlerini `window.dataLayer`'a yazar (GTM yüklendiğinde kuyruktaki
  * event'leri tüketir — standart GTM deseni) ve `window.gtag` mevcutsa ona da
  * iletir. Hiçbir script yokken sessizce bekler, asla hata vermez.

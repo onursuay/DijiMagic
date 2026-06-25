@@ -108,9 +108,9 @@ const VALID_OPTIMIZATION_GOALS: Record<string, string[]> = {
  * App Promotion + APP: promoted_object = { application_id, object_store_url }.
  * WhatsApp: promoted_object = { page_id, whatsapp_phone_number? }
  *   whatsapp_phone_number is OPTIONAL per Meta docs, but we send it EXPLICITLY when user selects
- *   a WABA number from the UI dropdown. This ensures the number shown in YoAi matches what
+ *   a WABA number from the UI dropdown. This ensures the number shown in DijiMagic matches what
  *   Meta Ads Manager displays. Without explicit number, Meta resolves server-side from Page Settings
- *   which can cause mismatch with what the user sees in YoAi.
+ *   which can cause mismatch with what the user sees in DijiMagic.
  */
 function resolveDestinationConfig(
   objective: string,
@@ -616,7 +616,7 @@ export async function POST(request: Request) {
       }))
 
       if (!whatsappPhoneNumber) {
-        console.warn(`[AdSet Create][${requestId}] WHATSAPP_SOURCE_MISMATCH: No explicit phone number provided. Meta will resolve server-side from page settings. This may cause number mismatch between YoAi UI and Ads Manager.`)
+        console.warn(`[AdSet Create][${requestId}] WHATSAPP_SOURCE_MISMATCH: No explicit phone number provided. Meta will resolve server-side from page settings. This may cause number mismatch between DijiMagic UI and Ads Manager.`)
       }
     }
 

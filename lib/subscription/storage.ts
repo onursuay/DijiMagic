@@ -7,16 +7,16 @@ import {
   USER_DEFAULTS,
 } from './types'
 
-// NOTE: `yoai-credits` and `yoai-subscription` were removed — those are now
+// NOTE: `dijimagic-credits` and `dijimagic-subscription` were removed — those are now
 // server-side only (see /api/billing/current and the Supabase subscriptions /
 // credit_balances tables). The remaining keys are either display prefs
 // (profile, invoice-info) or usage counters that reset automatically.
 const KEYS = {
-  profile: 'yoai-profile',
-  invoiceInfo: 'yoai-invoice-info',
-  invoiceHistory: 'yoai-invoice-history',
-  aiScanUsage: 'yoai-ai-scan-usage',
-  strategyUsage: 'yoai-strategy-usage',
+  profile: 'dijimagic-profile',
+  invoiceInfo: 'dijimagic-invoice-info',
+  invoiceHistory: 'dijimagic-invoice-history',
+  aiScanUsage: 'dijimagic-ai-scan-usage',
+  strategyUsage: 'dijimagic-strategy-usage',
 } as const
 
 function get<T>(key: string, fallback: T): T {

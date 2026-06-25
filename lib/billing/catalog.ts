@@ -40,8 +40,8 @@ export interface PricedCreditPack {
 
 const SUBSCRIPTION_PLAN_IDS: PlanId[] = ['basic', 'starter', 'premium']
 
-// Plana dahil aylık kredi. Rakip-hizalı (iyzads 20/60/100); YoAi daha fazla
-// kredi-tüketen modül paketlediği için (YoAlgoritma sohbet, Tasarım, Strateji
+// Plana dahil aylık kredi. Rakip-hizalı (iyzads 20/60/100); DijiMagic daha fazla
+// kredi-tüketen modül paketlediği için (DijiAlgoritma sohbet, Tasarım, Strateji
 // aşımı) cömert tutulur. Overflow için kredi paketleri ayrıca satılır.
 const BUNDLED_CREDITS: Record<string, number> = {
   basic: 50,

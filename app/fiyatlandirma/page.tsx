@@ -19,7 +19,7 @@ export default async function FiyatlandirmaPage() {
 
   const ctaTrial = isEn ? '14-Day Free Trial' : '14 Gün Ücretsiz Dene'
   const ctaSchedule = isEn ? 'Book a Call' : 'Görüşme Planla'
-  const footerText = isEn ? '2025 YO Dijital. All rights reserved.' : '2025 YO Dijital. Tüm hakları saklıdır.'
+  const footerText = isEn ? '2025 DijiMagic. All rights reserved.' : '2025 DijiMagic. Tüm hakları saklıdır.'
 
   // Legal links — locale-aware URLs (EN uses /en/ prefix for compliance), matching the landing footer.
   const legal = {
@@ -105,7 +105,7 @@ export default async function FiyatlandirmaPage() {
       <footer className="w-full border-t border-white/[0.05] py-6 px-6 bg-[#060609] mt-auto">
         <div className="max-w-7xl mx-auto flex flex-col sm:flex-row items-center justify-between gap-3 text-sm">
           <div className="flex items-center gap-3 text-gray-500">
-            <Image src="/logos/yoai-logo.png" alt="YoAI" width={40} height={16} className="object-contain brightness-0 invert opacity-40" />
+            <Image src="/logos/dijimagic-logo.png" alt="DijiMagic" width={40} height={16} className="object-contain brightness-0 invert opacity-40" />
             <span>{footerText}</span>
           </div>
           <nav className="flex gap-5 text-gray-500">

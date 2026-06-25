@@ -43,8 +43,8 @@ export default function CookieConsent() {
     if (!getConsent()) setVisible(true)
   }, [])
 
-  // Üretilen müşteri siteleri (public render + önizleme) YoAi root layout'unu miras alır;
-  // YoAi'nin çerez banner'ı oralarda görünmemeli (marka sızıntısı). Yalnız YoAi panelinde göster.
+  // Üretilen müşteri siteleri (public render + önizleme) DijiMagic root layout'unu miras alır;
+  // DijiMagic'in çerez banner'ı oralarda görünmemeli (marka sızıntısı). Yalnız DijiMagic panelinde göster.
   const isGeneratedSite =
     pathname?.startsWith('/s/') || pathname?.startsWith('/website-preview') || pathname?.startsWith('/site-render-test')
   if (isGeneratedSite || !visible) return null

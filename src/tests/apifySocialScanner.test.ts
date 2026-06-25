@@ -9,7 +9,7 @@
  */
 
 import assert from 'assert'
-import { scanSocialSource, getSocialScanProviderInfo } from '../../lib/yoai/socialSourceScanner'
+import { scanSocialSource, getSocialScanProviderInfo } from '../../lib/dijimagic/socialSourceScanner'
 import {
   normalizeInstagramProfile,
   normalizeFacebookProfile,
@@ -17,8 +17,8 @@ import {
   normalizeYouTubeProfile,
   normalizeTikTokProfile,
   normalizeSocialProfile,
-} from '../../lib/yoai/socialProfileNormalizer'
-import { getApifyToken, getApifyActorId, isApifyReady, buildActorInput } from '../../lib/yoai/apifySocialConfig'
+} from '../../lib/dijimagic/socialProfileNormalizer'
+import { getApifyToken, getApifyActorId, isApifyReady, buildActorInput } from '../../lib/dijimagic/apifySocialConfig'
 
 let passed = 0
 let failed = 0
@@ -551,7 +551,7 @@ console.log('\n▶ Token güvenlik')
 test('Token log çıktısına yansımaz (runner URL maskeleme)', () => {
   // apifySocialRunner exports maskToken utility used internally
   // We verify the module can be imported without exposing token
-  const { runApifyActor } = require('../../lib/yoai/apifySocialRunner')
+  const { runApifyActor } = require('../../lib/dijimagic/apifySocialRunner')
   assert.strictEqual(typeof runApifyActor, 'function')
   // If token was logged, it'd appear in console; we just verify function exists
   // and token-shaped strings aren't in module source via static check

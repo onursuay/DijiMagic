@@ -9,12 +9,12 @@
 
 ## 1. Vizyon
 
-YoAi'ye yeni bir modül: **Web Site Yöneticisi**. Kullanıcı işletme bilgilerini verir, AI markaya uygun gerçek bir web sitesi üretir, kullanıcı önizleyip düzenler ve **tek tuşla yayına alır**. Hedef referans modeli Promake'tir: *"Talk to AI. Build a real website. Get your business online."*
+DijiMagic'e yeni bir modül: **Web Site Yöneticisi**. Kullanıcı işletme bilgilerini verir, AI markaya uygun gerçek bir web sitesi üretir, kullanıcı önizleyip düzenler ve **tek tuşla yayına alır**. Hedef referans modeli Promake'tir: *"Talk to AI. Build a real website. Get your business online."*
 
 Promake = aslında **6-7 bağımsız alt sistem**. Bu nedenle proje tek spec/plan'a sığmaz; **fazlara bölünür** ve her faz kendi tasarım→plan→inşa döngüsünden geçer. Bu belge **tüm yol haritasını** kaydeder ama **yalnız Faz 1'i** detaylandırır.
 
 ### Promake'ten doğrulanan kritik gözlem
-Promake yayınlanan siteleri **kendi alt alan adlarında** barındırır (`apex-8831.published.promake.ai`, `panet-10818.site.promake.ai`). "Tek tuş yayın" sihrinin sırrı budur: site **platformun kendi altyapısında** yaşar. YoAi de aynı modeli benimser → `firma.yoai.app`.
+Promake yayınlanan siteleri **kendi alt alan adlarında** barındırır (`apex-8831.published.promake.ai`, `panet-10818.site.promake.ai`). "Tek tuş yayın" sihrinin sırrı budur: site **platformun kendi altyapısında** yaşar. DijiMagic de aynı modeli benimser → `firma.dijimagic.app`.
 
 ---
 
@@ -24,12 +24,12 @@ Her faz tek başına canlıya çıkabilir; bağımlılık sırası zorunludur.
 
 | Faz | Kapsam | Dış bağımlılık / risk |
 |-----|--------|----------------------|
-| **Faz 1** 🔴 | **Üretim + Barındırma + Yayın (ÇEKİRDEK)** — bilgi/logo/kategori → AI çok-sayfalı site üretir → önizleme + yönlendirilmiş düzenleme → `firma.yoai.app` tek tuş yayın | Yok (Vercel + mevcut anahtarlar yeter) |
+| **Faz 1** 🔴 | **Üretim + Barındırma + Yayın (ÇEKİRDEK)** — bilgi/logo/kategori → AI çok-sayfalı site üretir → önizleme + yönlendirilmiş düzenleme → `firma.dijimagic.app` tek tuş yayın | Yok (Vercel + mevcut anahtarlar yeter) |
 | **Faz 2** 🟡 | Sohbetle sürekli düzenleme + versiyon/rollback (logs + sandboxed edits) | Yok |
 | **Faz 3** 🟡 | Kullanıcının kendi domainini bağlama + otomatik SSL | Vercel Domains API |
 | **Faz 4** 🟠 | Domain **satın alma** (uygulama içinde) | **YASAL:** registrar reseller hesabı/API + markup + faturalama. Ayrı görüşülecek. |
 | **Faz 5** 🟠 | İş e-postası (`contact@firma.com`) | E-posta sağlayıcı (forwarding hafif yolu önerilir) |
-| **Faz 6** 🔴 | Ödeme alma + e-ticaret (üretilen sitelerde) | **YASAL:** para tutma riski. Hafif yol = her satıcı kendi ödeme hesabını bağlar (para YoAi'ye uğramaz). Ayrı görüşülecek. |
+| **Faz 6** 🔴 | Ödeme alma + e-ticaret (üretilen sitelerde) | **YASAL:** para tutma riski. Hafif yol = her satıcı kendi ödeme hesabını bağlar (para DijiMagic'e uğramaz). Ayrı görüşülecek. |
 | **Faz 7** 🟡 | Sohbetle işletme yönetimi (indirim/banner/stok) + faturalar | Faz 2 + Faz 6 üstüne biner |
 
 > **Sahip notu:** Faz 4-5-6'nın blokeri kod değil, dış hesap/sözleşme; başvuru süreleri uzun → Faz 1-3 inşa edilirken paralelde başlatılmalı. Faz 1-2-3 tamamen iç kaynaklarla, dışarıdan beklemeden yapılabilir.
@@ -48,15 +48,15 @@ Her faz tek başına canlıya çıkabilir; bağımlılık sırası zorunludur.
 6. **Serbest düzenleme girişi:** Kullanıcı ekranda doğal dille yazar ("logoyu şununla değiştir", "hizmet sitesi olsun", "şu hizmeti ekle", "renk daha koyu"). Bu, kör form **değildir**; sistem önerir, kullanıcı düzeltir.
 7. **Finalize:** AI tüm girdileri birleştirir → çok-sayfalı siteyi üretir (içerik + bölüm seçimi + tema + görseller).
 8. **Önizleme:** Masaüstü/mobil önizleme.
-9. **Yayın:** Tek tuş → `firma.yoai.app` canlı (deploy yok, `status='published'`).
+9. **Yayın:** Tek tuş → `firma.dijimagic.app` canlı (deploy yok, `status='published'`).
 10. **Çoklu site:** Kullanıcı istediği kadar site oluşturur; her biri ayrı kayıt. Profil yalnız **başlangıç tohumu** — her sitede override edilebilir, sonradan revize edilebilir.
 
 ### 3.2 Mimari — veri-modeli + paylaşımlı çok-kiracılı renderer
 
-**Temel ilke:** Üretilen site **gerçek dosya değil, veridir.** Veritabanında bir **sayfa modeli** (bölümler + içerik + tema tokenları, JSON). YoAi içindeki **tek bir site-renderer** bu modeli alt alan adına göre okuyup render eder.
+**Temel ilke:** Üretilen site **gerçek dosya değil, veridir.** Veritabanında bir **sayfa modeli** (bölümler + içerik + tema tokenları, JSON). DijiMagic içindeki **tek bir site-renderer** bu modeli alt alan adına göre okuyup render eder.
 
 ```
-Ziyaretçi → firma.yoai.app
+Ziyaretçi → firma.dijimagic.app
    ↓ (Next.js middleware: subdomain → website_id çözümle)
    ↓
 Site Renderer (dynamic route)
@@ -74,7 +74,7 @@ Responsive bölüm bileşenleri (Hero, Hakkımızda, Hizmetler, İletişim…) i
 
 **Reddedilen alternatif:** Her site için ayrı Vercel projesi deploy etmek — yayın yavaş, gereksiz karmaşık. Kod export (Promake Pro benzeri) gerekince ileride ayrı eklenir.
 
-**Altyapı işi (tek seferlik):** Vercel'de bir **wildcard alt alan adı** (`*.yoai.app` veya ayrılacak `*.<site-domaini>`) + DNS + wildcard SSL tanımlanır. → **Açık karar:** Hangi wildcard domain? (bkz. §7)
+**Altyapı işi (tek seferlik):** Vercel'de bir **wildcard alt alan adı** (`*.dijimagic.app` veya ayrılacak `*.<site-domaini>`) + DNS + wildcard SSL tanımlanır. → **Açık karar:** Hangi wildcard domain? (bkz. §7)
 
 ### 3.3 Üretim hattı (generation pipeline)
 
@@ -193,7 +193,7 @@ locales/tr.json, en.json  # tüm yeni metinler
 - **Entegrasyon:** intake → üretim → model persist → render; revizyon → yeni version + kredi düşümü; rollback → eski version.
 - **Renderer:** responsive bölüm bileşenleri (mobil/masaüstü) görsel snapshot.
 - **i18n:** TR/EN UI anahtarları eksiksiz; üretilen site çok-dilli model doğru.
-- **Gerçek doğrulama:** En az bir gerçek profil ile uçtan uca site üretip `firma.yoai.app` önizleme/yayın testi.
+- **Gerçek doğrulama:** En az bir gerçek profil ile uçtan uca site üretip `firma.dijimagic.app` önizleme/yayın testi.
 
 ---
 
@@ -205,7 +205,7 @@ locales/tr.json, en.json  # tüm yeni metinler
 
 ## 5. Mevcut altyapıdan yeniden kullanılan parçalar
 
-- **Marka verisi:** `user_business_profiles`, `user_business_intelligence` (`ai_synthesis`), `lib/yoai/businessIntelligenceBuilder.ts`, `lib/yoai/ai/brandSynthesis.ts`.
+- **Marka verisi:** `user_business_profiles`, `user_business_intelligence` (`ai_synthesis`), `lib/dijimagic/businessIntelligenceBuilder.ts`, `lib/dijimagic/ai/brandSynthesis.ts`.
 - **AI metin:** `lib/anthropic/text.ts` (`claudeJson`, `claudeText`).
 - **AI görsel:** `lib/seo/imageForArticle.ts` (FAL.ai deseni).
 - **Şifreleme:** `lib/seo/crypto.ts` (AES-256-GCM) — gerekirse API anahtarları için.
@@ -227,7 +227,7 @@ locales/tr.json, en.json  # tüm yeni metinler
 
 ## 7. Açık kararlar (implementasyon öncesi netleştirilecek)
 
-1. **Wildcard domain:** Yayın için hangi alan adı? `*.yoai.app` mi, ayrı bir `*.<marka>.com` mu?
+1. **Wildcard domain:** Yayın için hangi alan adı? `*.dijimagic.app` mi, ayrı bir `*.<marka>.com` mu?
 2. **Kredi rakamları:** Taban + sayfa çarpanı + dil çarpanı + revizyon maliyeti — somut değerler (gerçek üretim maliyetine göre).
 3. **Freepik API:** Anahtar/abonelik temin edilecek (yoksa Faz 1 ücretsiz API'lerle başlar, Freepik sonra eklenir).
 4. **Storage:** Üretilen/indirilen görseller nerede tutulacak (Supabase storage / S3 / Vercel Blob)?

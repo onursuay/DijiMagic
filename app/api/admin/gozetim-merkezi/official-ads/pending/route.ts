@@ -6,7 +6,7 @@
 import { NextResponse } from 'next/server'
 import { supabase } from '@/lib/supabase/client'
 import { checkAdminAccess } from '@/lib/admin/superAdmin'
-import { listPendingKnowledge } from '@/lib/yoai/officialAdsKnowledgeDecision'
+import { listPendingKnowledge } from '@/lib/dijimagic/officialAdsKnowledgeDecision'
 
 export const dynamic = 'force-dynamic'
 

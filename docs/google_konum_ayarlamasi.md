@@ -1,4 +1,4 @@
-# Konum Sistemi — YoAI Google Ads Teknik Referansı
+# Konum Sistemi — DijiMagic Google Ads Teknik Referansı
 
 **Son güncelleme:** 23 Mart 2026
 

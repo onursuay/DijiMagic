@@ -4,7 +4,7 @@ import { useRouter, usePathname } from 'next/navigation'
 import { useState, useEffect, useRef, type ReactNode } from 'react'
 import { useTranslations, useLocale } from 'next-intl'
 import { ChevronDown, TrendingUp, Lightbulb, Target, Zap, BarChart3, AlertTriangle, type LucideIcon } from 'lucide-react'
-import { clearYoAlgoritmaClientCache } from '@/lib/yoai/clientCache'
+import { clearDijiAlgoritmaClientCache } from '@/lib/dijimagic/clientCache'
 import { useRegisteredAccounts } from '@/hooks/useRegisteredAccounts'
 import MultiAccountDropdown from '@/components/account/MultiAccountDropdown'
 import AccessRequiredModal from '@/components/billing/AccessRequiredModal'
@@ -172,8 +172,8 @@ export default function Topbar({
         }).catch(() => {})
 
         setShowDropdown(false)
-        // Aktif hesap değişti → YoAlgoritma'nın önceki hesaba ait snapshot'ını temizle
-        clearYoAlgoritmaClientCache()
+        // Aktif hesap değişti → DijiAlgoritma'nın önceki hesaba ait snapshot'ını temizle
+        clearDijiAlgoritmaClientCache()
         window.location.reload()
       } else if (response.status === 400 && data.message) {
         alert(data.message)

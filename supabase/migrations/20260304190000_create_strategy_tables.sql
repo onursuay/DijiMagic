@@ -1,5 +1,5 @@
 -- ============================================================
--- YoAi Strateji Modülü — Veritabanı Şeması
+-- DijiMagic Strateji Modülü — Veritabanı Şeması
 -- ============================================================
 
 -- A) strategy_templates

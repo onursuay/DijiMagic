@@ -46,7 +46,7 @@ function mapLocalToUnified(row: AudienceRow): UnifiedAudience {
     metaAudienceId: row.meta_audience_id,
     adAccountId: row.ad_account_id,
     errorMessage: row.error_message,
-    yoaiSpecJson: row.yoai_spec_json,
+    dijimagicSpecJson: row.dijimagic_spec_json,
   }
 }
 
@@ -122,7 +122,7 @@ export default function HedefKitlePage() {
   const [wizardOpen, setWizardOpen] = useState(false)
   const [editAudience, setEditAudience] = useState<{
     id: string; type: AudienceType; source?: AudienceSource | null
-    name: string; description?: string | null; yoai_spec_json: Record<string, unknown>
+    name: string; description?: string | null; dijimagic_spec_json: Record<string, unknown>
   } | null>(null)
   const [toasts, setToasts] = useState<Toast[]>([])
   const [assets, setAssets] = useState<Assets>({ pixels: [], instagramAccounts: [], pages: [] })
@@ -211,14 +211,14 @@ export default function HedefKitlePage() {
 
   const handleEdit = useCallback((id: string) => {
     const audience = audiences.find((a) => a.id === id && a.origin === 'local')
-    if (!audience || !audience.yoaiSpecJson) return
+    if (!audience || !audience.dijimagicSpecJson) return
     setEditAudience({
       id: audience.id,
       type: audience.type,
       source: audience.source,
       name: audience.name,
       description: audience.description,
-      yoai_spec_json: audience.yoaiSpecJson,
+      dijimagic_spec_json: audience.dijimagicSpecJson,
     })
     setWizardOpen(true)
   }, [audiences])

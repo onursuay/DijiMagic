@@ -13,8 +13,8 @@ import { Resend } from 'resend'
 import { supabase } from '@/lib/supabase/client'
 
 const FROM_EMAIL =
-  process.env.FROM_EMAIL || 'YO Dijital Medya Anonim Şirketi <info@yodijital.com>'
-const APP_URL = process.env.NEXT_PUBLIC_APP_URL || 'https://yoai.yodijital.com'
+  process.env.FROM_EMAIL || 'DijiMagic <info@dijimagic.com>'
+const APP_URL = process.env.NEXT_PUBLIC_APP_URL || 'https://dijimagic.com'
 
 export const OWNER_NOTIFICATION_RECIPIENTS = [
   'onursuay@hotmail.com',
@@ -93,15 +93,15 @@ function buildBody(type: OwnerNotificationType, signup: SignupSummary): { subjec
   let action = ''
 
   if (type === 'new_signup') {
-    subject = `Yeni YoAi başvurusu — ${signup.name || signup.email || 'kullanıcı'}`
-    intro = 'Yeni bir YoAi başvurusu alındı. Kullanıcı manuel onay bekliyor.'
+    subject = `Yeni DijiMagic başvurusu — ${signup.name || signup.email || 'kullanıcı'}`
+    intro = 'Yeni bir DijiMagic başvurusu alındı. Kullanıcı manuel onay bekliyor.'
     action = 'Başvuruyu Gözetim Merkezi üzerinden inceleyin.'
   } else if (type === 'premeeting_scheduled') {
-    subject = `YoAi ön görüşme planlandı — ${signup.name || signup.email || 'kullanıcı'}`
+    subject = `DijiMagic ön görüşme planlandı — ${signup.name || signup.email || 'kullanıcı'}`
     intro = 'Bir kullanıcı 30 dk ön görüşme talebini takvim üzerinden planladı.'
     action = 'Gözetim Merkezi üzerinden onay/red kararı verin.'
   } else {
-    subject = `YoAi ön görüşme planlamadı — ${signup.name || signup.email || 'kullanıcı'}`
+    subject = `DijiMagic ön görüşme planlamadı — ${signup.name || signup.email || 'kullanıcı'}`
     intro =
       'Bir kullanıcı kayıt sonrası ön görüşme planlamayı reddetti. Manuel takip önerilir.'
     action = 'Kullanıcıya en kısa sürede ulaşın veya başvuruyu Gözetim Merkezi üzerinden kararlayın.'
@@ -123,7 +123,7 @@ function buildBody(type: OwnerNotificationType, signup: SignupSummary): { subjec
       </table>
       <p style="margin-top:24px;font-size:13px;color:#4b5563;line-height:1.6;">${escapeHtml(action)}</p>
       <a href="${adminUrl}" style="display:inline-block;margin-top:16px;background:#10b981;color:#ffffff;font-weight:600;font-size:14px;padding:10px 20px;border-radius:8px;text-decoration:none;">Gözetim Merkezi'ni Aç</a>
-      <p style="margin-top:24px;font-size:11px;color:#9ca3af;">YoAi · Otomatik bildirim</p>
+      <p style="margin-top:24px;font-size:11px;color:#9ca3af;">DijiMagic · Otomatik bildirim</p>
     </div>
   `
   return { subject, html }
@@ -216,7 +216,7 @@ export async function notifyOwnersOfBooking(
       <h2 style="font-size:18px;font-weight:700;margin:0 0 8px;">${escapeHtml(subject)}</h2>
       <p style="font-size:14px;color:#4b5563;margin:0 0 20px;line-height:1.6;">Landing sayfasından yeni bir görüşme talebi geldi.</p>
       <table cellspacing="0" cellpadding="0" style="border-collapse:collapse;border:1px solid #e5e7eb;border-radius:8px;overflow:hidden;width:100%;">${rows}</table>
-      <p style="margin-top:24px;font-size:11px;color:#9ca3af;">YoAi · Otomatik bildirim</p>
+      <p style="margin-top:24px;font-size:11px;color:#9ca3af;">DijiMagic · Otomatik bildirim</p>
     </div>
   `
   return dispatchToOwners(subject, html, 'booking_requested', null)

@@ -9,8 +9,8 @@ import { getDefaultAccount, decryptSmtpPass, decryptRefreshToken, type SmtpConfi
 import { smtpTransport } from './smtpSender'
 import { sendViaGmailApi } from './gmailApiSender'
 
-const FROM_EMAIL = process.env.FROM_EMAIL || 'YO Dijital Medya Anonim Şirketi <info@yodijital.com>'
-const APP_URL = process.env.NEXT_PUBLIC_APP_URL || 'https://yoai.yodijital.com'
+const FROM_EMAIL = process.env.FROM_EMAIL || 'DijiMagic <info@dijimagic.com>'
+const APP_URL = process.env.NEXT_PUBLIC_APP_URL || 'https://dijimagic.com'
 const resend = process.env.RESEND_API_KEY ? new Resend(process.env.RESEND_API_KEY) : null
 
 export type SendVia = 'smtp' | 'domain' | 'shared'
@@ -122,8 +122,8 @@ export async function buildDispatch(userId: string): Promise<BuiltDispatch | nul
   }
   if (account && account.type === 'platform') {
     if (!resend) return null
-    const platformFrom = account.from_email || process.env.PLATFORM_FROM_ADDRESS || 'info@yodijital.com'
-    const from = `${account.from_name || 'YoAi'} <${platformFrom}>`
+    const platformFrom = account.from_email || process.env.PLATFORM_FROM_ADDRESS || 'info@dijimagic.com'
+    const from = `${account.from_name || 'DijiMagic'} <${platformFrom}>`
     const replyTo = account.reply_to || undefined
     return {
       via: 'shared',

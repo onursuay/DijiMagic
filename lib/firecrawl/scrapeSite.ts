@@ -1,4 +1,4 @@
-/* YoAi — Firecrawl akıllı seçki orkestrasyonu.
+/* DijiMagic — Firecrawl akıllı seçki orkestrasyonu.
    map → kilit sayfa seç → her sayfayı scrape → birleşik temiz markdown.
    Hiçbir sayfa taranamazsa null döner (çağıran HTTP fetch'e düşer). */
 import { firecrawlMap, firecrawlScrape } from './client'

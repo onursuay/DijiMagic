@@ -1,6 +1,6 @@
 #!/usr/bin/env node
 /**
- * YoAi — SEO site_content_briefs migration uygulayıcı.
+ * DijiMagic — SEO site_content_briefs migration uygulayıcı.
  * Additive + idempotent. CANONICAL (omddq) projeye uygulanır.
  * Gerekli env (.env.local): DATABASE_URL (Transaction mode, port 6543).
  */

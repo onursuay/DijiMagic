@@ -2,7 +2,7 @@ import type { InputPayload, Blueprint, Persona, CreativeTheme, Experiment, Risk,
 import { generateBlueprint as generateTemplateBased } from './blueprint-generator'
 import { strategyClaudeText, isAnthropicReady } from './claude'
 import { extractJsonObject } from '@/lib/anthropic/text'
-import { META_ANALYSIS_KNOWLEDGE } from '@/lib/yoai/ai/docs/meta_analysis_knowledge'
+import { META_ANALYSIS_KNOWLEDGE } from '@/lib/dijimagic/ai/docs/meta_analysis_knowledge'
 
 // ════════════════════════════════════════════════════════════
 // AI-Powered Blueprint Generator (Claude — projenin standart motoru)

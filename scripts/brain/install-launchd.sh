@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 # ──────────────────────────────────────────────────────────
-# YoAi Beyin — launchd job kurulumu (macOS)
+# DijiMagic Beyin — launchd job kurulumu (macOS)
 #
 # Yerel toplayıcıyı (run-collect.sh) her gün 08:00'de çalıştırır.
 # Mevcut Sponsorlu launchd pattern'iyle aynı tarzda.
@@ -10,12 +10,12 @@
 # ──────────────────────────────────────────────────────────
 set -uo pipefail
 
-LABEL="com.yoai.brain.collect"
+LABEL="com.dijimagic.brain.collect"
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 ROOT="$(cd "$SCRIPT_DIR/../.." && pwd)"
 RUNNER="$SCRIPT_DIR/run-collect.sh"
 PLIST="$HOME/Library/LaunchAgents/$LABEL.plist"
-LOGDIR="$HOME/.yoai-brain-automation"
+LOGDIR="$HOME/.dijimagic-brain-automation"
 
 if [ "${1:-}" = "--uninstall" ]; then
   launchctl unload "$PLIST" 2>/dev/null || true

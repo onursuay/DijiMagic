@@ -5,7 +5,7 @@ import { Resend } from 'resend'
  * Üretilen sitenin iletişim formundan gelen mesajı SİTE SAHİBİNİN e-postasına iletir (Resend).
  * SMTP'den kaçınılır (Vercel giden SMTP portunu engeller). replyTo = ziyaretçi → sahip doğrudan yanıtlar.
  */
-const FROM_EMAIL = process.env.FROM_EMAIL || 'YO Dijital Medya Anonim Şirketi <info@yodijital.com>'
+const FROM_EMAIL = process.env.FROM_EMAIL || 'DijiMagic <info@dijimagic.com>'
 const resend = process.env.RESEND_API_KEY ? new Resend(process.env.RESEND_API_KEY) : null
 
 const esc = (s: string | null | undefined): string =>

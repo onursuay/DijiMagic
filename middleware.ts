@@ -2,7 +2,7 @@ import { NextRequest, NextResponse } from 'next/server'
 import { get } from '@vercel/edge-config'
 
 /** Uygulamanın kendi host'ları — bunlar ASLA custom-domain olarak yönlendirilmez. */
-const APP_HOST = 'yoai.yodijital.com'
+const APP_HOST = 'dijimagic.com'
 
 /**
  * EN slug → TR filesystem slug (app routes only).
@@ -16,7 +16,7 @@ const EN_TO_TR: Record<string, string> = {
   'design': 'tasarim',
   'reports': 'raporlar',
   'integration': 'entegrasyon',
-  'yoalgorithm': 'yoalgoritma',
+  'dijialgorithm': 'dijialgoritma',
   'subscription': 'abonelik',
   'account': 'hesabim',
   'invoices': 'faturalarim',
@@ -36,7 +36,7 @@ const TR_TO_EN: Record<string, string> = {
   'tasarim': 'design',
   'raporlar': 'reports',
   'entegrasyon': 'integration',
-  'yoalgoritma': 'yoalgorithm',
+  'dijialgoritma': 'dijialgorithm',
   'abonelik': 'subscription',
   'hesabim': 'account',
   'faturalarim': 'invoices',

@@ -13,7 +13,7 @@ import { getConnector } from '@/lib/seo/connectors'
 /**
  * Platform-agnostik makale yayını.
  *
- * Bir makaleyi (yoai_articles'tan articleId ile) seçili veya varsayılan
+ * Bir makaleyi (dijimagic_articles'tan articleId ile) seçili veya varsayılan
  * site bağlantısına yayınlar. Öne çıkan görsel dahil edilir.
  *
  * Eski app/api/seo/wordpress/publish/route.ts geriye dönük korunur;
@@ -59,7 +59,7 @@ export async function POST(request: Request) {
 
   // Makaleyi yükle
   const { data: article, error: artErr } = await supabase
-    .from('yoai_articles')
+    .from('dijimagic_articles')
     .select('*')
     .eq('id', articleId)
     .eq('user_id', userId)
@@ -122,7 +122,7 @@ export async function POST(request: Request) {
     // Makaleyi güncelle
     const now = new Date().toISOString()
     const { data: updated } = await supabase
-      .from('yoai_articles')
+      .from('dijimagic_articles')
       .update({
         status: wantPublish ? 'published' : 'draft',
         published_url: result.postUrl ?? null,

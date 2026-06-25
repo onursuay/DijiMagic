@@ -73,9 +73,9 @@ export const navItems: NavItem[] = [
     icon: TrendingUp,
   },
   {
-    id: 'yoai',
-    label: 'YoAlgoritma',
-    href: '/yoalgoritma',
+    id: 'dijimagic',
+    label: 'DijiAlgoritma',
+    href: '/dijialgoritma',
     icon: Sparkles,
   },
   {

@@ -83,7 +83,7 @@ Add these to your production environment:
 ## 4. Run admin refresh
 
 ```bash
-curl -X POST https://yoai.yodijital.com/api/admin/google-audiences/refresh \
+curl -X POST https://dijimagic.com/api/admin/google-audiences/refresh \
   -H "x-admin-secret: YOUR_ADMIN_SECRET" \
   -H "Content-Type: application/json"
 ```
@@ -100,9 +100,9 @@ Or set `VERIFY_BASE_URL` to test against a specific URL.
 
 ## Context
 
-YoAi platformunda Meta Ads dashboard'una benzer sekilde, tam kapsamli bir **Google Ads yonetim paneli** gelistirilecek. Mevcut projede zaten temel bir altyapi mevcut (OAuth, kampanya listeleme, basit kampanya olusturma wizard'i). Ancak Google Ads'in gercek gucunu yansitan, profesyonel bir dashboard icin onemli eksikler var. Bu dokuman, Google Ads API v23/v23.1 (Mart 2026 guncel) ile tam uyumlu, uretim seviyesinde bir uygulama icin teknik referans ve gelistirme plani niteligindedir.
+DijiMagic platformunda Meta Ads dashboard'una benzer sekilde, tam kapsamli bir **Google Ads yonetim paneli** gelistirilecek. Mevcut projede zaten temel bir altyapi mevcut (OAuth, kampanya listeleme, basit kampanya olusturma wizard'i). Ancak Google Ads'in gercek gucunu yansitan, profesyonel bir dashboard icin onemli eksikler var. Bu dokuman, Google Ads API v23/v23.1 (Mart 2026 guncel) ile tam uyumlu, uretim seviyesinde bir uygulama icin teknik referans ve gelistirme plani niteligindedir.
 
-**URL:** `https://yoai.yodijital.com/google-ads`
+**URL:** `https://dijimagic.com/google-ads`
 
 ---
 
@@ -1002,7 +1002,7 @@ life_event
 2. **Google Cloud Translation API:** Isimleri dinamik olarak cevirmek. Dezavantaj: ek maliyet, gecikme, API kurulumu.
 3. **Hibrit:** Ust seviye (top-level) kategorileri statik cevirirken, alt kategoriler icin Translation API kullanmak.
 
-#### 5.2.6 Mevcut Implementasyon (YoAi)
+#### 5.2.6 Mevcut Implementasyon (DijiMagic)
 
 | Dosya | Islem |
 |-------|-------|

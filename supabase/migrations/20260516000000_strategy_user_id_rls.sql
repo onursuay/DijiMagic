@@ -1,5 +1,5 @@
 -- ============================================================
--- YoAi Strateji — user_id kolonu + RLS politikaları + kredi RPC
+-- DijiMagic Strateji — user_id kolonu + RLS politikaları + kredi RPC
 -- Faz 1: Güvenlik katmanı
 --
 -- 1. strategy_instances tablosuna user_id TEXT kolonu ekler.

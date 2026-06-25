@@ -4,7 +4,7 @@ import { cookies } from 'next/headers'
 import { supabase } from '@/lib/supabase/client'
 import { resolveMetaContext } from '@/lib/meta/context'
 import { createJob, runQueuedJobs } from '@/lib/strategy/job-runner'
-import { getBusinessContextForUser, buildBusinessContextPromptBlock } from '@/lib/yoai/businessContextStore'
+import { getBusinessContextForUser, buildBusinessContextPromptBlock } from '@/lib/dijimagic/businessContextStore'
 import { isInngestReady, inngest } from '@/inngest/client'
 
 export const dynamic = 'force-dynamic'
@@ -53,7 +53,7 @@ export async function POST(_request: Request, { params }: { params: Promise<{ id
           .limit(1)
           .single()
         if (latestInput?.id) {
-          const newPayload = { ...(latestInput.payload as object), _yoai_business_context_prompt: block }
+          const newPayload = { ...(latestInput.payload as object), _dijimagic_business_context_prompt: block }
           await supabase.from('strategy_inputs').update({ payload: newPayload }).eq('id', latestInput.id)
         }
       }
