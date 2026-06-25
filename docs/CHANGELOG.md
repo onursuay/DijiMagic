@@ -2,6 +2,21 @@
 
 ---
 
+## 2026-06-25 — YoAi → DijiMagic tam rebrand + domain geçişi (kod/DB/yerel tamam)
+- **Sorun/İstek:** Ayrılan firma (YO Dijital Medya / yoai.yodijital.com) ve eski ürün adı
+  (YoAi/YoAlgoritma) projeden tamamen kaldırılıp DijiMagic / DijiAlgoritma / dijimagic.com'a geçiş.
+- **Çözüm:** (1) 43 git mv (klasör/dosya/route/migration adları). (2) 498 dosyada ordered
+  case-aware string/identifier replace (camelCase + İngilizce algorithm + TR ek grameri dahil).
+  (3) Canlı Supabase DB RENAME: 11 tablo + kolon + 70 index + 34 constraint + 34 RLS + trigger +
+  function + 22 type → dijimagic; ai_engine_runs 43 satır yoalgoritma_hier→dijialgoritma_hier + CHECK.
+  (4) env (.env.local/.example) + Inngest event'leri (dijialgoritma/*) + package-lock.
+  (5) Legal sayfalar: marka DijiMagic + satıcı kimliği Onur Şuay (şahıs işletmesi) + adres.
+  (6) Yeni DijiMagic logo (Montserrat wordmark + sparkle) + favicon (app/icon.png). (7) tsc 0 hata,
+  npm run build ✓. Kod+DB SIFIR yoai izi. Meta 12 izin baseline korundu.
+- **Kalan (dış cutover):** Vercel env/domain + dijimagic.com deploy + Meta App URL/isim + portfolyo
+  taşıma (Onur Şuay verification ~2 gün) + diğer pano (TikTok/Google/iyzico/Supabase/Turnstile/DNS).
+- **Dosyalar:** proje geneli (~500 dosya), supabase (canlı), public/logos, app/icon.png.
+
 ## 2026-06-20 — FAZ 1: H9 sunucu-taraflı fatura profili + amber/sarı renk temizliği
 - **Sorun:** (H9) Fatura/vergi bilgisi yalnız tarayıcı localStorage'ındaydı; iyzico checkout'una placeholder buyer/billingAddress (TC '11111111111', adres '-', Istanbul) gidiyordu → kurumsal müşteriye doğru fatura kesilemiyordu. (Renk) Meta/Google reklam UI'ında proje kırmızı-çizgisi amber/sarı renkler vardı.
 - **Çözüm:** (H9) `user_billing_profile` tablosu + `getBillingProfile`/`saveBillingProfile` store + `/api/billing/profile` route; faturalarim sunucuya kaydeder; `iyzico/start` profili yükleyip gerçek buyer/billingAddress (ad, telefon, adres, şehir, kurumsal vergi no) geçirir. **ADDITIVE:** profil yoksa/migration uygulanmadıysa eski placeholder fallback korunur (ödeme akışı bozulmaz). Migration: `npm run db:migrate:billing-profile`. (Not: bireysel TC kimlik form alanı + e-fatura entegrasyonu ayrı adım.) (Renk) 28 dosyada amber/sarı → semantiğe uygun primary/gray/red/emerald.

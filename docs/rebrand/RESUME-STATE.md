@@ -1,45 +1,38 @@
-# DijiMagic Rebrand — RESUME DURUMU (devam noktası)
+# DijiMagic Rebrand — RESUME DURUMU
 
 > Son güncelleme: 2026-06-25. Branch: `rebrand/dijimagic`.
-> Kullanıcı bilgisayarı kapattı; "devam et" deyince BURADAN devam.
 
-## ✅ TAMAMLANAN (commit'li)
-- **Faz 1+2+6** (commit `acccbd3`): 43 git mv (klasör/dosya/route/migration adları) + 498 dosyada
-  case-aware string replace + legal sayfalar (satıcı = Onur Şuay şahıs işletmesi + adres) +
-  voiceagent referansı temizlendi + TR ek grameri (nin→in, ye→e). **tsc 0 hata.**
-- **Faz 3** (commit `7803aa1`): **Canlı Supabase DB RENAME tamam** — 11 tablo, 1 kolon
-  (audiences.dijimagic_spec_json), 70 index, 34 constraint, 34 RLS policy, 1 trigger, 1 function,
-  22 type → dijimagic. `ai_engine_runs`: 43 satır `yoalgoritma_hier`→`dijialgoritma_hier` + CHECK.
-  Transaction + verify-or-rollback ile COMMIT (sıfır yoai DB nesnesi doğrulandı).
-  Migration dosya içerikleri + collect-outcomes.mjs zaten dijimagic_ (bulk replace ile).
-- **Faz 4a** (commit `7803aa1`): `.env.local` + `.env.example` domain/email/KEY → dijimagic
-  (secret DEĞERLERİ korundu). Inngest event'leri kodda `dijialgoritma/*` (17×, send+trigger tutarlı).
+## ✅ TAMAMLANAN — KOD/DB/YEREL REBRAND %100 + BUILD DOĞRULANDI
+- **Faz 1+2+6** (`acccbd3`): 43 git mv + 498 dosya string replace + legal (satıcı=Onur Şuay) +
+  voiceagent temizliği + TR gramer. tsc 0 hata.
+- **Faz 3** (`7803aa1`): Canlı Supabase DB RENAME — 11 tablo + kolon + 70 index + 34 constraint +
+  34 RLS + trigger + function + 22 type → dijimagic; ai_engine_runs 43 satır dijialgoritma_hier + CHECK. COMMIT.
+- **Faz 4a** (`7803aa1` + `3bdca1d`): env dosyaları + Inngest (dijialgoritma/*) + YOALGORITHM gap fix.
+- **package-lock** (`74e524f`): name → DijiMagic (son yoai izi temizlendi).
+- **Faz 5** (`134f77f`): DijiMagic logo (Montserrat wordmark + sparkle) + favicon (app/icon.png)
+  + 4 kullanıma object-contain. Eski YO DİJİTAL logosu kaldırıldı.
+- **Faz 7**: `npm run build` ✓ Compiled successfully (exit 0). tsc 0 hata.
+- **Durum:** kod + DB **SIFIR yoai izi**. Meta 12 izin baseline korunuyor (re-check: 12/12 granted).
 
-## 📊 DURUM
-- Kod tarafı **SIFIR yoai izi** (tek kalan: `package-lock.json` — `npm install` ile yenilenecek).
-- TLS: `scripts/rebrand/_db.mjs` Supabase Root CA pinler (rejectUnauthorized:true, güvenli).
-- DB bağlantısı CA pinli çalışıyor. `scripts/rebrand/introspect-db.mjs` ile durum okunabilir.
+## ⏭️ KALAN = DIŞ CUTOVER (owner girdisi + Meta verification bekler)
+1. **Vercel** (CLI hazır, `onursuay-8614`, proje yoai-project): env var rename YOAI_→DIJIMAGIC_ /
+   YOALGORITMA_→DIJIALGORITMA_ / YOALGORITHM_EXPERT_COPY_ENABLED→DIJIALGORITHM_… (değer aynı) +
+   domain-değerli env'ler (FROM_EMAIL, TIKTOK_REDIRECT_URI, GOOGLE_SETUP_REDIRECT_URI → dijimagic.com)
+   + dijimagic.com domain ekle + production + proje adı. **dijimagic.com DNS/sahiplik onayı gerekir.**
+2. **Deploy** rebrand/dijimagic → dijimagic.com canlı.
+3. **Meta App (A)**: App Domains/OAuth redirect/webhook/Privacy/Data-Deletion/Site URL → dijimagic.com
+   + Display name "DijiMagic Ads Manager" + App icon. (Deploy sonrası; checklist: meta-app-migration-checklist.md)
+4. **Meta App (B)**: "Yo Dijital Medya" → "Onur Şuay" portfolyosuna taşı — **verification ~2 gün BİTİNCE**.
+   Sıra: doğrula → taşı → /me/permissions baseline karşılaştır → eskini kaldır.
+5. **Diğer panolar**: TikTok redirect, Google OAuth authorized domains, iyzico callback,
+   Supabase Auth URL, Cloudflare Turnstile, DNS (A/CNAME + Meta TXT + SPF/DKIM), GitHub repo + yoai-brain.
+6. **Final temizlik**: `scripts/rebrand/` sil (yoai içeren tooling), yoai-brain repo içeriği (_learnings).
 
-## ⏭️ SIRADAKİ (devam edince)
-1. **Faz 4b:** `npm install` → package-lock.json yenilensin (son yoai izi temizlenir, name=DijiMagic).
-   Sonra **Vercel CLI**: `vercel whoami` → env var rename (YOAI_→DIJIMAGIC_ + YOALGORITMA_→DIJIALGORITMA_,
-   değer aynı), domain değerleri (NEXT_PUBLIC_APP_URL/META_REDIRECT_URI/TIKTOK_REDIRECT_URI/FROM_EMAIL/
-   PLATFORM_FROM_ADDRESS → dijimagic.com), dijimagic.com domain ekle + production ata.
-2. **Faz 5:** DijiMagic logo (frontend-design skill, PC+mobil önizleme+onay) → public/logos/dijimagic-logo.png
-   + Meta App icon. (Owner "ben tasarlayayım" dedi.)
-3. **Faz 7:** `npm run build` + adversarial doğrulama workflow + Meta izin baseline ile birebir karşılaştır.
-4. **Faz 8a:** dijimagic.com deploy → Meta App (A) URL/isim/ikon checklist (owner dashboard) +
-   TikTok/Google/iyzico/Supabase-Auth/Turnstile/DNS/SPF checklist. Bkz. docs/rebrand/meta-app-migration-checklist.md.
-5. **Faz 8b:** Meta App'i "Yo Dijital Medya" → "Onur Şuay" portfolyosuna taşı — **Meta business
-   verification (~2 gün) BİTİNCE.** Sıra: doğrula→taşı→/me/permissions baseline ile karşılaştır→eskini kaldır.
-6. **Final temizlik:** `scripts/rebrand/` sil (yoai içeren tooling), CHANGELOG güncelle,
-   yoai-brain repo içeriği (_learnings) + repo adı (Faz 8 dış).
+## ❗ OWNER'DAN GEREKEN (cutover için)
+- **dijimagic.com**: sahiplik + DNS erişimi (Vercel domain + DNS kayıtları için).
+- **info@dijimagic.com** kutusu kuruldu mu (e-posta gönderimi + SPF/DKIM).
+- **vergi dairesi + vergi no** (legal sayfalarda "[Eklenecek]" placeholder).
+- Meta verification tamamlanınca haber (ben de Graph ile kontrol ederim).
 
-## ❗ OWNER'DAN GEREKEN GİRDİLER
-- Yasal sayfalar için **vergi dairesi + vergi no** (şu an "[Eklenecek]" placeholder).
-- dijimagic.com **DNS erişimi** + **info@dijimagic.com** kutusu kuruldu mu (Vercel domain + SPF/DKIM).
-- Meta verification durumu (owner bildirecek; ben de introspect/Graph ile kontrol edebilirim).
-
-## 🔑 BASELINE (değişiklik öncesi — doğrulama için)
-- Meta izinleri: 12 granted / 0 declined (docs/rebrand/meta-permissions-baseline.md).
-- tsc: 0 hata (rename öncesi ve sonrası aynı).
+## Commit zinciri
+aeedefe → acccbd3 → 7803aa1 → d198fc9 → 3bdca1d → 74e524f → 134f77f (+ CHANGELOG/resume)
