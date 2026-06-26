@@ -20,14 +20,14 @@ await sharp(Buffer.from(wordmark)).png()
   .extend({ top: 24, bottom: 24, left: 24, right: 24, background: { r:0,g:0,b:0,alpha:0 } })
   .toFile(resolve(ROOT, 'public/logos/dijimagic-logo.png'))
 
-// --- 2) Kare favicon: marka-yeşili gradient yuvarlak kare + beyaz "D" + sparkle ---
+// --- 2) YUVARLAK favicon: marka-yeşili gradient daire + beyaz "D" + sparkle ---
 const icon = `<svg xmlns="http://www.w3.org/2000/svg" width="512" height="512" viewBox="0 0 512 512">
 <defs><linearGradient id="g" x1="0" y1="0" x2="1" y2="1">
-<stop offset="0" stop-color="#2FBF9B"/><stop offset="1" stop-color="#2BB673"/></linearGradient></defs>
-<rect width="512" height="512" rx="116" fill="url(#g)"/>
-<text x="248" y="372" text-anchor="middle" font-family="Montserrat, Arial" font-weight="800" font-size="360" fill="#FFFFFF">D</text>
-${sparkle(392, 150, 46, '#FFFFFF')}
-${sparkle(440, 196, 20, '#FFFFFF')}
+<stop offset="0" stop-color="#34D39E"/><stop offset="0.55" stop-color="#2BB673"/><stop offset="1" stop-color="#1E9E63"/></linearGradient></defs>
+<circle cx="256" cy="256" r="256" fill="url(#g)"/>
+<text x="252" y="358" text-anchor="middle" font-family="Montserrat, Arial" font-weight="800" font-size="300" fill="#FFFFFF">D</text>
+${sparkle(372, 156, 40, '#FFFFFF')}
+${sparkle(414, 198, 17, '#FFFFFF')}
 </svg>`
 await sharp(Buffer.from(icon)).png().toFile(resolve(ROOT, 'app/icon.png'))
 

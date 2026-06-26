@@ -97,7 +97,7 @@ export default function CookiePolicyContent({ locale = 'tr' }: { locale?: 'tr' |
       <footer className="w-full border-t border-white/[0.05] py-6 px-6 bg-[#060609]">
         <div className="max-w-7xl mx-auto flex flex-col sm:flex-row items-center justify-between gap-3 text-sm">
           <div className="flex items-center gap-3 text-gray-500">
-            <Image src="/logos/dijimagic-logo.png" alt="DijiMagic" width={40} height={16} className="object-contain brightness-0 invert opacity-40" />
+            <Image src="/logos/dijimagic-logo.png" alt="DijiMagic" width={64} height={22} className="object-contain brightness-0 invert opacity-40" />
             <span>© 2025 DijiMagic. {isEn ? 'All rights reserved.' : 'Tüm hakları saklıdır.'}</span>
           </div>
           <nav className="flex gap-5 text-gray-500">

@@ -210,8 +210,8 @@ export default function BasvuruDurumuPage() {
             <Image
               src="/logos/dijimagic-logo.png"
               alt="DijiMagic"
-              width={96}
-              height={32}
+              width={170}
+              height={54}
               className="object-contain brightness-0 invert"
               priority
             />

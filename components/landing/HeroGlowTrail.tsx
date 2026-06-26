@@ -59,7 +59,17 @@ export default function HeroGlowTrail() {
   }, [])
 
   return (
-    <div ref={wrap} aria-hidden="true" className="pointer-events-none absolute inset-0 z-0 overflow-hidden">
+    <div
+      ref={wrap}
+      aria-hidden="true"
+      className="pointer-events-none absolute inset-0 z-0 overflow-hidden"
+      style={{
+        /* Glow'u merkeze toplayıp kenarlara doğru yumuşakça söndür: section'ın dikdörtgen
+           sınırında keskin kesim ("ışıktan çerçeve / kutu" hissi) oluşmasın. */
+        maskImage: 'radial-gradient(ellipse 88% 94% at 50% 36%, #000 40%, transparent 88%)',
+        WebkitMaskImage: 'radial-gradient(ellipse 88% 94% at 50% 36%, #000 40%, transparent 88%)',
+      }}
+    >
       {/* HER ZAMAN görünür statik renkli bloblar — yeşil / mor / mavi (Grower paleti, koyu zeminde net) */}
       <div className="absolute -top-24 left-[6%] w-[42vw] max-w-[560px] aspect-square rounded-full blur-[100px]" style={{ background: 'radial-gradient(circle, rgba(61,237,154,0.34), transparent 66%)' }} />
       <div className="absolute -top-16 right-[4%] w-[40vw] max-w-[540px] aspect-square rounded-full blur-[100px]" style={{ background: 'radial-gradient(circle, rgba(168,85,247,0.32), transparent 66%)' }} />

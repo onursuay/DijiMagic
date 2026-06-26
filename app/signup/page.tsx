@@ -332,8 +332,8 @@ export default function SignupPage() {
             <Image
               src="/logos/dijimagic-logo.png"
               alt="DijiMagic"
-              width={80}
-              height={28}
+              width={150}
+              height={48}
               className="object-contain brightness-0 invert"
               priority
             />

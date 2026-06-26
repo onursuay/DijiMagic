@@ -73,7 +73,7 @@ export default function LandingHeader({ locale, ctaSchedule, ctaTrial }: Props) 
 
         {/* Logo — smaller */}
         <Link href="/" className="shrink-0">
-          <Image src="/logos/dijimagic-logo.png" alt="DijiMagic" width={56} height={22} className="object-contain brightness-0 invert" />
+          <Image src="/logos/dijimagic-logo.png" alt="DijiMagic" width={110} height={36} className="object-contain brightness-0 invert" />
         </Link>
 
         {/* Center nav — all pills */}

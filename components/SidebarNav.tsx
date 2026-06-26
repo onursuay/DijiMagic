@@ -157,8 +157,8 @@ export default function SidebarNav() {
               <Image
                 src="/logos/dijimagic-logo.png"
                 alt="DijiMagic"
-                width={32}
-                height={32}
+                width={44}
+                height={44}
                 className="object-contain"
               />
             </Link>
@@ -177,8 +177,8 @@ export default function SidebarNav() {
               <Image
                 src="/logos/dijimagic-logo.png"
                 alt="DijiMagic"
-                width={50}
-                height={20}
+                width={96}
+                height={34}
                 className="object-contain cursor-pointer"
               />
             </Link>
