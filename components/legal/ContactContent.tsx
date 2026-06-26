@@ -30,7 +30,7 @@ export default function ContactContent({ locale = 'tr' }: { locale?: 'tr' | 'en'
   const c = C[locale]
   const isEn = locale === 'en'
   return (
-    <div className="min-h-screen bg-[#060609] text-white">
+    <div className="min-h-screen bg-[#13181f] text-white">
       <LandingHeader
         locale={locale}
         ctaSchedule={isEn ? 'Book a Call' : 'Toplantı Planla'}

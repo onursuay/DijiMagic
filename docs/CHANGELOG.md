@@ -2,6 +2,11 @@
 
 ---
 
+## 2026-06-26 — Zemin açıldı (#060609 → #13181f mavi-gri) + sekme başlığı düzeltmeleri (Faz 1b)
+- **Sorun:** Zemin çok koyu/boğucuydu (neredeyse saf siyah); sekme başlığı "DijiMagic Dashboard" çıkıyordu.
+- **Çözüm:** Tüm pazarlama + legal + auth zemini iyzads-seviyesi mavi-gri **#13181f**'e çekildi (emerald korundu, kartlar okunur); toggle pill #1b212c; PWA manifest güncellendi. Layout başlık default'u "DijiMagic"; ana sayfaya özel SEO başlığı **"DijiMagic — Yapay Zeka Destekli Pazarlama Platformu"**.
+- **Dosyalar:** app/page.tsx, app/layout.tsx, app/ozellikler/page.tsx, app/fiyatlandirma, app/login, app/signup(+verify), app/basvuru-durumu, app/mesafeli-satis-sozlesmesi, app/on-bilgilendirme-formu, components/legal/*, components/landing/{LandingHeader,FeatureTabs}.tsx, app/manifest.ts
+
 ## 2026-06-26 — Ücretsiz deneme süresi 14 gün → 7 gün (tüm altyapı)
 - **Sorun:** Ücretsiz deneme 14 gündü; 7 güne çekilmesi istendi (fonksiyonel + tüm metinler).
 - **Çözüm:** Çekirdek kaynak `lib/subscription/plans.ts` `trialDays: 7` (startTrial bunu kullanır → yeni kayıt = 7 gün; mevcut kullanıcı trial'ı geriye dönük değişmez) + `lib/billing/catalog.ts`/`db.ts` fallback 7. Site içi tüm "14 gün/14-day" metinleri 7'ye çevrildi: ana sayfa, /ozellikler, fiyatlandırma, signup, 6 legal bileşeni, Mesafeli Satış + Ön Bilgilendirme sözleşmeleri, locales tr/en (trialBadge/trialNote/ctaButton). **Yasal "14 gün cayma hakkı" (Mesafeli Sözleşmeler Yön. m.9) + analitik "son 14 gün" + strateji "14 gün" KORUNDU** (trial değil).

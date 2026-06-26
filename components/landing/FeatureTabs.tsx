@@ -151,7 +151,7 @@ export default function FeatureTabs({ isEn, soonLabel }: { isEn: boolean; soonLa
       <div className="max-w-6xl mx-auto">
         {/* Toggle pill — aşağıdaki içerik kutusunun ÜST kenarına biner (iyzads gibi birleşik) */}
         <div className="relative z-10 flex justify-center -mb-6">
-          <div className="inline-flex flex-wrap justify-center gap-1 p-1.5 rounded-full border border-white/[0.08] bg-[#10161d] shadow-[0_12px_34px_-12px_rgba(0,0,0,0.7)]">
+          <div className="inline-flex flex-wrap justify-center gap-1 p-1.5 rounded-full border border-white/[0.08] bg-[#1b212c] shadow-[0_12px_34px_-12px_rgba(0,0,0,0.7)]">
             {GROUPS.map((gr, i) => (
               <button
                 key={gr.id}

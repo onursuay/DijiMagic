@@ -92,7 +92,7 @@ export default function LandingHeader({ locale, ctaSchedule, ctaTrial }: Props) 
   }, [])
 
   return (
-    <header className="w-full sticky top-0 z-50 bg-[#060609]/80 backdrop-blur-2xl" ref={headerRef}>
+    <header className="w-full sticky top-0 z-50 bg-[#13181f]/80 backdrop-blur-2xl" ref={headerRef}>
       <div className="max-w-7xl mx-auto flex items-center justify-between px-6 py-3">
 
         {/* Logo */}

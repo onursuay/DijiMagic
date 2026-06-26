@@ -18,8 +18,8 @@ const inter = Inter({
 
 export const metadata: Metadata = {
   metadataBase: new URL('https://dijimagic.com'),
-  title: 'DijiMagic Dashboard',
-  description: 'Reklam ve pazarlama yönetim platformu',
+  title: 'DijiMagic',
+  description: 'Yapay zeka destekli hepsi bir arada pazarlama yönetim platformu',
 }
 
 export default async function RootLayout({

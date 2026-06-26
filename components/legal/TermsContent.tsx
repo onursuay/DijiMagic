@@ -21,7 +21,7 @@ export default function TermsContent({ locale = 'tr' }: { locale?: 'tr' | 'en' }
   const isEn = locale === 'en'
 
   return (
-    <div className="min-h-screen bg-[#060609] text-white">
+    <div className="min-h-screen bg-[#13181f] text-white">
       <LandingHeader
         locale={locale}
         ctaSchedule={isEn ? 'Book a Call' : 'Toplantı Planla'}
@@ -83,7 +83,7 @@ export default function TermsContent({ locale = 'tr' }: { locale?: 'tr' | 'en' }
       </div>
 
       {/* Footer */}
-      <footer className="w-full border-t border-white/[0.05] py-6 px-6 bg-[#060609]">
+      <footer className="w-full border-t border-white/[0.05] py-6 px-6 bg-[#13181f]">
         <div className="max-w-7xl mx-auto flex flex-col sm:flex-row items-center justify-between gap-3 text-sm">
           <div className="flex items-center gap-3 text-gray-500">
             <Image src="/logos/dijimagic-logo-light.png" alt="DijiMagic" width={88} height={28} className="object-contain opacity-40" />

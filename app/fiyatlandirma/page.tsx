@@ -30,7 +30,7 @@ export default async function FiyatlandirmaPage() {
   }
 
   return (
-    <div className="min-h-screen bg-[#060609] text-white flex flex-col overflow-x-hidden" style={{ fontSize: '16px' }}>
+    <div className="min-h-screen bg-[#13181f] text-white flex flex-col overflow-x-hidden" style={{ fontSize: '16px' }}>
       {/* Shimmer animation for header buttons (same as landing) */}
       <style dangerouslySetInnerHTML={{ __html: `
         .btn-shimmer { position: relative; overflow: hidden; }
@@ -102,7 +102,7 @@ export default async function FiyatlandirmaPage() {
       </section>
 
       {/* ═══════════ FOOTER ═══════════ */}
-      <footer className="w-full border-t border-white/[0.05] py-6 px-6 bg-[#060609] mt-auto">
+      <footer className="w-full border-t border-white/[0.05] py-6 px-6 bg-[#13181f] mt-auto">
         <div className="max-w-7xl mx-auto flex flex-col sm:flex-row items-center justify-between gap-3 text-sm">
           <div className="flex items-center gap-3 text-gray-500">
             <Image src="/logos/dijimagic-logo-light.png" alt="DijiMagic" width={88} height={28} className="object-contain opacity-40" />

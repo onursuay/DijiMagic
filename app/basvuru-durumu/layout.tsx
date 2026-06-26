@@ -13,5 +13,5 @@ export default function BasvuruDurumuLayout({
 }: {
   children: React.ReactNode
 }) {
-  return <div className="min-h-screen bg-[#060609] text-white">{children}</div>
+  return <div className="min-h-screen bg-[#13181f] text-white">{children}</div>
 }

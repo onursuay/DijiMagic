@@ -10,7 +10,7 @@ export default function manifest(): MetadataRoute.Manifest {
     description: 'Reklam ve pazarlama yönetim platformu',
     start_url: '/',
     display: 'standalone',
-    background_color: '#060609',
+    background_color: '#13181f',
     theme_color: '#0B1220',
     icons: [
       { src: '/icons/icon-192.png', sizes: '192x192', type: 'image/png', purpose: 'any' },
