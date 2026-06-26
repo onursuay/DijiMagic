@@ -2,6 +2,11 @@
 
 ---
 
+## 2026-06-26 — Favicon: mevcut logonun istiflenmiş wordmark hali (koyu zemin) — düzeltme
+- **Sorun:** Favicon yanlış yorumlanıp soyut yıldız (sparkle) işaretine çevrilmişti. Owner aslında **mevcut logonun kendisinin** favicon olarak uyarlanmasını istemişti (yuvarlak alana sığsın diye "Diji" üstte / "Magic" altta istiflenmiş).
+- **Çözüm:** Favicon istiflenmiş wordmark'a geçti — KOYU zemin (`#0B1220`), beyaz "Diji" + camgöbeği-teal gradyan "Magic" + köşe yıldızı; sitedeki koyu-zemin logoyla birebir. Tam set aynı dosyalarla yeniden üretildi: `app/icon.png` (512 daire), `app/favicon.ico` (16/32/48), `app/apple-icon.png` (180 tam-dolu), `public/icons/icon-{192,512}.png` + `icon-maskable-512.png` (wordmark %80 güvenli bölgede). 48px'te net, 32px'te okunur. `app/manifest.ts` değişmedi.
+- **Dosyalar:** app/icon.png, app/favicon.ico, app/apple-icon.png, public/icons/icon-192.png, public/icons/icon-512.png, public/icons/icon-maskable-512.png
+
 ## 2026-06-26 — Favicon yenileme (sparkle/yıldız işareti) + tam PWA seti + header logo büyütme
 - **Sorun:** Favicon küçük/yuvarlak alanda enine wordmark olarak kırpılıp okunmaz oluyordu; mevcut `app/icon.png` eski "D" harfli markaydı. Apple touch ikonu, PWA ikonları ve manifest yoktu. Landing header logosu fazla küçüktü.
 - **Çözüm:** Owner seçimiyle favicon, yeni logodaki **yıldız (sparkle)** işaretine geçti — yeşil zemin + beyaz sparkle, her boyutta (16px dahil) okunur ve markanın "AI" imzasıyla tutarlı. Tam set: `app/icon.png` (512 daire), `app/favicon.ico` (16/32/48 paket — bağımlılıksız kendi ICO encoder'ımızla), `app/apple-icon.png` (180 tam-dolu), `public/icons/icon-{192,512}.png` + `icon-maskable-512.png` (güvenli bölge), `app/manifest.ts` (Next PWA manifest, otomatik `<link rel="manifest">`). Landing header logosu `110×36`'dan `140×46`'ya büyütüldü (oran korundu).
