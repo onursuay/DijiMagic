@@ -9,7 +9,7 @@ import HeroGlowTrail from '@/components/landing/HeroGlowTrail'
 import type { Metadata } from 'next'
 
 export const metadata: Metadata = {
-  title: 'DijiMagic | Yeni Nesil Dijital Ajans',
+  title: 'DijiMagic | Yeni Nesil Dijital Pazarlama Ajansı',
   description: 'Reklam yönetimi, yapay zeka stratejisi, içerik üretimi, SEO, CRM ve e-posta pazarlamasını tek bir akıllı panelde birleştiren hepsi bir arada pazarlama platformu.',
 }
 
