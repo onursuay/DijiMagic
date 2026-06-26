@@ -2,6 +2,11 @@
 
 ---
 
+## 2026-06-26 — A11y: yeni interaktif öğelere focus-visible (klavye erişilebilirliği)
+- **Sorun:** Faz 2'de eklenen HowItWorks sekmeleri + FeatureTabs toggle butonlarında belirgin focus-visible halkası yoktu (global kural: "istisnasız focus-visible").
+- **Çözüm:** İkisine `focus-visible:ring-2 focus-visible:ring-emerald-400/60 focus-visible:outline-none` eklendi. Ayrıca tüm /tr/ pazarlama sayfaları (fiyatlandırma/iletişim/hakkımızda/legal) mobilde (CDP 390px) taşma=0 doğrulandı.
+- **Dosyalar:** components/landing/HowItWorks.tsx, components/landing/FeatureTabs.tsx
+
 ## 2026-06-26 — Email: FROM_EMAIL → "DijiMagic <info@dijimagic.com>" (Resend verified)
 - **Sorun:** Resend'de dijimagic.com doğrulaması bekliyordu; production gönderen hâlâ eski markaydı ("YO Dijital Medya Anonim Şirketi <info@yodijital.com>").
 - **Çözüm:** dijimagic.com Resend'de **verified** oldu → Vercel production `FROM_EMAIL` = "DijiMagic <info@dijimagic.com>" yapıldı (yerel .env.local zaten güncel). Redeploy ile canlıya iner. yodijital.com Resend'den silinmedi (başka projeler kullanıyor olabilir — risk).

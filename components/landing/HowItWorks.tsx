@@ -62,7 +62,7 @@ export default function HowItWorks({ isEn }: { isEn: boolean }) {
                 key={tb.id}
                 onClick={() => setActive(i)}
                 aria-pressed={active === i}
-                className={`px-5 py-2 rounded-full text-[14px] transition-all duration-200 ${active === i
+                className={`px-5 py-2 rounded-full text-[14px] transition-all duration-200 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-emerald-400/60 ${active === i
                   ? 'bg-emerald-500/15 text-emerald-300 font-semibold border border-emerald-400/30 shadow-[0_0_18px_-6px_rgba(16,185,129,0.5)]'
                   : 'text-gray-400 hover:text-white font-medium border border-transparent'}`}
               >
