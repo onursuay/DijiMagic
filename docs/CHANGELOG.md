@@ -2,6 +2,12 @@
 
 ---
 
+## 2026-06-26 — DijiAlgoritma AI çıktı dili: reklamların diline göre (zorla Türkçe kaldırıldı)
+- **Sorun:** Per-campaign AI prompt'u "TÜM metinleri SADE TÜRKÇE üret" ile çıktıyı ZORLA Türkçe yapıyordu. Sistem mevcut aktif reklamları yeniden yazıp öneri ürettiği için, İngilizce reklamı olan hesaplarda bile gerekçe/öneri/başlık-açıklama Türkçe çıkıyordu — yanlış.
+- **Çözüm:** Dil direktifi "ANALİZ EDİLEN REKLAMLARIN DİLİNDE üret" olarak değiştirildi; AI dili reklamların kreatif metinlerinden (başlık/açıklama/ana metin) algılar. Türkçe reklam → Türkçe, İngilizce reklam → İngilizce. Arayüz/varsayılan dile göre DEĞİL. **Token artışı YOK** (tek dil — doğru dil); şema/UI/depolama/threading değişmedi (yalnız prompt direktifi).
+- **Dosyalar:** lib/dijimagic/ai/perCampaignPrompt.ts
+- **Not:** Yeni üretimlerde (haftalık tarama / tetiklenen re-scan) geçerli; mevcut kartlar yeniden üretilene kadar mevcut dilinde kalır. Türkçe reklamlarda görünür değişiklik yok (zaten doğru dil).
+
 ## 2026-06-26 — Logo renklendirme ("AI yeni nesil", markaya sadık camgöbeği-yeşil)
 - **Sorun:** Logo (wordmark + yıldızlar) tek renk siyahtı; her yerde `brightness-0 invert` ile beyaza çevriliyordu. Owner daha "AI yeni nesil" ama ölçülü (rengarenk olmayan) bir görünüm istedi; yıldızlar ana renk vurgusu olsun.
 - **Çözüm:** Kaynak script gradyanlı + iki varyantlı yapıldı. Yıldızlar (sparkle) camgöbeği→yeşil gradyan (`#34E0C4 → #2BB673`), "Magic" yeşil→teal gradyan (`#2BB673 → #2FBF9B`), "Diji" zemine göre nötr. İki varyant: `dijimagic-logo.png` (açık zemin, koyu Diji — sidebar) ve `dijimagic-logo-light.png` (koyu zemin, beyaz Diji — login/landing/footer/legal). 11 koyu-zemin kullanımı yeni varyanta geçirildi ve renk-yok-eden `brightness-0 invert` filtresi kaldırıldı. Marka kuralına (sarı/amber yasağı) %100 uyumlu; owner seçimi.
