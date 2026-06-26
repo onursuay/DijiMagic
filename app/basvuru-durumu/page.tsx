@@ -208,11 +208,11 @@ export default function BasvuruDurumuPage() {
         >
           <Link href="/">
             <Image
-              src="/logos/dijimagic-logo.png"
+              src="/logos/dijimagic-logo-light.png"
               alt="DijiMagic"
               width={170}
               height={54}
-              className="object-contain brightness-0 invert"
+              className="object-contain"
               priority
             />
           </Link>

@@ -2,6 +2,11 @@
 
 ---
 
+## 2026-06-26 — Logo renklendirme ("AI yeni nesil", markaya sadık camgöbeği-yeşil)
+- **Sorun:** Logo (wordmark + yıldızlar) tek renk siyahtı; her yerde `brightness-0 invert` ile beyaza çevriliyordu. Owner daha "AI yeni nesil" ama ölçülü (rengarenk olmayan) bir görünüm istedi; yıldızlar ana renk vurgusu olsun.
+- **Çözüm:** Kaynak script gradyanlı + iki varyantlı yapıldı. Yıldızlar (sparkle) camgöbeği→yeşil gradyan (`#34E0C4 → #2BB673`), "Magic" yeşil→teal gradyan (`#2BB673 → #2FBF9B`), "Diji" zemine göre nötr. İki varyant: `dijimagic-logo.png` (açık zemin, koyu Diji — sidebar) ve `dijimagic-logo-light.png` (koyu zemin, beyaz Diji — login/landing/footer/legal). 11 koyu-zemin kullanımı yeni varyanta geçirildi ve renk-yok-eden `brightness-0 invert` filtresi kaldırıldı. Marka kuralına (sarı/amber yasağı) %100 uyumlu; owner seçimi.
+- **Dosyalar:** scripts/rebrand/render-logo.mjs, public/logos/dijimagic-logo.png, public/logos/dijimagic-logo-light.png, app/login/page.tsx, app/signup/page.tsx, app/signup/verify/page.tsx, app/basvuru-durumu/page.tsx, app/page.tsx, app/fiyatlandirma/page.tsx, components/landing/LandingHeader.tsx, components/legal/{Terms,PrivacyPolicy,DataDeletion,CookiePolicy}Content.tsx
+
 ## 2026-06-26 — DijiAlgoritma kampanya türü enum + paylaşılan hesap seçici i18n (EN)
 - **Sorun:** EN arayüzde DijiAlgoritma kampanya kartında "Campaign Type" stored TR etiketini gösteriyordu ("Arama Ağı"); paylaşılan hesap seçici (UnifiedAccountSwitcher) hesabın "Hesap {id}" adını olduğu gibi basıyordu.
 - **Çözüm:** `CampaignCard`/`DrilldownModal` ham enum varsa locale-aware `translateEnum` kullanıyor (EN "Search"/"Traffic", TR "Arama Ağı"). `UnifiedAccountSwitcher` generic "Hesap {id}" desenini `accountFallback` ile locale-aware etikete çeviriyor (EN "Account {id}").

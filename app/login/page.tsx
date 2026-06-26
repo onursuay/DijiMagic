@@ -167,7 +167,7 @@ export default function LoginPage() {
         {/* Logo */}
         <div className="flex justify-center mb-5">
           <Link href="/">
-            <Image src="/logos/dijimagic-logo.png" alt="DijiMagic" width={150} height={48} className="object-contain brightness-0 invert" priority />
+            <Image src="/logos/dijimagic-logo-light.png" alt="DijiMagic" width={150} height={48} className="object-contain" priority />
           </Link>
         </div>
 
