@@ -159,7 +159,7 @@ export default function LoginPage() {
   }
 
   return (
-    <div className="min-h-screen bg-[#13181f] flex items-center justify-center px-4 py-6 relative overflow-hidden" style={{ fontSize: '16px' }}>
+    <div className="min-h-screen bg-[#161d28] flex items-center justify-center px-4 py-6 relative overflow-hidden" style={{ fontSize: '16px' }}>
       {/* Neural network canvas */}
       <canvas ref={canvasRef} className="absolute inset-0 w-full h-full pointer-events-none" aria-hidden="true" />
 

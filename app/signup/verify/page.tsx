@@ -70,7 +70,7 @@ export default function VerifyPage() {
   const isPending = status === 'pending' || !status
 
   return (
-    <div className="min-h-screen bg-[#13181f] flex items-center justify-center px-4 py-12" style={{ fontSize: '16px' }}>
+    <div className="min-h-screen bg-[#161d28] flex items-center justify-center px-4 py-12" style={{ fontSize: '16px' }}>
       <div className="w-full max-w-md relative z-10">
         {/* Logo */}
         <div className="flex justify-center mb-6">

@@ -2,6 +2,11 @@
 
 ---
 
+## 2026-06-26 — Landing: mor/mavi kaldırıldı (temiz emerald/teal) + zemin #161d28 + kart derinliği
+- **Sorun:** Mor/mavi glow "boğucu/murky" gösteriyordu (owner: "mor işi bozuyor, hâlâ çok karanlık").
+- **Çözüm:** HeroGlowTrail mor (168,85,247) + mavi (59,130,246) globları emerald + teal'e çevrildi; hero başlık gradyanlarından indigo (#818cf8) + sky (#38bdf8) çıkarıldı → emerald→teal→cyan. Zemin #13181f → #161d28 (dark-slate, nefes); kart/yüzeyler bg-white/[0.045] + border-white/[0.09] (katmanlı derinlik). frontend-design ilkeleriyle.
+- **Dosyalar:** components/landing/HeroGlowTrail.tsx, app/page.tsx, app/ozellikler/page.tsx, components/landing/{FeatureTabs,FeatureVisual}.tsx + zemin site geneli
+
 ## 2026-06-26 — Zemin açıldı (#060609 → #13181f mavi-gri) + sekme başlığı düzeltmeleri (Faz 1b)
 - **Sorun:** Zemin çok koyu/boğucuydu (neredeyse saf siyah); sekme başlığı "DijiMagic Dashboard" çıkıyordu.
 - **Çözüm:** Tüm pazarlama + legal + auth zemini iyzads-seviyesi mavi-gri **#13181f**'e çekildi (emerald korundu, kartlar okunur); toggle pill #1b212c; PWA manifest güncellendi. Layout başlık default'u "DijiMagic"; ana sayfaya özel SEO başlığı **"DijiMagic — Yapay Zeka Destekli Pazarlama Platformu"**.

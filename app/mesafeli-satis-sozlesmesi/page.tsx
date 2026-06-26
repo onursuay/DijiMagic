@@ -49,7 +49,7 @@ export default async function MesafeliSatisSozlesmesiPage() {
       }
 
   return (
-    <div className="min-h-screen bg-[#13181f] text-white">
+    <div className="min-h-screen bg-[#161d28] text-white">
       <div className="max-w-4xl mx-auto px-6 py-16">
         <Link href="/" className="text-emerald-400 hover:text-emerald-300 transition-colors mb-6 inline-block text-sm">{c.back}</Link>
         <div className="rounded-xl border border-gray-700 bg-white/[0.03] px-5 py-3 mb-6 text-sm text-gray-300">⚠️ {c.draft}</div>

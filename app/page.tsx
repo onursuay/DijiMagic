@@ -151,7 +151,7 @@ export default async function RootPage() {
   /* ────────────────────── Render ────────────────────── */
 
   return (
-    <div className="min-h-screen bg-[#13181f] text-white flex flex-col overflow-x-hidden" style={{ fontSize: '16px' }}>
+    <div className="min-h-screen bg-[#161d28] text-white flex flex-col overflow-x-hidden" style={{ fontSize: '16px' }}>
       {/* Shimmer animation for header buttons */}
       <style dangerouslySetInnerHTML={{ __html: `
         .btn-shimmer { position: relative; overflow: hidden; }
@@ -209,7 +209,7 @@ export default async function RootPage() {
             {c.heroLine1}{' '}
             <span
               className="hero-tagline-flow bg-clip-text text-transparent"
-              style={{ backgroundImage: 'linear-gradient(90deg, #34d399, #22d3ee, #38bdf8, #22d3ee, #34d399)' }}
+              style={{ backgroundImage: 'linear-gradient(90deg, #34d399, #2dd4bf, #22d3ee, #2dd4bf, #34d399)' }}
             >
               {c.heroLine2}
             </span>
@@ -238,8 +238,8 @@ export default async function RootPage() {
       <section className="w-full px-6 pb-8 md:pb-10">
         <div className="max-w-4xl mx-auto relative">
           <div className="absolute -inset-6 rounded-3xl blur-2xl" style={{ background: 'radial-gradient(ellipse at center, rgba(16,185,129,0.06), transparent 70%)' }} />
-          <div className="relative bg-white/[0.025] border border-white/[0.08] rounded-2xl backdrop-blur-sm overflow-hidden">
-            <div className="flex items-center justify-between px-5 py-3 border-b border-white/[0.06]">
+          <div className="relative bg-white/[0.045] border border-white/[0.08] rounded-2xl backdrop-blur-sm overflow-hidden">
+            <div className="flex items-center justify-between px-5 py-3 border-b border-white/[0.09]">
               <div className="flex items-center gap-2">
                 <div className="w-2 h-2 rounded-full bg-emerald-400 shadow-[0_0_8px_rgba(16,185,129,0.6)]" />
                 <span className="text-sm font-semibold text-gray-200">{c.panelTitle}</span>
@@ -295,13 +295,13 @@ export default async function RootPage() {
               { label: 'Google Ads', icon: '/platform-icons/google-ads.svg' },
               { label: 'Meta Ads', icon: '/platform-icons/meta.svg' },
             ].map((p, i) => (
-              <div key={i} className="flex items-center gap-2 text-sm text-gray-400 bg-white/[0.03] border border-white/[0.06] px-4 py-1.5 rounded-full">
+              <div key={i} className="flex items-center gap-2 text-sm text-gray-400 bg-white/[0.03] border border-white/[0.09] px-4 py-1.5 rounded-full">
                 <Image src={p.icon} alt={p.label} width={14} height={14} className="brightness-0 invert opacity-50" />
                 <span className="font-medium">{p.label}</span>
               </div>
             ))}
             {(isEn ? ['AI Engine', 'Auto Reports', 'Smart Budgets'] : ['AI Motor', 'Oto Raporlama', 'Akıllı Bütçe']).map((label, i) => (
-              <span key={i} className="text-sm font-medium text-gray-500 bg-white/[0.03] border border-white/[0.06] px-4 py-1.5 rounded-full">
+              <span key={i} className="text-sm font-medium text-gray-500 bg-white/[0.03] border border-white/[0.09] px-4 py-1.5 rounded-full">
                 {label}
               </span>
             ))}
@@ -321,7 +321,7 @@ export default async function RootPage() {
           </div>
           <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-4">
             {c.caps.map((cap, i) => (
-              <div key={i} className="group bg-white/[0.025] border border-white/[0.06] rounded-2xl p-6 hover:border-emerald-400/20 hover:bg-white/[0.04] hover:shadow-[0_0_30px_rgba(16,185,129,0.06)] transition-all duration-300">
+              <div key={i} className="group bg-white/[0.045] border border-white/[0.09] rounded-2xl p-6 hover:border-emerald-400/20 hover:bg-white/[0.04] hover:shadow-[0_0_30px_rgba(16,185,129,0.06)] transition-all duration-300">
                 <div className="w-10 h-10 rounded-xl bg-emerald-400/[0.08] border border-emerald-400/15 flex items-center justify-center mb-4 text-emerald-400 group-hover:shadow-[0_0_20px_rgba(16,185,129,0.1)] transition-all">
                   <Icon name={cap.svg} size={18} />
                 </div>
@@ -345,7 +345,7 @@ export default async function RootPage() {
           </div>
           <div className="grid md:grid-cols-3 gap-5">
             {c.perfs.map((perf, i) => (
-              <div key={i} className="relative bg-gradient-to-b from-white/[0.04] to-white/[0.02] border border-white/[0.06] rounded-2xl p-7 text-center overflow-hidden group">
+              <div key={i} className="relative bg-gradient-to-b from-white/[0.04] to-white/[0.02] border border-white/[0.09] rounded-2xl p-7 text-center overflow-hidden group">
                 <div className="absolute inset-0 bg-gradient-to-b from-emerald-400/[0.03] to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-500" />
                 <div className="relative">
                   <p className="text-4xl md:text-5xl font-black bg-gradient-to-r from-emerald-400 to-teal-300 bg-clip-text text-transparent mb-1.5">{perf.metric}</p>
@@ -367,8 +367,8 @@ export default async function RootPage() {
           </div>
           <div className="grid sm:grid-cols-2 lg:grid-cols-4 gap-4">
             {c.cmds.map((cmd, i) => (
-              <div key={i} className="bg-white/[0.025] border border-white/[0.06] rounded-2xl p-5 hover:border-emerald-400/10 transition-all duration-300">
-                <div className="w-8 h-8 rounded-lg bg-gradient-to-br from-emerald-400/10 to-teal-400/[0.06] border border-white/[0.06] flex items-center justify-center mb-3">
+              <div key={i} className="bg-white/[0.045] border border-white/[0.09] rounded-2xl p-5 hover:border-emerald-400/10 transition-all duration-300">
+                <div className="w-8 h-8 rounded-lg bg-gradient-to-br from-emerald-400/10 to-teal-400/[0.06] border border-white/[0.09] flex items-center justify-center mb-3">
                   <div className="w-2 h-2 rounded-full bg-emerald-400 shadow-[0_0_6px_rgba(16,185,129,0.5)]" />
                 </div>
                 <h4 className="font-semibold text-white text-base mb-1.5">{cmd.title}</h4>
@@ -401,7 +401,7 @@ export default async function RootPage() {
       </section>
 
       {/* ═══════════ FOOTER ═══════════ */}
-      <footer className="w-full border-t border-white/[0.05] py-6 px-6 bg-[#13181f]">
+      <footer className="w-full border-t border-white/[0.05] py-6 px-6 bg-[#161d28]">
         <div className="max-w-7xl mx-auto flex flex-col sm:flex-row flex-wrap items-center justify-between gap-3 text-sm">
           <div className="flex items-center gap-3 text-gray-500">
             <Image src="/logos/dijimagic-logo-light.png" alt="DijiMagic" width={88} height={28} className="object-contain opacity-40" />

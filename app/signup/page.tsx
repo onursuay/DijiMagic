@@ -319,7 +319,7 @@ export default function SignupPage() {
 
   return (
     <div
-      className="min-h-screen bg-[#13181f] flex items-center justify-center px-4 py-6 relative overflow-hidden"
+      className="min-h-screen bg-[#161d28] flex items-center justify-center px-4 py-6 relative overflow-hidden"
       style={{ fontSize: '16px' }}
     >
       {/* Neural Network Canvas Animation */}

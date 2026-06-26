@@ -109,7 +109,7 @@ function Carousel({ feats, isEn, soonLabel }: { feats: Feat[]; isEn: boolean; so
             key={i}
             {...(i < feats.length ? { id: f.slug } : {})}
             aria-hidden={i >= feats.length}
-            className="shrink-0 w-[280px] sm:w-[320px] mr-4 rounded-2xl border border-white/[0.07] bg-white/[0.025] p-6"
+            className="shrink-0 w-[280px] sm:w-[320px] mr-4 rounded-2xl border border-white/[0.07] bg-white/[0.045] p-6"
           >
             <div className="flex items-center gap-3 mb-3">
               <IconBox name={f.icon} />
@@ -151,7 +151,7 @@ export default function FeatureTabs({ isEn, soonLabel }: { isEn: boolean; soonLa
       <div className="max-w-6xl mx-auto">
         {/* Toggle pill — aşağıdaki içerik kutusunun ÜST kenarına biner (iyzads gibi birleşik) */}
         <div className="relative z-10 flex justify-center -mb-6">
-          <div className="inline-flex flex-wrap justify-center gap-1 p-1.5 rounded-full border border-white/[0.08] bg-[#1b212c] shadow-[0_12px_34px_-12px_rgba(0,0,0,0.7)]">
+          <div className="inline-flex flex-wrap justify-center gap-1 p-1.5 rounded-full border border-white/[0.08] bg-[#242c39] shadow-[0_12px_34px_-12px_rgba(0,0,0,0.7)]">
             {GROUPS.map((gr, i) => (
               <button
                 key={gr.id}
@@ -179,7 +179,7 @@ export default function FeatureTabs({ isEn, soonLabel }: { isEn: boolean; soonLa
           {g.layout === 'cards' && (
             <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-4 md:gap-5">
               {g.feats.map((f) => (
-                <div key={f.slug} id={f.slug} className="group relative scroll-mt-32 rounded-2xl border border-white/[0.07] bg-white/[0.025] p-6 md:p-7 transition-all duration-300 hover:-translate-y-1 hover:border-emerald-400/25 hover:bg-white/[0.04] hover:shadow-[0_10px_44px_-14px_rgba(16,185,129,0.22)]">
+                <div key={f.slug} id={f.slug} className="group relative scroll-mt-32 rounded-2xl border border-white/[0.07] bg-white/[0.045] p-6 md:p-7 transition-all duration-300 hover:-translate-y-1 hover:border-emerald-400/25 hover:bg-white/[0.04] hover:shadow-[0_10px_44px_-14px_rgba(16,185,129,0.22)]">
                   <div className="absolute inset-x-0 top-0 h-px bg-gradient-to-r from-transparent via-emerald-400/30 to-transparent opacity-0 group-hover:opacity-100 transition-opacity" />
                   <div className="mb-4 group-hover:shadow-[0_0_22px_rgba(16,185,129,0.18)] w-fit rounded-xl transition-all"><IconBox name={f.icon} big /></div>
                   <div className="flex items-center gap-2 mb-2">
@@ -236,7 +236,7 @@ export default function FeatureTabs({ isEn, soonLabel }: { isEn: boolean; soonLa
               {g.feats.map((f, i) => {
                 const span = i === 0 || i === 3 ? 'md:col-span-2' : 'md:col-span-1'
                 return (
-                  <div key={f.slug} id={f.slug} className={`group relative scroll-mt-32 rounded-2xl border border-white/[0.07] bg-white/[0.025] p-6 md:p-7 transition-all duration-300 hover:border-emerald-400/25 hover:bg-white/[0.04] hover:shadow-[0_10px_44px_-14px_rgba(16,185,129,0.2)] ${span}`}>
+                  <div key={f.slug} id={f.slug} className={`group relative scroll-mt-32 rounded-2xl border border-white/[0.07] bg-white/[0.045] p-6 md:p-7 transition-all duration-300 hover:border-emerald-400/25 hover:bg-white/[0.04] hover:shadow-[0_10px_44px_-14px_rgba(16,185,129,0.2)] ${span}`}>
                     <div className="flex items-start gap-4">
                       <IconBox name={f.icon} big={i === 0 || i === 3} />
                       <div className="min-w-0">

@@ -24,7 +24,7 @@ export default function AboutContent({ locale = 'tr' }: { locale?: 'tr' | 'en' }
   const a = A[locale]
   const isEn = locale === 'en'
   return (
-    <div className="min-h-screen bg-[#13181f] text-white">
+    <div className="min-h-screen bg-[#161d28] text-white">
       <LandingHeader
         locale={locale}
         ctaSchedule={isEn ? 'Book a Call' : 'Toplantı Planla'}

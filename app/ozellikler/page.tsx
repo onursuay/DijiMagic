@@ -23,10 +23,10 @@ export default async function OzelliklerPage() {
     : { badge: 'Her şey tek platformda', h1a: 'Tek platform,', h1b: 'tüm pazarlama modülleri', sub1: 'DijiMagic; reklam yönetimi, yapay zekâ stratejileri, içerik üretimi, SEO, CRM, e-mail marketing ve web sitesi tasarımını tek bir akıllı panelde birleştirir.', sub2: 'Markanız için çalışan bir ajans gücüyle tüm dijital süreçlerinizi tek merkezden yönetir.', soon: 'Yakında', ctaTrial: '7 Gün Ücretsiz Dene', ctaSchedule: 'Görüşme Planla', bottomTitle: 'Hepsini tek yerden yönetmeye hazır mısın?', bottomSub: '7 günlük ücretsiz denemeni başlat. Kredi kartı gerekmez.', footer: '2026 DijiMagic. Tüm hakları saklıdır.' }
 
   return (
-    <div className="min-h-screen bg-[#13181f] text-white flex flex-col overflow-x-hidden" style={{ fontSize: '16px' }}>
+    <div className="min-h-screen bg-[#161d28] text-white flex flex-col overflow-x-hidden" style={{ fontSize: '16px' }}>
       <style dangerouslySetInnerHTML={{ __html: `
         .feat-hero-flow {
-          background-image: linear-gradient(90deg,#34d399,#22d3ee,#38bdf8,#818cf8,#38bdf8,#22d3ee,#34d399);
+          background-image: linear-gradient(90deg,#34d399,#2dd4bf,#22d3ee,#2dd4bf,#34d399);
           background-size: 250% auto;
           -webkit-background-clip: text; background-clip: text;
           animation: feat-flow 4s linear infinite;
@@ -86,7 +86,7 @@ export default async function OzelliklerPage() {
       </section>
 
       {/* ── FOOTER ── */}
-      <footer className="w-full border-t border-white/[0.05] py-6 px-6 bg-[#13181f] mt-auto">
+      <footer className="w-full border-t border-white/[0.05] py-6 px-6 bg-[#161d28] mt-auto">
         <div className="max-w-7xl mx-auto flex flex-col sm:flex-row flex-wrap items-center justify-between gap-3 text-sm">
           <div className="flex items-center gap-3 text-gray-500">
             <Image src="/logos/dijimagic-logo-light.png" alt="DijiMagic" width={88} height={28} className="object-contain opacity-40" />

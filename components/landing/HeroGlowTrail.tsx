@@ -70,13 +70,13 @@ export default function HeroGlowTrail() {
         WebkitMaskImage: 'radial-gradient(ellipse 88% 94% at 50% 36%, #000 40%, transparent 88%)',
       }}
     >
-      {/* HER ZAMAN görünür statik renkli bloblar — yeşil / mor / mavi (Grower paleti, koyu zeminde net) */}
-      <div className="absolute -top-24 left-[6%] w-[42vw] max-w-[560px] aspect-square rounded-full blur-[100px]" style={{ background: 'radial-gradient(circle, rgba(61,237,154,0.34), transparent 66%)' }} />
-      <div className="absolute -top-16 right-[4%] w-[40vw] max-w-[540px] aspect-square rounded-full blur-[100px]" style={{ background: 'radial-gradient(circle, rgba(168,85,247,0.32), transparent 66%)' }} />
-      <div className="absolute bottom-[-35%] left-[32%] w-[44vw] max-w-[600px] aspect-square rounded-full blur-[110px]" style={{ background: 'radial-gradient(circle, rgba(59,130,246,0.30), transparent 66%)' }} />
-      {/* İmleci takip eden PARLAK glow — yeşil + mor (beyaz değil, normal blend) */}
-      <div ref={a} className="absolute top-0 left-0 w-[28vw] max-w-[400px] aspect-square rounded-full blur-[80px] opacity-0 transition-opacity duration-700 ease-out" style={{ background: 'radial-gradient(circle, rgba(61,237,154,0.42), transparent 66%)', willChange: 'transform, opacity' }} />
-      <div ref={b} className="absolute top-0 left-0 w-[26vw] max-w-[360px] aspect-square rounded-full blur-[80px] opacity-0 transition-opacity duration-700 ease-out" style={{ background: 'radial-gradient(circle, rgba(168,85,247,0.38), transparent 66%)', willChange: 'transform, opacity' }} />
+      {/* HER ZAMAN görünür statik bloblar — emerald + teal (marka paleti; mor/mavi YOK) */}
+      <div className="absolute -top-24 left-[6%] w-[42vw] max-w-[560px] aspect-square rounded-full blur-[100px]" style={{ background: 'radial-gradient(circle, rgba(52,211,153,0.30), transparent 66%)' }} />
+      <div className="absolute -top-16 right-[4%] w-[40vw] max-w-[540px] aspect-square rounded-full blur-[100px]" style={{ background: 'radial-gradient(circle, rgba(45,212,191,0.26), transparent 66%)' }} />
+      <div className="absolute bottom-[-35%] left-[32%] w-[44vw] max-w-[600px] aspect-square rounded-full blur-[110px]" style={{ background: 'radial-gradient(circle, rgba(16,185,129,0.22), transparent 66%)' }} />
+      {/* İmleci takip eden glow — emerald + teal (normal blend) */}
+      <div ref={a} className="absolute top-0 left-0 w-[28vw] max-w-[400px] aspect-square rounded-full blur-[80px] opacity-0 transition-opacity duration-700 ease-out" style={{ background: 'radial-gradient(circle, rgba(52,211,153,0.38), transparent 66%)', willChange: 'transform, opacity' }} />
+      <div ref={b} className="absolute top-0 left-0 w-[26vw] max-w-[360px] aspect-square rounded-full blur-[80px] opacity-0 transition-opacity duration-700 ease-out" style={{ background: 'radial-gradient(circle, rgba(45,212,191,0.32), transparent 66%)', willChange: 'transform, opacity' }} />
     </div>
   )
 }

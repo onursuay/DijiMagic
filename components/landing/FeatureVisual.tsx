@@ -33,7 +33,7 @@ function Tasarim() {
   return (
     <Frame>
       <div className="absolute inset-x-7 top-9 bottom-7 flex flex-col">
-        <div className="relative flex-1 rounded-xl bg-white/[0.04] border border-white/[0.06] overflow-hidden">
+        <div className="relative flex-1 rounded-xl bg-white/[0.04] border border-white/[0.09] overflow-hidden">
           <div className="absolute top-0 bottom-0 w-1/3" style={{ background: 'linear-gradient(90deg,transparent,rgba(16,185,129,0.28),transparent)', animation: 'fv-sweep 2.6s ease-in-out infinite' }} />
           <div className="absolute inset-0 flex items-center justify-center">
             <svg width="34" height="34" viewBox="0 0 24 24" fill="none" stroke="rgba(52,211,153,0.7)" strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round"><rect x="3" y="3" width="18" height="18" rx="2" /><circle cx="8.5" cy="8.5" r="1.5" /><polyline points="21,15 16,10 5,21" /></svg>
@@ -56,7 +56,7 @@ function Sosyal() {
   return (
     <Frame>
       <div className="absolute inset-x-7 top-9 bottom-7 flex gap-3">
-        <div className="w-1/2 rounded-xl border border-white/[0.06] bg-white/[0.03] overflow-hidden relative">
+        <div className="w-1/2 rounded-xl border border-white/[0.09] bg-white/[0.03] overflow-hidden relative">
           <div style={{ animation: 'fv-cycle 7.5s ease-in-out infinite' }}>
             {[...posts, posts[0]].map((c, i) => (
               <div key={i} className="h-[72px] m-2 rounded-lg flex items-center gap-2 px-3" style={{ background: c }}>
@@ -66,7 +66,7 @@ function Sosyal() {
             ))}
           </div>
         </div>
-        <div className="w-1/2 rounded-xl border border-white/[0.06] bg-white/[0.03] p-3">
+        <div className="w-1/2 rounded-xl border border-white/[0.09] bg-white/[0.03] p-3">
           <div className="grid grid-cols-4 gap-1.5">
             {Array.from({ length: 16 }).map((_, i) => (
               <div key={i} className="aspect-square rounded-[5px] bg-white/[0.05]" style={[2, 6, 9, 13].includes(i) ? { background: 'rgba(16,185,129,0.4)', animation: `fv-twinkle 2s ${i * 0.2}s ease-in-out infinite` } : undefined} />
@@ -84,7 +84,7 @@ function Seo() {
     <Frame>
       <div className="absolute inset-x-7 top-9 bottom-7 flex flex-col gap-2 justify-end overflow-hidden">
         {[0, 1, 2].map((i) => (
-          <div key={i} className="h-[44px] rounded-lg border border-white/[0.06] bg-white/[0.03] flex items-center gap-2.5 px-3">
+          <div key={i} className="h-[44px] rounded-lg border border-white/[0.09] bg-white/[0.03] flex items-center gap-2.5 px-3">
             <span className="text-[11px] font-bold text-gray-600 w-4">{i + 4}</span>
             <div className="flex-1 space-y-1.5"><div className="h-2 rounded-full bg-white/12 w-2/3" /><div className="h-1.5 rounded-full bg-white/[0.07] w-2/5" /></div>
           </div>
@@ -110,7 +110,7 @@ function Web() {
   ]
   return (
     <Frame>
-      <div className="absolute inset-x-7 top-9 bottom-7 rounded-xl border border-white/[0.06] bg-white/[0.025] p-2.5 flex flex-col gap-2">
+      <div className="absolute inset-x-7 top-9 bottom-7 rounded-xl border border-white/[0.09] bg-white/[0.045] p-2.5 flex flex-col gap-2">
         <div className="flex gap-2">
           {blocks.filter((b) => b.row).map((b, i) => (
             <div key={`r${i}`} className={`${b.h} ${b.w} rounded-md bg-emerald-400/[0.10] border border-emerald-400/15`} style={{ animation: `fv-build 4.2s ${b.d}s ease-in-out infinite`, transformOrigin: 'top' }} />

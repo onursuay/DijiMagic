@@ -190,14 +190,14 @@ export default function BasvuruDurumuPage() {
 
   if (loading) {
     return (
-      <div className="min-h-screen flex items-center justify-center bg-[#13181f]">
+      <div className="min-h-screen flex items-center justify-center bg-[#161d28]">
         <Loader2 className="h-6 w-6 text-emerald-400 animate-spin" />
       </div>
     )
   }
 
   return (
-    <div className="min-h-screen flex items-center justify-center px-4 py-12 bg-[#13181f] text-white">
+    <div className="min-h-screen flex items-center justify-center px-4 py-12 bg-[#161d28] text-white">
       <div className="w-full max-w-2xl relative z-10">
         {/* Logo */}
         <div
