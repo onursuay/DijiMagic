@@ -2,6 +2,11 @@
 
 ---
 
+## 2026-06-26 — Email: FROM_EMAIL → "DijiMagic <info@dijimagic.com>" (Resend verified)
+- **Sorun:** Resend'de dijimagic.com doğrulaması bekliyordu; production gönderen hâlâ eski markaydı ("YO Dijital Medya Anonim Şirketi <info@yodijital.com>").
+- **Çözüm:** dijimagic.com Resend'de **verified** oldu → Vercel production `FROM_EMAIL` = "DijiMagic <info@dijimagic.com>" yapıldı (yerel .env.local zaten güncel). Redeploy ile canlıya iner. yodijital.com Resend'den silinmedi (başka projeler kullanıyor olabilir — risk).
+- **Dosyalar:** Vercel env (FROM_EMAIL), docs/REDESIGN-CHECKLIST.md
+
 ## 2026-06-26 — QA: EN/TR parite (TrustStats partner etiketi) + mobil doğrulama
 - **Sorun:** TrustStats Meta/Google partner alt-etiketi ("Business Partner"/"Partner") TR'de lokalize değildi (EN/TR parite kuralı).
 - **Çözüm:** Partner alt-etiketleri locale-aware → TR'de "İş Ortağı". Ayrıca otonom QA: tsc 0 hata; mobil (CDP 390px gerçek emülasyon) ana sayfa + /ozellikler yatay taşma YOK (`--window-size` screenshot'larının yanıltıcı "kırpık" göstermesi artefakt çıktı); rebrand kalıntı taraması kullanıcı-yüzlü 0 iz.

@@ -38,8 +38,8 @@
 
 ---
 
-## 🔄 OTOMATİK BEKLEYEN (sende iş yok)
-- [ ] **Resend** dijimagic.com doğrulaması — DNS henüz cache'te `pending` (en geç ~24 saat). Verified olunca gönderen mail otomatik **info@dijimagic.com** olacak. Takip bende.
+## ✅ ÇÖZÜLDÜ (gece içinde — sende iş yok)
+- [x] **Resend** dijimagic.com **VERIFIED** → production gönderen mail `FROM_EMAIL` = "DijiMagic <info@dijimagic.com>" yapıldı (eski "YO Dijital ... <info@yodijital.com>" değişti). Redeploy ile canlı. *(yodijital.com Resend'den silinmedi — başka projeler kullanıyor olabilir.)*
 
 ---
 
