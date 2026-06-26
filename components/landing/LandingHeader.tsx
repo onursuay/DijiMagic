@@ -71,9 +71,9 @@ export default function LandingHeader({ locale, ctaSchedule, ctaTrial }: Props) 
     <header className="w-full sticky top-0 z-50 bg-[#060609]/80 backdrop-blur-2xl" ref={headerRef}>
       <div className="max-w-7xl mx-auto flex items-center justify-between px-6 py-3">
 
-        {/* Logo — smaller */}
+        {/* Logo */}
         <Link href="/" className="shrink-0">
-          <Image src="/logos/dijimagic-logo-light.png" alt="DijiMagic" width={110} height={36} className="object-contain" />
+          <Image src="/logos/dijimagic-logo-light.png" alt="DijiMagic" width={140} height={46} className="object-contain" />
         </Link>
 
         {/* Center nav — all pills */}
