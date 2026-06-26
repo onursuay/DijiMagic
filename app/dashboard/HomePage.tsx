@@ -57,6 +57,7 @@ function getDefaultDateRange() {
 
 export default function HomePage() {
   const t = useTranslations('dashboard.homepage')
+  const tAcc = useTranslations('dashboard.meta.accounts')
 
   // Locale
   const [localeString, setLocaleString] = useState('tr-TR')
@@ -124,7 +125,9 @@ export default function HomePage() {
 
     // Google Ads status
     const googleConnected = !!googleSel?.selected || !!googleSel?.customerId
-    const googleName = googleSel?.customerName || googleSel?.selected?.customerName || ''
+    const googleRaw = googleSel?.customerName || googleSel?.selected?.customerName || ''
+    const googleHesapM = /^Hesap\s+(.+)$/i.exec(googleRaw.trim())
+    const googleName = googleHesapM ? tAcc('accountFallback', { id: googleHesapM[1] }) : googleRaw
     setGoogleStatus({ connected: googleConnected, accountName: googleName })
 
     // Meta status

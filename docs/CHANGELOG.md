@@ -2,6 +2,11 @@
 
 ---
 
+## 2026-06-26 — Google Ads hesap etiketi i18n düzeltmesi ("Hesap" → "Account")
+- **Sorun:** EN arayüzde Google reklam hesabı etiketi (Ad Manager toggle + Dashboard Google Ads kartı) açıklayıcı adı olmayan hesaplarda Türkçe "Hesap {id}" gösteriyordu — EN/TR zorunlu kuralına aykırı.
+- **Çözüm:** `dashboard.meta.accounts.accountFallback` anahtarı eklendi (TR "Hesap {id}", EN "Account {id}"). `GoogleAccountDropdown` ve `HomePage` generic "Hesap {id}" desenini locale-aware etikete çeviriyor; gerçek hesap adları olduğu gibi geçer (TR davranışı değişmez).
+- **Dosyalar:** components/google/GoogleAccountDropdown.tsx, app/dashboard/HomePage.tsx, locales/tr.json, locales/en.json
+
 ## 2026-06-25 — YoAi → DijiMagic tam rebrand + domain geçişi (kod/DB/yerel tamam)
 - **Sorun/İstek:** Ayrılan firma (YO Dijital Medya / yoai.yodijital.com) ve eski ürün adı
   (YoAi/YoAlgoritma) projeden tamamen kaldırılıp DijiMagic / DijiAlgoritma / dijimagic.com'a geçiş.

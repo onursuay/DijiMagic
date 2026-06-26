@@ -593,6 +593,7 @@
         "metaAccounts": "Meta Accounts",
         "googleAccounts": "Google Accounts",
         "addGoogleAccount": "Add Google account",
+        "accountFallback": "Account {id}",
         "remove": "Remove"
       },
       "performanceRecommendations": {

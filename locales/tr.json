@@ -593,6 +593,7 @@
         "metaAccounts": "Meta Hesapları",
         "googleAccounts": "Google Hesapları",
         "addGoogleAccount": "Google hesabı ekle",
+        "accountFallback": "Hesap {id}",
         "remove": "Çıkar"
       },
       "performanceRecommendations": {

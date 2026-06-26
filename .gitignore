@@ -6,6 +6,9 @@ node_modules
 /.pnp
 .pnp.js
 
+# Google Ads API başvuru dökümanı — gerçek client verisi içeren ekran görüntüleri (repo dışı)
+/Google-Ads-API-Basvuru/
+
 # testing
 /coverage
 
