@@ -35,6 +35,29 @@ const avatar = `<svg xmlns="http://www.w3.org/2000/svg" width="1024" height="102
 ${spark(796, 236, 60, 'url(#star)')}
 </svg>`
 
+// --- Vercel avatar ALT: yatay logo (kare içinde, dengeli boşlukla) ---
+const avatarH = `<svg xmlns="http://www.w3.org/2000/svg" width="1024" height="1024" viewBox="0 0 1024 1024"><defs>${GRAD}</defs>
+<rect width="1024" height="1024" fill="#0B1220"/>
+<rect width="1024" height="1024" fill="url(#glow)"/>
+<g transform="translate(92,388) scale(0.745)">
+<text x="510" y="232" text-anchor="middle" font-family="Montserrat, Arial" font-size="184" letter-spacing="-4"><tspan font-weight="600" fill="#FFFFFF">Diji</tspan><tspan font-weight="800" fill="url(#magic)">Magic</tspan></text>
+${spark(958, 96, 46, 'url(#star)')}
+${spark(1012, 150, 22, 'url(#star)')}
+</g></svg>`
+
 await sharp(Buffer.from(banner), { density: 96 }).png().toFile(`${DESK}/github-social-1280x640.png`)
 await sharp(Buffer.from(avatar), { density: 96 }).png().toFile(`${DESK}/vercel-avatar-1024.png`)
-console.log('social OK → github-social-1280x640.png + vercel-avatar-1024.png')
+await sharp(Buffer.from(avatarH), { density: 96 }).png().toFile(`${DESK}/vercel-avatar-yatay-1024.png`)
+
+// Karşılaştırma: wordmark vs yatay — 220px + 48px (gerçek avatar boyutu)
+const wm = await sharp(Buffer.from(avatar), { density: 96 }).png().toBuffer()
+const hz = await sharp(Buffer.from(avatarH), { density: 96 }).png().toBuffer()
+const tile = async (buf, sz) => sharp(buf).resize(sz, sz).png().toBuffer()
+const comp = [
+  { input: await tile(wm, 220), top: 30, left: 30 },
+  { input: await tile(hz, 220), top: 30, left: 300 },
+  { input: await sharp(await tile(wm, 48)).resize(96, 96, { kernel: 'nearest' }).toBuffer(), top: 290, left: 92 },
+  { input: await sharp(await tile(hz, 48)).resize(96, 96, { kernel: 'nearest' }).toBuffer(), top: 290, left: 362 },
+]
+await sharp({ create: { width: 550, height: 410, channels: 3, background: '#E7EBEF' } }).composite(comp).png().toFile(`${DESK}/DijiMagic-avatar-karsilastirma.png`)
+console.log('social OK → github-social + 2 avatar + karşılaştırma')
