@@ -2,6 +2,11 @@
 
 ---
 
+## 2026-06-26 — Legal: yasal satıcı = Story 77 Ltd. (geçici), marka DijiMagic önde
+- **Sorun:** İlk etapta kendi şirketi kurulmadan satışa çıkılacak; yasal satıcı + iyzico para trafiği mevcut **Story 77 Creative … Ltd. Şti.** üzerinden olacak. Sözleşme sayfaları hâlâ "Onur Şuay — şahıs işletmesi" diyordu; ayrıca "Vergi Dairesi" alanı gereksizdi.
+- **Çözüm:** Araştırma (Mesafeli Sözleşmeler Yön. m.5 + 6563 E-Ticaret Yön.) → "vergi dairesi" zorunlu değil, MERSİS **veya** VKN yeterli. Mesafeli Satış Sözleşmesi (Taraflar/Satıcı) + Ön Bilgilendirme (Satıcı Bilgileri) → **Story 77 Ltd. + VKN 7811085924 + Beytepe adres**, "DijiMagic markasının işletmecisi" çerçevesi. İletişim + Hakkımızda + Footer → **yalnız DijiMagic** (satıcı/operator satırı kaldırıldı). Story77 yalnız 2 zorunlu sözleşmede görünür.
+- **Dosyalar:** components/legal/ContactContent.tsx, components/legal/AboutContent.tsx, app/mesafeli-satis-sozlesmesi/page.tsx, app/on-bilgilendirme-formu/page.tsx
+
 ## 2026-06-26 — Favicon: mevcut logonun istiflenmiş wordmark hali (koyu zemin) — düzeltme
 - **Sorun:** Favicon yanlış yorumlanıp soyut yıldız (sparkle) işaretine çevrilmişti. Owner aslında **mevcut logonun kendisinin** favicon olarak uyarlanmasını istemişti (yuvarlak alana sığsın diye "Diji" üstte / "Magic" altta istiflenmiş).
 - **Çözüm:** Favicon istiflenmiş wordmark'a geçti — KOYU zemin (`#0B1220`), beyaz "Diji" + camgöbeği-teal gradyan "Magic" + köşe yıldızı; sitedeki koyu-zemin logoyla birebir. Tam set aynı dosyalarla yeniden üretildi: `app/icon.png` (512 daire), `app/favicon.ico` (16/32/48), `app/apple-icon.png` (180 tam-dolu), `public/icons/icon-{192,512}.png` + `icon-maskable-512.png` (wordmark %80 güvenli bölgede). 48px'te net, 32px'te okunur. `app/manifest.ts` değişmedi.

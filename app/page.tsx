@@ -398,7 +398,7 @@ export default async function RootPage() {
       <footer className="w-full border-t border-white/[0.05] py-6 px-6 bg-[#060609]">
         <div className="max-w-7xl mx-auto flex flex-col sm:flex-row flex-wrap items-center justify-between gap-3 text-sm">
           <div className="flex items-center gap-3 text-gray-500">
-            <Image src="/logos/dijimagic-logo-light.png" alt="DijiMagic" width={64} height={22} className="object-contain opacity-40" />
+            <Image src="/logos/dijimagic-logo-light.png" alt="DijiMagic" width={88} height={28} className="object-contain opacity-40" />
             <span>{c.footer}</span>
           </div>
           <div className="flex flex-wrap items-center gap-x-5 gap-y-3">

@@ -7,7 +7,6 @@ const A = {
     title: 'Hakkımızda',
     p1: 'DijiMagic, reklam kampanyalarınızı oluşturmanızı, kreatiflerinizi üretmenizi ve SEO süreçlerinizi tek merkezden yönetmenizi sağlayan yapay zeka destekli hepsi bir arada pazarlama platformudur.',
     p2: 'Meta ve Google reklam yönetimi, AI tabanlı optimizasyon, SEO, sosyal medya, tasarım üretimi ve işletme zekâsını tek panelde birleştirir. Ajanslar, markalar ve dijital uzmanlar için geliştirilmiştir; operasyonel yükü azaltır, performans odağını güçlendirir.',
-    p3: 'DijiMagic, Onur Şuay (şahıs işletmesi) tarafından işletilmektedir.',
     cta: 'Ücretsiz Dene',
     contact: 'İletişim',
   },
@@ -16,7 +15,6 @@ const A = {
     title: 'About',
     p1: 'DijiMagic is an AI-powered all-in-one marketing platform that lets you create ad campaigns, generate creatives and manage your SEO from a single hub.',
     p2: 'It unifies Meta and Google ad management, AI-based optimization, SEO, social media, design generation and business intelligence in one panel. Built for agencies, brands and digital experts; it reduces operational load and sharpens performance focus.',
-    p3: 'DijiMagic is operated by Onur Şuay (sole proprietorship).',
     cta: 'Start Free',
     contact: 'Contact',
   },
@@ -41,7 +39,6 @@ export default function AboutContent({ locale = 'tr' }: { locale?: 'tr' | 'en' }
           <div className="space-y-5 text-[15px] text-[#8a8f98] leading-relaxed">
             <p>{a.p1}</p>
             <p>{a.p2}</p>
-            <p className="text-white/70">{a.p3}</p>
           </div>
           <div className="flex flex-wrap gap-3 mt-8">
             <Link href="/" className="inline-flex items-center justify-center rounded-xl bg-emerald-500 hover:bg-emerald-400 text-white font-semibold px-6 py-3 transition-all active:scale-[0.97]">

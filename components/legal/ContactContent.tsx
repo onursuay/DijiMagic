@@ -7,10 +7,8 @@ const C = {
     title: 'İletişim',
     intro: 'Sorularınız, talepleriniz veya iş birliği için bize ulaşın. En kısa sürede dönüş yaparız.',
     emailLabel: 'E-posta',
-    operatorLabel: 'İşletme',
-    operator: 'DijiMagic — Onur Şuay (şahıs işletmesi)',
     addressLabel: 'Adres',
-    address: 'İlkbahar Mah. 621 Sk. No: 24, Çankaya / Ankara 06550, Türkiye',
+    address: 'Çankaya / Ankara, Türkiye',
     emailCta: 'E-posta Gönder',
     schedCta: 'Toplantı Planla',
     supportNote: 'Destek ve veri talepleriniz için de bu adresi kullanabilirsiniz.',
@@ -20,10 +18,8 @@ const C = {
     title: 'Contact',
     intro: 'Reach out for questions, requests or partnership. We get back to you as soon as possible.',
     emailLabel: 'Email',
-    operatorLabel: 'Business',
-    operator: 'DijiMagic — Onur Şuay (sole proprietorship)',
     addressLabel: 'Address',
-    address: 'İlkbahar Mah. 621 Sk. No: 24, Çankaya / Ankara 06550, Turkey',
+    address: 'Çankaya / Ankara, Turkey',
     emailCta: 'Send Email',
     schedCta: 'Book a Call',
     supportNote: 'You can also use this address for support and data requests.',
@@ -53,10 +49,6 @@ export default function ContactContent({ locale = 'tr' }: { locale?: 'tr' | 'en'
               <div className="text-[12px] uppercase tracking-wide text-[#6b7280] mb-1">{c.emailLabel}</div>
               <a href="mailto:info@dijimagic.com" className="text-emerald-400 hover:text-emerald-300 transition-colors text-[15px] font-medium">info@dijimagic.com</a>
               <p className="text-[13px] text-[#6b7280] mt-1">{c.supportNote}</p>
-            </div>
-            <div className="rounded-xl border border-white/10 bg-white/[0.02] px-5 py-4">
-              <div className="text-[12px] uppercase tracking-wide text-[#6b7280] mb-1">{c.operatorLabel}</div>
-              <div className="text-[15px] text-white/90">{c.operator}</div>
             </div>
             <div className="rounded-xl border border-white/10 bg-white/[0.02] px-5 py-4">
               <div className="text-[12px] uppercase tracking-wide text-[#6b7280] mb-1">{c.addressLabel}</div>
