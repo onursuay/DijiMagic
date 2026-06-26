@@ -28,7 +28,7 @@ export default function AboutContent({ locale = 'tr' }: { locale?: 'tr' | 'en' }
       <LandingHeader
         locale={locale}
         ctaSchedule={isEn ? 'Book a Call' : 'Toplantı Planla'}
-        ctaTrial={isEn ? '14-Day Free Trial' : '14 Günlük Ücretsiz Deneme'}
+        ctaTrial={isEn ? '7-Day Free Trial' : '7 Günlük Ücretsiz Deneme'}
       />
       <div className="max-w-3xl mx-auto px-6 py-16">
         <Link href="/" className="text-emerald-400 hover:text-emerald-300 transition-colors mb-6 inline-block text-sm">

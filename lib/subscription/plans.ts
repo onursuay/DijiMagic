@@ -169,7 +169,7 @@ export const SUBSCRIPTION_PLANS: SubscriptionPlan[] = [
     includesOptimization: true,
     aiScanDailyLimit: 10,
     strategyMonthlyLimit: 10,
-    trialDays: 14,
+    trialDays: 7,
   },
   {
     id: 'enterprise',
@@ -181,7 +181,7 @@ export const SUBSCRIPTION_PLANS: SubscriptionPlan[] = [
     includesOptimization: true,
     aiScanDailyLimit: -1,
     strategyMonthlyLimit: -1,
-    trialDays: 14,
+    trialDays: 7,
   },
 ]
 

@@ -6776,7 +6776,7 @@
     "perYear": "year",
     "chargedInTryMonthly": "≈ ₺{amount} charged monthly to your card",
     "chargedInTryYearly": "≈ ₺{amount} charged yearly to your card",
-    "trialBadge": "14 days free",
+    "trialBadge": "7 days free",
     "selectPlan": "Select Plan",
     "popular": "Most Popular",
     "currentPlanBadge": "Current Plan",
@@ -6883,7 +6883,7 @@
     "monthly": "Monthly",
     "yearly": "Yearly",
     "yearlyBadge": "-30%",
-    "trialNote": "* 14-day free trial — available on the Premium plan.",
+    "trialNote": "* 7-day free trial — available on the Premium plan.",
     "optimizationNote": "The Optimization feature is not available during the trial.",
     "faqTitle": "Frequently Asked Questions",
     "faqSubtitle": "Quick answers to the questions you may have.",
@@ -6915,7 +6915,7 @@
     ],
     "ctaTitle": "Ready to get started?",
     "ctaSubtitle": "Start your free trial. No credit card required.",
-    "ctaButton": "14-Day Free Trial"
+    "ctaButton": "7-Day Free Trial"
   },
   "invoices": {
     "title": "My Invoices",

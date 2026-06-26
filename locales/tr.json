@@ -6776,7 +6776,7 @@
     "perYear": "yıl",
     "chargedInTryMonthly": "Kartınızdan aylık ≈ ₺{amount} tahsil edilir",
     "chargedInTryYearly": "Kartınızdan yıllık ≈ ₺{amount} tahsil edilir",
-    "trialBadge": "14 gün ücretsiz",
+    "trialBadge": "7 gün ücretsiz",
     "selectPlan": "Planı Seç",
     "popular": "En Popüler",
     "currentPlanBadge": "Mevcut Plan",
@@ -6883,7 +6883,7 @@
     "monthly": "Aylık",
     "yearly": "Yıllık",
     "yearlyBadge": "-30%",
-    "trialNote": "* 14 gün ücretsiz deneme — Premium plan için geçerlidir.",
+    "trialNote": "* 7 gün ücretsiz deneme — Premium plan için geçerlidir.",
     "optimizationNote": "Optimizasyon özelliği deneme sürecinde kullanılamaz.",
     "faqTitle": "Sıkça Sorulan Sorular",
     "faqSubtitle": "Aklınıza takılan sorulara hızlı yanıtlar.",
@@ -6915,7 +6915,7 @@
     ],
     "ctaTitle": "Hemen başlamaya hazır mısınız?",
     "ctaSubtitle": "Ücretsiz denemenizi başlatın. Kredi kartı gerekmez.",
-    "ctaButton": "14 Gün Ücretsiz Dene"
+    "ctaButton": "7 Gün Ücretsiz Dene"
   },
   "invoices": {
     "title": "Faturalarım",

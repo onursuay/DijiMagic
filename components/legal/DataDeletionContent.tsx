@@ -30,7 +30,7 @@ export default function DataDeletionContent({ locale = 'tr' }: { locale?: 'tr' |
       <LandingHeader
         locale={locale}
         ctaSchedule={isEn ? 'Book a Call' : 'Toplantı Planla'}
-        ctaTrial={isEn ? '14-Day Free Trial' : '14 Günlük Ücretsiz Deneme'}
+        ctaTrial={isEn ? '7-Day Free Trial' : '7 Günlük Ücretsiz Deneme'}
       />
 
       <div className="max-w-5xl mx-auto px-6 py-16">

@@ -100,7 +100,7 @@ export async function POST(request: NextRequest) {
     const approvalStatus = ((user as any).approval_status as string | null) ?? 'pending'
     const isApprovedForPanel = isOwner || approvalStatus === 'approved'
 
-    // Onaylı kullanıcıya ilk girişte 14 günlük Premium deneme (idempotent, kredi
+    // Onaylı kullanıcıya ilk girişte 7 günlük Premium deneme (idempotent, kredi
     // kartı gerekmez). Owner enterprise-stub kullandığı için hariç. Hata fatal değil.
     if (isApprovedForPanel && !isOwner) {
       try {

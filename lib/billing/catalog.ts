@@ -52,7 +52,7 @@ const BUNDLED_CREDITS: Record<string, number> = {
 const TRIAL_DAYS: Record<string, number> = {
   basic: 0,
   starter: 0,
-  premium: 14,
+  premium: 7,
 }
 
 // Kredi paketi GÖSTERİM fiyatları (USD). Tahsil TL = toChargeTRY(amountUsd).

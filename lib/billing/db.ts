@@ -82,7 +82,7 @@ export async function getCreditBalance(userId: string): Promise<CreditRow> {
 }
 
 /**
- * Yeni kullanıcıya 14 günlük Premium DENEME başlatır (kredi kartı GEREKMEZ).
+ * Yeni kullanıcıya 7 günlük Premium DENEME başlatır (kredi kartı GEREKMEZ).
  * Idempotent: kullanıcının zaten bir aboneliği (trial/active/expired/cancelled)
  * varsa hiçbir şey yapmaz — ücretli aboneliği ezmez, biten trial'ı tekrar açmaz.
  * Otomatik tahsilat (yenileme) YOK; trial bitince getSubscription 'expired' yapar
@@ -98,7 +98,7 @@ export async function startTrial(userId: string): Promise<boolean> {
   if (existing) return false
 
   const plan = SUBSCRIPTION_PLANS.find((p) => p.id === 'premium')
-  const trialDays = plan?.trialDays || 14
+  const trialDays = plan?.trialDays || 7
   const now = new Date()
   const end = new Date(now.getTime() + trialDays * 86_400_000).toISOString()
 

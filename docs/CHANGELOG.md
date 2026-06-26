@@ -2,6 +2,16 @@
 
 ---
 
+## 2026-06-26 — Ücretsiz deneme süresi 14 gün → 7 gün (tüm altyapı)
+- **Sorun:** Ücretsiz deneme 14 gündü; 7 güne çekilmesi istendi (fonksiyonel + tüm metinler).
+- **Çözüm:** Çekirdek kaynak `lib/subscription/plans.ts` `trialDays: 7` (startTrial bunu kullanır → yeni kayıt = 7 gün; mevcut kullanıcı trial'ı geriye dönük değişmez) + `lib/billing/catalog.ts`/`db.ts` fallback 7. Site içi tüm "14 gün/14-day" metinleri 7'ye çevrildi: ana sayfa, /ozellikler, fiyatlandırma, signup, 6 legal bileşeni, Mesafeli Satış + Ön Bilgilendirme sözleşmeleri, locales tr/en (trialBadge/trialNote/ctaButton). **Yasal "14 gün cayma hakkı" (Mesafeli Sözleşmeler Yön. m.9) + analitik "son 14 gün" + strateji "14 gün" KORUNDU** (trial değil).
+- **Dosyalar:** lib/subscription/plans.ts, lib/billing/catalog.ts, lib/billing/db.ts, app/api/auth/login/route.ts, app/page.tsx, app/ozellikler/page.tsx, app/fiyatlandirma/page.tsx, components/legal/*, app/mesafeli-satis-sozlesmesi, app/on-bilgilendirme-formu, locales/tr.json, locales/en.json
+
+## 2026-06-26 — /ozellikler sayfası + Ürün menüsü (15 modül) + iyzads-ilhamı redesign (Faz 1a)
+- **Sorun:** Header "Ürün" menüsündeki 6 öğe de `/#ozellikler`'e gidiyordu; sidebar'daki 15 modülün tamamı yoktu; URL `/#ozellikler` kötüydü; tasarım çok koyu/tekdüzeydi.
+- **Çözüm:** Yeni `/ozellikler` sayfası — 15 modül 4 grupta, **toggle/sekme** (içerik kutusunun üstüne binen, iyzads tarzı), her gruba farklı sunum (kartlar / soldan-sağa kesintisiz kayan marquee / dönüşümlü metin+animasyonlu mockup / bento). Ürün mega-menüsü 15 modüle bağlandı (`/ozellikler#slug`). Daha açık zemin (#0a0e13), emerald korundu, akan-gradyan hero başlık, kompakt padding. Yeni `FeatureTabs` + `FeatureVisual` (CSS animasyonlu mockup'lar) bileşenleri.
+- **Dosyalar:** app/ozellikler/page.tsx, components/landing/FeatureTabs.tsx, components/landing/FeatureVisual.tsx, components/landing/LandingHeader.tsx
+
 ## 2026-06-26 — Legal: yasal satıcı = Story 77 Ltd. (geçici), marka DijiMagic önde
 - **Sorun:** İlk etapta kendi şirketi kurulmadan satışa çıkılacak; yasal satıcı + iyzico para trafiği mevcut **Story 77 Creative … Ltd. Şti.** üzerinden olacak. Sözleşme sayfaları hâlâ "Onur Şuay — şahıs işletmesi" diyordu; ayrıca "Vergi Dairesi" alanı gereksizdi.
 - **Çözüm:** Araştırma (Mesafeli Sözleşmeler Yön. m.5 + 6563 E-Ticaret Yön.) → "vergi dairesi" zorunlu değil, MERSİS **veya** VKN yeterli. Mesafeli Satış Sözleşmesi (Taraflar/Satıcı) + Ön Bilgilendirme (Satıcı Bilgileri) → **Story 77 Ltd. + VKN 7811085924 + Beytepe adres**, "DijiMagic markasının işletmecisi" çerçevesi. İletişim + Hakkımızda + Footer → **yalnız DijiMagic** (satıcı/operator satırı kaldırıldı). Story77 yalnız 2 zorunlu sözleşmede görünür.
