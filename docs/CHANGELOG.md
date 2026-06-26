@@ -2,6 +2,11 @@
 
 ---
 
+## 2026-06-26 — Faz 2/1: Ana sayfaya "Nasıl Çalışır" sekmeli bölüm (Strateji/Optimizasyon/Tasarım)
+- **Sorun:** iyzads tarzı "nasıl çalışır" bölümü yoktu (owner istedi).
+- **Çözüm:** Yeni `HowItWorks` bileşeni — 3 sekme (Strateji/Optimizasyon/Tasarım), her sekmede açıklama + 4 numaralı adım + sağda video-poster placeholder (nabız atan play butonu; gerçek 45sn demo videoları 2. adımda). Ana sayfada TrustStrip ile özellikler bölümü arasına yerleştirildi. Emerald palet, mor yok.
+- **Dosyalar:** components/landing/HowItWorks.tsx, app/page.tsx
+
 ## 2026-06-26 — Landing: mor/mavi kaldırıldı (temiz emerald/teal) + zemin #161d28 + kart derinliği
 - **Sorun:** Mor/mavi glow "boğucu/murky" gösteriyordu (owner: "mor işi bozuyor, hâlâ çok karanlık").
 - **Çözüm:** HeroGlowTrail mor (168,85,247) + mavi (59,130,246) globları emerald + teal'e çevrildi; hero başlık gradyanlarından indigo (#818cf8) + sky (#38bdf8) çıkarıldı → emerald→teal→cyan. Zemin #13181f → #161d28 (dark-slate, nefes); kart/yüzeyler bg-white/[0.045] + border-white/[0.09] (katmanlı derinlik). frontend-design ilkeleriyle.

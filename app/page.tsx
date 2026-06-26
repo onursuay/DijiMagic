@@ -6,6 +6,7 @@ import DemoModal from '@/components/landing/DemoModal'
 import LandingHeader from '@/components/landing/LandingHeader'
 import FooterLangSwitcher from '@/components/landing/FooterLangSwitcher'
 import HeroGlowTrail from '@/components/landing/HeroGlowTrail'
+import HowItWorks from '@/components/landing/HowItWorks'
 import type { Metadata } from 'next'
 
 export const metadata: Metadata = {
@@ -308,6 +309,9 @@ export default async function RootPage() {
           </div>
         </div>
       </section>
+
+      {/* ═══════════ NASIL ÇALIŞIR ═══════════ */}
+      <HowItWorks isEn={isEn} />
 
       {/* ═══════════ AI CAPABILITIES ═══════════ */}
       <section id="ozellikler" className="relative w-full px-6 py-14 md:py-20">
