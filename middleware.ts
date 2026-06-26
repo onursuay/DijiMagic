@@ -136,6 +136,23 @@ export async function middleware(request: NextRequest) {
     return response
   }
 
+  // 1b. Handle /tr prefix: strip + rewrite to bare TR filesystem route + set locale=tr.
+  // TR slug'ları zaten filesystem slug'ı olduğu için eşleme gerekmez (/en/ bloğunun TR aynası).
+  if (pathname === '/tr' || pathname.startsWith('/tr/')) {
+    const rest = pathname.slice(3) || '/' // strip '/tr'
+    request.cookies.set('NEXT_LOCALE', 'tr')
+    const url = request.nextUrl.clone()
+    url.pathname = rest
+    const reqHeadersTr = new Headers(request.headers)
+    reqHeadersTr.set('x-pathname', rest)
+    const response = NextResponse.rewrite(url, { request: { headers: reqHeadersTr } })
+    response.cookies.set('NEXT_LOCALE', 'tr', { path: '/', maxAge: 60 * 60 * 24 * 365 })
+    if (PUBLIC_LEGAL_SLUGS.has(rest.split('/')[1] || '')) {
+      applyPublicLegalHeaders(response)
+    }
+    return response
+  }
+
   // 2. If locale=en but user is on a non-/en/ URL → redirect to /en/ equivalent
   const locale = request.cookies.get('NEXT_LOCALE')?.value
   if (locale === 'en') {

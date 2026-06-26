@@ -11,7 +11,13 @@ export const dynamic = 'force-dynamic'
 export const metadata: Metadata = {
   title: 'Özellikler — DijiMagic',
   description: 'DijiMagic\'in tüm modülleri: reklam yönetimi, yapay zekâ strateji, tasarım, SEO, CRM, e-posta ve daha fazlası, tek panelde.',
-  alternates: { canonical: 'https://dijimagic.com/ozellikler' },
+  alternates: {
+    canonical: 'https://dijimagic.com/tr/ozellikler',
+    languages: {
+      tr: 'https://dijimagic.com/tr/ozellikler',
+      en: 'https://dijimagic.com/en/ozellikler',
+    },
+  },
 }
 
 export default async function OzelliklerPage() {

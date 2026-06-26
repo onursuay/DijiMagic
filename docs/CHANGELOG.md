@@ -2,6 +2,11 @@
 
 ---
 
+## 2026-06-26 — Faz 1c: `/tr/` URL prefix (locale path) — düşük riskli, additive
+- **Sorun:** TR sayfaları prefix'siz (bare) idi; owner `/tr/ozellikler` gibi locale-prefix'li URL istedi.
+- **Çözüm:** Middleware'e `/tr/*` bloğu eklendi (mevcut `/en/*` mantığının TR aynası: strip + bare filesystem'e rewrite + `NEXT_LOCALE=tr`). App yapısı/dashboard/auth'a dokunulmadı (additive). LandingHeader Ürün menüsü + Fiyatlandırma linkleri locale-prefix'li. `/ozellikler` canonical → `/tr/ozellikler` + hreflang (tr/en). Doğrulama: `/tr/ozellikler`·`/tr/fiyatlandirma`·`/tr` → TR; `/en/*` → EN; bare yollar + `/login` (dashboard) bozulmadı.
+- **Dosyalar:** middleware.ts, components/landing/LandingHeader.tsx, app/ozellikler/page.tsx
+
 ## 2026-06-26 — Faz 2/2: İstatistik + Meta/Google partner + Kimler Kullanabilir + Yorumlar
 - **Sorun:** iyzads tarzı sosyal-kanıt bölümleri yoktu (owner kararıyla içerik yazıldı; rakip analizi: iyzads/withgrower/grower).
 - **Çözüm:** (1) `TrustStats` — istatistik şeridi (500+/%97/150K+/40M+) + Meta Business Partner & Google Partner rozetleri (eski ince trust-strip yerine). (2) `WhoCanUse` — 6 hedef segment kartı. (3) `Testimonials` — 9 gerçekçi yorum, SADECE isim-soyisim (marka/şirket adı yok), 5 yıldız. Ana sayfa akışı: Hero→Dashboard→TrustStats→NasılÇalışır→Özellikler→KimlerKullanabilir→Performans→KomutaMerkezi→Yorumlar→CTA. Müşteri logoları (gerçek+izinli) sonraki iş; videolar 2. adım.
