@@ -7,6 +7,9 @@ import LandingHeader from '@/components/landing/LandingHeader'
 import FooterLangSwitcher from '@/components/landing/FooterLangSwitcher'
 import HeroGlowTrail from '@/components/landing/HeroGlowTrail'
 import HowItWorks from '@/components/landing/HowItWorks'
+import TrustStats from '@/components/landing/TrustStats'
+import WhoCanUse from '@/components/landing/WhoCanUse'
+import Testimonials from '@/components/landing/Testimonials'
 import type { Metadata } from 'next'
 
 export const metadata: Metadata = {
@@ -287,28 +290,8 @@ export default async function RootPage() {
         </div>
       </section>
 
-      {/* ═══════════ TRUST STRIP ═══════════ */}
-      <section id="entegrasyonlar" className="w-full border-y border-white/[0.04] py-6 px-6 bg-white/[0.01]">
-        <div className="max-w-7xl mx-auto">
-          <p className="text-xs text-gray-600 uppercase tracking-[0.2em] text-center mb-4 font-medium">{c.trustLabel}</p>
-          <div className="flex flex-wrap justify-center items-center gap-3">
-            {[
-              { label: 'Google Ads', icon: '/platform-icons/google-ads.svg' },
-              { label: 'Meta Ads', icon: '/platform-icons/meta.svg' },
-            ].map((p, i) => (
-              <div key={i} className="flex items-center gap-2 text-sm text-gray-400 bg-white/[0.03] border border-white/[0.09] px-4 py-1.5 rounded-full">
-                <Image src={p.icon} alt={p.label} width={14} height={14} className="brightness-0 invert opacity-50" />
-                <span className="font-medium">{p.label}</span>
-              </div>
-            ))}
-            {(isEn ? ['AI Engine', 'Auto Reports', 'Smart Budgets'] : ['AI Motor', 'Oto Raporlama', 'Akıllı Bütçe']).map((label, i) => (
-              <span key={i} className="text-sm font-medium text-gray-500 bg-white/[0.03] border border-white/[0.09] px-4 py-1.5 rounded-full">
-                {label}
-              </span>
-            ))}
-          </div>
-        </div>
-      </section>
+      {/* ═══════════ TRUST + İSTATİSTİK + PARTNER ═══════════ */}
+      <TrustStats isEn={isEn} />
 
       {/* ═══════════ NASIL ÇALIŞIR ═══════════ */}
       <HowItWorks isEn={isEn} />
@@ -336,6 +319,9 @@ export default async function RootPage() {
           </div>
         </div>
       </section>
+
+      {/* ═══════════ KİMLER KULLANABİLİR ═══════════ */}
+      <WhoCanUse isEn={isEn} />
 
       {/* ═══════════ PERFORMANCE ═══════════ */}
       <section className="relative w-full px-6 py-12 md:py-16 bg-white/[0.015]">
@@ -382,6 +368,9 @@ export default async function RootPage() {
           </div>
         </div>
       </section>
+
+      {/* ═══════════ YORUMLAR ═══════════ */}
+      <Testimonials isEn={isEn} />
 
       {/* ═══════════ BOTTOM CTA ═══════════ */}
       <section className="relative w-full px-6 py-14 md:py-20">

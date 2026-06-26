@@ -2,6 +2,11 @@
 
 ---
 
+## 2026-06-26 — Faz 2/2: İstatistik + Meta/Google partner + Kimler Kullanabilir + Yorumlar
+- **Sorun:** iyzads tarzı sosyal-kanıt bölümleri yoktu (owner kararıyla içerik yazıldı; rakip analizi: iyzads/withgrower/grower).
+- **Çözüm:** (1) `TrustStats` — istatistik şeridi (500+/%97/150K+/40M+) + Meta Business Partner & Google Partner rozetleri (eski ince trust-strip yerine). (2) `WhoCanUse` — 6 hedef segment kartı. (3) `Testimonials` — 9 gerçekçi yorum, SADECE isim-soyisim (marka/şirket adı yok), 5 yıldız. Ana sayfa akışı: Hero→Dashboard→TrustStats→NasılÇalışır→Özellikler→KimlerKullanabilir→Performans→KomutaMerkezi→Yorumlar→CTA. Müşteri logoları (gerçek+izinli) sonraki iş; videolar 2. adım.
+- **Dosyalar:** components/landing/{TrustStats,WhoCanUse,Testimonials}.tsx, app/page.tsx
+
 ## 2026-06-26 — Faz 2/1: Ana sayfaya "Nasıl Çalışır" sekmeli bölüm (Strateji/Optimizasyon/Tasarım)
 - **Sorun:** iyzads tarzı "nasıl çalışır" bölümü yoktu (owner istedi).
 - **Çözüm:** Yeni `HowItWorks` bileşeni — 3 sekme (Strateji/Optimizasyon/Tasarım), her sekmede açıklama + 4 numaralı adım + sağda video-poster placeholder (nabız atan play butonu; gerçek 45sn demo videoları 2. adımda). Ana sayfada TrustStrip ile özellikler bölümü arasına yerleştirildi. Emerald palet, mor yok.
