@@ -34,6 +34,7 @@ const stripDash = (v: string) => v.replace(/-/g, '')
 export default function UnifiedAccountSwitcher() {
   const router = useRouter()
   const t = useTranslations('account.businessSwitcher')
+  const tAcc = useTranslations('dashboard.meta.accounts')
   const reg = useRegisteredAccounts()
   const [adAccounts, setAdAccounts] = useState<AdAccount[]>([])
   const [activeMeta, setActiveMeta] = useState<{ id: string; name: string } | null>(null)
@@ -162,9 +163,14 @@ export default function UnifiedAccountSwitcher() {
   if (!reg.enabled) return null
 
   const businessMode = reg.perAccountScope
+  // Generic "Hesap {id}" (açıklayıcı adı olmayan Google hesabı) → locale-aware etiket.
+  const relocAcc = (n?: string | null): string | undefined => {
+    const m = /^Hesap\s+(.+)$/i.exec((n ?? '').trim())
+    return m ? tAcc('accountFallback', { id: m[1] }) : (n ?? undefined)
+  }
   const label = businessMode
     ? (selectedBusiness?.name || t('selectBusiness'))
-    : (activeMeta?.name || activeGoogle?.customerName || t('adAccountsFallback'))
+    : (activeMeta?.name || relocAcc(activeGoogle?.customerName) || t('adAccountsFallback'))
 
   const handleMouseEnter = () => {
     if (timeoutRef.current) { clearTimeout(timeoutRef.current); timeoutRef.current = null }

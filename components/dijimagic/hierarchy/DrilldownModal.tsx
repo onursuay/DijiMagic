@@ -53,7 +53,7 @@ export default function DrilldownModal({ campaign, busyId, onDecide, onEditAd, o
   }, [])
 
   const payload = (campaign.improvement_payload ?? {}) as { current_objective_label?: string | null }
-  const curType = payload.current_objective_label || translateEnum(campaign.current_objective, locale, campaign.source_platform)
+  const curType = campaign.current_objective ? translateEnum(campaign.current_objective, locale, campaign.source_platform) : (payload.current_objective_label || '')
 
   if (!mounted) return null
 

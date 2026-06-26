@@ -42,7 +42,8 @@ export default function CampaignCard({ campaign, busy, onDrillDown, onApprove, o
   const payload = (campaign.improvement_payload ?? {}) as CampaignPayload
   const mismatch = payload.type_mismatch_alert
   const confidence = campaign.confidence ?? 0
-  const currentType = fixObjectiveTerm(payload.current_objective_label || translateEnum(campaign.current_objective, locale, campaign.source_platform))
+  // Locale-aware: ham enum varsa translateEnum (TR/EN doğru) — stored TR etiketi yalnız ham enum yoksa fallback.
+  const currentType = fixObjectiveTerm(campaign.current_objective ? translateEnum(campaign.current_objective, locale, campaign.source_platform) : (payload.current_objective_label || ''))
   const suggestions = payload.suggestions ?? []
 
   return (

@@ -2,6 +2,11 @@
 
 ---
 
+## 2026-06-26 — DijiAlgoritma kampanya türü enum + paylaşılan hesap seçici i18n (EN)
+- **Sorun:** EN arayüzde DijiAlgoritma kampanya kartında "Campaign Type" stored TR etiketini gösteriyordu ("Arama Ağı"); paylaşılan hesap seçici (UnifiedAccountSwitcher) hesabın "Hesap {id}" adını olduğu gibi basıyordu.
+- **Çözüm:** `CampaignCard`/`DrilldownModal` ham enum varsa locale-aware `translateEnum` kullanıyor (EN "Search"/"Traffic", TR "Arama Ağı"). `UnifiedAccountSwitcher` generic "Hesap {id}" desenini `accountFallback` ile locale-aware etikete çeviriyor (EN "Account {id}").
+- **Dosyalar:** components/dijimagic/hierarchy/CampaignCard.tsx, components/dijimagic/hierarchy/DrilldownModal.tsx, components/account/UnifiedAccountSwitcher.tsx
+
 ## 2026-06-26 — Google Ads hesap etiketi i18n düzeltmesi ("Hesap" → "Account")
 - **Sorun:** EN arayüzde Google reklam hesabı etiketi (Ad Manager toggle + Dashboard Google Ads kartı) açıklayıcı adı olmayan hesaplarda Türkçe "Hesap {id}" gösteriyordu — EN/TR zorunlu kuralına aykırı.
 - **Çözüm:** `dashboard.meta.accounts.accountFallback` anahtarı eklendi (TR "Hesap {id}", EN "Account {id}"). `GoogleAccountDropdown` ve `HomePage` generic "Hesap {id}" desenini locale-aware etikete çeviriyor; gerçek hesap adları olduğu gibi geçer (TR davranışı değişmez).
