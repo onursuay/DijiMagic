@@ -43,8 +43,14 @@
 
 ---
 
+## 🌙 GECE OTONOM DOĞRULAMA (ben yaptım — bilgi)
+- [x] **TypeScript tip kontrolü** (`tsc --noEmit`) → 0 hata, tüm değişiklikler tip-güvenli
+- [x] **Mobil QA** (gerçek cihaz emülasyonu / Chrome DevTools Protocol, 390px) → ana sayfa + /ozellikler `scrollWidth=390`, yatay taşma YOK, kırpılma YOK. *(Not: ilk `--window-size` screenshot'ları sahte "kırpık" gösterdi; CDP ile kesin doğrulandı — mobil sorunsuz.)*
+- [x] **Rebrand kalıntı taraması** → kullanıcı-yüzlü **0 yoai/yodijital izi** (temiz). .env backup'ları git-DIŞI (sızıntı yok).
+- [x] **EN/TR parite** → TrustStats partner etiketleri TR'ye lokalize (Meta/Google "İş Ortağı"). Amber/sarı renk YOK.
+
 ## 🙋 SADECE SEN YAPABİLİRSİN (bende teknik olarak imkânsız)
-- [ ] **Cloudflare Turnstile** → dijimagic.com + www hostname ekle. *(Kayıt sayfasındaki doğrulama bunsuz çalışmıyor — senin gördüğün #2 sorunu.)*
+- [ ] **Cloudflare Turnstile** *(kayıt doğrulaması bug'ı — #2 sorunun; KÖK NEDEN bulundu)* → site key eski domaine kilitli. Yapılacak: Cloudflare paneli → **Turnstile** → site key `0x4AAAAAACvDYQEwzjn9xWLF` → **Allowed Domains** → `dijimagic.com` + `www.dijimagic.com` ekle (eski `yoai.yodijital.com`'u sil) → Kaydet. *(Kod doğru; Cloudflare API token olmadığı için bende yapılamaz.)*
 - [ ] **Müşteri logoları** → gerçek marka adı + web sitelerini ver, logo şeridini eklerim.
-- [ ] **#3 Kart doğrulama ücreti** → KARAR gerek: kart zorunlu mu? Provizyon mu / tahsil edilip iade mi / iade yok mu? Tutar ne? Karar gelince kurarım.
+- [ ] **#3 Kart doğrulama ücreti** → KARAR gerek. **Önerim: Pre-Auth (provizyon)** — kayıtta 1 TL bloke edilir, hemen serbest bırakılır (24s içinde iz bırakmadan iptal). En güvenli + müşteri-dostu; iyzico destekliyor; **gerçek tahsilat olmadığı için cayma hakkıyla çelişmez.** Alternatifler: tahsil+iade veya tahsil-iade-yok (iyzads gibi ama net ToS + yasal risk). Karar: hangi yöntem + tutar? Karar gelince kurarım (lib/billing + iyzico preauth + signup akışı).
 - [ ] **Videolar** → en son beraber (nasıl çekeceğimizi konuşacağız).

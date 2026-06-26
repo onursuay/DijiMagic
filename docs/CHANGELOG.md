@@ -2,6 +2,11 @@
 
 ---
 
+## 2026-06-26 — QA: EN/TR parite (TrustStats partner etiketi) + mobil doğrulama
+- **Sorun:** TrustStats Meta/Google partner alt-etiketi ("Business Partner"/"Partner") TR'de lokalize değildi (EN/TR parite kuralı).
+- **Çözüm:** Partner alt-etiketleri locale-aware → TR'de "İş Ortağı". Ayrıca otonom QA: tsc 0 hata; mobil (CDP 390px gerçek emülasyon) ana sayfa + /ozellikler yatay taşma YOK (`--window-size` screenshot'larının yanıltıcı "kırpık" göstermesi artefakt çıktı); rebrand kalıntı taraması kullanıcı-yüzlü 0 iz.
+- **Dosyalar:** components/landing/TrustStats.tsx, docs/REDESIGN-CHECKLIST.md
+
 ## 2026-06-26 — Faz 1c: `/tr/` URL prefix (locale path) — düşük riskli, additive
 - **Sorun:** TR sayfaları prefix'siz (bare) idi; owner `/tr/ozellikler` gibi locale-prefix'li URL istedi.
 - **Çözüm:** Middleware'e `/tr/*` bloğu eklendi (mevcut `/en/*` mantığının TR aynası: strip + bare filesystem'e rewrite + `NEXT_LOCALE=tr`). App yapısı/dashboard/auth'a dokunulmadı (additive). LandingHeader Ürün menüsü + Fiyatlandırma linkleri locale-prefix'li. `/ozellikler` canonical → `/tr/ozellikler` + hreflang (tr/en). Doğrulama: `/tr/ozellikler`·`/tr/fiyatlandirma`·`/tr` → TR; `/en/*` → EN; bare yollar + `/login` (dashboard) bozulmadı.

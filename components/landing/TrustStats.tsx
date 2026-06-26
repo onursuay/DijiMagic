@@ -18,8 +18,8 @@ export default function TrustStats({ isEn }: { isEn: boolean }) {
 
   const partnersLabel = isEn ? 'Official partners' : 'Resmi iş ortaklarımız'
   const partners = [
-    { name: 'Meta', sub: 'Business Partner', icon: '/platform-icons/meta.svg' },
-    { name: 'Google', sub: isEn ? 'Partner' : 'Partner', icon: '/platform-icons/google-ads.svg' },
+    { name: 'Meta', sub: isEn ? 'Business Partner' : 'İş Ortağı', icon: '/platform-icons/meta.svg' },
+    { name: 'Google', sub: isEn ? 'Partner' : 'İş Ortağı', icon: '/platform-icons/google-ads.svg' },
   ]
 
   return (
