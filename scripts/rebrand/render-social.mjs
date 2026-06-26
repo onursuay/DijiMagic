@@ -20,10 +20,10 @@ function spark(cx, cy, R, fill, k = 0.30) {
 const banner = `<svg xmlns="http://www.w3.org/2000/svg" width="1280" height="640" viewBox="0 0 1280 640"><defs>${GRAD}</defs>
 <rect width="1280" height="640" fill="url(#vig)"/>
 <rect width="1280" height="640" fill="url(#glow)"/>
-<text x="628" y="338" text-anchor="middle" font-family="Montserrat, Arial" font-size="132" letter-spacing="-5"><tspan font-weight="600" fill="#FFFFFF">Diji</tspan><tspan font-weight="800" fill="url(#magic)">Magic</tspan></text>
-${spark(908, 248, 32, 'url(#star)')}
-${spark(951, 291, 16, 'url(#star)')}
-<text x="640" y="430" text-anchor="middle" font-family="Montserrat, Arial" font-size="30" letter-spacing="1" font-weight="500" fill="#94A3B8">Reklam ve pazarlama yönetim platformu</text>
+<text x="620" y="338" text-anchor="middle" font-family="Montserrat, Arial" font-size="132" letter-spacing="-5"><tspan font-weight="600" fill="#FFFFFF">Diji</tspan><tspan font-weight="800" fill="url(#magic)">Magic</tspan></text>
+${spark(990, 236, 32, 'url(#star)')}
+${spark(1033, 279, 16, 'url(#star)')}
+<text x="620" y="430" text-anchor="middle" font-family="Montserrat, Arial" font-size="30" letter-spacing="1" font-weight="500" fill="#94A3B8">Reklam ve pazarlama yönetim platformu</text>
 </svg>`
 
 // --- Vercel avatar 1024 (kare, istiflenmiş wordmark) ---
