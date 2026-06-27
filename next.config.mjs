@@ -9,6 +9,11 @@ const nextConfig = {
     serverActions: {
       bodySizeLimit: '50mb',
     },
+    // Web Site Yöneticisi codegen/serve modülleri (renderGate / assembleDocument /
+    // tailwindCompile .mjs) bu CommonJS paketlerini server'da kullanır. Next bunları
+    // BUNDLE ETMEZ; lambda'ya node_modules'tan DAHİL eder → import runtime'da çözülür.
+    // Bu olmadan tracer paketleri atlıyordu → Vercel'de "Cannot find module" → 500.
+    serverComponentsExternalPackages: ['sanitize-html', 'tailwindcss', 'postcss', 'autoprefixer'],
   },
   async headers() {
     return [{
