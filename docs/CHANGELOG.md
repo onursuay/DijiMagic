@@ -2,6 +2,11 @@
 
 ---
 
+## 2026-06-27 — Faz 2 Stage B T5: güvenlik + orphan cleanup + watchdog fix
+- **Sorun:** API key envVars'a açık görünüyordu; egress kısıtı yoktu; watchdog (18dk) > waitForEvent (12dk) → worker önce ölmeden orkestratör timeout ediyordu; reconcile stale job'ları timeout'a alıyordu ama sandbox'larını silmiyordu (orphan sızıntısı).
+- **Çözüm:** (1) `scripts/website/setup-daytona-secret.mjs`: idempotent Daytona named secret kaydı (`anthropic-prod`, `hosts:['api.anthropic.com']`). (2) `runAgenticBuild.ts`: `secrets:{ANTHROPIC_API_KEY:'anthropic-prod'}` + `domainAllowList:'api.anthropic.com,<callbackHost>'`; envVars fallback smoke'a kadar korundu. (3) `worker.mjs` watchdog: `18m → 15m`, log "8 minute" → "15 minute". (4) `websiteAgenticGenerate.ts` waitForEvent: `'12m' → '17m'` (worker 15m < orkestratör 17m kademeleme). (5) `genJobStore.ts`: `findOrphanSandboxes()` + `clearSandboxRef()` eklendi. (6) `reconcile cron`: `reconcileStaleJobs` sonrası orphan sandbox `deleteSandbox` + `clearSandboxRef` döngüsü.
+- **Dosyalar:** scripts/website/setup-daytona-secret.mjs, lib/website/codegen/agentic/runAgenticBuild.ts, lib/website/codegen/agentic/sandbox/worker.mjs, inngest/functions/websiteAgenticGenerate.ts, lib/website/genJobStore.ts, app/api/cron/website-jobs-reconcile/route.ts
+
 ## 2026-06-27 — Faz 2 Stage B T4: dispatch-sandbox dolduruldu + sandbox-ref persist + cleanup
 - **Sorun:** `dispatch-sandbox` step iskeletti (boş dönüyordu); sandbox referansı DB'de tutulmuyordu; timeout/hata durumunda sandbox kaynakları temizlenmiyordu.
 - **Çözüm:** (1) DB migration: `website_gen_jobs` tablosuna `sandbox_id/session_id/cmd_id` kolonları (additive, idempotent). (2) `genJobStore.ts`: `WebsiteGenJob` interface'e nullable sandbox alanları eklendi; `persistSandboxRef` + `getSandboxRef` fonksiyonları eklendi. (3) `isSandboxConfigured()`: `WEBSITE_SANDBOX_URL` yerine `DAYTONA_API_KEY + WEBSITE_SANDBOX_HMAC_SECRET + WEBSITE_CALLBACK_BASE` (Daytona SDK env'den okur). (4) `dispatch-sandbox` step: `runAgenticBuild` çağrısı (marka profili + scope türetme), `persistSandboxRef`, try/catch. (5) `cleanup-sandbox` step: `mark-complete-sandbox` sonrası sandbox silme. (6) `handle-timeout`: sandbox silme eklendi. Dev-fallback (koşul false) BOZULMADI.
