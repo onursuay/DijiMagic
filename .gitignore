@@ -60,3 +60,6 @@ _learnings/
 # DijiMagic Sağlık otomasyonu — sırlar asla commit edilmez
 _automation/smtp_config.json
 _automation/*.local.json
+
+# SDD scratch (brief/report/diff/ledger — repoya girmez)
+.superpowers/
