@@ -71,15 +71,15 @@ export const FEATURE_PAGES: FeaturePage[] = [
       "steps": [
         {
           "title": "Meta hesabını bağla",
-          "desc": "Facebook, Instagram ve WhatsApp reklam hesaplarını DijiMagic paneline güvenle bağlarsın."
+          "desc": "Facebook, Instagram ve WhatsApp reklam hesaplarını DijiMagic paneline güvenle bağlarsın. Bu sayede hesaplar arasında geçiş yapmadan tüm hesapların bilgilerine ve verilerine tek panelden erişebilirsin."
         },
         {
           "title": "Kampanyanı kur",
-          "desc": "Yapay zekâ destekli kurulum seni adım adım yönlendirir; hedefini, kitleni ve bütçeni belirlersin."
+          "desc": "Yapay zekâ destekli kurulum seni adım adım yönlendirir; hedefini, kitleni ve bütçeni belirlersin. Tüm bu ayarları yaptıktan sonra kampanyan hemen oluşturulur ve yayına almaya hazır olur."
         },
         {
           "title": "Başlat ve yönet",
-          "desc": "Kampanyanı yayına alır, performansını izler ve gerektiğinde aynı panelden düzenlersin."
+          "desc": "Kampanyanı yayına alır, performansını izler ve gerektiğinde aynı panelden düzenlersin. Harcama miktarını değiştirebilir, hedef kitleyi güncelleyebilir veya tasarımı yeniden yapabilirsin—her değişiklik anında kampanyaya uygulanır."
         }
       ],
       "ctaTitle": "Meta kampanyanı dakikalar içinde başlat"
@@ -109,15 +109,15 @@ export const FEATURE_PAGES: FeaturePage[] = [
       "steps": [
         {
           "title": "Connect your Meta account",
-          "desc": "Securely link your Facebook, Instagram and WhatsApp ad accounts to the DijiMagic panel."
+          "desc": "Securely link your Facebook, Instagram and WhatsApp ad accounts to the DijiMagic panel. This way you can access all your account information and data from one place instead of switching between accounts."
         },
         {
           "title": "Set up your campaign",
-          "desc": "The AI-guided setup walks you through choosing your goal, audience and budget step by step."
+          "desc": "The AI-guided setup walks you through choosing your goal, audience and budget step by step. Once you complete these settings, your campaign is created instantly and ready to go live."
         },
         {
           "title": "Launch and manage",
-          "desc": "Take your campaign live, track its performance and adjust it from the same panel whenever needed."
+          "desc": "Take your campaign live, track its performance and adjust it from the same panel whenever needed. You can change your budget, update your audience or redesign your ad—each change applies to your campaign immediately."
         }
       ],
       "ctaTitle": "Launch your Meta campaign in minutes"
@@ -156,15 +156,15 @@ export const FEATURE_PAGES: FeaturePage[] = [
       "steps": [
         {
           "title": "Hesabını bağla",
-          "desc": "Google reklam hesabını birkaç tıklamayla DijiMagic'e güvenle bağlarsın."
+          "desc": "Google reklam hesabını birkaç tıklamayla DijiMagic'e güvenle bağlarsın. Bağlantı tamamlandıktan sonra tüm kampanya verilerine erişim artık DijiMagic panelinde olur, farklı sistemler arasında çıkıp girmeni gerekmez."
         },
         {
           "title": "Kampanyaları gör",
-          "desc": "Arama, Görüntülü, Performance Max ve YouTube kampanyalarının tamamı tek panelde karşına gelir."
+          "desc": "Arama, Görüntülü, Performance Max ve YouTube kampanyalarının tamamı tek panelde karşına gelir. Böylece her bir kampanya türünün ayrı yönetim alanında kaybolmadan, hepsinin durumunu bir bakışta anlayabilirsin."
         },
         {
           "title": "Tek yerden yönet",
-          "desc": "Kampanyalarını aynı ekrandan izler, düzenler ve kontrol altında tutarsın."
+          "desc": "Kampanyalarını aynı ekrandan izler, düzenler ve kontrol altında tutarsın. Bütçe değişiklikleri, hedef kitle ayarlamaları ve performans takibi tek panelden yapıldığında zamanını daha verimli harcarsın."
         }
       ],
       "ctaTitle": "Google reklamlarını tek panelde yönetmeye bugün başla"
@@ -194,15 +194,15 @@ export const FEATURE_PAGES: FeaturePage[] = [
       "steps": [
         {
           "title": "Connect your account",
-          "desc": "Securely link your Google advertising account to DijiMagic in just a few clicks."
+          "desc": "Securely link your Google advertising account to DijiMagic in just a few clicks. Once connected, all your campaign data lives in the DijiMagic panel instead of you jumping between different systems."
         },
         {
           "title": "See your campaigns",
-          "desc": "All of your Search, Display, Performance Max and YouTube campaigns appear together in one panel."
+          "desc": "All of your Search, Display, Performance Max and YouTube campaigns appear together in one panel. This way you grasp the full picture of each campaign type at a glance instead of hunting through separate management areas."
         },
         {
           "title": "Manage from one place",
-          "desc": "Monitor, edit and keep your campaigns under control from a single screen."
+          "desc": "Monitor, edit and keep your campaigns under control from a single screen. When budget changes, audience adjustments and performance tracking happen in one panel, you spend your time on strategy instead of navigation."
         }
       ],
       "ctaTitle": "Start managing your Google ads from a single panel today"
@@ -242,15 +242,15 @@ export const FEATURE_PAGES: FeaturePage[] = [
       "steps": [
         {
           "title": "Geliştirme tamamlanıyor",
-          "desc": "TikTok reklam entegrasyonunun panele eklenmesi üzerinde çalışıyoruz."
+          "desc": "TikTok reklam entegrasyonunun panele eklenmesi üzerinde çalışıyoruz. Bu entegrasyon sayesinde Meta ve Google'ın yanında TikTok kampanyalarını da aynı merkezden yönetebileceksin."
         },
         {
           "title": "Onay süreci ilerliyor",
-          "desc": "Entegrasyonun yayına alınabilmesi için gerekli onay aşamaları sürüyor."
+          "desc": "Entegrasyonun yayına alınabilmesi için gerekli onay aşamaları sürüyor. Bu onaylar tamamlandığında DijiMagic platformu TikTok'un resmi ortağı haline gelecek ve tüm güvenlik standartlarını karşılayacak."
         },
         {
           "title": "Yakında kullanımda",
-          "desc": "Modül açıldığında TikTok hesabını bağlayıp kampanyalarını oluşturmaya başlayabileceksin."
+          "desc": "Modül açıldığında TikTok hesabını bağlayıp kampanyalarını oluşturmaya başlayabileceksin. O anda tüm platformlarında kampanyaları birleşik panoda yönetebilecek ve yapay zeka destekli optimizasyon özelliklerinden faydalanabileceksin."
         }
       ],
       "ctaTitle": "TikTok reklamları çok yakında. Şimdi DijiMagic'i ücretsiz dene, hazır olduğunda ilk sen kullan."
@@ -280,15 +280,15 @@ export const FEATURE_PAGES: FeaturePage[] = [
       "steps": [
         {
           "title": "Development wrapping up",
-          "desc": "We're building the TikTok ads integration into the panel right now."
+          "desc": "We're building the TikTok ads integration into the panel right now. Once complete, you'll manage TikTok campaigns from the same dashboard as your Meta and Google accounts."
         },
         {
           "title": "Approval in progress",
-          "desc": "The approval steps needed to take the integration live are underway."
+          "desc": "The approval steps needed to take the integration live are underway. When these approvals finish, DijiMagic becomes an official TikTok partner and meets all security standards."
         },
         {
           "title": "Available soon",
-          "desc": "Once the module opens you'll connect your TikTok account and start creating campaigns."
+          "desc": "Once the module opens you'll connect your TikTok account and start creating campaigns. At that point you'll manage all your platform campaigns in one unified panel and benefit from AI-powered optimization features."
         }
       ],
       "ctaTitle": "TikTok ads are coming very soon. Try DijiMagic free now and be the first to use it when it's ready."
@@ -327,15 +327,15 @@ export const FEATURE_PAGES: FeaturePage[] = [
       "steps": [
         {
           "title": "Markanı analiz eder",
-          "desc": "Siteni, sosyal hesaplarını ve ürünlerini tarar; konumunu ve rakiplerini anlar."
+          "desc": "Siteni, sosyal hesaplarını ve ürünlerini tarar; konumunu ve rakiplerini anlar. Bu sayede senin rakip boşluklarını ve en iyi potansiyel kitleleri keşfeder."
         },
         {
           "title": "Stratejini kurar",
-          "desc": "Hedef kitle, platform, bütçe ve mesaj planını tek bir akış halinde oluşturur."
+          "desc": "Hedef kitle, platform, bütçe ve mesaj planını tek bir akış halinde oluşturur. Hangi platformda kime ulaşacağını, ne harcayacağını ve ne söyleyeceğini önceden planladığın için zaman ve para kaybı olmaz."
         },
         {
           "title": "Sen onayla, yayına geçsin",
-          "desc": "Planı incele, dilersen düzenle; tek tıkla kampanyalara dönüştür."
+          "desc": "Planı incele, dilersen düzenle; tek tıkla kampanyalara dönüştür. Onaylaman sonrasında DijiMagic hazır planı Meta, Google ve diğer seçtiğin platformlara hemen yayına alır."
         }
       ],
       "ctaTitle": "Stratejini birkaç dakikada çıkar"
@@ -365,15 +365,15 @@ export const FEATURE_PAGES: FeaturePage[] = [
       "steps": [
         {
           "title": "Analyzes your brand",
-          "desc": "Scans your site, social accounts and products; understands your position and competitors."
+          "desc": "Scans your site, social accounts and products; understands your position and competitors. This way it discovers your competitive gaps and your most promising audience segments."
         },
         {
           "title": "Builds your strategy",
-          "desc": "Creates your audience, platform, budget and message plan in one flow."
+          "desc": "Creates your audience, platform, budget and message plan in one flow. Because you know upfront which platform reaches whom, what you'll spend and what you'll say, there's no wasted time or money."
         },
         {
           "title": "You approve, it goes live",
-          "desc": "Review the plan, edit if you like, and turn it into campaigns in one click."
+          "desc": "Review the plan, edit if you like, and turn it into campaigns in one click. Once you approve, DijiMagic immediately takes the ready-made plan live across Meta, Google and your chosen platforms."
         }
       ],
       "ctaTitle": "Build your strategy in minutes"
@@ -412,15 +412,15 @@ export const FEATURE_PAGES: FeaturePage[] = [
       "steps": [
         {
           "title": "Getiriyi izler",
-          "desc": "Tüm reklamlarının getirisini (ROAS) anlık olarak ölçer ve hangisinin kazandırıp hangisinin kaybettirdiğini görür."
+          "desc": "Tüm reklamlarının getirisini (ROAS) anlık olarak ölçer ve hangisinin kazandırıp hangisinin kaybettirdiğini görür. Her reklam harcaması karşılığında kaç lira gelir getirdiğini takip ederek kaynak israfını önlersin."
         },
         {
           "title": "Zayıfı kısar",
-          "desc": "Düşük performanslı reklama harcamayı azaltır veya o reklamı tamamen durdurur."
+          "desc": "Düşük performanslı reklama harcamayı azaltır veya o reklamı tamamen durdurur. Bu sayede kârsız kampanyalara sarfedilen bütçe otomatik olarak boşa gitmez ve işletmene kayıp yaşatmaz."
         },
         {
           "title": "Güçlüye bütçe ekler",
-          "desc": "En yüksek dönüşümü getiren reklama otomatik bütçe aktararak getirini büyütür."
+          "desc": "En yüksek dönüşümü getiren reklama otomatik bütçe aktararak getirini büyütür. Bütçe kaydırması sayesinde kazandıran kanallara yapılan yatırım artar ve toplam getirin hızla yükselişe geçer."
         }
       ],
       "ctaTitle": "Bütçeni en verimli reklamlara yapay zekayla taşı"
@@ -450,15 +450,15 @@ export const FEATURE_PAGES: FeaturePage[] = [
       "steps": [
         {
           "title": "Tracks the return",
-          "desc": "Measures every ad's return (ROAS) in real time and sees which ones earn and which ones lose."
+          "desc": "Measures every ad's return (ROAS) in real time and sees which ones earn and which ones lose. By monitoring how much revenue each ad spend generates, you prevent wasted spend and spot underperforming ads instantly."
         },
         {
           "title": "Trims the weak",
-          "desc": "Cuts spend on a low-performing ad or stops that ad entirely."
+          "desc": "Cuts spend on a low-performing ad or stops that ad entirely. This stops your budget from being drained by unprofitable campaigns and prevents losses from building up over time."
         },
         {
           "title": "Funds the strong",
-          "desc": "Automatically shifts budget to the highest-converting ad to grow your return."
+          "desc": "Automatically shifts budget to the highest-converting ad to grow your return. By increasing investment in winning channels, your overall return climbs faster and your budget works harder for you."
         }
       ],
       "ctaTitle": "Move your budget to the ads that work, with AI"
@@ -497,15 +497,15 @@ export const FEATURE_PAGES: FeaturePage[] = [
       "steps": [
         {
           "title": "Sorunu yaz",
-          "desc": "Reklam, içerik ya da büyümeyle ilgili aklına takılanı sade bir dille sor."
+          "desc": "Reklam, içerik ya da büyümeyle ilgili aklına takılanı sade bir dille sor. DijiAlgoritma senin işletmeni tanıdığı için cevabı hemen sana özel hazırlar."
         },
         {
           "title": "Markana göre yanıtlar",
-          "desc": "İşletmeni ve performans verini dikkate alarak sana özel cevabını veya içeriğini üretir."
+          "desc": "İşletmeni ve performans verini dikkate alarak sana özel cevabını veya içeriğini üretir. Böylece aldığın tavsiye ve oluşturulan içerik senin markan için gerçekten uygun olur."
         },
         {
           "title": "Öneriyi uygula",
-          "desc": "Beğendiğin içeriği ve önerileri tek tıkla kullan; karar her zaman sende kalır."
+          "desc": "Beğendiğin içeriği ve önerileri tek tıkla kullan; karar her zaman sende kalır. İstediğin gibi düzenleyip kullanabilir veya reddedebilirsin, çünkü kontrol tamamen senindir."
         }
       ],
       "ctaTitle": "Asistanına ilk sorunu hemen sor"
@@ -535,15 +535,15 @@ export const FEATURE_PAGES: FeaturePage[] = [
       "steps": [
         {
           "title": "Ask your question",
-          "desc": "Type whatever's on your mind about ads, content or growth in plain language."
+          "desc": "Type whatever's on your mind about ads, content or growth in plain language. Since DijiAlgoritma knows your business, it prepares an answer tailored just for you right away."
         },
         {
           "title": "It answers for your brand",
-          "desc": "It creates your tailored answer or content, taking your business and performance data into account."
+          "desc": "It creates your tailored answer or content, taking your business and performance data into account. This ensures the advice and content you get are genuinely suited to your brand."
         },
         {
           "title": "Use the suggestion",
-          "desc": "Put the content and advice you like to work in one click; the decision always stays with you."
+          "desc": "Put the content and advice you like to work in one click; the decision always stays with you. You can adjust as you please or decline entirely, since you're always in control."
         }
       ],
       "ctaTitle": "Ask your assistant your first question now"
@@ -582,15 +582,15 @@ export const FEATURE_PAGES: FeaturePage[] = [
       "steps": [
         {
           "title": "Kitleni analiz eder",
-          "desc": "İşletme profilini, sektörünü ve müşteri davranışlarını inceleyerek en değerli kitle sinyallerini çıkarır."
+          "desc": "İşletme profilini, sektörünü ve müşteri davranışlarını inceleyerek en değerli kitle sinyallerini çıkarır. Bu sayede reklam harcaman boş yere gitmez, seni satın alma ihtimali en yüksek olan insanlara ulaştırır."
         },
         {
           "title": "Segmentleri ve benzer kitleleri kurar",
-          "desc": "Yüksek potansiyelli segmentleri belirler ve müşterilerine benzeyen yeni kitleler oluşturur."
+          "desc": "Yüksek potansiyelli segmentleri belirler ve müşterilerine benzeyen yeni kitleler oluşturur. Böylece mevcut müşterilerine benzer, henüz seni tanımayan ancak büyük satın alma potansiyeli olan yeni insanları bulur."
         },
         {
           "title": "Hedeflemeyi keskinleştirir",
-          "desc": "Performans verisiyle kitleleri sürekli iyileştirir; sen onayla, kampanyalarında kullanılsın."
+          "desc": "Performans verisiyle kitleleri sürekli iyileştirir; sen onayla, kampanyalarında kullanılsın. Her kampanya sonucu öğrenir, dönüşüm en yüksek olan kitleleri tanır ve sonraki kampanyada bunları öncelikli hâle getirir."
         }
       ],
       "ctaTitle": "Doğru kitleni dakikalar içinde keşfet"
@@ -620,15 +620,15 @@ export const FEATURE_PAGES: FeaturePage[] = [
       "steps": [
         {
           "title": "Analyzes your audience",
-          "desc": "Reviews your business profile, industry and customer behavior to extract your most valuable audience signals."
+          "desc": "Reviews your business profile, industry and customer behavior to extract your most valuable audience signals. This ensures your ad spend reaches people most likely to buy from you, not wasted on unlikely prospects."
         },
         {
           "title": "Builds segments and lookalikes",
-          "desc": "Identifies high-potential segments and creates new audiences that resemble your customers."
+          "desc": "Identifies high-potential segments and creates new audiences that resemble your customers. This finds new people who haven't discovered you yet but share the traits that make your current customers valuable."
         },
         {
           "title": "Sharpens your targeting",
-          "desc": "Keeps improving audiences with performance data; you approve, then use them in your campaigns."
+          "desc": "Keeps improving audiences with performance data; you approve, then use them in your campaigns. It learns from each campaign's results, identifies which audiences converted best, and prioritizes them for your next campaign."
         }
       ],
       "ctaTitle": "Discover your right audience in minutes"
@@ -667,15 +667,15 @@ export const FEATURE_PAGES: FeaturePage[] = [
       "steps": [
         {
           "title": "Markanı öğrenir",
-          "desc": "DijiMagic markanın rengini, tonunu ve ürünlerini inceleyip görsel diline uygun bir başlangıç oluşturur."
+          "desc": "DijiMagic markanın rengini, tonunu ve ürünlerini inceleyip görsel diline uygun bir başlangıç oluşturur. Bu başlangıç, tüm görsellerin tutarlı ve profesyonel görünmesini sağlar."
         },
         {
           "title": "Görseli üretir",
-          "desc": "Saniyeler içinde reklama hazır görselleri oluşturur, arka planı temizler ve başlığını yazar."
+          "desc": "Saniyeler içinde reklama hazır görselleri oluşturur, arka planı temizler ve başlığını yazar. Böylece grafik tasarımcı tutmadan, markanın rengine uygun ve dikkat çeken reklamlar anında hazır olur."
         },
         {
           "title": "Platforma aktarır",
-          "desc": "Hazır görseli Meta, Google ve sosyal medyanın her ölçüsüne tek tıkla dışa aktarır."
+          "desc": "Hazır görseli Meta, Google ve sosyal medyanın her ölçüsüne tek tıkla dışa aktarır. Bu sayede farklı platformlar için ayrı ayrı yeniden boyutlandırma veya düzenleme yapmanıza gerek kalmaz."
         }
       ],
       "ctaTitle": "İlk reklam görselini saniyeler içinde üret"
@@ -705,15 +705,15 @@ export const FEATURE_PAGES: FeaturePage[] = [
       "steps": [
         {
           "title": "Learns your brand",
-          "desc": "DijiMagic studies your brand's colors, tone and products to build a starting point that fits your visual language."
+          "desc": "DijiMagic studies your brand's colors, tone and products to build a starting point that fits your visual language. This foundation ensures every visual that follows stays consistent and professional."
         },
         {
           "title": "Creates the visual",
-          "desc": "It generates ad-ready visuals in seconds, cleans up the background and writes the headline."
+          "desc": "It generates ad-ready visuals in seconds, cleans up the background and writes the headline. This means you get on-brand, attention-grabbing ads instantly without hiring a designer."
         },
         {
           "title": "Exports to platforms",
-          "desc": "Export the finished visual to every Meta, Google and social media size with a single click."
+          "desc": "Export the finished visual to every Meta, Google and social media size with a single click. You won't need to manually resize or edit your ads for different platforms anymore."
         }
       ],
       "ctaTitle": "Create your first ad visual in seconds"
@@ -752,15 +752,15 @@ export const FEATURE_PAGES: FeaturePage[] = [
       "steps": [
         {
           "title": "Hesaplarını bağla",
-          "desc": "Sosyal medya hesaplarını tek tıkla DijiMagic paneline bağlarsın."
+          "desc": "Sosyal medya hesaplarını tek tıkla DijiMagic paneline bağlarsın. Böylece gönderilerinizi planlama, paylaşma ve analiz etme tüm işlemlerini tek yerden yönetebileceksin."
         },
         {
           "title": "Gönderini planla",
-          "desc": "İçeriğini hazırlar veya yapay zekânın fikirlerinden seçer, takvimde tarih ve saatini belirlersin."
+          "desc": "İçeriğini hazırlar veya yapay zekânın fikirlerinden seçer, takvimde tarih ve saatini belirlersin. Hazırladığın içeriği hangi anda hangi hesaplardan paylaşacağını önceden planlarsan, tutarlı bir sosyal medya varlığı oluşturabildirin."
         },
         {
           "title": "Yayına geçsin",
-          "desc": "DijiMagic gönderini en aktif saatte otomatik paylaşır; sen tek elden takip edersin."
+          "desc": "DijiMagic gönderini en aktif saatte otomatik paylaşır; sen tek elden takip edersin. Takipçilerinizin en aktif olduğu saatlerde yayınlandığından görselliliği ve etkisi en yüksek seviyede kalır."
         }
       ],
       "ctaTitle": "Sosyal medyanı tek panelden yönetmeye başla"
@@ -790,15 +790,15 @@ export const FEATURE_PAGES: FeaturePage[] = [
       "steps": [
         {
           "title": "Connect your accounts",
-          "desc": "Link your social media accounts to the DijiMagic panel in one click."
+          "desc": "Link your social media accounts to the DijiMagic panel in one click. This puts all your posting, sharing and analytics tasks in one place, so you manage everything from a single hub."
         },
         {
           "title": "Plan your post",
-          "desc": "Prepare your content or pick from AI’s ideas, then set its date and time on the calendar."
+          "desc": "Prepare your content or pick from AI's ideas, then set its date and time on the calendar. When you plan your content ahead, you build a consistent social media presence that keeps your audience engaged over time."
         },
         {
           "title": "Let it go live",
-          "desc": "DijiMagic publishes your post automatically at peak time while you track everything from one place."
+          "desc": "DijiMagic publishes your post automatically at peak time while you track everything from one place. Publishing when your followers are most active keeps your reach and impact at the highest level."
         }
       ],
       "ctaTitle": "Start managing your social media from one panel"
@@ -837,15 +837,15 @@ export const FEATURE_PAGES: FeaturePage[] = [
       "steps": [
         {
           "title": "Siteni tarar",
-          "desc": "Sitenin arama performansını derinlemesine inceler; teknik durumunu ve içerik yapısını çözümler."
+          "desc": "Sitenin arama performansını derinlemesine inceler; teknik durumunu ve içerik yapısını tam olarak çözümler. Bu tarama HTML hataları, sayfa yükleme hızı sorunları ve başlık-açıklama eksiklikleri gibi Google'un sıralamalarını etkileyen faktörleri ortaya koymak için yapılır."
         },
         {
           "title": "Fırsatları ortaya çıkarır",
-          "desc": "Teknik hataları, eksik anahtar kelimeleri ve rakip boşluklarını öncelik sırasıyla listeler."
+          "desc": "Teknik hataları, eksik anahtar kelimeleri ve rakip boşluklarını öncelik sırasıyla listeler. Hangi düzeltme sana en çok ziyaretçi getireceğini anlarsın; böylece büyüme için en hızlı yolları belirleyebilirsin."
         },
         {
           "title": "İçerikle sıralamanı yükseltir",
-          "desc": "Tespit edilen boşlukları kapatan SEO odaklı içeriği üretir ve seni üst sıralara taşır."
+          "desc": "Tespit edilen boşlukları kapatan SEO odaklı içeriği üretir ve seni üst sıralara taşır. DijiMagic yeni içeriği doğru anahtar kelimelerle hazırlar, mevcut sayfalarını güçlendirir ve sitene daha fazla organik müşteri adayı çeker."
         }
       ],
       "ctaTitle": "Sitenin arama gücünü dakikalar içinde keşfet"
@@ -875,15 +875,15 @@ export const FEATURE_PAGES: FeaturePage[] = [
       "steps": [
         {
           "title": "Scans your site",
-          "desc": "Deeply reviews your site's search performance and analyzes its technical state and content structure."
+          "desc": "Deeply reviews your site's search performance and analyzes its technical state and content structure in full detail. This scan uncovers Google-ranking factors like HTML errors, page speed issues and missing titles or descriptions that affect your visibility."
         },
         {
           "title": "Surfaces the opportunities",
-          "desc": "Lists technical errors, missing keywords and competitor gaps in priority order."
+          "desc": "Lists technical errors, missing keywords and competitor gaps in priority order. You understand which fix will bring you the most visitors, so you can spot the fastest paths to growth."
         },
         {
           "title": "Lifts rankings with content",
-          "desc": "Produces the SEO-focused content that closes the identified gaps and moves you up the rankings."
+          "desc": "Produces the SEO-focused content that closes the identified gaps and moves you up the rankings. DijiMagic prepares new content with the right keywords, strengthens existing pages and brings more organic leads to your site."
         }
       ],
       "ctaTitle": "Discover your site's search power in minutes"
@@ -922,15 +922,15 @@ export const FEATURE_PAGES: FeaturePage[] = [
       "steps": [
         {
           "title": "İçeriğini hazırlar",
-          "desc": "İşletmeni anlar; markana uygun metinleri, bölümleri ve modern bir düzeni otomatik oluşturur."
+          "desc": "İşletmeni anlar; markana uygun metinleri, bölümleri ve modern bir düzeni otomatik oluşturur. Hakkında, hizmetler, iletişim gibi temel bölümleri saniyeler içinde hazırlar, sen bu temelden kendi ürünlerinin detaylarını ekleyerek özelleştirebilirsin."
         },
         {
           "title": "Sen ince ayar yaparsın",
-          "desc": "Metin, görsel ve renkleri sade bir arayüzden düzenleyip siteyi tam istediğin hale getirirsin."
+          "desc": "Metin, görsel ve renkleri sade bir arayüzden düzenleyip siteyi tam istediğin hale getirirsin. Kod yazmaya gerek yok — sürükle-bırak ve basit metin editörü ile tüm tasarım kararlarını kendiliğinden alabilirsin."
         },
         {
           "title": "Tek tıkla yayınla",
-          "desc": "Hazır olduğunda tek tıklamayla siteni canlıya alır, müşterilerinle buluşturursun."
+          "desc": "Hazır olduğunda tek tıklamayla siteni canlıya alır, müşterilerinle buluşturursun. DijiMagic alan adı kaydı, güvenlik sertifikası ve sunucu ayarlarını otomatik halleder, sen sadece siteni görmek üzere beklarsın."
         }
       ],
       "ctaTitle": "Web siteni birkaç dakikada yayına al"
@@ -960,15 +960,15 @@ export const FEATURE_PAGES: FeaturePage[] = [
       "steps": [
         {
           "title": "Prepares your content",
-          "desc": "Understands your business and automatically creates on-brand copy, sections and a modern layout."
+          "desc": "Understands your business and automatically creates on-brand copy, sections and a modern layout. It builds the core sections like About, Services and Contact in seconds so you can then add your own product details and customize from that strong starting point."
         },
         {
           "title": "You fine-tune",
-          "desc": "Edit text, images and colors from a simple interface to make the site exactly yours."
+          "desc": "Edit text, images and colors from a simple interface to make the site exactly yours. No code needed — drag-and-drop and a simple text editor let you own every design choice without technical barriers."
         },
         {
           "title": "Publish in one click",
-          "desc": "When you’re ready, take your site live in a single click and put it in front of customers."
+          "desc": "When you're ready, take your site live in a single click and put it in front of customers. DijiMagic handles domain registration, security certificates and server setup automatically so you just see your live site waiting for visitors."
         }
       ],
       "ctaTitle": "Launch your website in minutes"
@@ -1007,15 +1007,15 @@ export const FEATURE_PAGES: FeaturePage[] = [
       "steps": [
         {
           "title": "Platformlarını bağla",
-          "desc": "Meta ve Google hesaplarını birkaç tıkla bağlarsın; veriler tek panoya akmaya başlar."
+          "desc": "Meta ve Google hesaplarını birkaç tıkla bağlarsın; veriler tek panoya akmaya başlar. Böylece farklı arayüzlere girmek yerine tüm reklam verilerine merkezi bir yerden erişirsin."
         },
         {
           "title": "Performansını izle",
-          "desc": "Birleşik panoda harcama, dönüşüm, getiri ve günlük trendleri tek bakışta takip edersin."
+          "desc": "Birleşik panoda harcama, dönüşüm, getiri ve günlük trendleri tek bakışta takip edersin. Kampanyalarının hangi ayağı en iyi performans gösteriyor, hangi gün başarılı olmuş görmek bu sayede saniyeler alır."
         },
         {
           "title": "Raporların hazır gelsin",
-          "desc": "Raporlarını zamanlarsın; her dönem güncel performans tablon otomatik olarak oluşturulur."
+          "desc": "Raporlarını zamanlarsın; her dönem güncel performans tablon otomatik olarak oluşturulur. Elle hazırlamaktan tasarruf ederken, her zaman handa olan veriye dayanarak kararlarını alırsın."
         }
       ],
       "ctaTitle": "Tüm reklam verilerini tek panoda topla"
@@ -1045,15 +1045,15 @@ export const FEATURE_PAGES: FeaturePage[] = [
       "steps": [
         {
           "title": "Connect your platforms",
-          "desc": "Link your Meta and Google accounts in a few clicks, and your data starts flowing into one dashboard."
+          "desc": "Link your Meta and Google accounts in a few clicks, and your data starts flowing into one dashboard. Instead of logging into different interfaces, you access all your ad data from a single hub."
         },
         {
           "title": "Track your performance",
-          "desc": "Follow spend, conversions, return and daily trends at a glance in the unified dashboard."
+          "desc": "Follow spend, conversions, return and daily trends at a glance in the unified dashboard. It takes seconds to see which part of your campaigns is performing best and which day you succeeded — without switching screens."
         },
         {
           "title": "Get reports ready for you",
-          "desc": "Schedule your reports, and an up-to-date performance view is generated automatically every period."
+          "desc": "Schedule your reports, and an up-to-date performance view is generated automatically every period. You save time on manual work while always having current data to make decisions from."
         }
       ],
       "ctaTitle": "Bring all your ad data into one dashboard"
@@ -1092,15 +1092,15 @@ export const FEATURE_PAGES: FeaturePage[] = [
       "steps": [
         {
           "title": "Adayların toplanır",
-          "desc": "Gelen müşteri adayların ve mevcut müşterilerin tek bir yerde kayıt altına alınır."
+          "desc": "Gelen müşteri adaylarını ve mevcut müşterilerinin tamamını tek bir yerde merkezi olarak kayıt altına alırsın; hiçbir adayın kaydedilmemesi veya unutulması riski ortadan kalkar. Tüm iletişim geçmişi her müşteriye bağlı olduğu için, hangi adayı takip etmen gerektiğini bir bakışta görebilirsin."
         },
         {
           "title": "Sürece yerleşir",
-          "desc": "Her aday satış aşamalarından oluşan akışta doğru konuma yerleştirilir."
+          "desc": "Her yeni aday otomatik olarak satış döngünün ilk aşamasına yerleştirilir ve sen bunu düzenleyebilirsin. Böylece tüm adaylar standart bir yoldan geçerken, kimsenin arada kaybolması engellenir ve satış sisteminiz tutarlı kalır."
         },
         {
           "title": "Satışa kadar izlenir",
-          "desc": "Adaylar aşama aşama ilerletilir; süreç kapanan satışa kadar tek panelden takip edilir."
+          "desc": "Adayları aşama aşama ilerletirken, tek bir ekrandan kimin nerede olduğunu ve ne zaman harekete geçmen gerektiğini görürsün. Satış kapatılana kadar tüm süreç kaydedildiği için, sonrası müşteri hizmetinde de tam tarihçeyi okuyabilirsin."
         }
       ],
       "ctaTitle": "Müşterilerini ve satışlarını düzene sokmaya bugün başla"
@@ -1130,15 +1130,15 @@ export const FEATURE_PAGES: FeaturePage[] = [
       "steps": [
         {
           "title": "Leads are gathered",
-          "desc": "Your incoming leads and existing customers are recorded together in one place."
+          "desc": "Your incoming leads and existing customers are all recorded together in one central place, eliminating the risk of any lead being lost or forgotten. With every customer's communication history attached, you can see at a glance which lead you need to follow up on."
         },
         {
           "title": "Placed in the process",
-          "desc": "Each lead is positioned at the right point in a flow made up of your sales stages."
+          "desc": "Each new lead is automatically positioned at the first stage of your sales cycle, and you can adjust it as needed. This ensures all leads move through a standard path while preventing anyone from falling through the cracks and keeping your sales system consistent."
         },
         {
           "title": "Tracked to the sale",
-          "desc": "Leads are moved forward stage by stage and the process is followed from a single panel until the sale closes."
+          "desc": "As you move leads forward stage by stage, a single screen shows you where everyone is and when you need to take action. Since the entire process is recorded until the sale closes, you can review the complete history in customer service afterward too."
         }
       ],
       "ctaTitle": "Start organizing your customers and sales today"
@@ -1177,15 +1177,15 @@ export const FEATURE_PAGES: FeaturePage[] = [
       "steps": [
         {
           "title": "Kampanyanı oluştur",
-          "desc": "Mesajını yaz, göndereceğin kişileri seç ve kampanyanı birkaç adımda hazır hâle getir."
+          "desc": "Mesajını yaz, göndereceğin kişileri seç ve kampanyanı birkaç adımda hazır hâle getir. Basit arayüzü sayesinde e-posta pazarlamasına hiç deneyim olmasa da dakikalar içinde başlar."
         },
         {
           "title": "Otomasyonunu kur",
-          "desc": "Hangi durumda hangi e-postanın gideceğini belirle; sistem akışı senin yerine yürütsün."
+          "desc": "Hangi durumda hangi e-postanın gideceğini belirle; sistem akışı senin yerine yürütsün. Tetikleyiciler ve koşullar sayesinde doğru kişiye doğru mesaj doğru zamanda ulaşır."
         },
         {
           "title": "Gönder ve sonuçları izle",
-          "desc": "Kampanyanı yayına al, açılma ve tıklama sonuçlarını tek ekrandan takip et."
+          "desc": "Kampanyanı yayına al, açılma ve tıklama sonuçlarını tek ekrandan takip et. Anlık istatistikler sayesinde hangi konu başlığının ve mesajın işe yaradığını görür, sonraki kampanyanı daha başarılı kurar."
         }
       ],
       "ctaTitle": "Müşterilerinle bağını e-postayla güçlendir"
@@ -1215,15 +1215,15 @@ export const FEATURE_PAGES: FeaturePage[] = [
       "steps": [
         {
           "title": "Create your campaign",
-          "desc": "Write your message, choose your recipients and get your campaign ready in a few steps."
+          "desc": "Write your message, choose your recipients and get your campaign ready in a few steps. Thanks to our simple interface, you can launch your email marketing in minutes, even without prior experience."
         },
         {
           "title": "Set up automation",
-          "desc": "Define which email goes out in which situation and let the system run the flow for you."
+          "desc": "Define which email goes out in which situation and let the system run the flow for you. Triggers and conditions ensure the right message reaches the right person at exactly the right moment."
         },
         {
           "title": "Send and track results",
-          "desc": "Launch your campaign and follow open and click results from a single screen."
+          "desc": "Launch your campaign and follow open and click results from a single screen. Real-time metrics show you which subject lines and messages work, so you can build your next campaign even more successfully."
         }
       ],
       "ctaTitle": "Strengthen customer ties with email"
@@ -1262,15 +1262,15 @@ export const FEATURE_PAGES: FeaturePage[] = [
       "steps": [
         {
           "title": "Platformunu seç",
-          "desc": "Bağlamak istediğin hesabı (Meta, Google, Google Analytics, Search Console ve daha fazlası) listeden seçersin."
+          "desc": "Bağlamak istediğin hesabı (Meta, Google, Google Analytics, Search Console ve daha fazlası) listeden seçersin. DijiMagic desteği olan tüm platformlar bir yerde listelenmiş olur, böylece neyi bağlayacağını kolayca görürsün."
         },
         {
           "title": "Güvenle yetkilendir",
-          "desc": "Resmi yetkilendirme ekranından onay verirsin; DijiMagic yalnızca işin için gereken erişimi alır."
+          "desc": "Resmi yetkilendirme ekranından onay verirsin; DijiMagic yalnızca işin için gereken erişimi alır. Bu şekilde şifrenizi paylaşmadan, her platform istediği gibi yetkilendirme yapıyor; verileriniz ve hesaplarınız tamamen korumalı kalır."
         },
         {
           "title": "Hepsi tek panelde",
-          "desc": "Bağlantı tamamlanır; tüm hesaplarını ve verilerini bundan sonra tek merkezden yönetirsin."
+          "desc": "Bağlantı tamamlanır; tüm hesaplarını ve verilerini bundan sonra tek merkezden yönetirsin. Farklı paneller arasında gezinmek yerine, Meta reklam, Google Analytics raporu ve Search Console verileri hep aynı yerde yanyana gelir."
         }
       ],
       "ctaTitle": "Hesaplarını birkaç dakikada bağla"
@@ -1300,15 +1300,15 @@ export const FEATURE_PAGES: FeaturePage[] = [
       "steps": [
         {
           "title": "Pick your platform",
-          "desc": "Choose the account you want to connect — Meta, Google, Google Analytics, Search Console and more — from the list."
+          "desc": "Choose the account you want to connect — Meta, Google, Google Analytics, Search Console and more — from the list. Every platform that DijiMagic supports sits in one place, so you see exactly what you can link."
         },
         {
           "title": "Authorize securely",
-          "desc": "Approve through the official authorization screen; DijiMagic takes only the access your work needs."
+          "desc": "Approve through the official authorization screen; DijiMagic takes only the access your work needs. This way you never share your password, each platform authorizes the way it wants, and your data and accounts stay completely protected."
         },
         {
           "title": "All in one panel",
-          "desc": "The connection completes, and from then on you manage all your accounts and data from a single hub."
+          "desc": "The connection completes, and from then on you manage all your accounts and data from a single hub. Instead of jumping between panels, Meta ads, Google Analytics reports and Search Console data all sit side by side in the same place."
         }
       ],
       "ctaTitle": "Connect your accounts in minutes"

@@ -2,6 +2,10 @@
 
 ---
 
+## 2026-06-27 — Feature "Nasıl çalışır" adımları detaylandırıldı (#5)
+- **Çözüm:** 15 modülün 3'er "Nasıl çalışır" adımının açıklaması 1 cümle → ~2 cümle (TR+EN; ikinci cümle somut "nasıl/neden"). Başlıklar + anlam + sıra korundu, uydurma yok. Paralel workflow + merge (yalnız `steps`; featureHref/types korundu). Layout dengeli (3 sütun, sıkışma yok).
+- **Dosyalar:** components/landing/featurePagesData.ts
+
 ## 2026-06-27 — Web Site Yöneticisi "Site oluşturulamadı" kök neden: 60sn timeout → 300sn
 - **Sorun:** Web Site Yöneticisi'nde AI ile site üretimi **sürekli** "Site oluşturulamadı." hatası veriyordu. Kök neden: `POST /api/website/[id]/generate` route'unun `maxDuration = 60`'ı, tek istekte yaptığı işin (kurulum + Claude içerik çağrısı `timeoutMs:60_000` + Pexels stok görsel çözümleme + DB yazımı) **toplam süresinden kısaydı**. Üretim 60sn'yi aşınca Vercel fonksiyonu öldürüyor (504, JSON değil) → istemcinin `res.json()`'u throw ediyor → genel `buildError` = "Site oluşturulamadı." fallback'i gösteriliyordu. Bütçe yapısal olarak yetersiz olduğu için hata **tutarlıydı**. (Not: prod, `WEBSITE_CODEGEN_V2` set OLMADIĞI için legacy `generateSitePages` yolunu kullanıyor.)
 - **Çözüm:** (1) generate route `maxDuration` 60 → **300** (projedeki diğer ağır/batch-AI route'larıyla hizalı; plan destekliyor). (2) `generateSitePages` iç Claude `timeoutMs` 60_000 → **120_000** (büyüyen bütçede tam 4000-token üretim tamamlanabilir; stok 10sn, Claude 120sn ile sınırlı → fonksiyon 300sn'ye asla dayanmaz, ya tamamlanır ya da düzgün JSON hatası döner — 504 değil). (3) Tüm diller boş dönerse fırlatılan ham `AI_GENERATION_FAILED` kodu → kullanıcı-dostu "Site içeriği üretilemedi, lütfen tekrar deneyin." (UI ham teknik terim göstermez; kredi iade + "Yeniden Dene" çalışır).
