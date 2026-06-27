@@ -47,7 +47,7 @@ export default function Testimonials({ isEn }: { isEn: boolean }) {
     : { eyebrow: 'Yorumlar', title: 'Gerçek Kullanıcı Yorumları', sub: 'DijiMagic kullananların deneyimleri.' }
 
   return (
-    <section className="relative w-full px-6 py-14 md:py-20 bg-white/[0.012]">
+    <section className="relative w-full px-6 py-10 md:py-12 bg-white/[0.012]">
       <div className="relative max-w-6xl mx-auto">
         <div className="text-center mb-9 md:mb-11">
           <p className="text-[12px] font-semibold uppercase tracking-[0.18em] text-emerald-400/80 mb-2.5">{c.eyebrow}</p>

@@ -2,6 +2,10 @@
 
 ---
 
+## 2026-06-27 — Landing bölüm padding'leri standardize + sıkılaştırıldı
+- **Sorun:** Bölümler arası dikey boşluk fazlaydı (masaüstü ~144–160px, mobil ~104–112px).
+- **Çözüm:** Tüm landing içerik bölümleri tutarlı **`py-10 md:py-12` (40/48px)** → bölüm arası boşluk **80px (mobil) / 96px (masaüstü)**. Dosyalar: app/page.tsx (AI/Performans/Komuta/CTA), TrustStats, HowItWorks, WhoCanUse, Testimonials.
+
 ## 2026-06-27 — Feature sayfaları revizyon (owner geri bildirimi 7 madde) + Turnstile domain fix
 - **Sorun:** URL `/tr/ozellikler/<slug>` istenmiyordu (`/tr/<slug>` olmalı); "İlgili modüller" gereksizdi; padding fazlaydı; sağ görsel icon-only "saçma"ydı; TrustStats partnerleri küçük + abartılı rakamlar; breadcrumb gereksiz; HowItWorks "video çok yakında" placeholder.
 - **Çözüm:** (1) **URL → `/tr/<slug>`**: middleware'e pazarlama özellik-slug interception (`/tr/<feature>` ve `/en/<feature>` → `/ozellikler/<feature>` rewrite); dashboard bare `/<slug>` + `/en/<translated>` ETKİLENMEZ (EN'de seo-plus/email-marketing dashboard'a bırakıldı). `featureHref()` helper. (2) "İlgili modüller" kaldırıldı + tüm section padding'leri azaltıldı. (3) **FeatureVisual 15 modülün hepsi için animasyonlu temsilî mockup** (icon-only kalktı; Sosyal'daki mor temizlendi). (4) **TrustStats**: Resmi İş Ortakları ÜSTTE + büyük kutular + gerçek renkli Meta/Google logoları (/integration-icons); rakamlar makul (120+ kullanıcı, %97, 320+ reklam hesabı, 6M+ erişim). (5) breadcrumb kaldırıldı. (6) HowItWorks video placeholder → FeatureVisual animasyonu. (7) Turnstile widget domain turhost.com → dijimagic.com (Cloudflare API).

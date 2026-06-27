@@ -36,7 +36,7 @@ export default function WhoCanUse({ isEn }: { isEn: boolean }) {
       ]
 
   return (
-    <section className="relative w-full px-6 py-14 md:py-18">
+    <section className="relative w-full px-6 py-10 md:py-12">
       <div className="relative max-w-6xl mx-auto">
         <div className="text-center mb-9 md:mb-11">
           <p className="text-[12px] font-semibold uppercase tracking-[0.18em] text-emerald-400/80 mb-2.5">{c.eyebrow}</p>

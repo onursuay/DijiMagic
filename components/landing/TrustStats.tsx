@@ -23,7 +23,7 @@ export default function TrustStats({ isEn }: { isEn: boolean }) {
   ]
 
   return (
-    <section id="entegrasyonlar" className="relative w-full px-6 py-11 md:py-12 border-y border-white/[0.05] bg-white/[0.012]">
+    <section id="entegrasyonlar" className="relative w-full px-6 py-10 md:py-12 border-y border-white/[0.05] bg-white/[0.012]">
       <div className="max-w-5xl mx-auto">
         {/* Resmi iş ortakları — ÜSTTE, büyük */}
         <p className="text-[12px] font-semibold uppercase tracking-[0.2em] text-emerald-400/80 text-center mb-6">{isEn ? 'Official partners' : 'Resmi İş Ortaklarımız'}</p>

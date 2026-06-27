@@ -38,7 +38,7 @@ export default function HowItWorks({ isEn }: { isEn: boolean }) {
     : { eyebrow: 'Nasıl Çalışır', title: '30 saniyede kur, gerisini yapay zeka halletsin', demo: 'Demo · 45 saniyede gör', soon: 'Video çok yakında' }
 
   return (
-    <section className="relative w-full px-6 py-14 md:py-20">
+    <section className="relative w-full px-6 py-10 md:py-12">
       <style dangerouslySetInnerHTML={{ __html: `
         @keyframes hiw-pulse { 0%,100% { transform: scale(1); opacity: 1 } 50% { transform: scale(1.06); opacity: .88 } }
         @keyframes hiw-ring { 0% { transform: scale(.8); opacity: .5 } 100% { transform: scale(1.8); opacity: 0 } }

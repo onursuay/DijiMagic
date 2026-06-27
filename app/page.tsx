@@ -297,7 +297,7 @@ export default async function RootPage() {
       <HowItWorks isEn={isEn} />
 
       {/* ═══════════ AI CAPABILITIES ═══════════ */}
-      <section id="ozellikler" className="relative w-full px-6 py-14 md:py-20">
+      <section id="ozellikler" className="relative w-full px-6 py-10 md:py-12">
         <div className="absolute inset-0 pointer-events-none" aria-hidden="true">
           <div className="absolute top-1/2 left-1/4 w-[500px] h-[500px] bg-emerald-500/[0.03] rounded-full blur-[120px]" />
         </div>
@@ -324,7 +324,7 @@ export default async function RootPage() {
       <WhoCanUse isEn={isEn} />
 
       {/* ═══════════ PERFORMANCE ═══════════ */}
-      <section className="relative w-full px-6 py-12 md:py-16 bg-white/[0.015]">
+      <section className="relative w-full px-6 py-10 md:py-12 bg-white/[0.015]">
         <div className="absolute inset-0 pointer-events-none" aria-hidden="true">
           <div className="absolute bottom-0 right-1/4 w-[400px] h-[400px] bg-teal-500/[0.04] rounded-full blur-[120px]" />
         </div>
@@ -349,7 +349,7 @@ export default async function RootPage() {
       </section>
 
       {/* ═══════════ COMMAND CENTER ═══════════ */}
-      <section className="w-full px-6 py-12 md:py-16">
+      <section className="w-full px-6 py-10 md:py-12">
         <div className="max-w-7xl mx-auto">
           <div className="text-center mb-8">
             <h2 className="text-3xl md:text-4xl font-bold tracking-tight mb-3">{c.cmdTitle}</h2>
@@ -373,7 +373,7 @@ export default async function RootPage() {
       <Testimonials isEn={isEn} />
 
       {/* ═══════════ BOTTOM CTA ═══════════ */}
-      <section className="relative w-full px-6 py-14 md:py-20">
+      <section className="relative w-full px-6 py-10 md:py-12">
         <div className="absolute inset-0 pointer-events-none" aria-hidden="true">
           <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[600px] h-[400px] rounded-full blur-[150px]" style={{ background: 'radial-gradient(ellipse, rgba(16,185,129,0.08), transparent 70%)' }} />
         </div>
