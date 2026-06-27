@@ -2,6 +2,11 @@
 
 ---
 
+## 2026-06-27 — Agentic Website Generator Faz 1.4: Job API'leri (GET /job + HMAC progress/complete)
+- **Sorun:** UI polling için job durum endpoint'i, sandbox callback'leri için HMAC doğrulamalı progress/complete route'ları yoktu.
+- **Çözüm:** `lib/website/sandboxHmac.mjs` (saf HMAC yardımcısı, `x-sandbox-signature-256` header, sha256=hex şeması, timingSafeEqual) + `scripts/verify-sandbox-hmac.mjs` (7 birim testi) + 3 route: `GET /api/website/[id]/job` (owner-only UI polling), `POST .../jobs/[jobId]/progress` (HMAC, appendJobLog), `POST .../jobs/[jobId]/complete` (HMAC, idempotent markJobComplete + inngest.send sandbox-done). tsc 0 hata, HMAC 7/7, verify 15/15.
+- **Dosyalar:** lib/website/sandboxHmac.mjs (CREATE), scripts/verify-sandbox-hmac.mjs (CREATE), app/api/website/[id]/job/route.ts (CREATE), app/api/website/[id]/jobs/[jobId]/progress/route.ts (CREATE), app/api/website/[id]/jobs/[jobId]/complete/route.ts (CREATE)
+
 ## 2026-06-27 — Agentic Website Generator Faz 1.3: Inngest orkestratör + route kaydı
 - **Sorun:** Agentic üretim pipeline'ı için Inngest fonksiyonu ve route kaydı yoktu.
 - **Çözüm:** `inngest/functions/websiteAgenticGenerate.ts` oluşturuldu — 2-ARG createFunction (triggers config içinde), dev-fallback inline motor, sandbox-done waitForEvent iskeleti, markJobFailed + refundCreditsServer hata/timeout garantileri, tüm yan-etkiler step.run içinde (idempotent). Route'a (`app/api/inngest/route.ts`) import + functions[] kaydı eklendi. tsc 0 hata, verify 15/15.
