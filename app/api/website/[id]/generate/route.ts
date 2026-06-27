@@ -9,6 +9,7 @@ import { summarizeSiteForRevision } from '@/lib/website/revisionContext'
 import { getProfileByUserId, getIntelligenceByUserId } from '@/lib/dijimagic/businessProfileStore'
 import { generateHtmlSite } from '@/lib/website/codegen/generateHtmlSite'
 import { applyBlockPatch } from '@/lib/website/codegen/applyBlockPatch'
+import { persistGeneratedSite } from '@/lib/website/persistGeneratedSite'
 import type { Website, WebsitePageInput, WebsiteSnapshot, ThemeTokens } from '@/lib/website/types'
 
 export const dynamic = 'force-dynamic'
@@ -253,32 +254,7 @@ async function generateWithCodegenV2({
   }
 
   try {
-    // Stage-1 designVars'ı temaya yaz (servis bunu themeToDesignVars ile aynı şekilde okur:
-    // theme.designVars = Record<string,string>). compiledCssVersion bump → per-site CSS cache.
-    const theme: ThemeTokens = {
-      ...site.theme,
-      designVars: result.designVars,
-      compiledCssVersion: new Date().toISOString(),
-    }
-    await updateWebsite(user.id, site.id, { theme })
-
-    // Sayfaları yaz — landing → [home]; multipage → tüm sayfalar (result.pages).
-    // page.html + page.format='html' (carry-in: store bunları kolonlara map eder).
-    const pages = await replacePages(user.id, site.id, result.pages)
-
-    const snapshot: WebsiteSnapshot = {
-      website: {
-        label: site.label,
-        siteType: site.siteType,
-        defaultLocale: site.defaultLocale,
-        locales: site.locales,
-        category: site.category,
-        theme, // designVars + compiledCssVersion dahil → rollback bunları geri yükler
-      },
-      pages, // html + format taşır (rowToPage map eder) → rollback bozulmadan geri yükler
-    }
-    await createVersion(site.id, snapshot, isRevision ? 'revision' : 'initial', access.spent)
-
+    const { pages } = await persistGeneratedSite(user.id, site, result, isRevision, access.spent)
     return NextResponse.json({ ok: true, pages, creditCharged: access.spent })
   } catch (e) {
     // Persist aşamasında hata → krediyi iade et (üretildi ama yazılamadı; çift ücret olmasın).
