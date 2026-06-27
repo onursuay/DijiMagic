@@ -2,6 +2,11 @@
 
 ---
 
+## 2026-06-27 — Faz 2 POC fix: env/shell kaybolması (MODULE_NOT_FOUND / zsh not found)
+- **Sorun:** `executeCommand(cmd, cwd, {}, timeout)` — boş `{}` env geçince Daytona sandbox'ın default env'i (PATH, SHELL, ANTHROPIC_API_KEY) kayboluyor; shell `/usr/bin/zsh`'a düşüp Linux sandbox'ta patlıyor.
+- **Çözüm:** Tüm `executeCommand` çağrılarında `env` argümanı `undefined` yapıldı (sandbox default env korunur). Playwright install komutu `cd /work/deps && ./node_modules/.bin/playwright install` şeklinde inline-cd'ye alındı. Gereksiz `export NODE_PATH=...` komutu kaldırıldı. Worker run komutu `NODE_PATH=... JOB_ID=... SCOPE=... node worker.mjs` inline env'e taşındı. Brief JSON büyük → komut satırı yerine `sandbox.fs.uploadFile` ile `brief.json` olarak yükleniyor; `worker.mjs`'de `BRIEF` env yoksa `existsSync('./brief.json') ? readFileSync(...)` fallback'i eklendi.
+- **Dosyalar:** poc/runPoc.mjs, poc/sandbox/worker.mjs, .superpowers/sdd/reports/faz2-poc-build-report.md
+
 ## 2026-06-27 — Web Site Yöneticisi v2 — Agentic üretim FAZ 1 (async iskelet, bayrak arkasında dark)
 - **İstek:** Üretilen siteler jenerik (şablon-doldurma); promake.ai/bolt kalitesi hedefleniyor. Çözüm yönü: harici sandbox'ta Claude Agent SDK agentic döngüsü (yaz→build→ekran görüntüsü→öz-eleştir→düzelt). Bu giriş, o motorun **async iskeletini** kurar.
 - **Çözüm (7 task, subagent-driven + 2-aşamalı review + opus final-review = MERGE-HAZIR):** (1) `website_gen_jobs` tablosu + `genJobStore` (migration prod'a uygulandı). (2) `persistGeneratedSite` — v2 persist bloğu idempotent ortak fonksiyona çıkarıldı (davranış byte-aynı). (3) Inngest `websiteAgenticGenerate` orkestratör (dispatch→waitForEvent→persist; **dev-fallback**: sandbox yoksa mevcut `generateHtmlSite` inline → Faz 1 anahtarsız uçtan uca çalışır). (4) Job API: GET `/job` (owner-only polling) + POST `progress`/`complete` (HMAC `timingSafeEqual` + 300sn replay penceresi + websiteId bağı + fail-closed). (5) generate route `WEBSITE_AGENTIC` bayrağı — açıkken job-başlat-dön, **kapalıyken byte-aynı** (71+/0-, sıfır regresyon). (6) UI non-blocking + job polling + WizardBuildingAnimation **gerçek** ilerleme (sahte setInterval kalktı; EN/TR). (7) `cron/website-jobs-reconcile` event-kaybı bekçisi (CRON_SECRET fail-closed).
