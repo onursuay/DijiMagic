@@ -11,6 +11,9 @@ import { generateHtmlSite } from '@/lib/website/codegen/generateHtmlSite'
 import { applyBlockPatch } from '@/lib/website/codegen/applyBlockPatch'
 import { persistGeneratedSite } from '@/lib/website/persistGeneratedSite'
 import type { Website, WebsitePageInput, WebsiteSnapshot, ThemeTokens } from '@/lib/website/types'
+import { isAgenticEnabled } from '@/lib/website/agenticFlag.mjs'
+import { createWebsiteGenJob } from '@/lib/website/genJobStore'
+import { inngest } from '@/inngest/client'
 
 export const dynamic = 'force-dynamic'
 // Üretim akışı tek istekte şunları yapar: kurulum (auth + profil + kredi DB turları) →
@@ -60,6 +63,59 @@ export async function POST(req: NextRequest, { params }: { params: { id: string 
   // — talimat boş olsa da (kredi atlatma kapalı). İlk üretim yalnız sayfa hiç yokken.
   const existing = await getPages(user.id, site.id)
   const isRevision = existing.length > 0
+
+  // ── Agentic (Faz 1) bayrağı — WEBSITE_AGENTIC='1' açıkken: krediyi düş → job oluştur →
+  // orkestratörü tetikle → job bilgisiyle HEMEN dön (<3sn, bloke etmez).
+  // Bayrak KAPALIYKEN bu blok ATLANIR; aşağıdaki v2/legacy yollar BYTE-AYNI çalışır. ──
+  if (isAgenticEnabled()) {
+    // Maliyet — legacy/v2 yollarıyla PARİTE:
+    //   • Revizyon → ilk WEBSITE_FREE_REVISIONS adet ÜCRETSİZ, sonrası WEBSITE_REVISION_COST.
+    //   • İlk üretim → computeGenerationCost (multipage: 4 sayfa; lokalizasyon sayısıyla).
+    let cost: number
+    if (isRevision) {
+      const versions = await listVersions(user.id, site.id)
+      const usedRevisions = versions.filter((v) => v.reason === 'revision').length
+      cost = usedRevisions < WEBSITE_FREE_REVISIONS ? 0 : WEBSITE_REVISION_COST
+    } else {
+      const pageCount = site.siteType === 'multipage' ? 4 : 1
+      cost = computeGenerationCost({ siteType: site.siteType, pageCount, localeCount: site.locales.length || 1 })
+    }
+
+    // Krediyi düş (owner bypass + yetersiz bakiye 402 featureGuard içinde).
+    const access = await chargeFeature({ featureKey: 'website_generation', creditCost: cost })
+    if (!access.ok) return NextResponse.json(access.body, { status: access.status })
+
+    // Job oluştur → DB'ye 'queued' statusuyla kayıt.
+    const jobId = await createWebsiteGenJob({
+      websiteId: site.id,
+      userId: user.id,
+      brief: instructions || site.theme?.initialInstructions || '',
+      locales: site.locales,
+      siteType: site.siteType,
+    })
+
+    // Orkestratörü async tetikle — yanıt beklenmez (non-blocking).
+    // Payload şekli Task 1.3 ile kilitlidir; websiteAgenticGenerate bunu bekler.
+    await inngest.send({
+      name: 'website/generate.agentic',
+      data: {
+        jobId,
+        websiteId: site.id,
+        userId: user.id,
+        brief: instructions || site.theme?.initialInstructions || '',
+        locales: site.locales,
+        isRevision,
+        creditSpent: access.spent,
+      },
+    })
+
+    // Hemen dön — UI polling ile job durumunu izler.
+    return NextResponse.json({
+      ok: true,
+      jobId,
+      polling: `/api/website/${site.id}/job?jobId=${jobId}`,
+    })
+  }
 
   // ── Codegen v2 (serbest HTML) bayrağı açıksa: yeni motor. Kapalıysa aşağıdaki mevcut
   // sections motoru AYNEN çalışır (additive — eski yol byte-byte korunur). ──────────────
