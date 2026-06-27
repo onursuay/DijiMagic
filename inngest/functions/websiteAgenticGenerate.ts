@@ -33,7 +33,7 @@ import { persistGeneratedSite } from '@/lib/website/persistGeneratedSite'
 import { gateSiteHtml } from '@/lib/website/codegen/renderGate.mjs'
 import { generateHtmlSite } from '@/lib/website/codegen/generateHtmlSite'
 import { runAgenticBuild, deleteSandbox } from '@/lib/website/codegen/agentic/runAgenticBuild'
-import { getProfileByUserId } from '@/lib/dijimagic/businessProfileStore'
+import { getProfileByUserId, getIntelligenceByUserId } from '@/lib/dijimagic/businessProfileStore'
 import { refundCreditsServer } from '@/lib/billing/db'
 
 // ---------------------------------------------------------------------------
@@ -171,8 +171,12 @@ export const websiteAgenticGenerate = inngest.createFunction(
         // Scope türet — website context'inde reklam hesabı kimliği yok; userId kullan
         const scope = deriveWebsiteScope(userId, websiteId)
 
-        // Marka profili — getProfileByUserId (site-bazlı scope yok; userId yeterli)
-        const profile = await getProfileByUserId(userId)
+        // Marka profili + intelligence — getProfileByUserId (site-bazlı scope yok; userId yeterli)
+        const [profile, intelligence, site] = await Promise.all([
+          getProfileByUserId(userId),
+          getIntelligenceByUserId(userId),
+          getWebsite(userId, websiteId),
+        ])
 
         const callbackBase = process.env.WEBSITE_CALLBACK_BASE
         if (!callbackBase) {
@@ -187,7 +191,21 @@ export const websiteAgenticGenerate = inngest.createFunction(
           websiteId,
           userId,
           scope,
-          brief: { instructions: brief },
+          brief: {
+            id: websiteId,
+            businessName: site?.label || profile?.company_name || 'İşletme',
+            tagline: intelligence?.brand_positioning ?? '',
+            industry: [profile?.sector_main, profile?.sector_sub].filter(Boolean).join(' / '),
+            locale: site?.defaultLocale ?? locales[0] ?? 'tr',
+            description: profile?.business_description ?? intelligence?.services_summary ?? '',
+            services: profile?.products_or_services?.length ? profile.products_or_services : [],
+            uniqueSellingPoints: profile?.most_profitable_services ?? [],
+            targetAudience: profile?.target_audience ?? intelligence?.target_audience_summary ?? '',
+            tone: profile?.brand_tone ?? 'profesyonel, güven veren',
+            colorHint: '',
+            sections: ['hero', 'hizmetler/ürünler', 'hakkımızda', 'neden biz', 'müşteri yorumları', 'SSS', 'iletişim', 'footer'],
+            instructions: brief,
+          },
           brandContextJson: JSON.stringify(profile ?? {}),
           callbackBase,
           hmacSecret: process.env.WEBSITE_SANDBOX_HMAC_SECRET!,
