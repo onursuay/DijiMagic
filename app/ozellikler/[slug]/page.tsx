@@ -10,7 +10,6 @@ import { FEATURE_PAGES, GROUP_LABEL } from '@/components/landing/featurePagesDat
 
 export const dynamic = 'force-dynamic'
 
-/* Icon set (FeatureTabs ile aynı) */
 const ICONS: Record<string, string> = {
   meta: '<path d="M18 2h-3a5 5 0 00-5 5v3H7v4h3v8h4v-8h3l1-4h-4V7a1 1 0 011-1h3z"/>',
   google: '<text x="3.5" y="18" font-size="19" font-weight="700" font-family="Arial,sans-serif" fill="currentColor" stroke="none">G</text>',
@@ -28,11 +27,9 @@ const ICONS: Record<string, string> = {
   mail: '<rect x="2" y="4" width="20" height="16" rx="2"/><path d="M22 6l-10 7L2 6"/>',
   plug: '<path d="M10 13a5 5 0 007.07 0l3-3a5 5 0 00-7.07-7.07l-1.72 1.71"/><path d="M14 11a5 5 0 00-7.07 0l-3 3a5 5 0 007.07 7.07l1.71-1.71"/>',
 }
-function Icon({ name, size = 22 }: { name: string; size?: number }) {
+function Icon({ name, size = 16 }: { name: string; size?: number }) {
   return <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round" dangerouslySetInnerHTML={{ __html: ICONS[name] || '' }} />
 }
-
-const VISUAL_SLUGS = new Set(['tasarim', 'sosyal-medya', 'seo-plus', 'web-site-yoneticisi'])
 
 export async function generateMetadata({ params }: { params: Promise<{ slug: string }> }): Promise<Metadata> {
   const { slug } = await params
@@ -45,11 +42,8 @@ export async function generateMetadata({ params }: { params: Promise<{ slug: str
     title: `${c.title} — DijiMagic`,
     description: c.sub,
     alternates: {
-      canonical: `https://dijimagic.com/tr/ozellikler/${slug}`,
-      languages: {
-        tr: `https://dijimagic.com/tr/ozellikler/${slug}`,
-        en: `https://dijimagic.com/en/ozellikler/${slug}`,
-      },
+      canonical: `https://dijimagic.com/tr/${slug}`,
+      languages: { tr: `https://dijimagic.com/tr/${slug}`, en: `https://dijimagic.com/en/${slug}` },
     },
   }
 }
@@ -64,18 +58,17 @@ export default async function FeaturePageView({ params }: { params: Promise<{ sl
   const c = isEn ? page.en : page.tr
   const locale = isEn ? 'en' : 'tr'
   const group = GROUP_LABEL[page.group]
-  const related = FEATURE_PAGES.filter((p) => p.group === page.group && p.slug !== page.slug)
 
   const ui = isEn
-    ? { home: 'Features', ctaTrial: '7-Day Free Trial', ctaAll: 'All features', benefitsEyebrow: 'Highlights', stepsEyebrow: 'How it works', soon: 'Soon', relatedTitle: 'Related modules', footer: '2026 DijiMagic. All rights reserved.', startNow: 'Start free' }
-    : { home: 'Özellikler', ctaTrial: '7 Gün Ücretsiz Dene', ctaAll: 'Tüm özellikler', benefitsEyebrow: 'Öne çıkanlar', stepsEyebrow: 'Nasıl çalışır', soon: 'Yakında', relatedTitle: 'İlgili modüller', footer: '2026 DijiMagic. Tüm hakları saklıdır.', startNow: 'Ücretsiz başla' }
+    ? { ctaTrial: '7-Day Free Trial', ctaAll: 'All features', benefitsEyebrow: 'Highlights', stepsEyebrow: 'How it works', soon: 'Soon', footer: '2026 DijiMagic. All rights reserved.', startNow: 'Start free' }
+    : { ctaTrial: '7 Gün Ücretsiz Dene', ctaAll: 'Tüm özellikler', benefitsEyebrow: 'Öne çıkanlar', stepsEyebrow: 'Nasıl çalışır', soon: 'Yakında', footer: '2026 DijiMagic. Tüm hakları saklıdır.', startNow: 'Ücretsiz başla' }
 
   return (
     <div className="min-h-screen bg-[#161d28] text-white flex flex-col overflow-x-hidden" style={{ fontSize: '16px' }}>
       <style dangerouslySetInnerHTML={{ __html: `
         .fp-flow { background-image: linear-gradient(90deg,#34d399,#2dd4bf,#22d3ee,#2dd4bf,#34d399); background-size: 250% auto; -webkit-background-clip: text; background-clip: text; animation: fp-flow 6s linear infinite; }
         @keyframes fp-flow { to { background-position: 250% center; } }
-        @keyframes fp-enter { from { opacity: 0; transform: translateY(14px); } to { opacity: 1; transform: none; } }
+        @keyframes fp-enter { from { opacity: 0; transform: translateY(12px); } to { opacity: 1; transform: none; } }
         .fp-enter { animation: fp-enter .5s ease both; }
         .btn-shimmer { position: relative; overflow: hidden; }
         @media (prefers-reduced-motion: reduce) { .fp-flow, .fp-enter { animation: none !important; } }
@@ -84,18 +77,11 @@ export default async function FeaturePageView({ params }: { params: Promise<{ sl
       <LandingHeader locale={locale} ctaSchedule={isEn ? 'Book a Call' : 'Görüşme Planla'} ctaTrial={ui.ctaTrial} />
 
       {/* ── HERO ── */}
-      <section className="relative w-full px-6 pt-10 pb-10 md:pt-14 md:pb-12 overflow-hidden">
+      <section className="relative w-full px-6 pt-10 pb-10 md:pt-12 md:pb-12 overflow-hidden">
         <div className="absolute inset-0 pointer-events-none" aria-hidden="true">
-          <div className="absolute top-[-14%] left-1/2 -translate-x-1/2 w-[900px] h-[520px] rounded-full blur-[150px]" style={{ background: 'radial-gradient(ellipse, rgba(16,185,129,0.10) 0%, rgba(20,184,166,0.04) 50%, transparent 78%)' }} />
+          <div className="absolute top-[-14%] left-1/2 -translate-x-1/2 w-[900px] h-[500px] rounded-full blur-[150px]" style={{ background: 'radial-gradient(ellipse, rgba(16,185,129,0.10) 0%, rgba(20,184,166,0.04) 50%, transparent 78%)' }} />
         </div>
         <div className="relative z-10 max-w-6xl mx-auto">
-          {/* breadcrumb */}
-          <nav className="flex items-center gap-2 text-[13px] text-gray-500 mb-6">
-            <Link href={`/${locale}/ozellikler`} className="hover:text-emerald-400 transition-colors">{ui.home}</Link>
-            <span>/</span>
-            <span className="text-emerald-400/80">{isEn ? group.en : group.tr}</span>
-          </nav>
-
           <div className="grid md:grid-cols-2 gap-10 md:gap-14 items-center">
             <div className="fp-enter">
               <div className="inline-flex items-center gap-2.5 text-[13px] font-medium text-emerald-400/90 border border-emerald-400/20 bg-emerald-400/[0.06] px-4 py-2 rounded-full mb-5">
@@ -106,7 +92,7 @@ export default async function FeaturePageView({ params }: { params: Promise<{ sl
               <h1 className="text-4xl md:text-5xl font-black leading-[1.08] tracking-tight mb-5">
                 <span className="fp-flow text-transparent">{c.title}</span>
               </h1>
-              <p className="text-lg text-gray-300/90 leading-relaxed mb-8 max-w-lg">{c.sub}</p>
+              <p className="text-lg text-gray-300/90 leading-relaxed mb-7 max-w-lg">{c.sub}</p>
               <div className="flex flex-wrap items-center gap-4">
                 <Link href="/signup" className="btn-shimmer inline-flex items-center gap-2 text-[15px] font-semibold bg-gradient-to-r from-emerald-500 to-teal-500 text-black hover:from-emerald-400 hover:to-teal-400 px-7 py-3.5 rounded-full transition-all shadow-[0_0_30px_rgba(16,185,129,0.22)] active:scale-[0.97] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-emerald-400/60">
                   {ui.ctaTrial}
@@ -117,36 +103,25 @@ export default async function FeaturePageView({ params }: { params: Promise<{ sl
                 </Link>
               </div>
             </div>
-
-            {/* görsel */}
             <div className="fp-enter" style={{ animationDelay: '.08s' }}>
-              {VISUAL_SLUGS.has(page.slug) ? (
-                <FeatureVisual slug={page.slug} />
-              ) : (
-                <div className="relative w-full aspect-[4/3] rounded-2xl border border-white/[0.09] bg-gradient-to-br from-white/[0.05] to-white/[0.012] overflow-hidden flex items-center justify-center">
-                  <div className="absolute inset-0 pointer-events-none" style={{ background: 'radial-gradient(ellipse at 50% 40%, rgba(16,185,129,0.14), transparent 65%)' }} />
-                  <div className="relative w-24 h-24 rounded-3xl bg-gradient-to-br from-emerald-400/20 to-teal-400/[0.08] border border-emerald-400/25 flex items-center justify-center text-emerald-300 shadow-[0_0_40px_rgba(16,185,129,0.2)]">
-                    <Icon name={page.icon} size={44} />
-                  </div>
-                </div>
-              )}
+              <FeatureVisual slug={page.slug} />
             </div>
           </div>
         </div>
       </section>
 
       {/* ── INTRO ── */}
-      <section className="relative w-full px-6 py-4 md:py-6">
+      <section className="relative w-full px-6 pb-2">
         <div className="max-w-3xl mx-auto text-center">
-          <p className="text-[17px] md:text-lg text-gray-300/90 leading-relaxed">{c.intro}</p>
+          <p className="text-[16.5px] md:text-lg text-gray-300/90 leading-relaxed">{c.intro}</p>
         </div>
       </section>
 
       {/* ── ÖNE ÇIKANLAR ── */}
-      <section className="relative w-full px-6 py-12 md:py-16">
+      <section className="relative w-full px-6 py-9 md:py-11">
         <div className="max-w-6xl mx-auto">
-          <p className="text-[12px] font-semibold uppercase tracking-[0.18em] text-emerald-400/80 mb-2.5 text-center">{ui.benefitsEyebrow}</p>
-          <div className="grid sm:grid-cols-2 lg:grid-cols-4 gap-4 md:gap-5 mt-8">
+          <p className="text-[12px] font-semibold uppercase tracking-[0.18em] text-emerald-400/80 mb-6 text-center">{ui.benefitsEyebrow}</p>
+          <div className="grid sm:grid-cols-2 lg:grid-cols-4 gap-4 md:gap-5">
             {c.benefits.map((b, i) => (
               <div key={i} className="rounded-2xl border border-white/[0.09] bg-white/[0.045] p-6">
                 <div className="w-10 h-10 rounded-xl bg-emerald-400/12 border border-emerald-400/25 flex items-center justify-center text-emerald-300 mb-4 text-sm font-bold">{i + 1}</div>
@@ -159,13 +134,13 @@ export default async function FeaturePageView({ params }: { params: Promise<{ sl
       </section>
 
       {/* ── NASIL ÇALIŞIR ── */}
-      <section className="relative w-full px-6 py-12 md:py-16 bg-white/[0.012] border-y border-white/[0.05]">
+      <section className="relative w-full px-6 py-9 md:py-11 bg-white/[0.012] border-y border-white/[0.05]">
         <div className="max-w-5xl mx-auto">
-          <p className="text-[12px] font-semibold uppercase tracking-[0.18em] text-emerald-400/80 mb-2.5 text-center">{ui.stepsEyebrow}</p>
-          <div className="grid md:grid-cols-3 gap-6 md:gap-8 mt-8">
+          <p className="text-[12px] font-semibold uppercase tracking-[0.18em] text-emerald-400/80 mb-6 text-center">{ui.stepsEyebrow}</p>
+          <div className="grid md:grid-cols-3 gap-6 md:gap-8">
             {c.steps.map((s, i) => (
               <div key={i} className="relative">
-                <div className="text-5xl font-black text-emerald-400/15 mb-2 leading-none">{String(i + 1).padStart(2, '0')}</div>
+                <div className="text-4xl font-black text-emerald-400/15 mb-2 leading-none">{String(i + 1).padStart(2, '0')}</div>
                 <h3 className="text-lg font-semibold text-white mb-2">{s.title}</h3>
                 <p className="text-[15px] text-gray-300/85 leading-relaxed">{s.desc}</p>
               </div>
@@ -174,27 +149,10 @@ export default async function FeaturePageView({ params }: { params: Promise<{ sl
         </div>
       </section>
 
-      {/* ── İLGİLİ MODÜLLER ── */}
-      {related.length > 0 && (
-        <section className="relative w-full px-6 py-12 md:py-14">
-          <div className="max-w-6xl mx-auto">
-            <p className="text-[12px] font-semibold uppercase tracking-[0.18em] text-emerald-400/80 mb-6 text-center">{ui.relatedTitle}</p>
-            <div className="flex flex-wrap justify-center gap-3">
-              {related.map((r) => (
-                <Link key={r.slug} href={`/${locale}/ozellikler/${r.slug}`} className="group inline-flex items-center gap-2.5 rounded-xl border border-white/[0.09] bg-white/[0.04] px-5 py-3 transition-all hover:border-emerald-400/25 hover:bg-white/[0.06] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-emerald-400/40">
-                  <span className="text-emerald-400"><Icon name={r.icon} size={18} /></span>
-                  <span className="text-sm font-medium text-gray-200 group-hover:text-white transition-colors">{isEn ? r.name.en : r.name.tr}</span>
-                </Link>
-              ))}
-            </div>
-          </div>
-        </section>
-      )}
-
       {/* ── BOTTOM CTA ── */}
-      <section className="relative w-full px-6 py-14 md:py-20">
+      <section className="relative w-full px-6 py-12 md:py-14">
         <div className="absolute inset-0 pointer-events-none" aria-hidden="true">
-          <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[600px] h-[360px] rounded-full blur-[150px]" style={{ background: 'radial-gradient(ellipse, rgba(16,185,129,0.09), transparent 70%)' }} />
+          <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[600px] h-[320px] rounded-full blur-[150px]" style={{ background: 'radial-gradient(ellipse, rgba(16,185,129,0.09), transparent 70%)' }} />
         </div>
         <div className="relative max-w-2xl mx-auto text-center">
           <h2 className="text-2xl md:text-3xl font-bold tracking-tight mb-3">{c.ctaTitle}</h2>

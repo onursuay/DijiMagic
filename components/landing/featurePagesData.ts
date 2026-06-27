@@ -28,6 +28,15 @@ export const GROUP_LABEL: Record<FeaturePage['group'], { tr: string; en: string 
   yonetim: { tr: 'Yönetim & Büyüme', en: 'Management & Growth' },
 }
 
+/** EN'de dashboard ile aynı slug → EN pazarlama linki /en/ozellikler/<slug> (çakışmayı önler). */
+export const FEATURE_EN_SKIP = new Set(['seo-plus', 'email-marketing'])
+
+/** Modül dedike sayfa linki: TR → /tr/<slug>, EN → /en/<slug> (istisnalar /en/ozellikler/<slug>). */
+export function featureHref(locale: string, slug: string): string {
+  if (locale === 'en' && FEATURE_EN_SKIP.has(slug)) return `/en/ozellikler/${slug}`
+  return `/${locale}/${slug}`
+}
+
 export const FEATURE_PAGES: FeaturePage[] = [
   {
     "slug": "meta",

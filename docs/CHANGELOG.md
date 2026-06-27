@@ -2,6 +2,11 @@
 
 ---
 
+## 2026-06-27 — Feature sayfaları revizyon (owner geri bildirimi 7 madde) + Turnstile domain fix
+- **Sorun:** URL `/tr/ozellikler/<slug>` istenmiyordu (`/tr/<slug>` olmalı); "İlgili modüller" gereksizdi; padding fazlaydı; sağ görsel icon-only "saçma"ydı; TrustStats partnerleri küçük + abartılı rakamlar; breadcrumb gereksiz; HowItWorks "video çok yakında" placeholder.
+- **Çözüm:** (1) **URL → `/tr/<slug>`**: middleware'e pazarlama özellik-slug interception (`/tr/<feature>` ve `/en/<feature>` → `/ozellikler/<feature>` rewrite); dashboard bare `/<slug>` + `/en/<translated>` ETKİLENMEZ (EN'de seo-plus/email-marketing dashboard'a bırakıldı). `featureHref()` helper. (2) "İlgili modüller" kaldırıldı + tüm section padding'leri azaltıldı. (3) **FeatureVisual 15 modülün hepsi için animasyonlu temsilî mockup** (icon-only kalktı; Sosyal'daki mor temizlendi). (4) **TrustStats**: Resmi İş Ortakları ÜSTTE + büyük kutular + gerçek renkli Meta/Google logoları (/integration-icons); rakamlar makul (120+ kullanıcı, %97, 320+ reklam hesabı, 6M+ erişim). (5) breadcrumb kaldırıldı. (6) HowItWorks video placeholder → FeatureVisual animasyonu. (7) Turnstile widget domain turhost.com → dijimagic.com (Cloudflare API).
+- **Dosyalar:** middleware.ts, components/landing/{featurePagesData.ts,FeatureVisual.tsx,HowItWorks.tsx,TrustStats.tsx,LandingHeader.tsx}, app/ozellikler/{page.tsx,[slug]/page.tsx}
+
 ## 2026-06-27 — Feature sayfaları: her modül AYRI dedike sayfa (/tr/ozellikler/<slug>) + Turnstile yeni key
 - **Sorun:** Ürün menüsü `/ozellikler#anchor` (tek sayfa + toggle) "garip" yapıdaydı; owner iyzads gibi her özelliğin KENDİ tam sayfası olmasını istedi. Ayrıca signup Turnstile bug'ı.
 - **Çözüm:** (1) iyzads.com header/URL analizi (her özellik `/tr/<slug>` dedike sayfa; app subdomain'de). Bizde dashboard çakışması nedeniyle `/tr/ozellikler/<slug>` seçildi. (2) Dinamik şablon `app/ozellikler/[slug]` — breadcrumb + hero (sol metin/sağ görsel; içerik grubunda FeatureVisual) + öne çıkanlar (4) + nasıl çalışır (01/02/03) + ilgili modüller + CTA. (3) 15 modül içeriği (TR+EN, grounded, iyzads tonu). (4) `/ozellikler` → gruplu overview grid → dedike sayfalar. (5) Header Ürün dropdown → `/tr/ozellikler/<slug>`. EN aynası `/en/ozellikler/<slug>`. (6) Turnstile yeni widget anahtarları (.env.local + Vercel prod) eklendi; canlıda yeni key doğrulandı.

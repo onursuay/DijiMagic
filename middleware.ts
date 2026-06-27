@@ -79,6 +79,15 @@ function applyPublicLegalHeaders(response: NextResponse) {
   response.headers.set('X-Robots-Tag', 'index, follow')
 }
 
+/** Pazarlama özellik sayfaları — /tr/<slug> ve /en/<slug> bunlar için /ozellikler/<slug>'a rewrite edilir.
+ *  Dashboard bare /<slug> ve /en/<translated-slug>'ı ETKİLENMEZ (yalnız /tr ve /en prefix'i pazarlamadır). */
+const FEATURE_SLUGS = new Set([
+  'meta', 'google', 'tiktok', 'strateji', 'optimizasyon', 'dijialgoritma', 'hedef-kitle',
+  'tasarim', 'sosyal-medya', 'seo-plus', 'web-site-yoneticisi', 'raporlar', 'crm-sistemi', 'email-marketing', 'entegrasyon',
+])
+/** EN dashboard ile AYNI slug'a sahip olanlar — EN'de pazarlama interception YAPMA (dashboard'a bırak). */
+const FEATURE_SLUGS_EN_SKIP = new Set(['seo-plus', 'email-marketing'])
+
 export async function middleware(request: NextRequest) {
   const { pathname } = request.nextUrl
 
@@ -113,9 +122,14 @@ export async function middleware(request: NextRequest) {
       const segments = rest.split('/')
       if (segments.length >= 2 && segments[1]) {
         const enSlug = segments[1]
-        const trSlug = EN_TO_TR[enSlug] || enSlug
-        segments[1] = trSlug
-        rewritePath = segments.join('/')
+        if (FEATURE_SLUGS.has(enSlug) && !FEATURE_SLUGS_EN_SKIP.has(enSlug)) {
+          // Pazarlama özellik sayfası (EN): /en/<feature> → /ozellikler/<feature>
+          rewritePath = `/ozellikler${rest}`
+        } else {
+          const trSlug = EN_TO_TR[enSlug] || enSlug
+          segments[1] = trSlug
+          rewritePath = segments.join('/')
+        }
       }
     }
 
@@ -140,11 +154,14 @@ export async function middleware(request: NextRequest) {
   // TR slug'ları zaten filesystem slug'ı olduğu için eşleme gerekmez (/en/ bloğunun TR aynası).
   if (pathname === '/tr' || pathname.startsWith('/tr/')) {
     const rest = pathname.slice(3) || '/' // strip '/tr'
+    const seg1Tr = rest.split('/')[1] || ''
+    // Pazarlama özellik sayfası: /tr/<feature> → /ozellikler/<feature> (dashboard'a DEĞİL)
+    const rewritePath = FEATURE_SLUGS.has(seg1Tr) ? `/ozellikler${rest}` : rest
     request.cookies.set('NEXT_LOCALE', 'tr')
     const url = request.nextUrl.clone()
-    url.pathname = rest
+    url.pathname = rewritePath
     const reqHeadersTr = new Headers(request.headers)
-    reqHeadersTr.set('x-pathname', rest)
+    reqHeadersTr.set('x-pathname', rewritePath)
     const response = NextResponse.rewrite(url, { request: { headers: reqHeadersTr } })
     response.cookies.set('NEXT_LOCALE', 'tr', { path: '/', maxAge: 60 * 60 * 24 * 365 })
     if (PUBLIC_LEGAL_SLUGS.has(rest.split('/')[1] || '')) {

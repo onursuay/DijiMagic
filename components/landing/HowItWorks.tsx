@@ -1,6 +1,7 @@
 'use client'
 
 import { useState } from 'react'
+import FeatureVisual from './FeatureVisual'
 
 /* "Nasıl Çalışır" — Strateji / Optimizasyon / Tasarım sekmeleri.
    Sağdaki video-poster şimdilik placeholder; gerçek 45sn demo videoları 2. adımda eklenecek. */
@@ -87,23 +88,8 @@ export default function HowItWorks({ isEn }: { isEn: boolean }) {
             </ul>
           </div>
 
-          {/* Video poster (placeholder — gerçek demo videosu 2. adımda) */}
-          <div className="relative w-full aspect-video rounded-2xl border border-white/[0.09] bg-gradient-to-br from-white/[0.05] to-white/[0.012] overflow-hidden">
-            <div className="absolute inset-0 pointer-events-none" style={{ background: 'radial-gradient(ellipse at 50% 40%, rgba(16,185,129,0.14), transparent 65%)' }} />
-            <div className="absolute top-3.5 left-4 flex gap-1.5">
-              <span className="w-2 h-2 rounded-full bg-white/15" /><span className="w-2 h-2 rounded-full bg-white/15" /><span className="w-2 h-2 rounded-full bg-emerald-400/45" />
-            </div>
-            <div className="absolute inset-0 flex flex-col items-center justify-center gap-3">
-              <div className="relative">
-                <span className="absolute inset-0 rounded-full border border-emerald-400/40" style={{ animation: 'hiw-ring 2.4s ease-out infinite' }} />
-                <div className="hiw-pulse relative w-16 h-16 rounded-full bg-gradient-to-br from-emerald-400 to-teal-500 flex items-center justify-center shadow-[0_0_30px_rgba(16,185,129,0.4)]" style={{ animation: 'hiw-pulse 2.4s ease-in-out infinite' }}>
-                  <svg width="22" height="22" viewBox="0 0 24 24" fill="#06251b"><polygon points="6,4 20,12 6,20" /></svg>
-                </div>
-              </div>
-              <span className="text-[13px] font-medium text-gray-300">{c.demo}</span>
-              <span className="text-[11px] uppercase tracking-wide text-emerald-400/70 bg-emerald-400/10 border border-emerald-400/20 px-2.5 py-1 rounded-full">{c.soon}</span>
-            </div>
-          </div>
+          {/* Modüle özel animasyonlu temsilî mockup (Strateji/Optimizasyon/Tasarım) */}
+          <FeatureVisual slug={tab.id} />
         </div>
       </div>
     </section>

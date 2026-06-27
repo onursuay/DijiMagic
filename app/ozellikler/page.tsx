@@ -4,7 +4,7 @@ import { cookies } from 'next/headers'
 import type { Metadata } from 'next'
 import LandingHeader from '@/components/landing/LandingHeader'
 import FooterLangSwitcher from '@/components/landing/FooterLangSwitcher'
-import { FEATURE_PAGES, GROUP_LABEL, type FeaturePage } from '@/components/landing/featurePagesData'
+import { FEATURE_PAGES, GROUP_LABEL, featureHref, type FeaturePage } from '@/components/landing/featurePagesData'
 
 export const dynamic = 'force-dynamic'
 
@@ -94,7 +94,7 @@ export default async function OzelliklerPage() {
                   {items.map((p) => (
                     <Link
                       key={p.slug}
-                      href={`/${locale}/ozellikler/${p.slug}`}
+                      href={featureHref(locale, p.slug)}
                       className="group relative rounded-2xl border border-white/[0.09] bg-white/[0.045] p-6 transition-all duration-300 hover:-translate-y-0.5 hover:border-emerald-400/25 hover:bg-white/[0.06] hover:shadow-[0_10px_40px_-14px_rgba(16,185,129,0.2)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-emerald-400/40"
                     >
                       <div className="flex items-center gap-3 mb-3">
