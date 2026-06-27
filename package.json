@@ -33,6 +33,7 @@
   },
   "dependencies": {
     "@anthropic-ai/sdk": "^0.97.1",
+    "@daytona/sdk": "^0.192.0",
     "@fal-ai/client": "^1.9.4",
     "@supabase/supabase-js": "^2.99.0",
     "@types/bcryptjs": "^2.4.6",
