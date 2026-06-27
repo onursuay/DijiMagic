@@ -6885,6 +6885,8 @@
     "yearlyBadge": "-30%",
     "trialNote": "* 7 gün ücretsiz deneme — Premium plan için geçerlidir.",
     "optimizationNote": "Optimizasyon özelliği deneme sürecinde kullanılamaz.",
+    "enterpriseEmailSubject": "Enterprise Plan — Reklam Ajansı Talebi",
+    "enterpriseEmailBody": "Merhaba,\n\nEnterprise plan ile ilgileniyorum. İhtiyacım olan reklam hesabı sayısı: {count}.\n\nTeşekkürler.",
     "faqTitle": "Sıkça Sorulan Sorular",
     "faqSubtitle": "Aklınıza takılan sorulara hızlı yanıtlar.",
     "faq": [

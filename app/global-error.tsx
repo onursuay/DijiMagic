@@ -1,36 +1,30 @@
-'use client';
+'use client'
 
-import { useEffect } from 'react';
+import { useEffect, useState } from 'react'
 
-export default function GlobalError({
-  error,
-}: {
-  error: Error & { digest?: string };
-}) {
-  useEffect(() => {
-    console.error(error);
-  }, [error]);
+function getLocale(): string {
+  if (typeof document === 'undefined') return 'tr'
+  return document.cookie.match(/NEXT_LOCALE=(\w+)/)?.[1] || 'tr'
+}
+
+export default function GlobalError({ error }: { error: Error & { digest?: string } }) {
+  const [locale, setLocale] = useState('tr')
+  useEffect(() => { setLocale(getLocale()) }, [])
+  useEffect(() => { console.error(error) }, [error])
+  const isEn = locale === 'en'
+  const t = isEn
+    ? { title: 'Critical error', desc: 'An application-wide error occurred. Please refresh the page.', refresh: 'Refresh' }
+    : { title: 'Kritik hata', desc: 'Uygulama genelinde bir hata oluştu. Sayfayı yenileyin.', refresh: 'Yenile' }
 
   return (
-    <html>
-      <body>
-        <div style={{ padding: 24 }}>
-          <h2>Kritik hata</h2>
-          <p>Uygulama genelinde bir hata oluştu. Sayfayı yenileyin.</p>
-          <button
-            onClick={() => window.location.reload()}
-            style={{
-              marginTop: 12,
-              padding: '10px 14px',
-              borderRadius: 8,
-              border: '1px solid #ccc',
-              cursor: 'pointer',
-            }}
-          >
-            Yenile
-          </button>
-        </div>
+    <html lang={isEn ? 'en' : 'tr'}>
+      <body style={{ margin: 0, minHeight: '100vh', background: '#161d28', color: '#fff', display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', fontFamily: 'Inter, system-ui, -apple-system, sans-serif', textAlign: 'center', padding: 24 }}>
+        <h2 style={{ fontSize: 24, fontWeight: 700, margin: '0 0 8px' }}>{t.title}</h2>
+        <p style={{ color: '#9ca3af', maxWidth: 420, lineHeight: 1.6, margin: '0 0 28px' }}>{t.desc}</p>
+        <button onClick={() => window.location.reload()} style={{ background: 'linear-gradient(90deg,#10b981,#14b8a6)', color: '#06251b', fontWeight: 600, fontSize: 15, padding: '12px 24px', borderRadius: 999, border: 'none', cursor: 'pointer' }}>
+          {t.refresh}
+        </button>
       </body>
     </html>
-  );
+  )
 }

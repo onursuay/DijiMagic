@@ -2,6 +2,12 @@
 
 ---
 
+## 2026-06-27 — TR/EN site-geneli denetim: hata/404 sayfaları + enterprise e-posta iki dilli
+- **Denetim (3 paralel ajan):** dashboard/sidebar (197 dosya next-intl, server-side cookie) ✓ doğru; marketing (server cookies+isEn) ✓; auth (fixlendi) ✓. False-positive: landing bileşenleri zaten isEn ile iki dilli; hakkimizda/contact/veri-silme bilinçli dil-özel; meta wizard client-only (no-touch).
+- **Gerçek bulgular düzeltildi:** error.tsx + not-found.tsx + global-error.tsx hardcoded Türkçeydi → iki dilli (getLocale useState, SSR-safe) + on-brand tasarım. PricingPlans enterprise e-posta şablonu → next-intl (pricing.enterpriseEmailSubject/Body, tr+en).
+- **Kanıt:** EN cookie + /login → İngilizce (Log In / Email Address) CDP ile doğrulandı.
+- **Dosyalar:** app/{error,not-found,global-error}.tsx, components/landing/PricingPlans.tsx, locales/{tr,en}.json
+
 ## 2026-06-27 — Yorumlar masonry + padding sıkı + 280+ kullanıcı + auth TR/EN hydration fix
 - **Çözüm:** (1) Testimonials iyzads tarzı **masonry grid** (4 sütun, değişken yükseklik; quote ikonu + yeşil pill başlık; yıldız yerine). (2) Bölüm padding'leri `py-8 md:py-10` (32/40px → bölüm arası 64/80px). (3) Hero üst padding düşürüldü (header-hero boşluğu). (4) TrustStats aktif kullanıcı **280+**. (5) **Auth TR/EN bug fix:** login/signup/signup-verify `getLocale()`'i render'da çağırıyordu → SSR 'tr' + hydration uyuşmazlığı → EN arayüzde Türkçe kalıyordu. `useState('tr')` + `useEffect(setLocale(getLocale()))` ile düzeltildi (SSR uyumlu, mount sonrası cookie'den EN'e geçer). Dashboard/sidebar zaten next-intl (server-side cookie) → doğruydu.
 - **Dosyalar:** components/landing/{Testimonials,TrustStats,HowItWorks,WhoCanUse}.tsx, app/page.tsx, app/{login,signup,signup/verify}/page.tsx

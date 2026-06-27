@@ -6885,6 +6885,8 @@
     "yearlyBadge": "-30%",
     "trialNote": "* 7-day free trial — available on the Premium plan.",
     "optimizationNote": "The Optimization feature is not available during the trial.",
+    "enterpriseEmailSubject": "Enterprise Plan — Agency Request",
+    "enterpriseEmailBody": "Hello,\n\nI'm interested in the Enterprise plan. Number of ad accounts I need: {count}.\n\nThanks.",
     "faqTitle": "Frequently Asked Questions",
     "faqSubtitle": "Quick answers to the questions you may have.",
     "faq": [

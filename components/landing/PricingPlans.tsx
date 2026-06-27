@@ -31,10 +31,8 @@ export default function PricingPlans() {
   const handleSelect = (planId: string) => {
     if (planId === 'enterprise') {
       const count = accountCounts.enterprise ?? ENTERPRISE_MIN_AD_ACCOUNTS
-      const subject = encodeURIComponent('Enterprise Plan — Reklam Ajansı Talebi')
-      const body = encodeURIComponent(
-        `Merhaba,\n\nEnterprise plan ile ilgileniyorum. İhtiyacım olan reklam hesabı sayısı: ${count}.\n\nTeşekkürler.`,
-      )
+      const subject = encodeURIComponent(t('enterpriseEmailSubject'))
+      const body = encodeURIComponent(t('enterpriseEmailBody', { count }))
       window.location.href = `mailto:${SALES_EMAIL}?subject=${subject}&body=${body}`
       return
     }
