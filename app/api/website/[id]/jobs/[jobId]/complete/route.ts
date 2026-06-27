@@ -17,7 +17,7 @@
  */
 
 import { NextRequest, NextResponse } from 'next/server'
-import { verifySandboxSignature } from '@/lib/website/sandboxHmac.mjs'
+import { verifySandboxSignature, isTimestampFresh } from '@/lib/website/sandboxHmac.mjs'
 import { getWebsiteGenJob, markJobComplete } from '@/lib/website/genJobStore'
 import { inngest } from '@/inngest/client'
 
@@ -39,15 +39,26 @@ export async function POST(
     return NextResponse.json({ ok: false, error: 'bad_signature' }, { status: 401 })
   }
 
-  const { html, designVars } = JSON.parse(rawBody) as {
+  const body = JSON.parse(rawBody) as {
     html: string
     designVars: Record<string, string>
+    ts?: number
+  }
+
+  // FIX 1: Replay koruması — timestamp 300 sn pencere içinde olmalı
+  if (!isTimestampFresh(body.ts as number)) {
+    return NextResponse.json({ error: 'replay_or_stale' }, { status: 401 })
   }
 
   // İdempotent: zaten completed ise tekrar yazma (Storage-önce sözleşmesi)
+  // FIX 2: websiteId bağı — jobId URL'deki websiteId ile eşleşmeli
   const existing = await getWebsiteGenJob(params.jobId)
-  if (existing && existing.status !== 'completed') {
-    await markJobComplete(params.jobId, html, designVars ?? {})
+  if (!existing || existing.websiteId !== params.id) {
+    return NextResponse.json({ error: 'not_found' }, { status: 404 })
+  }
+
+  if (existing.status !== 'completed') {
+    await markJobComplete(params.jobId, body.html, body.designVars ?? {})
   }
 
   // Orkestratörü uyandır — her durumda (idempotent Inngest event)

@@ -13,8 +13,8 @@
  */
 
 import { NextRequest, NextResponse } from 'next/server'
-import { verifySandboxSignature } from '@/lib/website/sandboxHmac.mjs'
-import { appendJobLog } from '@/lib/website/genJobStore'
+import { verifySandboxSignature, isTimestampFresh } from '@/lib/website/sandboxHmac.mjs'
+import { appendJobLog, getWebsiteGenJob } from '@/lib/website/genJobStore'
 
 export const dynamic = 'force-dynamic'
 
@@ -34,13 +34,25 @@ export async function POST(
     return NextResponse.json({ ok: false, error: 'bad_signature' }, { status: 401 })
   }
 
-  const { stage, progress, stepMsg } = JSON.parse(rawBody) as {
+  const body = JSON.parse(rawBody) as {
     stage: string
     progress: number
     stepMsg: string
+    ts?: number
   }
 
-  await appendJobLog(params.jobId, stage, progress, stepMsg)
+  // FIX 1: Replay koruması — timestamp 300 sn pencere içinde olmalı
+  if (!isTimestampFresh(body.ts as number)) {
+    return NextResponse.json({ error: 'replay_or_stale' }, { status: 401 })
+  }
+
+  // FIX 2: websiteId bağı — jobId URL'deki websiteId ile eşleşmeli
+  const job = await getWebsiteGenJob(params.jobId)
+  if (!job || job.websiteId !== params.id) {
+    return NextResponse.json({ error: 'not_found' }, { status: 404 })
+  }
+
+  await appendJobLog(params.jobId, body.stage, body.progress, body.stepMsg)
 
   return NextResponse.json({ ok: true })
 }
