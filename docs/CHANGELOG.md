@@ -2,6 +2,11 @@
 
 ---
 
+## 2026-06-27 — Faz 2 Stage B T4: dispatch-sandbox dolduruldu + sandbox-ref persist + cleanup
+- **Sorun:** `dispatch-sandbox` step iskeletti (boş dönüyordu); sandbox referansı DB'de tutulmuyordu; timeout/hata durumunda sandbox kaynakları temizlenmiyordu.
+- **Çözüm:** (1) DB migration: `website_gen_jobs` tablosuna `sandbox_id/session_id/cmd_id` kolonları (additive, idempotent). (2) `genJobStore.ts`: `WebsiteGenJob` interface'e nullable sandbox alanları eklendi; `persistSandboxRef` + `getSandboxRef` fonksiyonları eklendi. (3) `isSandboxConfigured()`: `WEBSITE_SANDBOX_URL` yerine `DAYTONA_API_KEY + WEBSITE_SANDBOX_HMAC_SECRET + WEBSITE_CALLBACK_BASE` (Daytona SDK env'den okur). (4) `dispatch-sandbox` step: `runAgenticBuild` çağrısı (marka profili + scope türetme), `persistSandboxRef`, try/catch. (5) `cleanup-sandbox` step: `mark-complete-sandbox` sonrası sandbox silme. (6) `handle-timeout`: sandbox silme eklendi. Dev-fallback (koşul false) BOZULMADI.
+- **Dosyalar:** supabase/migrations/20260627010000_website_gen_jobs_sandbox_ref.sql, lib/website/genJobStore.ts, inngest/functions/websiteAgenticGenerate.ts
+
 ## 2026-06-27 — Faz 2 POC fix: env/shell kaybolması (MODULE_NOT_FOUND / zsh not found)
 - **Sorun:** `executeCommand(cmd, cwd, {}, timeout)` — boş `{}` env geçince Daytona sandbox'ın default env'i (PATH, SHELL, ANTHROPIC_API_KEY) kayboluyor; shell `/usr/bin/zsh`'a düşüp Linux sandbox'ta patlıyor.
 - **Çözüm:** Tüm `executeCommand` çağrılarında `env` argümanı `undefined` yapıldı (sandbox default env korunur). Playwright install komutu `cd /work/deps && ./node_modules/.bin/playwright install` şeklinde inline-cd'ye alındı. Gereksiz `export NODE_PATH=...` komutu kaldırıldı. Worker run komutu `NODE_PATH=... JOB_ID=... SCOPE=... node worker.mjs` inline env'e taşındı. Brief JSON büyük → komut satırı yerine `sandbox.fs.uploadFile` ile `brief.json` olarak yükleniyor; `worker.mjs`'de `BRIEF` env yoksa `existsSync('./brief.json') ? readFileSync(...)` fallback'i eklendi.

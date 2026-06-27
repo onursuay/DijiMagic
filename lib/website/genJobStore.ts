@@ -24,6 +24,12 @@ export interface WebsiteGenJob {
   designVars: Record<string, string> | null
   errorReason: string | null
   inngestRunId: string | null
+  /** Daytona sandbox ID — set when dispatch-sandbox step fires (T4) */
+  sandboxId?: string | null
+  /** Worker session ID inside the sandbox (T4) */
+  sessionId?: string | null
+  /** Command ID of the detached worker process (T4) */
+  cmdId?: string | null
 }
 
 function rowToJob(r: Record<string, unknown>): WebsiteGenJob {
@@ -42,6 +48,9 @@ function rowToJob(r: Record<string, unknown>): WebsiteGenJob {
     designVars: (r.design_vars as Record<string, string> | null) ?? null,
     errorReason: (r.error_reason as string | null) ?? null,
     inngestRunId: (r.inngest_run_id as string | null) ?? null,
+    sandboxId: (r.sandbox_id as string | null) ?? null,
+    sessionId: (r.session_id as string | null) ?? null,
+    cmdId: (r.cmd_id as string | null) ?? null,
   }
 }
 
@@ -148,6 +157,46 @@ export async function getLatestJobForWebsite(websiteId: string): Promise<Website
     .maybeSingle()
   if (error) throw new Error(`getLatestJobForWebsite: ${error.message}`)
   return data ? rowToJob(data as Record<string, unknown>) : null
+}
+
+/**
+ * Persist the Daytona sandbox reference fields after dispatch-sandbox fires.
+ * Called immediately after runAgenticBuild() returns — before awaiting the worker.
+ */
+export async function persistSandboxRef(
+  jobId: string,
+  sandboxId: string,
+  sessionId: string,
+  cmdId: string,
+): Promise<void> {
+  const db = requireClient()
+  const { error } = await db
+    .from('website_gen_jobs')
+    .update({ sandbox_id: sandboxId, session_id: sessionId, cmd_id: cmdId, updated_at: new Date().toISOString() })
+    .eq('id', jobId)
+  if (error) throw new Error(`persistSandboxRef: ${error.message}`)
+}
+
+/**
+ * Read back the sandbox reference for a job (used by cleanup-sandbox step).
+ * Returns null if the job has no sandbox reference (dev-fallback path).
+ */
+export async function getSandboxRef(
+  jobId: string,
+): Promise<{ sandboxId: string; sessionId: string; cmdId: string } | null> {
+  const db = requireClient()
+  const { data, error } = await db
+    .from('website_gen_jobs')
+    .select('sandbox_id, session_id, cmd_id')
+    .eq('id', jobId)
+    .maybeSingle()
+  if (error) throw new Error(`getSandboxRef: ${error.message}`)
+  if (!data || !data.sandbox_id) return null
+  return {
+    sandboxId: data.sandbox_id as string,
+    sessionId: (data.session_id as string) ?? '',
+    cmdId: (data.cmd_id as string) ?? '',
+  }
 }
 
 export async function reconcileStaleJobs(

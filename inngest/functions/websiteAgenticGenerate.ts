@@ -1,16 +1,16 @@
 /* ──────────────────────────────────────────────────────────
-   Inngest Function: website/generate.agentic (Faz 1.3)
+   Inngest Function: website/generate.agentic (Faz 2 Stage B T4)
 
    Agentic Website Generator orkestratörü.
 
    İki yol:
-     A) Dev-fallback  — WEBSITE_SANDBOX_URL/WEBSITE_SANDBOX_HMAC_SECRET yokken
-        mevcut senkron motor (generateHtmlSite) inline çalıştırılır.
-        Faz 1'de WEBSITE_AGENTIC bayrağı açıkken KEY GEREKTİRMEDEN
+     A) Dev-fallback  — DAYTONA_API_KEY / WEBSITE_SANDBOX_HMAC_SECRET /
+        WEBSITE_CALLBACK_BASE eksikken mevcut senkron motor (generateHtmlSite)
+        inline çalıştırılır. WEBSITE_AGENTIC bayrağı açıkken KEY GEREKTİRMEDEN
         uçtan uca test edilebilir.
 
-     B) Prod-sandbox  — Faz 2: sandbox dispatch → waitForEvent (12 dk)
-        → persist. Bu yol şimdi iskelettir; Faz 2'de doldurulur.
+     B) Prod-sandbox  — Faz 2 Stage B: sandbox dispatch → waitForEvent (12 dk)
+        → persist → cleanup. Daytona konfigürasyonu tam olduğunda bu yol aktif.
 
    İdempotency: tüm yan-etkili bloklar step.run içinde → Inngest
    her adımı event başına tam bir kez memoize eder (retry güvenli).
@@ -25,11 +25,15 @@ import {
   markJobComplete,
   markJobFailed,
   getWebsiteGenJob,
+  persistSandboxRef,
+  getSandboxRef,
 } from '@/lib/website/genJobStore'
 import { getWebsite } from '@/lib/website/store'
 import { persistGeneratedSite } from '@/lib/website/persistGeneratedSite'
 import { gateSiteHtml } from '@/lib/website/codegen/renderGate.mjs'
 import { generateHtmlSite } from '@/lib/website/codegen/generateHtmlSite'
+import { runAgenticBuild, deleteSandbox } from '@/lib/website/codegen/agentic/runAgenticBuild'
+import { getProfileByUserId } from '@/lib/dijimagic/businessProfileStore'
 import { refundCreditsServer } from '@/lib/billing/db'
 
 // ---------------------------------------------------------------------------
@@ -48,10 +52,28 @@ interface WebsiteAgenticGenerateEventData {
 
 // ---------------------------------------------------------------------------
 // Helper — sandbox yapılandırılmış mı?
+// Daytona SDK env'den DAYTONA_API_KEY'i okur; WEBSITE_SANDBOX_URL artık kullanılmıyor.
+// Route katmanı WEBSITE_AGENTIC bayrağını zaten kontrol eder — burada tekrar etme.
 // ---------------------------------------------------------------------------
 
 function isSandboxConfigured(): boolean {
-  return Boolean(process.env.WEBSITE_SANDBOX_URL && process.env.WEBSITE_SANDBOX_HMAC_SECRET)
+  return (
+    Boolean(process.env.DAYTONA_API_KEY) &&
+    Boolean(process.env.WEBSITE_SANDBOX_HMAC_SECRET) &&
+    Boolean(process.env.WEBSITE_CALLBACK_BASE)
+  )
+}
+
+// ---------------------------------------------------------------------------
+// Helper — website codegen için scope türet
+// Website context'inde Meta/Google hesap kimliği yoktur; scope = userId.
+// getProfileByUserId → en güncel profili döndürür (multi-account yoksa userId yeterli).
+// ---------------------------------------------------------------------------
+
+function deriveWebsiteScope(userId: string, _websiteId: string): string {
+  // Website'a özgü reklam-hesabı kimlikleri olmadığından scope = userId (legacy path).
+  // İleride site-bazlı profil eklenirse bu helper genişler.
+  return userId
 }
 
 // ---------------------------------------------------------------------------
@@ -139,15 +161,56 @@ export const websiteAgenticGenerate = inngest.createFunction(
     }
 
     // -----------------------------------------------------------------------
-    // Yol B — Prod-sandbox (Faz 2 iskeleti)
+    // Yol B — Prod-sandbox (Faz 2 Stage B T4)
+    // dispatch-sandbox: sandbox spawn → HIZLI DÖN (worker'ı beklemez)
     // -----------------------------------------------------------------------
-    await step.run('dispatch-sandbox', async () => {
-      await appendJobLog(jobId, 'building_page', 15, 'Sandbox işçisi başlatılıyor')
-      // FAZ 2: POST {WEBSITE_SANDBOX_URL}/run (HMAC imzalı brand asset URL'leri ile) → 202
-      // Şimdilik boş iskelet — Faz 2'de doldurulur.
-      return { ok: true }
+    const dispatch = await step.run('dispatch-sandbox', async () => {
+      try {
+        await appendJobLog(jobId, 'building_page', 15, 'Sandbox işçisi başlatılıyor')
+
+        // Scope türet — website context'inde reklam hesabı kimliği yok; userId kullan
+        const scope = deriveWebsiteScope(userId, websiteId)
+
+        // Marka profili — getProfileByUserId (site-bazlı scope yok; userId yeterli)
+        const profile = await getProfileByUserId(userId)
+
+        const callbackBase = process.env.WEBSITE_CALLBACK_BASE
+        if (!callbackBase) {
+          logger.error('[website-agentic] WEBSITE_CALLBACK_BASE env eksik')
+          await markJobFailed(jobId, 'dispatch_failed:missing_callback_base')
+          if (creditSpent > 0) await refundCreditsServer(userId, creditSpent, 'website_generation_refund')
+          return { ok: false as const }
+        }
+
+        const r = await runAgenticBuild({
+          jobId,
+          websiteId,
+          userId,
+          scope,
+          brief: { instructions: brief },
+          brandContextJson: JSON.stringify(profile ?? {}),
+          callbackBase,
+          hmacSecret: process.env.WEBSITE_SANDBOX_HMAC_SECRET!,
+        })
+
+        // Sandbox referansını DB'ye persist et (cleanup + timeout için gerekli)
+        await persistSandboxRef(jobId, r.sandboxId, r.sessionId, r.cmdId)
+
+        return { ok: true as const, ...r }
+      } catch (e) {
+        logger.error(`[website-agentic] dispatch-sandbox hata: ${e}`)
+        await markJobFailed(jobId, 'dispatch_failed')
+        if (creditSpent > 0) await refundCreditsServer(userId, creditSpent, 'website_generation_refund')
+        return { ok: false as const }
+      }
     })
 
+    if (!dispatch.ok) {
+      logger.warn(`[website-agentic] dispatch başarısız: ${jobId}`)
+      return { ok: false, jobId, reason: 'dispatch_failed' }
+    }
+
+    // waitForEvent/persist-result/handle-timeout — aynen korunur
     const done = await step.waitForEvent('await-sandbox', {
       event: 'website/generate.sandbox-done',
       timeout: '12m',
@@ -155,11 +218,16 @@ export const websiteAgenticGenerate = inngest.createFunction(
     })
 
     if (!done) {
-      // Timeout: kredi iade + iş başarısız işaretle
+      // Timeout: sandbox sil + kredi iade + iş başarısız işaretle
       await step.run('handle-timeout', async () => {
         await markJobFailed(jobId, 'sandbox_timeout')
         if (creditSpent > 0) {
           await refundCreditsServer(userId, creditSpent, 'website_generation_refund')
+        }
+        // Sandbox temizle (timeout durumunda da kaynakları serbest bırak)
+        const ref = await getSandboxRef(jobId)
+        if (ref?.sandboxId) {
+          await deleteSandbox(ref.sandboxId)
         }
         await updateJobStatus(jobId, 'timeout')
         return { ok: false }
@@ -219,6 +287,15 @@ export const websiteAgenticGenerate = inngest.createFunction(
         return { ok: true }
       })
     }
+
+    // Sandbox temizle (işçi bitti — kaynakları serbest bırak)
+    await step.run('cleanup-sandbox', async () => {
+      const ref = await getSandboxRef(jobId)
+      if (ref?.sandboxId) {
+        await deleteSandbox(ref.sandboxId)
+      }
+      return { ok: true }
+    })
 
     logger.info(`[website-agentic] tamamlandı: ${jobId}`)
     return { ok: sandboxPersistResult.ok, jobId }
