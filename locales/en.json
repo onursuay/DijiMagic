@@ -7426,6 +7426,13 @@
       "empty": "No requests yet."
     }
   },
+  "website": {
+    "building": {
+      "stageDesignSystem": "Building design system",
+      "stageBuildingPage": "Building the page",
+      "stagePolishing": "Final polish"
+    }
+  },
   "unsubscribe": {
     "title": "Unsubscribe",
     "button": "Unsubscribe",

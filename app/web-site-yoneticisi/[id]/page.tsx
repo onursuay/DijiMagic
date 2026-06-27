@@ -12,6 +12,7 @@ import DomainPanel from '@/components/website/DomainPanel'
 import DesignPanel from '@/components/website/DesignPanel'
 import WizardBuildingAnimation from '@/components/website/WizardBuildingAnimation'
 import type { Website, WebsitePage, WebsiteVersionMeta } from '@/lib/website/types'
+import { mapJobToStageIndex } from '@/lib/website/jobProgress.mjs'
 
 type Busy = 'ai' | 'quick' | 'publish' | 'logo' | 'rollback' | null
 type Device = 'desktop' | 'tablet' | 'mobile'
@@ -62,6 +63,12 @@ export default function WebSiteDetailPage() {
   const [showHistory, setShowHistory] = useState(false)
   const [showDesign, setShowDesign] = useState(false)
 
+  // Job polling state (used when agentic flag is ON and POST /generate returns jobId)
+  const [jobStage, setJobStage] = useState<0 | 1 | 2>(0)
+  const [jobProgress, setJobProgress] = useState(0)
+  const [jobLog, setJobLog] = useState('')
+  const pollRef = useRef<ReturnType<typeof setInterval> | null>(null)
+
   const frameWrapRef = useRef<HTMLDivElement>(null)
   const fileInputRef = useRef<HTMLInputElement>(null)
   const [wrapW, setWrapW] = useState(0)
@@ -88,6 +95,9 @@ export default function WebSiteDetailPage() {
   }, [id])
 
   useEffect(() => { load(); fetchVersions() }, [load, fetchVersions])
+
+  // Polling cleanup on unmount — prevents memory leaks if the user navigates away mid-build
+  useEffect(() => () => { if (pollRef.current) clearInterval(pollRef.current) }, [])
 
   // Önizleme kutusunun gerçek genişliğini ölç (iframe'i ölçekleyip gerçek viewport düzeni göster)
   useEffect(() => {
@@ -119,13 +129,46 @@ export default function WebSiteDetailPage() {
     setBusy('ai'); setGenError('')
     try {
       const res = await fetch(`/api/website/${id}/generate`, {
-        method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ instructions: override ?? '' }),
+        method: 'POST', headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ instructions: override ?? '' }),
       })
       if (res.status === 402) { setShowCredit(true); return }
       const json = await res.json()
+
+      // Agentic async path: jobId present → start polling (flag ON)
+      if (json.ok && json.jobId) {
+        // Reset job progress display
+        setJobStage(0); setJobProgress(0); setJobLog('')
+        pollRef.current = setInterval(async () => {
+          try {
+            const r = await fetch(`/api/website/${id}/job?jobId=${json.jobId}`)
+            const j = await r.json()
+            if (!j.ok) return
+            setJobStage(mapJobToStageIndex(j.stage) as 0 | 1 | 2)
+            setJobProgress(j.progress ?? 0)
+            setJobLog(j.lastLog ?? '')
+            if (j.done) {
+              if (pollRef.current) { clearInterval(pollRef.current); pollRef.current = null }
+              // Load the freshly generated pages
+              const pr = await fetch(`/api/website/${id}/pages`)
+              const pj = await pr.json()
+              if (pj.ok) { setPages(pj.pages ?? []); setActiveSlug('home') }
+              setReloadKey((k) => k + 1); fetchVersions(); setBusy(null); setCreateInitiated(false)
+            } else if (j.failed) {
+              if (pollRef.current) { clearInterval(pollRef.current); pollRef.current = null }
+              setBusy(null); setCreateInitiated(false)
+              setGenError(t('buildError')); addToast(t('buildError'), 'error')
+            }
+          } catch { /* single poll error swallowed; next tick retries */ }
+        }, 1500)
+        return // busy cleared by polling; finally block below must not clear it
+      }
+
+      // Synchronous path (flag OFF): preserve existing behaviour byte-for-byte
       if (json.ok) { setPages(json.pages ?? []); setActiveSlug('home'); setReloadKey((k) => k + 1); fetchVersions() }
       else { const m = json.error || t('buildError'); setGenError(m); addToast(m, 'error') }
-    } catch { setGenError(t('buildError')); addToast(t('buildError'), 'error') } finally { setBusy(null); setCreateInitiated(false) }
+    } catch { setGenError(t('buildError')); addToast(t('buildError'), 'error') }
+    finally { if (!pollRef.current) { setBusy(null); setCreateInitiated(false) } }
   }
 
   const handleQuick = async () => {
@@ -229,7 +272,7 @@ export default function WebSiteDetailPage() {
           {/* Üretim durumu + aksiyonlar (intake wizard'a taşındı; burada tekrar sorulmaz) */}
           <div className="bg-white rounded-xl border border-gray-200 p-5 animate-card-enter">
             {busy === 'ai' || busy === 'quick' || (createInitiated && !hasPages && !genError) ? (
-              <WizardBuildingAnimation />
+              <WizardBuildingAnimation stage={jobStage} progress={jobProgress > 0 ? jobProgress : undefined} lastLog={jobLog || undefined} />
             ) : !hasPages ? (
               <div className="py-6 flex flex-col items-center text-center gap-3">
                 <div className="w-12 h-12 rounded-xl bg-primary/5 flex items-center justify-center">

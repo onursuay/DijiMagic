@@ -7426,6 +7426,13 @@
       "empty": "Henüz istek yok."
     }
   },
+  "website": {
+    "building": {
+      "stageDesignSystem": "Tasarım sistemi kuruluyor",
+      "stageBuildingPage": "Sayfa inşa ediliyor",
+      "stagePolishing": "Son rötuşlar yapılıyor"
+    }
+  },
   "unsubscribe": {
     "title": "Abonelikten çık",
     "button": "Abonelikten çık",

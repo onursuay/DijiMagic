@@ -10,24 +10,27 @@
    Renkler yalnız primary(emerald)/gray — amber/sarı YOK.
    ────────────────────────────────────────────────────────── */
 
-import { useEffect, useState } from 'react'
 import { useTranslations } from 'next-intl'
 
 const STAGE_KEYS = ['stageDesignSystem', 'stageBuildingPage', 'stagePolishing'] as const
 
-export default function WizardBuildingAnimation() {
-  const t = useTranslations('dashboard.webSiteYoneticisi')
-  const tc = useTranslations('dashboard.webSiteYoneticisi.codegen')
-  const stages = STAGE_KEYS.map((k) => tc(k))
-  const [stage, setStage] = useState(0)
+interface WizardBuildingAnimationProps {
+  /** 0 = design system, 1 = building page, 2 = polishing/final (default: 0) */
+  stage?: 0 | 1 | 2
+  /** 0–100 progress percentage; if provided renders a determinate progress bar */
+  progress?: number
+  /** Latest log line from the job; displayed below the stage label */
+  lastLog?: string
+}
 
-  useEffect(() => {
-    const id = setInterval(
-      () => setStage((s) => (s < STAGE_KEYS.length - 1 ? s + 1 : s)),
-      2800,
-    )
-    return () => clearInterval(id)
-  }, [])
+export default function WizardBuildingAnimation({
+  stage = 0,
+  progress,
+  lastLog,
+}: WizardBuildingAnimationProps = {}) {
+  const t = useTranslations('dashboard.webSiteYoneticisi')
+  const tc = useTranslations('website.building')
+  const stages = STAGE_KEYS.map((k) => tc(k))
 
   return (
     <div className="wsy-build relative flex flex-col items-center text-center py-10 px-4 overflow-hidden">
@@ -80,10 +83,24 @@ export default function WizardBuildingAnimation() {
         <span key={stage} className="wsy-stage">{stages[stage]}</span>
       </div>
 
-      {/* belirsiz ilerleme çubuğu */}
+      {/* ilerleme çubuğu — belirli (progress prop) veya belirsiz (animasyonlu) */}
       <div className="mt-3 h-1 w-40 overflow-hidden rounded-full bg-primary/10" aria-hidden>
-        <div className="wsy-progress h-full w-1/3 rounded-full bg-primary" />
+        {progress !== undefined ? (
+          <div
+            className="h-full rounded-full bg-primary transition-[width] duration-700"
+            style={{ width: `${Math.min(100, Math.max(0, progress))}%` }}
+          />
+        ) : (
+          <div className="wsy-progress h-full w-1/3 rounded-full bg-primary" />
+        )}
       </div>
+
+      {/* son log satırı (gerçek iş günlüğü — yalnız bayrak açıkken dolu olur) */}
+      {lastLog ? (
+        <p className="mt-2 max-w-xs truncate text-xs text-gray-400" aria-live="polite">
+          {lastLog}
+        </p>
+      ) : null}
     </div>
   )
 }
