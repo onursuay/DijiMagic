@@ -4,7 +4,7 @@
    Agentic Website Generator orkestratörü.
 
    İki yol:
-     A) Dev-fallback  — SANDBOX_URL/SANDBOX_HMAC_SECRET yokken
+     A) Dev-fallback  — WEBSITE_SANDBOX_URL/WEBSITE_SANDBOX_HMAC_SECRET yokken
         mevcut senkron motor (generateHtmlSite) inline çalıştırılır.
         Faz 1'de WEBSITE_AGENTIC bayrağı açıkken KEY GEREKTİRMEDEN
         uçtan uca test edilebilir.
@@ -51,7 +51,7 @@ interface WebsiteAgenticGenerateEventData {
 // ---------------------------------------------------------------------------
 
 function isSandboxConfigured(): boolean {
-  return Boolean(process.env.SANDBOX_URL && process.env.SANDBOX_HMAC_SECRET)
+  return Boolean(process.env.WEBSITE_SANDBOX_URL && process.env.WEBSITE_SANDBOX_HMAC_SECRET)
 }
 
 // ---------------------------------------------------------------------------
@@ -137,7 +137,7 @@ export const websiteAgenticGenerate = inngest.createFunction(
     // -----------------------------------------------------------------------
     await step.run('dispatch-sandbox', async () => {
       await appendJobLog(jobId, 'building_page', 15, 'Sandbox işçisi başlatılıyor')
-      // FAZ 2: POST {SANDBOX_URL}/run (HMAC imzalı brand asset URL'leri ile) → 202
+      // FAZ 2: POST {WEBSITE_SANDBOX_URL}/run (HMAC imzalı brand asset URL'leri ile) → 202
       // Şimdilik boş iskelet — Faz 2'de doldurulur.
       return { ok: true }
     })
@@ -167,7 +167,11 @@ export const websiteAgenticGenerate = inngest.createFunction(
       const site = await getWebsite(userId, websiteId)
 
       if (!site || !job?.generatedHtml) {
-        throw new Error('persist-missing-input')
+        await markJobFailed(jobId, 'persist_missing_input')
+        if (creditSpent > 0) {
+          await refundCreditsServer(userId, creditSpent, 'website_generation_refund')
+        }
+        return { ok: false, jobId, error: 'persist_missing_input' }
       }
 
       // renderGate — SON OTORİTE (sandbox çıktısı da gate'ten geçer)
