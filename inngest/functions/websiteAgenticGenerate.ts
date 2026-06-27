@@ -90,14 +90,14 @@ export const websiteAgenticGenerate = inngest.createFunction(
     // Yol A — Dev-fallback (sandbox YOK → mevcut senkron motor inline)
     // -----------------------------------------------------------------------
     if (!isSandboxConfigured()) {
-      await step.run('dev-fallback-generate', async () => {
+      const devPersistResult = await step.run('dev-fallback-generate', async () => {
         const site = await getWebsite(userId, websiteId)
         if (!site) {
           await markJobFailed(jobId, 'website_not_found')
           if (creditSpent > 0) {
             await refundCreditsServer(userId, creditSpent, 'website_generation_refund')
           }
-          return { ok: false }
+          return { ok: false as const, reason: 'website_not_found' }
         }
 
         await appendJobLog(jobId, 'building_page', 40, 'Sayfa inşa ediliyor (dev-fallback)')
@@ -109,7 +109,7 @@ export const websiteAgenticGenerate = inngest.createFunction(
           if (creditSpent > 0) {
             await refundCreditsServer(userId, creditSpent, 'website_generation_refund')
           }
-          return { ok: false }
+          return { ok: false as const, reason: `generate_failed:${result.reason}` }
         }
 
         // renderGate — SON OTORİTE
@@ -119,17 +119,23 @@ export const websiteAgenticGenerate = inngest.createFunction(
           if (creditSpent > 0) {
             await refundCreditsServer(userId, creditSpent, 'website_generation_refund')
           }
-          return { ok: false }
+          return { ok: false as const, reason: `gate_failed:${gated.reason}` }
         }
 
-        // İdempotent persist (step.run memoize eder — retry'da çift yazılmaz)
+        // İdempotent persist — markJobComplete bu adımın DIŞINDA (ayrı step)
         await persistGeneratedSite(userId, site, result, isRevision, creditSpent)
-        await markJobComplete(jobId, gated.html, result.designVars)
-        return { ok: true }
+        return { ok: true as const, gatedHtml: gated.html, designVars: result.designVars, pageCount: result.pages.length }
       })
 
+      if (devPersistResult.ok) {
+        await step.run('mark-complete-devfallback', async () => {
+          await markJobComplete(jobId, devPersistResult.gatedHtml, devPersistResult.designVars)
+          return { ok: true }
+        })
+      }
+
       logger.info(`[website-agentic] dev-fallback tamamlandı: ${jobId}`)
-      return { ok: true, jobId, mode: 'dev-fallback' }
+      return { ok: devPersistResult.ok, jobId, mode: 'dev-fallback' }
     }
 
     // -----------------------------------------------------------------------
@@ -162,7 +168,7 @@ export const websiteAgenticGenerate = inngest.createFunction(
     }
 
     // Sandbox tamamlandı — persist (idempotent step)
-    await step.run('persist-result', async () => {
+    const sandboxPersistResult = await step.run('persist-result', async () => {
       const job = await getWebsiteGenJob(jobId)
       const site = await getWebsite(userId, websiteId)
 
@@ -203,11 +209,18 @@ export const websiteAgenticGenerate = inngest.createFunction(
       }
 
       await persistGeneratedSite(userId, site, result, isRevision, creditSpent)
-      await markJobComplete(jobId, gated.html, job.designVars ?? {})
-      return { ok: true }
+      return { ok: true as const, gatedHtml: gated.html, designVars: job.designVars ?? {} }
     })
 
+    if (sandboxPersistResult.ok && 'gatedHtml' in sandboxPersistResult) {
+      const { gatedHtml, designVars } = sandboxPersistResult as { ok: true; gatedHtml: string; designVars: Record<string, string> }
+      await step.run('mark-complete-sandbox', async () => {
+        await markJobComplete(jobId, gatedHtml, designVars)
+        return { ok: true }
+      })
+    }
+
     logger.info(`[website-agentic] tamamlandı: ${jobId}`)
-    return { ok: true, jobId }
+    return { ok: sandboxPersistResult.ok, jobId }
   },
 )

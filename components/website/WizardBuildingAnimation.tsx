@@ -97,7 +97,7 @@ export default function WizardBuildingAnimation({
 
       {/* son log satırı (gerçek iş günlüğü — yalnız bayrak açıkken dolu olur) */}
       {lastLog ? (
-        <p className="mt-2 max-w-xs truncate text-xs text-gray-400" aria-live="polite">
+        <p className="mt-2 max-w-xs truncate text-xs text-gray-400">
           {lastLog}
         </p>
       ) : null}

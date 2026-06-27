@@ -2,6 +2,11 @@
 
 ---
 
+## 2026-06-27 — Faz 1 Final-Fix: Inngest step-split (I-1) + aria-live çift bölge (M-4)
+- **Sorun:** `persistGeneratedSite` + `markJobComplete` aynı step.run içindeydi; persist sonrası throw → retry → duplicate `createVersion` snapshot riski. Ayrıca WizardBuildingAnimation'da iki `aria-live="polite"` bölgesi ekran-okuyucu çift seslendirmesine neden oluyordu.
+- **Çözüm (I-1):** Her iki yolda (dev-fallback + sandbox) `markJobComplete` ayrı step'e taşındı: `mark-complete-devfallback` ve `mark-complete-sandbox`. Persist step serializable değer döner; markComplete bağımsız adım olarak memoize edilir. (M-4): lastLog `<p>`'sinden `aria-live` özniteliği kaldırıldı; birincil aşama etiketi canlı bölge olarak korundu.
+- **Dosyalar:** inngest/functions/websiteAgenticGenerate.ts, components/website/WizardBuildingAnimation.tsx, .superpowers/sdd/reports/final-fix-report.md
+
 ## 2026-06-27 — Agentic Website Generator Faz 1.4: Job API'leri (GET /job + HMAC progress/complete)
 - **Sorun:** UI polling için job durum endpoint'i, sandbox callback'leri için HMAC doğrulamalı progress/complete route'ları yoktu.
 - **Çözüm:** `lib/website/sandboxHmac.mjs` (saf HMAC yardımcısı, `x-sandbox-signature-256` header, sha256=hex şeması, timingSafeEqual) + `scripts/verify-sandbox-hmac.mjs` (7 birim testi) + 3 route: `GET /api/website/[id]/job` (owner-only UI polling), `POST .../jobs/[jobId]/progress` (HMAC, appendJobLog), `POST .../jobs/[jobId]/complete` (HMAC, idempotent markJobComplete + inngest.send sandbox-done). tsc 0 hata, HMAC 7/7, verify 15/15.
