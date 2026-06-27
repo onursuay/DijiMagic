@@ -211,9 +211,13 @@ export const websiteAgenticGenerate = inngest.createFunction(
     }
 
     // waitForEvent/persist-result/handle-timeout — aynen korunur
+    // T5 watchdog alignment: worker aborts after 15m; orchestrator waits 17m.
+    // worker (15m) < waitForEvent (17m) → worker exits cleanly first,
+    // fires /failed callback, sandbox self-cleans. Orchestrator timeout is
+    // a last-resort safety net only (orphan cleanup + reconcile cron handle rest).
     const done = await step.waitForEvent('await-sandbox', {
       event: 'website/generate.sandbox-done',
-      timeout: '12m',
+      timeout: '17m',
       match: 'data.jobId',
     })
 

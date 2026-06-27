@@ -199,6 +199,48 @@ export async function getSandboxRef(
   }
 }
 
+/**
+ * Find jobs that have ended in a terminal state (timeout | failed) but still
+ * have a sandbox_id set — these are "orphan" sandboxes that were never deleted
+ * (e.g. the callback never arrived, reconcile timed them out, but sandbox was
+ * not cleaned up). The caller is responsible for calling deleteSandbox() on
+ * each and then clearSandboxRef() to prevent double-deletion on future runs.
+ */
+export async function findOrphanSandboxes(): Promise<
+  Array<{ jobId: string; sandboxId: string }>
+> {
+  const db = requireClient()
+  const { data, error } = await db
+    .from('website_gen_jobs')
+    .select('id, sandbox_id')
+    .in('status', ['timeout', 'failed'])
+    .not('sandbox_id', 'is', null)
+  if (error) throw new Error(`findOrphanSandboxes: ${error.message}`)
+  return (data ?? []).map((r) => ({
+    jobId: r.id as string,
+    sandboxId: r.sandbox_id as string,
+  }))
+}
+
+/**
+ * Clear the sandbox reference fields after a sandbox has been deleted.
+ * Sets sandbox_id, session_id, cmd_id to NULL so the record is not picked up
+ * again by findOrphanSandboxes() on the next reconcile run.
+ */
+export async function clearSandboxRef(jobId: string): Promise<void> {
+  const db = requireClient()
+  const { error } = await db
+    .from('website_gen_jobs')
+    .update({
+      sandbox_id: null,
+      session_id: null,
+      cmd_id: null,
+      updated_at: new Date().toISOString(),
+    })
+    .eq('id', jobId)
+  if (error) throw new Error(`clearSandboxRef: ${error.message}`)
+}
+
 export async function reconcileStaleJobs(
   staleThresholdMinutes = 15,
 ): Promise<{ reconciled: number }> {
