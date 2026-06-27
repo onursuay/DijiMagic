@@ -115,7 +115,7 @@ export default function LandingHeader({ locale, ctaSchedule, ctaTrial }: Props) 
                     <div key={gi}>
                       <p className="text-[11px] font-semibold uppercase tracking-wider text-emerald-400/70 px-2 mb-1.5">{isEn ? g.en : g.tr}</p>
                       {g.items.map((item, i) => (
-                        <Link key={i} href={`/${isEn ? 'en' : 'tr'}/ozellikler#${item.slug}`} className="flex items-center gap-2 px-2 py-1.5 rounded-lg hover:bg-white/[0.05] transition-colors group" onClick={() => setOpenMenu(null)}>
+                        <Link key={i} href={`/${isEn ? 'en' : 'tr'}/ozellikler/${item.slug}`} className="flex items-center gap-2 px-2 py-1.5 rounded-lg hover:bg-white/[0.05] transition-colors group" onClick={() => setOpenMenu(null)}>
                           <span className="text-gray-400 group-hover:text-emerald-400 transition-colors shrink-0"><MIcon name={item.icon} /></span>
                           <span className="text-[13px] font-medium text-gray-200 group-hover:text-white transition-colors truncate">{isEn ? item.en : item.tr}</span>
                           {('soon' in item && item.soon) && <span className="ml-auto text-[9px] font-semibold uppercase text-emerald-300/80 bg-emerald-400/10 px-1.5 py-0.5 rounded-full shrink-0">{isEn ? 'Soon' : 'Yakında'}</span>}

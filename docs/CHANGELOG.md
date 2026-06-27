@@ -2,6 +2,11 @@
 
 ---
 
+## 2026-06-27 — Feature sayfaları: her modül AYRI dedike sayfa (/tr/ozellikler/<slug>) + Turnstile yeni key
+- **Sorun:** Ürün menüsü `/ozellikler#anchor` (tek sayfa + toggle) "garip" yapıdaydı; owner iyzads gibi her özelliğin KENDİ tam sayfası olmasını istedi. Ayrıca signup Turnstile bug'ı.
+- **Çözüm:** (1) iyzads.com header/URL analizi (her özellik `/tr/<slug>` dedike sayfa; app subdomain'de). Bizde dashboard çakışması nedeniyle `/tr/ozellikler/<slug>` seçildi. (2) Dinamik şablon `app/ozellikler/[slug]` — breadcrumb + hero (sol metin/sağ görsel; içerik grubunda FeatureVisual) + öne çıkanlar (4) + nasıl çalışır (01/02/03) + ilgili modüller + CTA. (3) 15 modül içeriği (TR+EN, grounded, iyzads tonu). (4) `/ozellikler` → gruplu overview grid → dedike sayfalar. (5) Header Ürün dropdown → `/tr/ozellikler/<slug>`. EN aynası `/en/ozellikler/<slug>`. (6) Turnstile yeni widget anahtarları (.env.local + Vercel prod) eklendi; canlıda yeni key doğrulandı.
+- **Dosyalar:** app/ozellikler/[slug]/page.tsx (yeni), app/ozellikler/page.tsx (overview), components/landing/featurePagesData.ts (yeni), components/landing/LandingHeader.tsx
+
 ## 2026-06-26 — A11y: yeni interaktif öğelere focus-visible (klavye erişilebilirliği)
 - **Sorun:** Faz 2'de eklenen HowItWorks sekmeleri + FeatureTabs toggle butonlarında belirgin focus-visible halkası yoktu (global kural: "istisnasız focus-visible").
 - **Çözüm:** İkisine `focus-visible:ring-2 focus-visible:ring-emerald-400/60 focus-visible:outline-none` eklendi. Ayrıca tüm /tr/ pazarlama sayfaları (fiyatlandırma/iletişim/hakkımızda/legal) mobilde (CDP 390px) taşma=0 doğrulandı.
