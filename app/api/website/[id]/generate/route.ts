@@ -12,7 +12,14 @@ import { applyBlockPatch } from '@/lib/website/codegen/applyBlockPatch'
 import type { Website, WebsitePageInput, WebsiteSnapshot, ThemeTokens } from '@/lib/website/types'
 
 export const dynamic = 'force-dynamic'
-export const maxDuration = 60
+// Üretim akışı tek istekte şunları yapar: kurulum (auth + profil + kredi DB turları) →
+// (≤120sn) Claude içerik çağrısı → stok görsel çözümleme (Pexels, paralel ~10sn) → DB yazımı.
+// Bunların TOPLAMI 60sn'yi aşıp Vercel'in fonksiyonu öldürmesine (504 → istemcide ham
+// "Site oluşturulamadı.") yol açıyordu — sitenin SÜREKLİ "oluşturulamadı" vermesinin kök nedeni.
+// Projedeki diğer ağır/batch-AI route'larıyla (300sn) hizalandı; çoklu-dil + çok-sayfa üretimi
+// de bu paya rahat sığar. Stok çağrıları zaten 10sn ile, Claude çağrısı 120sn ile sınırlı →
+// fonksiyon asla 300sn'ye dayanmaz, ya tamamlanır ya da düzgün JSON hatası döner (504 değil).
+export const maxDuration = 300
 
 /** Codegen v2 (serbest HTML) motoru bayrağı. Açık değilse mevcut sections motoru aynen çalışır. */
 function isCodegenV2Enabled(): boolean {
@@ -92,7 +99,7 @@ export async function POST(req: NextRequest, { params }: { params: { id: string 
     const theme = { ...site.theme, ...resolveSiteColors({ brandColor: null, sector }) }
     await updateWebsite(user.id, site.id, { theme })
 
-    // Çoklu dil — her seçili dil için paralel üret (60sn maxDuration içinde kalır; ilk 4 dil).
+    // Çoklu dil — her seçili dil için paralel üret (maxDuration=300 içinde rahat kalır; ilk 4 dil).
     const locales = (site.locales.length ? site.locales : [site.defaultLocale]).slice(0, 4)
     const perLocale = await Promise.all(
       locales.map((locale) =>
@@ -116,7 +123,10 @@ export async function POST(req: NextRequest, { params }: { params: { id: string 
       ),
     )
     const pageInputs = perLocale.filter((x): x is NonNullable<typeof x> => Boolean(x)).flat()
-    if (pageInputs.length === 0) throw new Error('AI_GENERATION_FAILED')
+    // Tüm diller boş döndü (Claude null/parse hatası) → kullanıcıya HAM 'AI_GENERATION_FAILED'
+    // kodu göstermek yerine (UI ham teknik terim göstermez) kullanıcı-dostu mesaj fırlat.
+    // Kredi aşağıdaki catch'te iade edilir; istemcide "Yeniden Dene" çalışır.
+    if (pageInputs.length === 0) throw new Error('Site içeriği üretilemedi, lütfen tekrar deneyin.')
 
     const pages = await replacePages(user.id, site.id, pageInputs)
     const snapshot: WebsiteSnapshot = {

@@ -223,7 +223,9 @@ export async function generateSitePages(input: GenerateInput): Promise<WebsitePa
 
   const refSummaries = input.referenceUrls?.length ? await scanReferences(input.referenceUrls) : []
   const { system, user } = buildPrompt(input, ai, refSummaries)
-  const content = await claudeJson<AiContent>({ system, user, maxTokens: 4000, temperature: 0.6, timeoutMs: 60_000 })
+  // timeoutMs 120sn: route maxDuration=300 içinde tam 4000-token üretimin tamamlanmasına yer
+  // bırakır (eski 60sn, route'un eski 60sn bütçesine eşitti → görsel/DB'ye pay kalmıyordu).
+  const content = await claudeJson<AiContent>({ system, user, maxTokens: 4000, temperature: 0.6, timeoutMs: 120_000 })
   if (!content) return null
 
   const services = svcItems(content.services?.items)
