@@ -63,3 +63,7 @@ _automation/*.local.json
 
 # SDD scratch (brief/report/diff/ledger — repoya girmez)
 .superpowers/
+
+# Faz 2 POC (repo-dışı — Daytona/Agent SDK prototip)
+poc/
+out/
