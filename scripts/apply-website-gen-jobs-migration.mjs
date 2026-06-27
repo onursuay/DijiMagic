@@ -39,12 +39,12 @@ const FILE = 'supabase/migrations/20260627000000_website_gen_jobs.sql'
  */
 function makeClient(url) {
   const m = url.match(/^postgres(?:ql)?:\/\/([^:@/]+):([\s\S]+)@([^@/]+)\/([^?]+)(?:\?.*)?$/)
-  if (!m) return new Client({ connectionString: url, ssl: { rejectUnauthorized: true } })
+  if (!m) return new Client({ connectionString: url, ssl: { rejectUnauthorized: false } })
   const [, user, password, hostPort, database] = m
   const li = hostPort.lastIndexOf(':')
   const host = li >= 0 ? hostPort.slice(0, li) : hostPort
   const port = li >= 0 ? Number(hostPort.slice(li + 1)) : 5432
-  return new Client({ host, port, user, password, database, ssl: { rejectUnauthorized: true } })
+  return new Client({ host, port, user, password, database, ssl: { rejectUnauthorized: false } })
 }
 
 async function main() {
