@@ -2,6 +2,11 @@
 
 ---
 
+## 2026-06-27 — Agentic Website Generator Faz 1.3: Inngest orkestratör + route kaydı
+- **Sorun:** Agentic üretim pipeline'ı için Inngest fonksiyonu ve route kaydı yoktu.
+- **Çözüm:** `inngest/functions/websiteAgenticGenerate.ts` oluşturuldu — 2-ARG createFunction (triggers config içinde), dev-fallback inline motor, sandbox-done waitForEvent iskeleti, markJobFailed + refundCreditsServer hata/timeout garantileri, tüm yan-etkiler step.run içinde (idempotent). Route'a (`app/api/inngest/route.ts`) import + functions[] kaydı eklendi. tsc 0 hata, verify 15/15.
+- **Dosyalar:** inngest/functions/websiteAgenticGenerate.ts (CREATE), app/api/inngest/route.ts
+
 ## 2026-06-27 — Feature "Nasıl çalışır" adımları detaylandırıldı (#5)
 - **Çözüm:** 15 modülün 3'er "Nasıl çalışır" adımının açıklaması 1 cümle → ~2 cümle (TR+EN; ikinci cümle somut "nasıl/neden"). Başlıklar + anlam + sıra korundu, uydurma yok. Paralel workflow + merge (yalnız `steps`; featureHref/types korundu). Layout dengeli (3 sütun, sıkışma yok).
 - **Dosyalar:** components/landing/featurePagesData.ts

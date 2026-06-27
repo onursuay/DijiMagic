@@ -13,6 +13,7 @@ import { brandIngestionUser } from '@/inngest/functions/brandIngestion'
 import { seoArticleGeneratePublish } from '@/inngest/functions/seoArticleRun'
 import { strategyRunJobs } from '@/inngest/functions/strategyRunJobs'
 import { officialAdsRefresh } from '@/inngest/functions/officialAdsRefresh'
+import { websiteAgenticGenerate } from '@/inngest/functions/websiteAgenticGenerate'
 
 // Strateji blueprint üretimi (Claude, 8000 token) tek invocation'da uzun
 // sürebilir; serve endpoint'ine geniş süre bütçesi tanı.
@@ -28,5 +29,6 @@ export const { GET, POST, PUT } = serve({
     seoArticleGeneratePublish,           // SEO — otomatik günlük makale üret+yayınla
     strategyRunJobs,                     // Strateji — kuyruktaki işleri arka planda çalıştır
     officialAdsRefresh,                  // Resmi reklam dokümanı taraması (kaynak-başına step)
+    websiteAgenticGenerate,              // Faz 1.3 — Agentic website generator (WEBSITE_AGENTIC flag)
   ],
 })
