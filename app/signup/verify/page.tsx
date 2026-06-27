@@ -1,5 +1,6 @@
 'use client'
 
+import { useState, useEffect } from 'react'
 import { useSearchParams } from 'next/navigation'
 import Image from 'next/image'
 import Link from 'next/link'
@@ -58,7 +59,9 @@ const content = {
 export default function VerifyPage() {
   const searchParams = useSearchParams()
   const status = searchParams.get('status') || 'pending'
-  const locale = getLocale()
+  // Locale'i mount sonrası cookie'den oku (SSR 'tr' → hydration uyuşmazlığı olmaz; EN cookie'de EN'e geçer)
+  const [locale, setLocale] = useState('tr')
+  useEffect(() => { setLocale(getLocale()) }, [])
   const isEn = locale === 'en'
   const t = isEn ? content.en : content.tr
 

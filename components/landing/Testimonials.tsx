@@ -1,12 +1,11 @@
-/* Kullanıcı yorumları — gerçekçi, SADECE isim-soyisim (marka/şirket adı yok). Statik grid. */
+/* Kullanıcı yorumları — iyzads tarzı MASONRY grid (quote ikonu + yeşil pill başlık).
+   Gerçekçi, SADECE isim-soyisim (marka/şirket adı yok). */
 
-function Stars() {
+function QuoteMark() {
   return (
-    <div className="flex gap-0.5 text-emerald-400" aria-label="5/5">
-      {Array.from({ length: 5 }).map((_, i) => (
-        <svg key={i} width="14" height="14" viewBox="0 0 24 24" fill="currentColor"><path d="M12 2l2.9 6.3 6.9.7-5.1 4.6 1.4 6.8L12 17.8 5.9 20.4l1.4-6.8L2.2 9l6.9-.7z" /></svg>
-      ))}
-    </div>
+    <svg width="26" height="26" viewBox="0 0 24 24" fill="rgba(52,211,153,0.30)" aria-hidden="true">
+      <path d="M7.5 6C5 6 3 8 3 10.5S5 15 7.5 15c.3 0 .6 0 .9-.1C7.8 16.7 6.3 18 4.5 18.4c-.4.1-.6.5-.5.9.1.4.5.6.9.5C8.4 19 11 16 11 11.5 11 8 9.5 6 7.5 6zm9 0C14 6 12 8 12 10.5S14 15 16.5 15c.3 0 .6 0 .9-.1-.6 1.8-2.1 3.1-3.9 3.5-.4.1-.6.5-.5.9.1.4.5.6.9.5C17.4 19 20 16 20 11.5 20 8 18.5 6 16.5 6z" />
+    </svg>
   )
 }
 
@@ -47,21 +46,22 @@ export default function Testimonials({ isEn }: { isEn: boolean }) {
     : { eyebrow: 'Yorumlar', title: 'Gerçek Kullanıcı Yorumları', sub: 'DijiMagic kullananların deneyimleri.' }
 
   return (
-    <section className="relative w-full px-6 py-10 md:py-12 bg-white/[0.012]">
+    <section className="relative w-full px-6 py-8 md:py-10 bg-white/[0.012]">
       <div className="relative max-w-6xl mx-auto">
-        <div className="text-center mb-9 md:mb-11">
+        <div className="text-center mb-8 md:mb-10">
           <p className="text-[12px] font-semibold uppercase tracking-[0.18em] text-emerald-400/80 mb-2.5">{c.eyebrow}</p>
           <h2 className="text-3xl md:text-4xl font-bold tracking-tight">{c.title}</h2>
           <p className="text-base text-gray-400 mt-3 max-w-xl mx-auto leading-relaxed">{c.sub}</p>
         </div>
-        <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-4 md:gap-5">
+        {/* Masonry (iyzads gibi): değişken yükseklikli kartlar sütunlara akar */}
+        <div className="columns-1 sm:columns-2 lg:columns-4 gap-4 md:gap-5">
           {items.map((r, i) => (
-            <div key={i} className="flex flex-col rounded-2xl border border-white/[0.09] bg-white/[0.045] p-6">
-              <Stars />
-              <h3 className="text-base font-semibold text-white mt-3 mb-2">{r.title}</h3>
-              <p className="text-[14.5px] text-gray-300/90 leading-relaxed flex-1">{r.body}</p>
-              <div className="flex items-center gap-3 mt-5 pt-4 border-t border-white/[0.06]">
-                <div className="w-9 h-9 rounded-full bg-gradient-to-br from-emerald-400/25 to-teal-400/15 border border-emerald-400/25 flex items-center justify-center text-[12px] font-bold text-emerald-300">{initials(r.name)}</div>
+            <div key={i} className="break-inside-avoid mb-4 md:mb-5 rounded-2xl border border-white/[0.09] bg-white/[0.045] p-5">
+              <QuoteMark />
+              <span className="inline-flex mt-3 mb-3 rounded-full bg-emerald-400/10 border border-emerald-400/25 text-emerald-300 text-[12.5px] font-semibold px-3 py-1">{r.title}</span>
+              <p className="text-[14px] text-gray-300/90 leading-relaxed">{r.body}</p>
+              <div className="flex items-center gap-3 mt-4 pt-4 border-t border-white/[0.06]">
+                <div className="w-9 h-9 rounded-full bg-gradient-to-br from-emerald-400/25 to-teal-400/15 border border-emerald-400/25 flex items-center justify-center text-[12px] font-bold text-emerald-300 shrink-0">{initials(r.name)}</div>
                 <span className="text-sm font-medium text-white/90">{r.name}</span>
               </div>
             </div>

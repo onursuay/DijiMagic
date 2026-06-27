@@ -2,6 +2,10 @@
 
 ---
 
+## 2026-06-27 — Yorumlar masonry + padding sıkı + 280+ kullanıcı + auth TR/EN hydration fix
+- **Çözüm:** (1) Testimonials iyzads tarzı **masonry grid** (4 sütun, değişken yükseklik; quote ikonu + yeşil pill başlık; yıldız yerine). (2) Bölüm padding'leri `py-8 md:py-10` (32/40px → bölüm arası 64/80px). (3) Hero üst padding düşürüldü (header-hero boşluğu). (4) TrustStats aktif kullanıcı **280+**. (5) **Auth TR/EN bug fix:** login/signup/signup-verify `getLocale()`'i render'da çağırıyordu → SSR 'tr' + hydration uyuşmazlığı → EN arayüzde Türkçe kalıyordu. `useState('tr')` + `useEffect(setLocale(getLocale()))` ile düzeltildi (SSR uyumlu, mount sonrası cookie'den EN'e geçer). Dashboard/sidebar zaten next-intl (server-side cookie) → doğruydu.
+- **Dosyalar:** components/landing/{Testimonials,TrustStats,HowItWorks,WhoCanUse}.tsx, app/page.tsx, app/{login,signup,signup/verify}/page.tsx
+
 ## 2026-06-27 — Landing bölüm padding'leri standardize + sıkılaştırıldı
 - **Sorun:** Bölümler arası dikey boşluk fazlaydı (masaüstü ~144–160px, mobil ~104–112px).
 - **Çözüm:** Tüm landing içerik bölümleri tutarlı **`py-10 md:py-12` (40/48px)** → bölüm arası boşluk **80px (mobil) / 96px (masaüstü)**. Dosyalar: app/page.tsx (AI/Performans/Komuta/CTA), TrustStats, HowItWorks, WhoCanUse, Testimonials.

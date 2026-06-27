@@ -193,7 +193,7 @@ export default async function RootPage() {
       <LandingHeader locale={locale} ctaSchedule={c.ctaSchedule} ctaTrial={c.ctaTrial} ctaDemo={c.ctaDemo} />
 
       {/* ═══════════ HERO — Centered layout ═══════════ */}
-      <section className="relative w-full px-6 pt-10 pb-8 md:pt-16 md:pb-10 overflow-hidden">
+      <section className="relative w-full px-6 pt-5 pb-8 md:pt-7 md:pb-10 overflow-hidden">
         {/* Orijinal hafif statik parıltı (hero tasarımı birebir korunur) */}
         <div className="absolute inset-0 pointer-events-none" aria-hidden="true">
           <div className="absolute top-[15%] left-1/2 -translate-x-1/2 w-[1000px] h-[700px] rounded-full blur-[160px]" style={{ background: 'radial-gradient(ellipse, rgba(16,185,129,0.07) 0%, rgba(20,184,166,0.03) 50%, transparent 80%)' }} />
@@ -297,7 +297,7 @@ export default async function RootPage() {
       <HowItWorks isEn={isEn} />
 
       {/* ═══════════ AI CAPABILITIES ═══════════ */}
-      <section id="ozellikler" className="relative w-full px-6 py-10 md:py-12">
+      <section id="ozellikler" className="relative w-full px-6 py-8 md:py-10">
         <div className="absolute inset-0 pointer-events-none" aria-hidden="true">
           <div className="absolute top-1/2 left-1/4 w-[500px] h-[500px] bg-emerald-500/[0.03] rounded-full blur-[120px]" />
         </div>
@@ -324,7 +324,7 @@ export default async function RootPage() {
       <WhoCanUse isEn={isEn} />
 
       {/* ═══════════ PERFORMANCE ═══════════ */}
-      <section className="relative w-full px-6 py-10 md:py-12 bg-white/[0.015]">
+      <section className="relative w-full px-6 py-8 md:py-10 bg-white/[0.015]">
         <div className="absolute inset-0 pointer-events-none" aria-hidden="true">
           <div className="absolute bottom-0 right-1/4 w-[400px] h-[400px] bg-teal-500/[0.04] rounded-full blur-[120px]" />
         </div>
@@ -349,7 +349,7 @@ export default async function RootPage() {
       </section>
 
       {/* ═══════════ COMMAND CENTER ═══════════ */}
-      <section className="w-full px-6 py-10 md:py-12">
+      <section className="w-full px-6 py-8 md:py-10">
         <div className="max-w-7xl mx-auto">
           <div className="text-center mb-8">
             <h2 className="text-3xl md:text-4xl font-bold tracking-tight mb-3">{c.cmdTitle}</h2>
@@ -373,7 +373,7 @@ export default async function RootPage() {
       <Testimonials isEn={isEn} />
 
       {/* ═══════════ BOTTOM CTA ═══════════ */}
-      <section className="relative w-full px-6 py-10 md:py-12">
+      <section className="relative w-full px-6 py-8 md:py-10">
         <div className="absolute inset-0 pointer-events-none" aria-hidden="true">
           <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[600px] h-[400px] rounded-full blur-[150px]" style={{ background: 'radial-gradient(ellipse, rgba(16,185,129,0.08), transparent 70%)' }} />
         </div>
