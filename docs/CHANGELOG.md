@@ -2,6 +2,11 @@
 
 ---
 
+## 2026-06-27 — fix(website-gen): file-tracing + owner-only gate + zengin brief (Stage B)
+- **Sorun:** (1) `@daytona/sdk` Vercel lambda'da `MODULE_NOT_FOUND` veriyordu; agentic codegen `.mjs` dosyaları file-tracing'e dahil edilmemişti. (2) Agentic yol yalnız global flag açıkken çalışıyordu; owner-only test için çevre değişkeniyle bypass imkânı yoktu. (3) Sandbox'a gönderilen brief yalnızca serbest talimat metnini içeriyordu; işletme adı, sektör, hizmetler, hedef kitle gibi bağlam eksikti.
+- **Çözüm:** (1) `next.config.mjs`: `serverComponentsExternalPackages`'e `@daytona/sdk` eklendi; `outputFileTracingIncludes['/api/inngest']` ile agentic `.mjs` dosyaları izlemeye alındı. (2) `app/api/website/[id]/generate/route.ts`: agentic koşuluna `WEBSITE_AGENTIC_OWNER_ONLY=1 && isSuperAdmin` dalı eklendi. (3) `inngest/functions/websiteAgenticGenerate.ts`: `getIntelligenceByUserId` import edildi; `dispatch-sandbox` adımında profil+intelligence+site paralel çekilip zengin brief objesi oluşturuldu (businessName, tagline, industry, description, services, tone, sections vb.).
+- **Dosyalar:** next.config.mjs, app/api/website/[id]/generate/route.ts, inngest/functions/websiteAgenticGenerate.ts
+
 ## 2026-06-27 — Faz 2 Stage B T5: güvenlik + orphan cleanup + watchdog fix
 - **Sorun:** API key envVars'a açık görünüyordu; egress kısıtı yoktu; watchdog (18dk) > waitForEvent (12dk) → worker önce ölmeden orkestratör timeout ediyordu; reconcile stale job'ları timeout'a alıyordu ama sandbox'larını silmiyordu (orphan sızıntısı).
 - **Çözüm:** (1) `scripts/website/setup-daytona-secret.mjs`: idempotent Daytona named secret kaydı (`anthropic-prod`, `hosts:['api.anthropic.com']`). (2) `runAgenticBuild.ts`: `secrets:{ANTHROPIC_API_KEY:'anthropic-prod'}` + `domainAllowList:'api.anthropic.com,<callbackHost>'`; envVars fallback smoke'a kadar korundu. (3) `worker.mjs` watchdog: `18m → 15m`, log "8 minute" → "15 minute". (4) `websiteAgenticGenerate.ts` waitForEvent: `'12m' → '17m'` (worker 15m < orkestratör 17m kademeleme). (5) `genJobStore.ts`: `findOrphanSandboxes()` + `clearSandboxRef()` eklendi. (6) `reconcile cron`: `reconcileStaleJobs` sonrası orphan sandbox `deleteSandbox` + `clearSandboxRef` döngüsü.

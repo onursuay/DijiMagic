@@ -13,7 +13,10 @@ const nextConfig = {
     // tailwindCompile .mjs) bu CommonJS paketlerini server'da kullanır. Next bunları
     // BUNDLE ETMEZ; lambda'ya node_modules'tan DAHİL eder → import runtime'da çözülür.
     // Bu olmadan tracer paketleri atlıyordu → Vercel'de "Cannot find module" → 500.
-    serverComponentsExternalPackages: ['sanitize-html', 'tailwindcss', 'postcss', 'autoprefixer'],
+    serverComponentsExternalPackages: ['sanitize-html', 'tailwindcss', 'postcss', 'autoprefixer', '@daytona/sdk'],
+    outputFileTracingIncludes: {
+      '/api/inngest': ['./lib/website/codegen/agentic/**/*.mjs', './lib/website/codegen/renderGate.mjs', './lib/website/codegen/sanitizeAllowlist.mjs', './lib/website/codegen/tailwindCompile.mjs'],
+    },
   },
   async headers() {
     return [{

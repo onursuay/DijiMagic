@@ -12,6 +12,7 @@ import { applyBlockPatch } from '@/lib/website/codegen/applyBlockPatch'
 import { persistGeneratedSite } from '@/lib/website/persistGeneratedSite'
 import type { Website, WebsitePageInput, WebsiteSnapshot, ThemeTokens } from '@/lib/website/types'
 import { isAgenticEnabled } from '@/lib/website/agenticFlag.mjs'
+import { getIsCurrentUserSuperAdmin } from '@/lib/admin/superAdmin'
 import { createWebsiteGenJob } from '@/lib/website/genJobStore'
 import { inngest } from '@/inngest/client'
 
@@ -67,7 +68,7 @@ export async function POST(req: NextRequest, { params }: { params: { id: string 
   // ── Agentic (Faz 1) bayrağı — WEBSITE_AGENTIC='1' açıkken: krediyi düş → job oluştur →
   // orkestratörü tetikle → job bilgisiyle HEMEN dön (<3sn, bloke etmez).
   // Bayrak KAPALIYKEN bu blok ATLANIR; aşağıdaki v2/legacy yollar BYTE-AYNI çalışır. ──
-  if (isAgenticEnabled()) {
+  if (isAgenticEnabled() || (process.env.WEBSITE_AGENTIC_OWNER_ONLY === '1' && await getIsCurrentUserSuperAdmin())) {
     // Maliyet — legacy/v2 yollarıyla PARİTE:
     //   • Revizyon → ilk WEBSITE_FREE_REVISIONS adet ÜCRETSİZ, sonrası WEBSITE_REVISION_COST.
     //   • İlk üretim → computeGenerationCost (multipage: 4 sayfa; lokalizasyon sayısıyla).
