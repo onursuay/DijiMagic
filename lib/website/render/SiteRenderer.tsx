@@ -45,7 +45,10 @@ function applyPreviewLinks(sections: SectionBlock[], previewId: string, locale: 
 export default function SiteRenderer({ page, theme, style, previewId }: SiteRendererProps) {
   // Logo → header/footer; iletişim formuna websiteId + locale RENDER anında enjekte edilir.
   const logoUrl = theme?.logoUrl
-  let sections: SectionBlock[] = page.sections.map((b) => {
+  // Savunmacı: 'sections' formatlı eski/yarım sayfa kayıtlarında sections null/undefined
+  // gelebilir → page.sections.map() beyaz-ekran "Kritik hata" fırlatıyordu. Boş diziyle
+  // koru (crash yerine boş render). Kök çözüm: tek bir üretim motoruna konsolide etmek.
+  let sections: SectionBlock[] = (page.sections ?? []).map((b) => {
     if ((b.type === 'header' || b.type === 'footer') && logoUrl) {
       const existing = (b.content as Record<string, unknown> | undefined)?.logoUrl
       return { ...b, content: { ...b.content, logoUrl: existing || logoUrl } }
