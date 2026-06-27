@@ -197,26 +197,17 @@ export async function runAgenticBuild(
   const daytona = new Daytona()
 
   // Extract callback host for egress allowlist
-  const callbackHost = new URL(i.callbackBase).host
-
   // Spawn sandbox
   const sandbox = await daytona.create(
     {
       autoStopInterval: 0,   // never auto-stop — worker may run 5-15 min
       ephemeral: true,       // auto-cleanup after sandbox.delete()
-      // ANTHROPIC_API_KEY goes into `secrets` — not exposed in API responses.
-      // Daytona substitutes named secrets inside the sandbox process at launch.
-      // NOTE (T5): secret substitution via Agent SDK x-api-key TLS header is
-      // unverified until first smoke test. envVars fallback is kept intentionally
-      // so the worker functions even if secret substitution does not propagate.
-      // After smoke confirms substitution works, owner can remove the envVars copy.
-      secrets: { ANTHROPIC_API_KEY: 'anthropic-prod' },
-      // domainAllowList MUST be a comma-separated STRING, not an array.
-      // Restricts outbound egress to Anthropic API + callback host only.
-      domainAllowList: `api.anthropic.com,${callbackHost}`,
+      // EGRESS HARDENING ERTELENDİ (ileride): Daytona named-secret oluşturma "Access denied"
+      // (key'in secret izni yok) + domainAllowList npm/playwright indirmelerini bloklardı.
+      // POC açık egress + envVars ile çalıştı (ephemeral + izole sandbox yeterince güvenli).
+      // Sonraki adım: deps'i snapshot'a göm + domainAllowList daralt, veya secret izni
+      // açılınca `secrets:{ANTHROPIC_API_KEY:'anthropic-prod'}`'a geç.
       envVars: {
-        // ANTHROPIC_API_KEY kept here as fallback until smoke confirms secret substitution.
-        // Remove after first successful prod smoke test confirms the `secrets` path works.
         ANTHROPIC_API_KEY: process.env.ANTHROPIC_API_KEY ?? '',
         JOB_ID: i.jobId,
         SCOPE: i.scope,
